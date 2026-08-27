@@ -5,9 +5,9 @@
 
 ## 1. Project Health Status
 
-* **Current Phase:** Phase 1 (UI Foundation & Setup Verification)
-* **Frontend Running:** YES (Active Vite dev server running in background at `ip-sakti/`)
-* **Backend Running:** NO (Not started, planned for Phase 3)
+* **Current Phase:** Phase 1.1 (Frontend/Backend Contract; local verification pending)
+* **Frontend Running:** YES (Vite app in `ip-sakti/`; run locally in Antigravity)
+* **Backend Running:** Available locally via `backend/app/main.py`; not continuously running by default
 * **Database Ingestion:** NO (Not started, corpus processing planned for Phase 2)
 
 ---
@@ -35,6 +35,14 @@
 - [ ] Create initial raw document dataset in `corpus/data/raw/`. (Prerequisite for Phase 2)
 - [ ] Develop the text parsing script (`corpus/parser.py`) utilizing PyMuPDF.
 - [ ] Create embedding and collection initialization scripts inside ChromaDB.
+
+### Phase 1.1 Checklist
+
+- [x] Add FastAPI application and local CORS configuration.
+- [x] Add strict Pydantic request/response models.
+- [x] Add `/health` and `/api/chat` endpoints.
+- [x] Replace the frontend mock timeout with a backend request.
+- [ ] Run and manually verify both servers locally.
 
 ---
 

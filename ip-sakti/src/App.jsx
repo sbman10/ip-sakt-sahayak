@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, useNavigate, Link } from 'react-router-dom'
 import './index.css'
 
@@ -22,7 +22,8 @@ function useTypewriter(phrases, speed = 70, pause = 1800) {
   const [charIdx, setCharIdx] = useState(0)
   const [deleting, setDeleting] = useState(false)
 
-  useState(() => {
+  // UPDATED: useEffect owns the timer lifecycle so the rotating hero phrase actually runs and cleans up.
+  useEffect(() => {
     const tick = () => {
       const current = phrases[phraseIdx]
       if (!deleting) {
@@ -48,7 +49,7 @@ function useTypewriter(phrases, speed = 70, pause = 1800) {
 
     let timeout = setTimeout(tick, speed)
     return () => clearTimeout(timeout)
-  }, [phraseIdx, charIdx, deleting])
+  }, [phrases, speed, pause, phraseIdx, charIdx, deleting])
 
   return displayText
 }
@@ -388,7 +389,8 @@ function ChatPage() {
   const [lang, setLang] = useState('en')
   const [typing, setTyping] = useState(false)
 
-  const handleSend = () => {
+  // UPDATED: Send the question to the real FastAPI development endpoint and render its validated JSON response.
+  const handleSend = async () => {
     const trimmed = input.trim()
     if (!trimmed) return
 
@@ -397,19 +399,35 @@ function ChatPage() {
     setInput('')
     setTyping(true)
 
-    // Simulate AI response (placeholder — no backend yet)
-    setTimeout(() => {
-      setTyping(false)
-      const aiMsg = {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: trimmed, jurisdiction, language: lang }),
+      })
+
+      if (!response.ok) throw new Error(`Backend returned HTTP ${response.status}`)
+      const data = await response.json()
+      setMessages(prev => [...prev, {
         id: Date.now() + 1,
         role: 'ai',
-        text: `You asked: "${trimmed}"\n\nThis is a UI framework demo — backend integration will be added in a future phase. The full RAG pipeline will cite real statutes and return jurisdiction-specific (${jurisdiction === 'india' ? '🇮🇳 India' : '🌐 International'}) answers.`,
-        citations: [],
-        confidence: 'medium',
+        text: data.answer,
+        citations: data.citations,
+        confidence: data.confidence === 'unavailable' ? null : data.confidence,
         showDisclaimer: true,
-      }
-      setMessages(prev => [...prev, aiMsg])
-    }, 1800)
+      }])
+    } catch (error) {
+      setMessages(prev => [...prev, {
+        id: Date.now() + 1,
+        role: 'ai',
+        text: `I could not reach the development backend. Start FastAPI on port 8000 and try again.\n\nTechnical detail: ${error.message}`,
+        citations: [],
+        confidence: 'low',
+        showDisclaimer: true,
+      }])
+    } finally {
+      setTyping(false)
+    }
   }
 
   const handleKeyDown = e => {

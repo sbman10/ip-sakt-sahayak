@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added the Phase 1.1 FastAPI development API with `/health` and `/api/chat` endpoints.
+- Added strict Pydantic schemas for question, jurisdiction, language, citations, confidence and disclaimer fields.
+- Connected the React chat send action to the local backend with loading and connection-error handling.
+- Added `docs/AI_ACTIVITY_LOG.md` to track AI-assisted changes and verification status.
 - Proposed FastAPI Python web server architecture.
 - Planned Local ChromaDB storage indices for India/International regulations.
 - Proposed parsing pipeline matching PyMuPDF libraries.

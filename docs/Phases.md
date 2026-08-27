@@ -31,6 +31,13 @@
 - **Skills/Knowledge:** Basic React components and routing, layout variables, CSS keyframe animations.
 - **Definition of Done:** Landing page and chat template render, interactive inputs display placeholder messages.
 
+### Phase 1.1 — Frontend/Backend Contract (Current)
+- **Objective:** Replace the simulated chat response with a transparent, validated local API connection.
+- **Status:** **Implemented; awaiting local verification** 🔧
+- **Technologies:** React `fetch`, FastAPI, Uvicorn, Pydantic, CORS, JSON.
+- **Deliverables:** `backend/app/main.py`, `backend/app/routers/chat.py`, `backend/app/schemas/chat.py`, `GET /health`, and `POST /api/chat`.
+- **Definition of Done:** React sends `{ question, jurisdiction, language }` and displays the validated JSON response or a useful connection error.
+
 ### Phase 2 — Ingestion Corpus Handling (Next Task)
 - **Objective:** Write scripts to collect and prepare the Ayurvedic statutory knowledge base for retrieval.
 - **Status:** **Planned / In Queue** ⏳
