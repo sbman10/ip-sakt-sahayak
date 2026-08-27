@@ -69,3 +69,15 @@ To build this successfully, different team members should focus on different asp
 3. **AI Pipeline Team:**
    - Study HuggingFace embedding APIs and model size trade-offs.
    - Trace prompt constraints inside model contexts to prevent hallucinated answers.
+
+---
+
+## 4. Visual Hygiene in Institutional Interfaces
+
+* **Key Concept:** Cognitive ergonomics & contrast hygiene.
+* **Why simplify backgrounds?** In consumer startups, heavy animation and parallax glows catch short attention spans. But in administrative, judicial, or regulatory portals (like the Ministry of AYUSH), busy background particles create high visual noise. This:
+  - distracts users who are carefully reading dense legal sections.
+  - degrades contrast readability, rendering small text fuzzy.
+  - consumes CPU power on older computers because animating dozens of items causes re-reflow processes.
+* **Analogy (The clean table):** Apne study table par kaam karte waqt agar space bilkul empty aur clean ho to concentration banana easy hota hai. Floating objects table par distractions ke siwa kuch nahi hote.
+

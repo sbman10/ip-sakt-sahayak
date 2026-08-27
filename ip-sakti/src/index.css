@@ -157,12 +157,7 @@ h1, h2, h3, h4, h5, h6 {
   100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
 }
 
-/* Floating particle */
-@keyframes float {
-  0%   { transform: translateY(0) rotate(0deg);   opacity: 0.06; }
-  50%  { transform: translateY(-30px) rotate(15deg); opacity: 0.12; }
-  100% { transform: translateY(0) rotate(0deg);   opacity: 0.06; }
-}
+/* REMOVED: float keyframes block is disabled since floating background herbs were removed */
 
 /* Typewriter cursor blink */
 @keyframes cursorBlink {
@@ -212,21 +207,7 @@ h1, h2, h3, h4, h5, h6 {
   overflow: hidden;
 }
 
-/* --- Particle Background --- */
-.particles {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  overflow: hidden;
-}
-
-.particle {
-  position: absolute;
-  font-size: 1.4rem;
-  animation: float linear infinite;
-  user-select: none;
-}
+/* REMOVED: .particles and .particle rules are disabled since background herbs were removed */
 
 /* --- Navbar --- */
 .navbar {

@@ -17,7 +17,7 @@
 * **Landing Hub (`ip-sakti/src/App.jsx`):**
   - Brand branding: Minimalist layout with amber/emerald styling tokens.
   - Multilingual header text typewriter simulation (English, Hindi, Sanskrit).
-  - Floating ambient herb-emoji background system.
+  - Flat, clean backdrops (removed floating herb particles to minimize visual distraction).
 * **Dialogue Interface (`ip-sakti/src/App.jsx`):**
   - Double column interactive screen displaying the chat.
   - Interactive India vs International switch toggling styled ambient glows.

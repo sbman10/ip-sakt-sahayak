@@ -2,42 +2,7 @@ import { useState } from 'react'
 import { BrowserRouter, Routes, Route, useNavigate, Link } from 'react-router-dom'
 import './index.css'
 
-/* ============================================================
-   PARTICLES (floating herb symbols in background)
-   ============================================================ */
-const HERBS = ['🌿', '🍃', '🌱', '🌾', '🪴', '🌻', '🍀', '🌺']
-
-function Particles() {
-  const items = Array.from({ length: 18 }, (_, i) => ({
-    id: i,
-    emoji: HERBS[i % HERBS.length],
-    left: `${(i * 5.8 + 3) % 100}%`,
-    top: `${(i * 13 + 5) % 100}%`,
-    duration: `${12 + (i % 8) * 3}s`,
-    delay: `${(i * 0.7) % 6}s`,
-    size: `${1 + (i % 3) * 0.3}rem`,
-  }))
-
-  return (
-    <div className="particles" aria-hidden="true">
-      {items.map(p => (
-        <span
-          key={p.id}
-          className="particle"
-          style={{
-            left: p.left,
-            top: p.top,
-            fontSize: p.size,
-            animationDuration: p.duration,
-            animationDelay: p.delay,
-          }}
-        >
-          {p.emoji}
-        </span>
-      ))}
-    </div>
-  )
-}
+// REMOVED: Floating herb particles system has been removed to keep the background clean and professional.
 
 /* ============================================================
    TYPEWRITER EFFECT
@@ -97,7 +62,7 @@ function LandingPage() {
 
   return (
     <div className="landing">
-      <Particles />
+      {/* REMOVED: <Particles /> background component invocation is deleted to keep background flat and clean */}
 
       {/* Navbar */}
       <nav className="navbar" role="navigation" aria-label="Main navigation">

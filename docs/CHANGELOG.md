@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.0] — 2026-08-27
 
+### Removed
+- Removed the floating herb-emoji particle backdrop and associated keyframes float from index.css to enforce minimalist cognitive ergonomics.
+
 ### Added
 - Completed **Phase 1 (UI Foundation & Setup Verification)**.
 - Built active React + Vite mockup shell inside `ip-sakti/`.
