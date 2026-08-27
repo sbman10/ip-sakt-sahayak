@@ -1,0 +1,14 @@
+# CODEOWNERS — Code reviews ownership settings
+# IP-SAKTI Sahayak
+
+# Set main admin team for everything
+* @sbman10 @teammate1 @teammate2 @teammate3 @teammate4 @teammate5
+
+# Set documentation sign-off rules
+/docs/ @sbman10
+
+# Set backend pipeline rules
+/backend/ @teammate1 @teammate2
+
+# Set frontend UI mockup rules
+/ip-sakti/ @teammate3 @teammate4
