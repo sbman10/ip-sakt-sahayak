@@ -31,11 +31,12 @@ def check_traditional_formula(ingredients: list[str]) -> bool:
 - **State:** React standard state (`useState`, `useContext`) is preferred. If global state becomes vital, use `zustand`. Do not use Redux.
 - **Styling:** Vanilla CSS. All custom variables must reside in `src/index.css`. Do not add Tailwind CSS unless specifically approved.
 
-### Backend (`backend/` - Planned)
+### Backend (`backend/` - Phase 1.1 baseline)
 - **Base:** Python 3.11+.
 - **Web Layer:** FastAPI. All routing files go matching `/routers/{endpoint_name}.py`.
 - **Data Schemas:** Strict Pydantic models for incoming and outgoing APIs.
 - **Orchestration:** Use direct database and LLM client APIs where possible. Avoid complex LCEL (LangChain Expression Language) structures.
+- **Current routes:** Keep `/health` and `/api/chat` stable while corpus, retrieval and grounded generation are added incrementally.
 
 ---
 
@@ -53,7 +54,7 @@ def check_traditional_formula(ingredients: list[str]) -> bool:
 
 ## 4. Workspaces & Git Guidelines
 
-* **Working Directory:** All code must live under `ip-sakti/` (frontend) or future `backend/` and `corpus/` directories. No loose operational scripts at the root level.
+* **Working Directory:** All code must live under `ip-sakti/` (frontend), `backend/` (API) or `corpus/` (ingestion/data) directories. No loose operational scripts at the root level.
 - **Branching Policy:**
   - **`main`:** Stable, review-approved codebase. Direct pushes to main are deactivated.
   - **`feature/*`:** Branching for new components or pages.

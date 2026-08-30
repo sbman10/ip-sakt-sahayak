@@ -46,11 +46,18 @@ Currently, there is no easy-to-use, plain-language assistant that guides the AYU
 To manage project complexity, features are broken into distinct phases. We explicitly avoid faking product readiness:
 
 ### Phase 1 (Current State) — Frontend UI Mockup & Design Foundation
-- [x] Basic interactive landing page and chat layout (simulated response).
+- [x] Basic interactive landing page and chat layout (initial placeholder response).
 - [x] UI/UX design components matching the AYUSH Visual Design System.
 - [x] Jurisdiction switch toggle (India 🇮🇳 vs International 🌐).
 - [x] Quick actions/Shortcut triggers for the Formulation Wizard.
 - [x] Language selector dropdown layout.
+
+### Phase 1.1 (Implemented) — Frontend/Backend Contract
+- [x] FastAPI `GET /health` endpoint.
+- [x] FastAPI `POST /api/chat` endpoint with strict Pydantic validation.
+- [x] React sends question, jurisdiction and language as JSON.
+- [x] React displays the API response, loading state and connection errors.
+- [ ] Team runs and manually verifies both servers locally.
 
 ### Phase 2 (Planned Next) — Knowledge Corpus & Local ChromaDB Ingestion
 - [ ] Offline Python ingestion script to parse official documents (PDFs/HTML).
@@ -58,8 +65,8 @@ To manage project complexity, features are broken into distinct phases. We expli
 - [ ] Local vector store setup using ChromaDB.
 - [ ] Ground-truth retrieval test suite (retrieving statutes like Section 3(p) of Patents Act).
 
-### Phase 3 (Planned) — Local RAG Pipeline & Simple Backend
-- [ ] FastAPI backend framework for routing API calls.
+### Phase 3 (Planned) — Local RAG Pipeline & Grounded Answering
+- [x] FastAPI foundation and chat contract (delivered in Phase 1.1).
 - [ ] Local semantic search and retrieved-chunk re-ranking using small sentence-transformers.
 - [ ] Prompt construction targeting LLM contextual constraints (retrieved context only, abstain if missing).
 - [ ] Proof of Concept using free-tier Gemini API for response generation.

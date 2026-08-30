@@ -16,7 +16,7 @@ The system is designed to separate the user-facing web app from the offline inge
                             │ HTTP POST requests
 ┌───────────────────────────▼────────────────────────────┐
 │                    BACKEND SERVER                      │
-│                  FastAPI (Planned)                     │
+│              FastAPI (Phase 1.1 baseline)              │
 │    ┌─────────────┐  ┌─────────────┐  ┌─────────────┐   │
 │    │ Chat Router │  │ Classifier  │  │ Health Check│   │
 │    └──────┬──────┘  └──────┬──────┘  └──────┬──────┘   │
@@ -57,8 +57,9 @@ The system is designed to separate the user-facing web app from the offline inge
 * **Styling:** Vanilla CSS. Built from scratch with variables in `src/index.css` to allow maximum layout control and visual identity without relying on third-party Tailwind setups, maintaining transparency for learning.
 * **Routing:** `react-router-dom` for transitioning between static home and interactive chat screens.
 
-### Backend (Planned for Phase 3)
+### Backend (Phase 1.1 baseline implemented)
 * **Framework:** FastAPI (Python). Async endpoints, high throughput, native type-hinting, automatic OpenAPI documentation.
+* **Current contract:** `GET /health` and `POST /api/chat` are implemented with strict Pydantic request/response models and local-development CORS.
 * **Retrieval Orchestration:** Direct integration with raw embedding adapters and SQLite/Chroma DB APIs—minimizing abstraction layers like LangChain to maximize student control and troubleshooting visibility.
 * **Vector Database:** local ChromaDB (persisted folder). Zero-config setup, queries run inside local Docker or filesystem, very fast for student testing.
 
@@ -96,8 +97,10 @@ ip-sakti-sahayak/                    # Workspace root
 │       ├── index.css                # Global Visual Stylesheet
 │       └── main.jsx                 # React root mount
 │
-├── backend/                         # FastAPI application (Planned / Not started)
-│   └── (To be built in Phase 3)
+├── backend/                         # FastAPI application (Phase 1.1 baseline)
+│   ├── app/main.py                  # Application + health route
+│   ├── app/routers/chat.py          # Transparent development chat route
+│   └── app/schemas/chat.py          # Validated request/response models
 │
 ├── corpus/                          # Ingestion & offline scrapers (Not started)
 │   └── (To be built in Phase 2)

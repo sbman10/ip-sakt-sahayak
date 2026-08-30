@@ -56,3 +56,33 @@ Read the complete `26045` workspace and `AyuSync.md`, then add the next justifie
 ### Next human-controlled step
 
 Run the backend locally and verify `/health`, `/docs`, and `/api/chat`. Then create a small, manually verified source register before adding document ingestion or any LLM.
+
+## 2026-08-30 — Documentation audit and presentation guide
+
+### User request
+
+Provide a current project update, check the Markdown documentation, prepare a PPT-making guide for a 9-day presentation, and align the next steps with a 15-day project target.
+
+### What I inspected
+
+- Confirmed the repository is on `main`, clean, and tracking `origin/main`.
+- Inspected the project tree, all Markdown files in `docs/`, the root README, and `AyuSync.md`.
+- Checked the available earlier conversation attachments, then located the supplied template at `C:\Users\thaku\Desktop\SIH2026-IDEA-Presentation-Format.pptx` on the Desktop.
+
+### Changes made
+
+- Added `docs/PPT_GUIDE.md` with a slide story, implemented-vs-planned boundary, 9-day PPT schedule, 15-day project alignment, speaking roles, design rules and final checklist.
+- Updated `docs/Architecture.md` to describe the FastAPI/Pydantic contract as the Phase 1.1 baseline and to show the actual backend files.
+- Updated `docs/PRD.md` with the implemented Phase 1.1 contract and clarified that Phase 3 is now grounded-answering work built on that foundation.
+- Updated `docs/Rules.md` to identify the current backend baseline and protect the existing `/health` and `/api/chat` contract.
+- Replaced the placeholder root `README.md` with setup instructions, project status, document links and the safety promise.
+- Removed remaining stale “FastAPI planned” and “future backend” wording from the architecture, PRD and workspace rules.
+- Added `docs/SOURCE_REGISTER.md` as the first concrete corpus-preparation artifact, with provenance, version, checksum and human-verification fields.
+- Added `docs/PPT_CONTENT_DRAFT.md` with editable slide wording, speaker points, visual suggestions and the remaining team inputs required for the deck.
+- Inspected all seven template slides and updated `PPT_GUIDE.md` and `PPT_CONTENT_DRAFT.md` to the six-slide content limit, required headings, template-only rule and PDF-only submission rule.
+
+### Verification
+
+- Confirmed all edited files exist and contain the intended sections.
+- No application source code or dependency files were changed.
+- Remaining PPT work is content entry into the supplied template, local verification, rehearsal and PDF export.

@@ -50,13 +50,12 @@
 - **Skills/Knowledge:** Vector algebra, chunking strategies (chunk size and overlap concepts), similarity searching.
 - **Definition of Done:** Searching for *"Neem"* in the local database retrieves direct segments containing Patents Act citations.
 
-### Phase 3 — Simple RAG Pipeline Backend
-- **Objective:** Create API connections so the frontend can receive computed AI responses based on retrieved context.
+### Phase 3 — Simple RAG Pipeline & Grounded Answering
+- **Objective:** Connect verified retrieval results to the existing API so the frontend can receive grounded responses.
 - **Status:** **Planned** ⏳
 - **Prerequisites:** Completed Phase 2 ChromaDB database output.
 - **Deliverables:**
-  - FastAPI web server running under `/backend`.
-  - `/api/chat` endpoint returning `{ answer, citations, confidence, disclaimer }`.
+  - Existing `/api/chat` endpoint extended to return `{ answer, citations, confidence, disclaimer }` from retrieved context.
   - `/api/classify` endpoint containing the rules engine for formulations.
 - **Technologies:** FastAPI, Gemini Developer API, cross-encoder models.
 - **Skills/Knowledge:** REST API design, async functions in Python, prompts mapping constraints to LLMs.
