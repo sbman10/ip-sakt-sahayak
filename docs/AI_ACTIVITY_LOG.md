@@ -1,5 +1,31 @@
 # AI Activity Log
 
+## 2026-09-01 — Milestone: six-member research sprint documentation
+
+### User request
+
+Read the project documentation and implement a three-day research division for six team members. The work needed to cover Ayurveda theory, IP rights, statutes and citations, MVP architecture, feasibility and impact, plus limited international protocol awareness.
+
+### What I inspected
+
+- Read the project documentation in `docs/`, including the PRD, architecture, roadmap, safety rules, source register, learning journal, contribution guide, workflow, and presentation guidance.
+- Confirmed that the current product is a React/Vite UI and FastAPI contract baseline; corpus ingestion, retrieval, and grounded generation are still planned work.
+
+### Changes made
+
+- Added `docs/TEAM_RESEARCH_SPRINT.md` with six non-overlapping research assignments, required use cases, starting official sources, daily milestones, source rules, Day 4 decisions, and safety boundaries.
+- Added `docs/RESEARCH_PACK_TEMPLATE.md` so all members submit comparable, source-backed research packs.
+- Linked both documents from the root README and recorded them in the changelog.
+
+### Deliberately not changed
+
+- No product code, dependencies, AI model, RAG pipeline, API contract, or source-corpus data was changed.
+- The source register was not pre-marked as verified: source verification remains a human research task.
+
+### Next human-controlled step
+
+Assign the six tracks, have each teammate use the common template for three days, then run the Day 4 discussion to freeze the MVP corpus and first test questions.
+
 ## 2026-08-27 — Milestone: real frontend/backend development connection
 
 ### User request

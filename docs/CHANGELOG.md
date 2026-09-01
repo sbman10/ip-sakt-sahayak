@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added `docs/TEAM_RESEARCH_SPRINT.md`, assigning six India-first research tracks covering Ayurveda theory, IP rights, Indian statutes, MVP architecture, feasibility, and limited international context.
+- Added `docs/RESEARCH_PACK_TEMPLATE.md`, a common two-page output template for source-backed team research.
 - Added `docs/PPT_GUIDE.md` for the 9-day presentation schedule and 15-day delivery alignment.
 - Added `docs/PPT_CONTENT_DRAFT.md` with six-slide content mapped to the supplied SIH template.
 - Added `docs/SOURCE_REGISTER.md` for provenance, version and human verification of corpus sources.

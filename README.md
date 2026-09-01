@@ -42,6 +42,8 @@ Open the API documentation at `http://127.0.0.1:8000/docs` and the frontend URL 
 - `docs/SOURCE_REGISTER.md` — verified-corpus provenance register
 - `docs/PPT_GUIDE.md` — presentation plan and checklist
 - `docs/PPT_CONTENT_DRAFT.md` — editable slide wording and speaker points
+- `docs/TEAM_RESEARCH_SPRINT.md` — six-member, three-day research division
+- `docs/RESEARCH_PACK_TEMPLATE.md` — common format for each member’s research output
 - `docs/AI_ACTIVITY_LOG.md` — AI-assisted changes and verification
 
 ## Safety promise
