@@ -252,7 +252,7 @@ Show that the project can be useful and feasible without inventing adoption figu
 - [TKDL](https://www.tkdl.res.in/tkdl/langdefault/common/Abouttkdl.asp)
 - [WIPO PATENTSCOPE](https://www.wipo.int/en/web/patentscope)
 
-## Mahi — International Protocols, Export Awareness, and Solution Boundaries
+## Mahi "— International Protocols, Export Awareness, and Solution Boundaries
 
 ### Objective
 
