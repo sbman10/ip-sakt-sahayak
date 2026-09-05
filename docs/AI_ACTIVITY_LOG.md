@@ -112,3 +112,53 @@ Provide a current project update, check the Markdown documentation, prepare a PP
 - Confirmed all edited files exist and contain the intended sections.
 - No application source code or dependency files were changed.
 - Remaining PPT work is content entry into the supplied template, local verification, rehearsal and PDF export.
+
+## 2026-09-05 — Milestone: Frontend Completion, Accessibility Audit & MVP Polish
+
+### User request
+
+Perform comprehensive frontend completion, accessibility audit, and MVP polish on `ip-sakti/` (`App.jsx`, `index.css`), ensuring strict legal accuracy, responsive design, keyboard accessibility, and production build readiness.
+
+### What I inspected
+
+- `ip-sakti/src/App.jsx`, `ip-sakti/src/index.css`, `ip-sakti/src/App.css`, `ip-sakti/package.json`, `ip-sakti/index.html`.
+- Project documentation: `docs/PRD.md`, `docs/Architecture.md`, `docs/Design.md`, `docs/Rules.md`, `docs/Memory.md`, `docs/SOURCE_REGISTER.md`.
+- Confirmed corpus ingestion has not started; RAG pipeline and vector store remain planned for Phases 2–3.
+
+### Changes made
+
+#### 1. Legal Accuracy & Capability Honesty (Memory.md & Rules.md compliance)
+- **AboutModal**: Removed misleading "Zero Hallucination" and "Core Ingested Corpora" claims. Replaced with "Grounding Design & Abstention Policy" and "Planned Source Corpus (Pending Verification)", clearly noting prototype status.
+- **SourcesPage**: Renamed header to "Official Source Directory" (removed "Ingested"); added status badge to every source card designating "Candidate — Pending Corpus Ingestion".
+- **Landing Page**: Removed ungrounded claims ("Zero simulated laws — all citations verified"). Replaced Step 3 text with "Source-grounded answers (designed for citation grounding)". Added defensible stats strip (6+ Languages, 4 Core Legal Domains, 2 Jurisdiction Modes) and Development Preview notice.
+- **Dev Fallback**: Changed placeholder confidence from `high` to `medium` and added explicit notice that response is an illustrative dev placeholder.
+- **ABS Checker**: Added "MVP Prototype · Preliminary Informational Assessment Only" banner and clear notice that results do not constitute official NBA/SBB regulatory determinations. Added Form Reset button.
+
+#### 2. Accessibility & Semantic HTML
+- **Keyboard Focus**: Removed destructive `button { outline: none }` reset in `index.css`. Added high-contrast amber `:focus-visible` styling for interactive elements.
+- **Semantic Sidebar**: Replaced non-semantic `div` history items with accessible `<button>` elements with `role="listitem"` and `aria-current`.
+- **Keyboard Navigation**: Added Escape key handlers to `AboutModal`, `FormulationWizardModal`, and mobile sidebar drawer.
+- **Screen Reader Support**: Added `aria-labelledby`, `aria-modal="true"`, `aria-expanded` on sidebar toggles, and polite `role="status"` toast for voice input.
+- **Reduced Motion**: Added `@media (prefers-reduced-motion: reduce)` rules in `index.css` to respect user motion preferences.
+
+#### 3. Responsive Design & Component Polish
+- Added `.sidebar-backdrop` overlay for mobile viewports (≤768px).
+- Added mobile responsiveness down to 375px screens across top bar, modals, and landing grid.
+- Added Voice Input button with informational toast explaining planned Bhashini API integration (Phase 4).
+- Added 404 catchall route (`NotFoundPage`) with clean return-to-home navigation.
+- Added comprehensive footer grid with portal navigation, official links, statutory disclaimers, and prototype credits.
+
+#### 4. Code Quality & Build Stability
+- Fixed all React 19 / ESLint warnings and errors: resolved `react-hooks/set-state-in-effect`, fixed `handleClose` declaration ordering, removed unused `onToggle` and `error` parameters, and verified clean build output (`vite build` completed in ~250ms).
+
+### Deliberately not changed
+
+- No fake or hallucinated legal statutes introduced; all statutory citations strictly reflect Indian Patents Act 1970, BD Act 2002, and TKDL guidelines.
+- FastAPI backend contract (`POST /api/chat`) preserved without breaking changes.
+- Maintained Vanilla CSS design system without ad-hoc utility frameworks per `Rules.md`.
+
+### Verification
+
+- `npm run lint` in `ip-sakti/`: passed with 0 errors and 0 warnings.
+- `npm run build` in `ip-sakti/`: passed with clean production bundle.
+

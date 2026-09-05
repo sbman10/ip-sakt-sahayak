@@ -164,7 +164,19 @@ button {
   font-family: var(--font-body);
   cursor: pointer;
   border: none;
-  outline: none;
+  /* UPDATED: outline:none removed — browser focus rings are required for keyboard accessibility */
+}
+
+/* ADDED: Visible keyboard focus indicator using amber brand colour for all interactive elements */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
 }
 
 input, textarea {
@@ -576,7 +588,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .gov-nav-cta {
-  background: linear-gradient(135deg, var(--primary), #D97706);
+  background: var(--primary);
   color: #FFFFFF !important;
   border: none;
   border-radius: var(--radius-sm);
@@ -589,12 +601,12 @@ h1, h2, h3, h4, h5, h6 {
   cursor: pointer;
   white-space: nowrap;
   text-decoration: none;
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  transition: transform var(--transition-fast), background var(--transition-fast);
 }
 
 .gov-nav-cta:hover {
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.4);
+  background: var(--primary-dark);
   color: #FFFFFF !important;
   text-decoration: none;
 }
@@ -631,12 +643,8 @@ h1, h2, h3, h4, h5, h6 {
 .hero-title {
   font-size: clamp(2.5rem, 6vw, 4.5rem);
   font-weight: 700;
-  background: linear-gradient(90deg, var(--primary-light), var(--secondary-light), var(--primary-light));
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: fadeSlideUp 0.5s 0.2s both, shimmer 4s linear 1s infinite;
+  color: var(--primary-light);
+  animation: fadeSlideUp 0.5s 0.2s both;
   margin-bottom: var(--space-2);
 }
 
@@ -689,7 +697,6 @@ h1, h2, h3, h4, h5, h6 {
   padding: var(--space-4) var(--space-8);
   border-radius: var(--radius-full);
   text-decoration: none;
-  animation: ctaGlow 2s ease-in-out infinite;
   transition: background var(--transition-fast), transform var(--transition-fast);
 }
 .btn-primary:hover {
@@ -775,7 +782,7 @@ h1, h2, h3, h4, h5, h6 {
   justify-content: center;
   font-size: 1.5rem;
   margin-bottom: var(--space-4);
-  background: linear-gradient(135deg, rgba(217,119,6,0.15), rgba(6,95,70,0.15));
+  background: rgba(217, 119, 6, 0.15);
   border: 1px solid rgba(52,211,153,0.2);
 }
 
@@ -815,7 +822,7 @@ h1, h2, h3, h4, h5, h6 {
   width: 48px;
   height: 48px;
   border-radius: var(--radius-full);
-  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  background: var(--primary);
   color: #fff;
   font-weight: 700;
   font-size: 1.1rem;
@@ -916,7 +923,7 @@ h1, h2, h3, h4, h5, h6 {
 .chat-brand-icon {
   width: 34px;
   height: 34px;
-  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  background: var(--primary);
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
@@ -1786,12 +1793,355 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ============================================================
+   STATS STRIP — Landing page scope metrics (defensible data only)
+   ============================================================ */
+/* ADDED: Compact horizontal strip showing product scope metrics below typewriter */
+.stats-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  background: var(--bg-surface);
+  border: 1px solid var(--bg-border);
+  border-radius: var(--radius-full);
+  padding: var(--space-3) var(--space-8);
+  margin-bottom: var(--space-4);
+  animation: fadeSlideUp 0.5s 0.45s both;
+}
+
+.stat-item {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  text-align: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.stat-number {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--primary-light);
+  font-family: var(--font-body);
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.stat-note {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.stat-divider {
+  width: 1px;
+  height: 32px;
+  background: var(--bg-border);
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   DEVELOPMENT PREVIEW NOTICE
+   Informs users about current product state honestly.
+   ============================================================ */
+/* ADDED: Honest development status notice on landing page hero */
+.dev-preview-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  font-size: 0.82rem;
+  color: rgba(165, 180, 252, 0.9);
+  max-width: 640px;
+  margin: 0 auto var(--space-4);
+  text-align: left;
+  line-height: 1.5;
+  animation: fadeSlideUp 0.5s 0.5s both;
+}
+
+/* ============================================================
+   DEV FALLBACK BADGE
+   Shown on AI messages when backend is unavailable.
+   ============================================================ */
+/* ADDED: Clearly labels placeholder/fallback content in chat to avoid misleading users */
+.dev-fallback-badge {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.75rem;
+  color: var(--confidence-medium);
+  line-height: 1.4;
+  font-family: var(--font-mono);
+}
+
+/* ============================================================
+   VOICE INPUT BUTTON
+   Microphone button inside chat input area (Phase 4 placeholder).
+   ============================================================ */
+/* ADDED: Voice input button styled to match chat input area; visually deemphasised (coming soon) */
+.voice-input-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1rem;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: color var(--transition-fast), transform var(--transition-fast);
+  flex-shrink: 0;
+  opacity: 0.65;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.voice-input-btn:hover {
+  color: var(--text-secondary);
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+/* ============================================================
+   TOAST NOTIFICATION
+   Accessible live-region notification for voice input.
+   ============================================================ */
+/* ADDED: Toast for voice-input coming-soon message with role=status live region */
+.toast-notification {
+  position: fixed;
+  bottom: var(--space-8);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  background: var(--bg-elevated);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-full);
+  padding: var(--space-3) var(--space-6);
+  font-size: 0.88rem;
+  color: var(--text-primary);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.35);
+  z-index: 300;
+  animation: fadeSlideUp 0.2s ease-out both;
+  max-width: min(90vw, 480px);
+  white-space: normal;
+  text-align: left;
+}
+
+.toast-dismiss-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: var(--space-1);
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  margin-left: auto;
+  transition: color var(--transition-fast);
+}
+.toast-dismiss-btn:hover { color: var(--text-primary); }
+
+/* ============================================================
+   SIDEBAR BACKDROP
+   Mobile overlay that closes the drawer when clicked.
+   ============================================================ */
+/* ADDED: Semi-transparent backdrop behind mobile sidebar drawer */
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 35;
+  backdrop-filter: blur(2px);
+}
+
+/* Mobile-open state overrides collapsed state */
+.chat-sidebar.mobile-open {
+  transform: translateX(0) !important;
+  margin-left: 0 !important;
+}
+
+/* ============================================================
+   FOOTER GRID
+   Improved footer layout with nav links and legal disclaimer.
+   ============================================================ */
+/* ADDED: Three-column footer grid for brand, navigation, and meta information */
+.footer-grid {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: start;
+  gap: var(--space-8);
+  max-width: 1100px;
+  margin: 0 auto var(--space-4);
+}
+
+.footer-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.footer-logo {
+  font-size: 1.6rem;
+}
+
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-6);
+  justify-content: center;
+  align-items: center;
+}
+
+.footer-link {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  transition: color var(--transition-fast);
+  white-space: nowrap;
+}
+.footer-link:hover { color: var(--primary-light); }
+
+.footer-meta {
+  text-align: right;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.footer-disclaimer {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  max-width: 900px;
+  margin: 0 auto;
+  line-height: 1.5;
+  border-top: 1px solid var(--bg-border);
+  padding-top: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+/* ============================================================
+   SOURCES PAGE ADDITIONS
+   Status legend, note, and verification status badges.
+   ============================================================ */
+/* ADDED: Explanatory note on source corpus status for accurate provenance disclosure */
+.sources-status-note {
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  font-size: 0.82rem;
+  color: rgba(165, 180, 252, 0.85);
+  max-width: 700px;
+  margin: var(--space-4) auto 0;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.sources-legend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: var(--space-4) var(--space-6);
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* ADDED: Colour-coded status badges for source verification state */
+.source-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+}
+
+.source-status-badge.pending {
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--confidence-medium);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.source-status-badge.verified {
+  background: rgba(34, 197, 94, 0.12);
+  color: var(--confidence-high);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.source-status-badge.needs-update {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--confidence-low);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* ============================================================
+   HISTORY ITEM AS BUTTON
+   Semantic button styles for chat history items.
+   ============================================================ */
+/* UPDATED: history-item now styled as button for keyboard accessibility */
+.history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 0.83rem;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  border: 1px solid transparent;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  font-family: var(--font-body);
+}
+.history-item:hover, .history-item.active, .history-item[aria-current="true"] {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border-color: var(--bg-border);
+}
+
+/* ============================================================
+   ACCESSIBILITY UTILITY
+   Screen-reader only text for skip links and hidden hints.
+   ============================================================ */
+/* ADDED: Visually hidden but screen-reader accessible content helper */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ============================================================
    RESPONSIVE
    ============================================================ */
 
 @media (max-width: 768px) {
   .navbar { padding: var(--space-3) var(--space-4); }
-  .navbar-name .brand-sub { display: none; }
 
   .hero-section { padding: 6rem var(--space-4) var(--space-12); }
 
@@ -1809,18 +2159,108 @@ h1, h2, h3, h4, h5, h6 {
 
   .trust-logos { gap: var(--space-3); }
 
+  /* UPDATED: Mobile sidebar uses fixed positioning with z-index 40 for overlay drawer */
   .chat-sidebar {
-    position: absolute;
+    position: fixed;
     top: 0;
     bottom: 0;
     left: 0;
-    box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+    z-index: 40;
+    transform: translateX(-100%);
+    margin-left: 0;
+    transition: transform var(--transition-base);
   }
+
+  .chat-sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  .stats-strip {
+    flex-direction: column;
+    gap: var(--space-3);
+    border-radius: var(--radius-xl);
+  }
+  .stat-divider { width: 80%; height: 1px; }
+
+  .footer-grid {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: var(--space-6);
+  }
+  .footer-meta { text-align: center; }
+  .footer-brand { justify-content: center; }
+}
+
+/* ADDED: 375px mobile viewport — no horizontal overflow, all elements fit */
+@media (max-width: 375px) {
+  .hero-title { font-size: 2rem; }
+  .hero-title-sub { font-size: 1.1rem; }
+
+  .hero-cta-group { flex-direction: column; align-items: stretch; }
+  .hero-cta-group .btn-primary,
+  .hero-cta-group .btn-secondary { text-align: center; justify-content: center; }
+
+  .stats-strip { padding: var(--space-3) var(--space-4); }
+
+  .features-grid { grid-template-columns: 1fr; }
+  .steps-grid { grid-template-columns: 1fr; }
+
+  .modal-card { border-radius: var(--radius-lg); }
+  .modal-body { padding: var(--space-4); }
+
+  .abs-form-card { width: 95%; padding: var(--space-4); }
+  .form-select { font-size: 0.85rem; }
+
+  .page-title { font-size: 1.6rem; }
+
+  .sources-grid { grid-template-columns: 1fr; padding: 0 var(--space-3); }
+
+  .chat-topbar { flex-wrap: wrap; gap: var(--space-2); }
+  .topbar-right { gap: var(--space-2); }
+
+  .wizard-options-grid { gap: var(--space-2); }
+  .wizard-option-btn { padding: var(--space-3); }
+
+  .toast-notification { bottom: var(--space-4); padding: var(--space-3) var(--space-4); }
+
+  .gov-portal-name { font-size: 0.9rem; }
+  .gov-header-container { flex-direction: column; align-items: flex-start; gap: var(--space-3); }
+
+  .top-access-container { flex-direction: column; align-items: flex-start; gap: var(--space-2); }
+  .top-access-right { flex-wrap: wrap; }
+
+  .top-search-input { width: 90px; }
+
+  .input-actions { flex-wrap: wrap; gap: var(--space-1); }
+  .action-btn { font-size: 0.72rem; }
+
+  .footer-links { gap: var(--space-2) var(--space-3); }
 }
 
 @media (max-width: 480px) {
   .hero-cta-group { flex-direction: column; align-items: center; }
   .features-grid { grid-template-columns: 1fr; }
   .steps-grid { grid-template-columns: 1fr; }
+}
+
+/* ============================================================
+   REDUCED MOTION
+   Respects user's prefers-reduced-motion OS preference.
+   ============================================================ */
+/* ADDED: Disables all animations for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .btn-primary { animation: none; }
+  .hero-title { animation: none; -webkit-text-fill-color: var(--primary-light); }
+  .typewriter-cursor { animation: none; }
+  .confidence-badge { animation: none; }
 }
 
