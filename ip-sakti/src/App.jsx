@@ -1,5 +1,5 @@
 // UPDATED: Added useCallback, useRef, useLocation for accessibility and routing patterns
-import { useEffect, useState, useRef, createContext, useContext, useCallback, useRef } from 'react'
+import { useEffect, useState, useRef, createContext, useContext, useCallback } from 'react'
 import { BrowserRouter, Routes, Route, useNavigate, Link, useLocation } from 'react-router-dom'
 import './index.css'
 
@@ -3419,7 +3419,6 @@ function AppRoutes() {
 
   return (
     <LanguageProvider>
-    <BrowserRouter>
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
       <FormulationWizardModal
         isOpen={isWizardOpen}
@@ -3486,7 +3485,7 @@ function AppRoutes() {
           }
         />
       </Routes>
-    </>
+    </LanguageProvider>
   )
 }
 
@@ -3496,6 +3495,5 @@ export default function App() {
     <BrowserRouter>
       <AppRoutes />
     </BrowserRouter>
-    </LanguageProvider>
   )
 }
