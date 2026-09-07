@@ -162,3 +162,57 @@ Perform comprehensive frontend completion, accessibility audit, and MVP polish o
 - `npm run lint` in `ip-sakti/`: passed with 0 errors and 0 warnings.
 - `npm run build` in `ip-sakti/`: passed with clean production bundle.
 
+## 2026-09-07 — Milestone: Full RAG Backend & Offline PDF Ingestion Pipeline
+
+### User request
+
+Build the modular, production-ready Python backend and PDF ingestion pipeline for "IP-SAKTI Sahayak" based on the project's exact directory structure and technical stack (FastAPI, local ChromaDB, SentenceTransformers embeddings & re-ranker, and Google Gemini 1.5 Flash).
+
+### What was built & updated today
+
+#### 1. Data Schemas (`backend/app/schemas/chat.py`)
+- Created Pydantic data models for the chat system:
+  - `ChatRequest`: Validates incoming user questions, jurisdiction selection (`India` or `International`), and language choice.
+  - `CitationItem`: Formats source document names, page numbers/sections, and extracted text snippets.
+  - `ChatResponse`: Formats the answer, citations list, confidence score (`high`, `moderate`, or `low`), and standard legal disclaimer.
+
+#### 2. PDF Ingestor & Vector DB (`corpus/ingest.py`)
+- Created an offline script to process legal PDF files:
+  - Reads raw PDFs from `corpus/data/raw/` (with `india/` and `international/` subdirectories) using PyMuPDF.
+  - Splits text into 500-word chunks with a 50-word overlap for context preservation.
+  - Uses `all-MiniLM-L6-v2` locally via SentenceTransformers to generate text embeddings on CPU.
+  - Saves embeddings and page metadata into a persistent local ChromaDB database at `./corpus/chroma_db`.
+  - Creates two isolated collections: `india_statutes` and `international_treaties`.
+  - Uses deterministic MD5 chunk IDs so re-running the script safely updates data without creating duplicates.
+  - Configured telemetry off setting for privacy.
+
+#### 3. Grounded Gemini Service (`backend/app/services/llm.py`)
+- Built the AI response service using `google-generativeai` and `gemini-1.5-flash`:
+  - Securely reads `GEMINI_API_KEY` from the `backend/.env` file.
+  - Implements a strict anti-hallucination System Prompt forcing Gemini to answer **only** using the retrieved legal passages.
+  - Instructs Gemini to explicitly state *"I cannot find an authoritative source in our legal registers to safely answer this"* if information is missing or unclear.
+
+#### 4. Chat Router & Guardrails (`backend/app/routers/chat.py`)
+- Created the main `POST /api/chat` RAG pipeline endpoint:
+  - Routes queries to `india_statutes` or `international_treaties` based on user's jurisdiction selection.
+  - Performs initial similarity search to pull the top 5 relevant document chunks.
+  - Uses a Cross-Encoder re-ranker (`cross-encoder/ms-marco-MiniLM-L-6-v2`) to re-score and select the top 3 best chunks.
+  - **Guardrail Abstention Check**: If the re-ranker similarity score is below the confidence threshold, skips Gemini and immediately returns a safe "low confidence" fallback answer.
+  - Calls Gemini service with the top 3 passages if confidence threshold is met, returning the answer alongside exact citations.
+
+#### 5. Main Application & Project Scaffolding (`backend/app/main.py` & setup)
+- Configured FastAPI app with CORS middleware enabled for local Vite React development (`http://localhost:5173`).
+- Included `/health` endpoint returning `{"status": "ok"}` for quick server status checks.
+- Created `corpus/data/raw/india/` and `corpus/data/raw/international/` folders for organizing raw PDFs.
+- Updated `backend/requirements.txt` with all backend and ingestion dependencies.
+- Updated `backend/.env` template with `GEMINI_API_KEY`.
+
+### Next steps for the user
+
+1. Add your real `GEMINI_API_KEY` in `backend/.env`.
+2. Install python packages: `pip install -r backend/requirements.txt`.
+3. Drop legal PDF files into `corpus/data/raw/india/` or `corpus/data/raw/international/`.
+4. Run the ingestion script: `python corpus/ingest.py`.
+5. Start the FastAPI server: `cd backend && uvicorn app.main:app --reload --port 8000`.
+
+

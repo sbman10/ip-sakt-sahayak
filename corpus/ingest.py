@@ -40,11 +40,12 @@ from typing import Generator
 # Third-party imports – guard with friendly error messages
 # ---------------------------------------------------------------------------
 try:
-    import fitz  # PyMuPDF
+    import pymupdf as fitz  # PyMuPDF
 except ImportError:
     sys.exit("ERROR: PyMuPDF is not installed. Run:  pip install pymupdf")
 
 try:
+    os.environ.setdefault("ANONYMIZED_TELEMETRY", "FALSE")
     import chromadb
     from chromadb.config import Settings
 except ImportError:
@@ -322,7 +323,10 @@ def main() -> None:
     # -----------------------------------------------------------------------
     CHROMA_DB_DIR.mkdir(parents=True, exist_ok=True)
     log.info("Initialising ChromaDB at: %s", CHROMA_DB_DIR)
-    chroma_client = chromadb.PersistentClient(path=str(CHROMA_DB_DIR))
+    chroma_client = chromadb.PersistentClient(
+        path=str(CHROMA_DB_DIR),
+        settings=Settings(anonymized_telemetry=False),
+    )
 
     # Create (or retrieve existing) collections.
     india_collection = chroma_client.get_or_create_collection(

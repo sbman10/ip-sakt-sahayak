@@ -27,6 +27,7 @@ shared safely across sync endpoint calls.
 from __future__ import annotations
 
 import logging
+import os
 import sys
 from functools import lru_cache
 from pathlib import Path
@@ -94,8 +95,12 @@ def _get_chroma_client() -> chromadb.PersistentClient:
     """Return (or lazily initialise) the ChromaDB PersistentClient."""
     global _chroma_client
     if _chroma_client is None:
+        os.environ.setdefault("ANONYMIZED_TELEMETRY", "FALSE")
         log.info("Initialising ChromaDB client at: %s", CHROMA_DB_PATH)
-        _chroma_client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
+        _chroma_client = chromadb.PersistentClient(
+            path=CHROMA_DB_PATH,
+            settings=chromadb.config.Settings(anonymized_telemetry=False),
+        )
     return _chroma_client
 
 
