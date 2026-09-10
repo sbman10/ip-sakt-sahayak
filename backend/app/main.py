@@ -5,10 +5,11 @@ FastAPI application entry point for IP-SAKTI Sahayak.
 
 Startup sequence
 ----------------
-1.  Create the FastAPI app with metadata for Swagger UI.
+1.  Create the FastAPI app with full OpenAPI metadata.
 2.  Register CORSMiddleware to allow the React Vite dev server (port 5173).
-3.  Mount the /api router (which includes /api/chat).
-4.  Expose a GET /health liveness probe.
+3.  Mount the /api router for chat (POST /api/chat).
+4.  Mount the /api router for classification (POST /api/classify).
+5.  Expose GET /health liveness probe.
 
 Running the server
 ------------------
@@ -24,6 +25,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers import chat as chat_router
+from app.routers import classify as classify_router
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -39,15 +41,26 @@ log = logging.getLogger(__name__)
 # FastAPI application
 # ---------------------------------------------------------------------------
 app = FastAPI(
-    title="IP-SAKTI Sahayak API",
+    title="IP-SAKTI Sahayak Backend API",
     description=(
         "Ayurvedic Intellectual Property Assistant — a RAG-powered legal Q&A backend "
-        "using ChromaDB, SentenceTransformers, and Google Gemini 1.5 Flash."
+        "supporting Ministry of AYUSH Problem Statement 26045. "
+        "Uses ChromaDB vector search, SentenceTransformers (local), and "
+        "Google Gemini 1.5 Flash for grounded, citation-backed answers. "
+        "DPDP Act compliant: all queries are PII-scrubbed before external API calls "
+        "and audit-logged to a local SQLite database."
     ),
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json",
+    contact={
+        "name": "IP-SAKTI Sahayak Team",
+        "url": "https://github.com/sbman10/ip-sakt-sahayak",
+    },
+    license_info={
+        "name": "Ministry of AYUSH — Problem Statement 26045",
+    },
 )
 
 # ---------------------------------------------------------------------------
@@ -74,7 +87,13 @@ log.info("CORS configured for origins: %s", _ALLOWED_ORIGINS)
 app.include_router(
     chat_router.router,
     prefix="/api",
-    tags=["Chat"],
+    tags=["Chat — RAG Pipeline"],
+)
+
+app.include_router(
+    classify_router.router,
+    prefix="/api",
+    tags=["Classify — Formulation Wizard"],
 )
 
 # ---------------------------------------------------------------------------
@@ -100,10 +119,12 @@ def health_check() -> dict[str, str]:
 async def on_startup() -> None:
     """Log startup confirmation so the operator knows the app is live."""
     log.info("IP-SAKTI Sahayak API started successfully.")
-    log.info("Interactive docs available at:  http://127.0.0.1:8000/docs")
+    log.info("Swagger UI available at:  http://127.0.0.1:8000/docs")
+    log.info("ReDoc available at:       http://127.0.0.1:8000/redoc")
+    log.info("Health check at:          http://127.0.0.1:8000/health")
 
 
 @app.on_event("shutdown")
 async def on_shutdown() -> None:
     """Log graceful shutdown."""
-    log.info("IP-SAKTI Sahayak API shutting down.")
+    log.info("IP-SAKTI Sahayak API shutting down gracefully.")

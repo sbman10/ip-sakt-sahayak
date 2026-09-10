@@ -1,27 +1,27 @@
 """
 backend/app/services/llm.py
 ----------------------------
-Secure interface to Google Gemini 1.5 Flash for IP-SAKTI Sahayak.
+Secure interface to Google Gemini for IP-SAKTI Sahayak.
+
+SDK: google-genai (new, replaces deprecated google-generativeai)
+Model: configured with GEMINI_MODEL; defaults to gemini-2.5-flash
 
 Responsibilities
 ----------------
-- Load the GEMINI_API_KEY from the local .env file via python-dotenv.
-- Hold a singleton Gemini GenerativeModel instance (thread-safe for
-  concurrent FastAPI requests because google-generativeai is stateless
-  at the model-object level).
-- Expose a single public function ``generate_answer`` that accepts a
-  user question and a list of pre-ranked context chunks, then returns
-  the model's grounded text response.
+- Load the GEMINI_API_KEY from backend/.env via python-dotenv.
+- Hold a singleton google.genai Client (thread-safe, stateless per call).
+- Expose generate_grounded_answer() (primary) and generate_answer() (alias).
 
 Environment
 -----------
-Create ``backend/.env`` with::
-
+backend/.env must contain:
     GEMINI_API_KEY=<your-key>
+Optional:
+    GEMINI_MODEL=gemini-2.5-flash
 
 Dependencies
 ------------
-    pip install google-generativeai python-dotenv
+    pip install google-genai python-dotenv
 """
 
 from __future__ import annotations
@@ -32,20 +32,19 @@ import sys
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
-# Third-party imports with friendly startup errors
+# Third-party imports
 # ---------------------------------------------------------------------------
 try:
     from dotenv import load_dotenv
 except ImportError:
-    sys.exit("ERROR: python-dotenv is not installed. Run:  pip install python-dotenv")
+    sys.exit("ERROR: python-dotenv not installed. Run: pip install python-dotenv")
 
 try:
-    import google.generativeai as genai
-    from google.generativeai.types import GenerationConfig
+    from google import genai
+    from google.genai import types as genai_types
 except ImportError:
     sys.exit(
-        "ERROR: google-generativeai is not installed. "
-        "Run:  pip install google-generativeai"
+        "ERROR: google-genai not installed. Run: pip install google-genai"
     )
 
 log = logging.getLogger(__name__)
@@ -53,136 +52,116 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Load environment variables
 # ---------------------------------------------------------------------------
-# Walk upward from this file to find the .env in the backend/ directory,
-# so the service works regardless of which directory the server is launched from.
+#   __file__  = backend/app/services/llm.py  ->  backend/ is 3 levels up
 _ENV_PATH = Path(__file__).parent.parent.parent / ".env"
 load_dotenv(dotenv_path=_ENV_PATH, override=False)
 
 _API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
 if not _API_KEY:
     raise EnvironmentError(
-        f"GEMINI_API_KEY is not set. "
-        f"Add it to {_ENV_PATH} or to your shell environment."
+        f"GEMINI_API_KEY is not set. Add it to {_ENV_PATH} or your shell environment."
     )
 
 # ---------------------------------------------------------------------------
 # Model configuration
 # ---------------------------------------------------------------------------
-_MODEL_NAME = "gemini-1.5-flash"
+_MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-2.5-flash").strip()
+if not _MODEL_NAME:
+    _MODEL_NAME = "gemini-2.5-flash"
 
-_SYSTEM_PROMPT = """\
-You are IP-SAKTI Sahayak, an authoritative legal guide for Ayurvedic Intellectual Property.
-You must answer the user's question using ONLY the retrieved source passages provided below.
-
-Rules you MUST follow at all times:
-- If the retrieved context contains the answer, explain it in simple, clear language and \
-list the exact sections and sources you are drawing from.
-- If the retrieved context is missing information, does not match, or does not provide \
-enough evidence to answer reliably, state clearly and humbly: \
-"I cannot find an authoritative source in our legal registers to safely answer this."
-- Do NOT make up statutory sections, acts, rules, or case references. Never hallucinate.
-- Keep your tone professional, calm, and trustworthy.
-- Do NOT speculate beyond the provided passages.
-- If a concept appears in multiple passages, synthesise them coherently.
-"""
-
-_GENERATION_CONFIG = GenerationConfig(
-    temperature=0.1,      # near-deterministic for legal Q&A
-    top_p=0.95,
-    top_k=40,
-    max_output_tokens=1024,
+_SYSTEM_PROMPT = (
+    "You are IP-SAKTI Sahayak, an authoritative legal guide for Ayurvedic "
+    "Intellectual Property. "
+    "You must answer the user question using ONLY the retrieved source passages provided below.\n\n"
+    "Rules you MUST follow at all times:\n"
+    "- If the retrieved context contains the answer, explain it in simple, direct language "
+    "and mention the exact legal acts, schedules, or treaties retrieved.\n"
+    "- If the retrieved context is missing information, does not match, or does not provide "
+    "enough evidence to answer reliably, state clearly and humbly: "
+    "'I cannot find an authoritative source in our legal registers to safely answer this.'\n"
+    "- Do NOT make up statutory sections, acts, rules, or case references. Never hallucinate.\n"
+    "- Keep your tone professional, calm, and trustworthy.\n"
+    "- Do NOT speculate beyond the provided passages.\n"
+    "- If a concept appears in multiple passages, synthesise them coherently."
 )
 
 # ---------------------------------------------------------------------------
-# Singleton model initialisation
+# Singleton client (initialised once at module load)
 # ---------------------------------------------------------------------------
-def _initialise_model() -> genai.GenerativeModel:
-    """
-    Configure the Gemini SDK and return a GenerativeModel instance.
+def _init_client() -> genai.Client:
+    client = genai.Client(api_key=_API_KEY)
+    log.info("google-genai Client initialised. Model: %s", _MODEL_NAME)
+    return client
 
-    Called once at module load time. The returned object is stateless
-    and safe to share across concurrent requests.
-    """
-    genai.configure(api_key=_API_KEY)
-    model = genai.GenerativeModel(
-        model_name=_MODEL_NAME,
-        system_instruction=_SYSTEM_PROMPT,
-        generation_config=_GENERATION_CONFIG,
-    )
-    log.info("Gemini model '%s' initialised successfully.", _MODEL_NAME)
-    return model
-
-
-_MODEL: genai.GenerativeModel = _initialise_model()
+_CLIENT: genai.Client = _init_client()
 
 
 # ---------------------------------------------------------------------------
 # Public interface
 # ---------------------------------------------------------------------------
 
-def generate_answer(question: str, context_chunks: list[str]) -> str:
+def generate_grounded_answer(question: str, context_chunks: list[str]) -> str:
     """
-    Query Gemini 1.5 Flash with a grounded prompt and return the answer text.
-
-    The retrieved context chunks are embedded verbatim inside the prompt so
-    Gemini has no licence to invent information not present in the passages.
+    Query Gemini with a grounded prompt and return the answer text.
 
     Parameters
     ----------
     question:
-        The user's original legal question (already validated by the schema).
+        The user original legal question (already validated by the schema).
     context_chunks:
-        Ordered list of top-ranked text passages retrieved from ChromaDB.
-        Typically the top 3 chunks after re-ranking.
+        Ordered list of top-ranked text passages from ChromaDB (top 3).
 
     Returns
     -------
     str
-        The raw text response from Gemini.
+        Clean text response from Gemini.
 
     Raises
     ------
     RuntimeError
-        If the Gemini API call fails (network error, quota exceeded, etc.).
-        The caller should catch this and return a graceful API error response.
+        If the Gemini API call fails. The caller catches this and returns 500.
     """
     if not context_chunks:
-        log.warning("generate_answer called with no context chunks — abstaining.")
+        log.warning("generate_grounded_answer called with no context chunks.")
         return (
             "I cannot find an authoritative source in our verified legal registers "
             "to answer this safely."
         )
 
-    # Build the numbered passage block
     passages_block = "\n\n".join(
         f"[Passage {i + 1}]\n{chunk.strip()}"
         for i, chunk in enumerate(context_chunks)
     )
 
     user_prompt = (
-        f"--- RETRIEVED LEGAL PASSAGES ---\n"
+        "--- RETRIEVED LEGAL PASSAGES ---\n"
         f"{passages_block}\n"
-        f"--- END OF PASSAGES ---\n\n"
+        "--- END OF PASSAGES ---\n\n"
         f"User Question: {question}\n\n"
-        f"Please answer the question based ONLY on the passages above."
+        "Please answer the question based ONLY on the passages above."
     )
 
-    log.debug(
-        "Sending prompt to Gemini (%d chars, %d passages).",
-        len(user_prompt),
-        len(context_chunks),
-    )
+    log.debug("Sending prompt to Gemini (%d chars, %d passages).", len(user_prompt), len(context_chunks))
 
     try:
-        response = _MODEL.generate_content(user_prompt)
-        answer_text: str = response.text.strip()
-        log.info(
-            "Gemini responded successfully (%d chars).", len(answer_text)
+        response = _CLIENT.models.generate_content(
+            model=_MODEL_NAME,
+            contents=user_prompt,
+            config=genai_types.GenerateContentConfig(
+                system_instruction=_SYSTEM_PROMPT,
+                temperature=0.1,
+                top_p=0.95,
+                max_output_tokens=1024,
+            ),
         )
+        answer_text: str = response.text.strip()
+        log.info("Gemini responded (%d chars).", len(answer_text))
         return answer_text
 
     except Exception as exc:  # noqa: BLE001
         log.error("Gemini API call failed: %s", exc, exc_info=True)
-        raise RuntimeError(
-            f"Failed to get a response from the Gemini API: {exc}"
-        ) from exc
+        raise RuntimeError(f"Failed to get a response from the Gemini API: {exc}") from exc
+
+
+# Backward-compatible alias
+generate_answer = generate_grounded_answer

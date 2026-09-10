@@ -22,8 +22,8 @@ chromadb>=0.5,<1.0
 # Embedding & re-ranking models (CPU-only)
 sentence-transformers>=3.0,<4.0
 
-# Google Gemini LLM
-google-generativeai>=0.7,<1.0
+# Google Gemini LLM (matches `from google import genai` in app/services/llm.py)
+google-genai>=1.0,<2.0
 
 # PDF parsing (also needed for ingest.py — install project-wide)
 pymupdf>=1.24,<2.0
