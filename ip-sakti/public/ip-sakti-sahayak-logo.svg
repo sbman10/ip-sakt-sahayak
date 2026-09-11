@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 260" role="img" aria-labelledby="title desc">
+  <title id="title">IP-SAKTI Sahayak logo</title>
+  <desc id="desc">An original institutional logo combining a botanical leaf, a protective shield, and an open knowledge mark.</desc>
+  <defs>
+    <linearGradient id="leaf" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0F766E"/>
+      <stop offset="1" stop-color="#065F46"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Original mark: leaf + shield + open knowledge lines. It is not a government emblem. -->
+  <g transform="translate(24 25)">
+    <path d="M105 4C57 15 19 50 12 98c-7 49 22 92 68 108 46-16 75-59 68-108C141 50 115 16 105 4Z" fill="#F4F1E8" stroke="#065F46" stroke-width="7"/>
+    <path d="M80 37C49 52 31 79 34 106c3 28 21 49 46 61 25-12 43-33 46-61 3-27-15-54-46-69Z" fill="url(#leaf)"/>
+    <path d="M80 45v109M80 73c-14-12-27-18-39-20M80 95c17-13 31-19 43-21M80 119c-12-8-23-12-33-13M80 137c15-8 27-12 37-13" fill="none" stroke="#F4F1E8" stroke-width="5" stroke-linecap="round"/>
+    <path d="M31 183h98" stroke="#D97706" stroke-width="9" stroke-linecap="round"/>
+    <path d="M38 193c17 12 30 18 42 21 12-3 25-9 42-21" fill="none" stroke="#065F46" stroke-width="6" stroke-linecap="round"/>
+  </g>
+
+  <g transform="translate(205 62)">
+    <text x="0" y="72" font-family="Arial, Helvetica, sans-serif" font-size="61" font-weight="800" letter-spacing="3" fill="#12312A">IP-SAKTI</text>
+    <text x="4" y="127" font-family="Arial, Helvetica, sans-serif" font-size="33" font-weight="600" letter-spacing="8" fill="#D97706">SAHAYAK</text>
+    <path d="M4 149h443" stroke="#065F46" stroke-width="3" opacity=".35"/>
+    <text x="4" y="179" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="500" letter-spacing="2.7" fill="#36564D">SOURCE-CITED AYURVEDA IP GUIDANCE</text>
+  </g>
+</svg>
