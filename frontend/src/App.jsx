@@ -1,21 +1,71 @@
 import { useEffect, useState, useRef, createContext, useContext, useCallback } from 'react'
 import { BrowserRouter, Routes, Route, useNavigate, Link } from 'react-router-dom'
 import './index.css'
+import {
+  IconHome,
+  IconFlask,
+  IconLeaf,
+  IconCalculator,
+  IconBook,
+  IconInfo,
+  IconGovt,
+  IconShield,
+  IconShieldCheck,
+  IconScroll,
+  IconScales,
+  IconGlobe,
+  IconUser,
+  IconUsers,
+  IconLock,
+  IconSearch,
+  IconCheck,
+  IconX,
+  IconSun,
+  IconMoon,
+  IconArrowRight,
+  IconExternalLink,
+  IconMic,
+  IconCopy,
+  IconRotate,
+  IconThumbsUp,
+  IconThumbsDown,
+  IconFileText,
+  IconTrash,
+  IconBuilding,
+  IconMicroscope,
+  IconEye,
+  IconEyeOff,
+  IconSparkles,
+  IconChevronDown,
+  IconAlertTriangle,
+  IconTag,
+  IconSend,
+  IconPin,
+  IconMail,
+  IconPhone,
+  IconAccessibility,
+  IconMenu,
+  IconTrendingUp,
+  IconCalendar,
+  IconCurrencyRupee,
+  IconMessageSquare,
+  IconBriefcase,
+} from './components/Icons'
 
 /* ============================================================
    GLOBAL LANGUAGE CONTEXT & TRANSLATIONS
    ============================================================ */
 const SITE_LANGUAGES = [
-  { code: 'en', label: 'English', flag: '🇬🇧' },
-  { code: 'hi', label: 'हिन्दी', flag: '🇮🇳' },
-  { code: 'kn', label: 'ಕನ್ನಡ', flag: '🇮🇳' },
-  { code: 'bn', label: 'বাংলা', flag: '🇮🇳' },
-  { code: 'ta', label: 'தமிழ்', flag: '🇮🇳' },
-  { code: 'te', label: 'తెలుగు', flag: '🇮🇳' },
-  { code: 'mr', label: 'मराठी', flag: '🇮🇳' },
-  { code: 'gu', label: 'ગુજરાતી', flag: '🇮🇳' },
-  { code: 'ml', label: 'മലയാളം', flag: '🇮🇳' },
-  { code: 'pa', label: 'ਪੰਜਾਬੀ', flag: '🇮🇳' },
+  { code: 'en', label: 'English', flag: 'EN' },
+  { code: 'hi', label: 'हिन्दी', flag: 'HI' },
+  { code: 'kn', label: 'ಕನ್ನಡ', flag: 'KN' },
+  { code: 'bn', label: 'বাংলা', flag: 'BN' },
+  { code: 'ta', label: 'தமிழ்', flag: 'TA' },
+  { code: 'te', label: 'తెలుగు', flag: 'TE' },
+  { code: 'mr', label: 'मराठी', flag: 'MR' },
+  { code: 'gu', label: 'ગુજરાતી', flag: 'GU' },
+  { code: 'ml', label: 'മലയാളം', flag: 'ML' },
+  { code: 'pa', label: 'ਪੰਜਾਬੀ', flag: 'PA' },
 ]
 
 // Complete translations for all UI text
@@ -24,8 +74,8 @@ const UI_TRANSLATIONS = {
     // Government Header
     govtOf: 'Government of India',
     ministry: 'Ministry of AYUSH',
-    searchPlaceholder: 'Search portal...',
-    
+    searchPlaceholder: 'Search statutes, Section 3(p), ABS guidelines...',
+
     // Navbar
     home: 'Home',
     absChecker: 'ABS Checker',
@@ -33,29 +83,30 @@ const UI_TRANSLATIONS = {
     officialSources: 'Official Sources',
     aboutPortal: 'About Portal',
     consultAssistant: 'Consult IP Assistant',
-    
+
     // Hero Section
-    heroEyebrow: 'Ministry of AYUSH · Government of India Initiative',
-    heroTitle: 'IP-SAKTI Sahayak',
-    heroSubtitle: 'Your Trusted Guide to Ayurvedic Intellectual Property',
-    heroDesc: 'A multilingual, source-cited AI assistant helping Vaidyas, AYUSH startups, researchers and cultivators navigate patents, trademarks, GI tags and biodiversity compliance.',
-    heroDescBold: ' Grounded in official statutes, never guessing.',
-    startConsultation: 'Start Consultation',
+    heroEyebrow: 'AYUSH INNOVATION GUIDANCE',
+    heroTitle: 'Protect your innovation.',
+    heroSubtitle: 'Know what comes next.',
+    heroDesc: 'Navigate intellectual property, regulation, traditional knowledge and biodiversity-related pathways through one guided assessment.',
+    startAssessment: 'Start Assessment →',
+    startConsultation: 'Start Assessment →',
+    howItWorksBtn: 'How it works',
     formulationWizard: 'Formulation Wizard',
     seeDemo: 'See Demo',
-    
+
     // Trust Pills
     zeroHallucination: 'Zero-hallucination',
     sourceCited: 'Source-cited',
     multiLanguage: '10+ Languages',
     indiaIntl: 'India & International',
-    
+
     // Stats Section
     statutesCovered: 'Statutes Covered',
     languagesSupported: 'Languages Supported',
     averageResponseTime: 'Avg Response Time',
     userSatisfaction: 'User Satisfaction',
-    
+
     // Features Section
     featuresLabel: 'Complete Feature Suite',
     featuresTitle: 'Everything you need for Ayurvedic IP & Regulatory Protection',
@@ -71,7 +122,7 @@ const UI_TRANSLATIONS = {
     featureABSDesc: 'Verify Nagoya Protocol and BD Act compliance before commercializing formulations with endemic ingredients.',
     featureTKDL: 'TKDL Integration',
     featureTKDLDesc: 'Cross-reference against Traditional Knowledge Digital Library to assess prior art barriers.',
-    
+
     // How It Works
     howItWorksLabel: 'Simple Process',
     howItWorksTitle: 'How IP-SAKTI Sahayak Works',
@@ -83,14 +134,14 @@ const UI_TRANSLATIONS = {
     step3Desc: 'Receive structured guidance with exact section references and confidence ratings.',
     step4Title: 'Assess & Act',
     step4Desc: 'Use confidence badges & Formulation Wizard to plan your patent or licensing filing.',
-    
+
     // Comparison Section
     comparisonLabel: 'Why Choose IP-SAKTI?',
     comparisonTitle: 'Not just another chatbot. A domain-specialized legal guide',
     comparisonFeature: 'Feature',
     comparisonGenericAI: 'Generic AI',
     comparisonIpSakti: 'IP-SAKTI',
-    
+
     // Demo Section
     demoLabel: 'Live Demo',
     demoTitle: 'See IP-SAKTI in Action',
@@ -98,17 +149,17 @@ const UI_TRANSLATIONS = {
     demoHighConfidence: 'High Confidence',
     demoDisclaimer: 'Informational only. Consult IP attorney for formal advice',
     demoTryIt: 'Try It Yourself',
-    
+
     // Personas Section
     personasLabel: 'Who Is It For?',
     personasTitle: 'Built for the entire Ayurveda ecosystem',
     painPoint: 'Pain Point',
-    
+
     // Demo Section - Sample Chat
     demoUserQuestion: 'Can I patent my Ayurvedic arthritis formulation?',
     demoAiResponse1: 'Under Section 3(p) of the Patents Act 1970, traditional Ayurvedic formulations from classical texts are barred from patenting as they constitute prior art in the public domain.',
     demoAiResponse2: 'However, if your formulation has a novel delivery mechanism or enhanced therapeutic efficacy backed by clinical data, it may qualify as a patentable invention under Section 2(1)(j).',
-    
+
     // Wizard Modal
     wizardTitle: 'Ayurvedic Formulation Classifier',
     wizardSubtitle: 'Guided 3-Step IP & Regulatory Assessment',
@@ -142,38 +193,38 @@ const UI_TRANSLATIONS = {
     wizardPatentability: 'Patentability',
     wizardRegulatory: 'Regulatory Path',
     wizardRecommendation: 'Recommendation',
-    
+
     // Statutes Section
     statutesLabel: 'Authoritative Data Corpus',
     statutesTitle: 'Grounded in official statutes & international treaties',
     statutesSubtitle: 'Zero simulated laws. Every citation is verified against statutory archives',
-    
+
     // FAQ Section
     faqTitle: 'Frequently Asked Questions',
     faqSubtitle: 'Clear all your doubts about IP-SAKTI and Ayurvedic IP protection',
     faqReadIn: 'Read in:',
     moreQuestions: 'Have more questions? Ask our AI assistant!',
     askIpSakti: 'Ask IP-SAKTI',
-    
+
     // Footer
     footerDesc: 'AI-powered IP guidance for Ayurveda',
     footerDisclaimer: 'Informational research tool only. Does not constitute formal legal advice. Consult a registered IP attorney for official proceedings.',
     footerCopyright: '© 2026 IP-SAKTI Sahayak. Built with care for Ayurveda innovators.',
     privacyPolicy: 'Privacy Policy',
     termsOfService: 'Terms of Service',
-    
+
     // Chat Page
     chatWelcome: 'Namaste! I am IP-SAKTI Sahayak, your guide to Intellectual Property in Ayurveda. Ask me about patents, trademarks, GI tags, TKDL, or any IP question related to traditional knowledge.',
     chatPlaceholder: 'Ask about Patents Act, ABS clearance, BD Act 2002, TKDL, trademarks...',
     sendMessage: 'Send',
-    
+
     // Voice Input
     voiceInput: 'Voice Input',
     voiceListening: 'Listening...',
     voiceNotSupported: 'Voice input not supported in this browser',
     voiceError: 'Voice recognition error. Please try again.',
     tapToSpeak: 'Tap to speak',
-    
+
     // PDF Export
     exportPdf: 'Export PDF',
     exportingPdf: 'Generating PDF...',
@@ -182,7 +233,7 @@ const UI_TRANSLATIONS = {
     consultationSummary: 'Consultation Summary',
     legalDisclaimer: 'Legal Disclaimer',
     disclaimerText: 'This report is for informational purposes only and does not constitute legal advice. Please consult a registered IP attorney for formal proceedings.',
-    
+
     jurisdiction: 'Jurisdiction',
     jurisdictionIndia: 'India',
     jurisdictionInternational: 'International',
@@ -206,12 +257,12 @@ const UI_TRANSLATIONS = {
     messageInput: 'Message input',
     typeYourQuestion: 'Type your IP question',
     selectResponseLang: 'Select response language',
-    
+
     // Confidence Levels
     highConfidence: 'High Confidence (Direct Statute Match)',
     mediumConfidence: 'Moderate Confidence: Verify details with expert',
     lowConfidence: 'Low Confidence: Consult a registered IP attorney',
-    
+
     // ABS Checker Page
     absPageTitle: 'ABS Compliance Checker',
     absPageSubtitle: 'Verify Access and Benefit Sharing (ABS) obligations & National Biodiversity Authority (NBA) approval requirements.',
@@ -228,13 +279,13 @@ const UI_TRANSLATIONS = {
     absCommercial: 'Commercial Utilization & Drug Manufacturing',
     absPatent: 'Filing Intellectual Property / Patent Protection',
     absExport: 'Transfer of Research / Exporting Bio-Resources',
-    
+
     // Sources Page
     sourcesPageTitle: 'Official Ingested Data Sources',
     sourcesPageSubtitle: 'IP-SAKTI Sahayak strictly cites verified government statutes, international treaties, and traditional knowledge archives.',
     sourcesChipLabel: 'Grounding Corpus',
     sourcesVisitSource: 'Visit Source',
-    
+
     // Privacy Policy Page
     privacyTitle: 'Privacy Policy',
     privacyLegal: 'Legal',
@@ -290,7 +341,7 @@ const UI_TRANSLATIONS = {
     privacyChangesTitle: '10. Changes to This Policy',
     privacyChangesText: 'We may update this Privacy Policy periodically. Changes will be posted on this page with an updated revision date. Continued use of the platform after changes constitutes acceptance of the revised policy.',
     privacyNoSell: 'We do NOT sell, rent, or trade your personal information to third parties for marketing purposes.',
-    
+
     // Common Actions
     loading: 'Loading...',
     error: 'Error',
@@ -302,11 +353,11 @@ const UI_TRANSLATIONS = {
     next: 'Next',
     learnMore: 'Learn More',
     viewAll: 'View All',
-    
+
     // Wizard Modal
     askIpSaktiDetailed: 'Ask IP-SAKTI Detailed Questions',
     retestFormulation: 'Re-test Formulation',
-    
+
     // About Modal
     aboutTitle: 'About IP-SAKTI Sahayak',
     aboutSubtitle: 'Intellectual Property Assistant',
@@ -318,11 +369,11 @@ const UI_TRANSLATIONS = {
     aboutCorporaTitle: 'Core Ingested Corpora',
     aboutDisclaimer: 'IP-SAKTI Sahayak is an informational research tool for AYUSH innovators and Vaidyas. It does not replace professional legal representation before the Controller General of Patents or High Courts.',
     disclaimer: 'Disclaimer',
-    
+
     // Chat Sidebar Demo Data
     today: 'Today',
     yesterday: 'Yesterday',
-    
+
     // Login Page
     loginTitle: 'Sign In to IP-SAKTI Sahayak',
     loginSubtitle: 'Access your personalized IP guidance dashboard',
@@ -369,7 +420,7 @@ const UI_TRANSLATIONS = {
     govtOf: 'भारत सरकार',
     ministry: 'आयुष मंत्रालय',
     searchPlaceholder: 'पोर्टल खोजें...',
-    
+
     // Navbar
     home: 'होम',
     absChecker: 'ABS चेकर',
@@ -377,29 +428,31 @@ const UI_TRANSLATIONS = {
     officialSources: 'आधिकारिक स्रोत',
     aboutPortal: 'पोर्टल के बारे में',
     consultAssistant: 'IP सहायक से परामर्श',
-    
+
     // Hero Section
     heroEyebrow: 'आयुष मंत्रालय · भारत सरकार पहल',
-    heroTitle: 'IP-SAKTI सहायक',
-    heroSubtitle: 'आयुर्वेदिक बौद्धिक संपदा के लिए आपका विश्वसनीय मार्गदर्शक',
-    heroDesc: 'एक बहुभाषी, स्रोत-उद्धृत AI सहायक जो वैद्यों, आयुष स्टार्टअप्स, शोधकर्ताओं और किसानों को पेटेंट, ट्रेडमार्क, GI टैग और जैव विविधता अनुपालन में मार्गदर्शन करता है।',
-    heroDescBold: ' आधिकारिक कानूनों पर आधारित, कभी अनुमान नहीं।',
-    startConsultation: 'परामर्श शुरू करें',
+    heroEyebrow: 'आयुष नवाचार मार्गदर्शन',
+    heroTitle: 'अपने नवाचार को सुरक्षित करें।',
+    heroSubtitle: 'जानिए आगे क्या करना है।',
+    heroDesc: 'एक निर्देशित मूल्यांकन के माध्यम से बौद्धिक संपदा, विनियम, पारंपरिक ज्ञान और जैव विविधता से संबंधित मार्गों का पता लगाएं।',
+    startAssessment: 'मूल्यांकन शुरू करें →',
+    startConsultation: 'मूल्यांकन शुरू करें →',
+    howItWorksBtn: 'यह कैसे काम करता है',
     formulationWizard: 'फॉर्मूलेशन विज़ार्ड',
     seeDemo: 'डेमो देखें',
-    
+
     // Trust Pills
     zeroHallucination: 'शून्य-भ्रम',
     sourceCited: 'स्रोत-उद्धृत',
     multiLanguage: '10+ भाषाएं',
     indiaIntl: 'भारत और अंतर्राष्ट्रीय',
-    
+
     // Stats Section
     statutesCovered: 'कवर किए गए क़ानून',
     languagesSupported: 'समर्थित भाषाएं',
     averageResponseTime: 'औसत प्रतिक्रिया समय',
     userSatisfaction: 'उपयोगकर्ता संतुष्टि',
-    
+
     // Features Section
     featuresLabel: 'संपूर्ण फीचर सूट',
     featuresTitle: 'आयुर्वेदिक IP और नियामक सुरक्षा के लिए सब कुछ',
@@ -415,7 +468,7 @@ const UI_TRANSLATIONS = {
     featureABSDesc: 'स्थानिक सामग्री वाले फॉर्मूलेशन को व्यावसायीकृत करने से पहले नागोया प्रोटोकॉल और BD अधिनियम अनुपालन सत्यापित करें।',
     featureTKDL: 'TKDL एकीकरण',
     featureTKDLDesc: 'पूर्व कला बाधाओं का आकलन करने के लिए पारंपरिक ज्ञान डिजिटल लाइब्रेरी के विरुद्ध क्रॉस-रेफरेंस।',
-    
+
     // How It Works
     howItWorksLabel: 'सरल प्रक्रिया',
     howItWorksTitle: 'IP-SAKTI सहायक कैसे काम करता है',
@@ -427,14 +480,14 @@ const UI_TRANSLATIONS = {
     step3Desc: 'सटीक अनुभाग संदर्भों और विश्वास रेटिंग के साथ संरचित मार्गदर्शन प्राप्त करें।',
     step4Title: 'मूल्यांकन करें और कार्य करें',
     step4Desc: 'अपने पेटेंट या लाइसेंसिंग फाइलिंग की योजना बनाने के लिए विश्वास बैज और फॉर्मूलेशन विज़ार्ड का उपयोग करें।',
-    
+
     // Comparison Section
     comparisonLabel: 'IP-SAKTI क्यों चुनें?',
     comparisonTitle: 'सिर्फ एक और चैटबॉट नहीं। एक डोमेन-विशेषज्ञ कानूनी मार्गदर्शक',
     comparisonFeature: 'फीचर',
     comparisonGenericAI: 'सामान्य AI',
     comparisonIpSakti: 'IP-SAKTI',
-    
+
     // Demo Section
     demoLabel: 'लाइव डेमो',
     demoTitle: 'IP-SAKTI को कार्य में देखें',
@@ -442,17 +495,17 @@ const UI_TRANSLATIONS = {
     demoHighConfidence: 'उच्च विश्वास',
     demoDisclaimer: 'केवल सूचनात्मक। औपचारिक सलाह के लिए IP वकील से परामर्श करें',
     demoTryIt: 'स्वयं आज़माएं',
-    
+
     // Personas Section
     personasLabel: 'यह किसके लिए है?',
     personasTitle: 'संपूर्ण आयुर्वेद पारिस्थितिकी तंत्र के लिए निर्मित',
     painPoint: 'समस्या',
-    
+
     // Demo Section - Sample Chat
     demoUserQuestion: 'क्या मैं अपने आयुर्वेदिक गठिया फॉर्मूलेशन को पेटेंट करा सकता हूं?',
     demoAiResponse1: 'पेटेंट अधिनियम 1970 की धारा 3(p) के तहत, शास्त्रीय ग्रंथों से पारंपरिक आयुर्वेदिक फॉर्मूलेशन को पेटेंट से वर्जित किया गया है क्योंकि वे सार्वजनिक डोमेन में पूर्व कला का गठन करते हैं।',
     demoAiResponse2: 'हालांकि, यदि आपके फॉर्मूलेशन में क्लिनिकल डेटा द्वारा समर्थित नवीन वितरण तंत्र या बढ़ी हुई चिकित्सीय प्रभावकारिता है, तो यह धारा 2(1)(j) के तहत पेटेंट योग्य आविष्कार के रूप में योग्य हो सकता है।',
-    
+
     // Wizard Modal
     wizardTitle: 'आयुर्वेदिक फॉर्मूलेशन वर्गीकरणकर्ता',
     wizardSubtitle: 'निर्देशित 3-चरण IP और नियामक मूल्यांकन',
@@ -486,38 +539,38 @@ const UI_TRANSLATIONS = {
     wizardPatentability: 'पेटेंट योग्यता',
     wizardRegulatory: 'नियामक मार्ग',
     wizardRecommendation: 'सिफारिश',
-    
+
     // Statutes Section
     statutesLabel: 'आधिकारिक डेटा कॉर्पस',
     statutesTitle: 'आधिकारिक क़ानूनों और अंतर्राष्ट्रीय संधियों पर आधारित',
     statutesSubtitle: 'शून्य नकली कानून। हर उद्धरण वैधानिक अभिलेखागार के विरुद्ध सत्यापित है',
-    
+
     // FAQ Section
     faqTitle: 'अक्सर पूछे जाने वाले प्रश्न',
     faqSubtitle: 'IP-SAKTI और आयुर्वेदिक IP सुरक्षा के बारे में अपने सभी संदेह दूर करें',
     faqReadIn: 'इसमें पढ़ें:',
     moreQuestions: 'क्या आपके पास और प्रश्न हैं? हमारे AI सहायक से पूछें!',
     askIpSakti: 'IP-SAKTI से पूछें',
-    
+
     // Footer
     footerDesc: 'आयुर्वेद के लिए AI-संचालित IP मार्गदर्शन',
     footerDisclaimer: 'केवल सूचनात्मक अनुसंधान उपकरण। औपचारिक कानूनी सलाह नहीं है। आधिकारिक कार्यवाही के लिए पंजीकृत IP वकील से परामर्श करें।',
     footerCopyright: '© 2026 IP-SAKTI सहायक। आयुर्वेद नवप्रवर्तकों के लिए प्यार से बनाया गया।',
     privacyPolicy: 'गोपनीयता नीति',
     termsOfService: 'सेवा की शर्तें',
-    
+
     // Chat Page
     chatWelcome: 'नमस्ते! मैं IP-SAKTI सहायक हूं, आयुर्वेद में बौद्धिक संपदा के लिए आपका मार्गदर्शक। मुझसे पेटेंट, ट्रेडमार्क, GI टैग, TKDL, या पारंपरिक ज्ञान से संबंधित किसी भी IP प्रश्न के बारे में पूछें।',
     chatPlaceholder: 'पेटेंट अधिनियम, ABS मंज़ूरी, BD अधिनियम 2002, TKDL, ट्रेडमार्क के बारे में पूछें...',
     sendMessage: 'भेजें',
-    
+
     // Voice Input
     voiceInput: 'आवाज़ इनपुट',
     voiceListening: 'सुन रहा है...',
     voiceNotSupported: 'इस ब्राउज़र में आवाज़ इनपुट समर्थित नहीं है',
     voiceError: 'आवाज़ पहचान त्रुटि। कृपया पुनः प्रयास करें।',
     tapToSpeak: 'बोलने के लिए टैप करें',
-    
+
     // PDF Export
     exportPdf: 'PDF निर्यात',
     exportingPdf: 'PDF बना रहा है...',
@@ -526,7 +579,7 @@ const UI_TRANSLATIONS = {
     consultationSummary: 'परामर्श सारांश',
     legalDisclaimer: 'कानूनी अस्वीकरण',
     disclaimerText: 'यह रिपोर्ट केवल सूचनात्मक उद्देश्यों के लिए है और कानूनी सलाह नहीं है। औपचारिक कार्यवाही के लिए पंजीकृत IP वकील से परामर्श करें।',
-    
+
     jurisdiction: 'अधिकार क्षेत्र',
     jurisdictionIndia: 'भारत',
     jurisdictionInternational: 'अंतर्राष्ट्रीय',
@@ -550,12 +603,12 @@ const UI_TRANSLATIONS = {
     messageInput: 'संदेश इनपुट',
     typeYourQuestion: 'अपना IP प्रश्न टाइप करें',
     selectResponseLang: 'प्रतिक्रिया भाषा चुनें',
-    
+
     // Confidence Levels
     highConfidence: 'उच्च विश्वास (प्रत्यक्ष क़ानून मिलान)',
     mediumConfidence: 'मध्यम विश्वास: विशेषज्ञ से विवरण सत्यापित करें',
     lowConfidence: 'कम विश्वास: पंजीकृत IP वकील से परामर्श करें',
-    
+
     // ABS Checker Page
     absPageTitle: 'ABS अनुपालन चेकर',
     absPageSubtitle: 'पहुंच और लाभ साझाकरण (ABS) दायित्वों और राष्ट्रीय जैव विविधता प्राधिकरण (NBA) अनुमोदन आवश्यकताओं को सत्यापित करें।',
@@ -572,13 +625,13 @@ const UI_TRANSLATIONS = {
     absCommercial: 'वाणिज्यिक उपयोग और दवा निर्माण',
     absPatent: 'बौद्धिक संपदा / पेटेंट संरक्षण दाखिल करना',
     absExport: 'अनुसंधान स्थानांतरण / जैव-संसाधन निर्यात',
-    
+
     // Sources Page
     sourcesPageTitle: 'आधिकारिक अंतर्ग्रहित डेटा स्रोत',
     sourcesPageSubtitle: 'IP-SAKTI सहायक केवल सत्यापित सरकारी क़ानूनों, अंतर्राष्ट्रीय संधियों और पारंपरिक ज्ञान अभिलेखागार से उद्धृत करता है।',
     sourcesChipLabel: 'ग्राउंडिंग कॉर्पस',
     sourcesVisitSource: 'स्रोत पर जाएं',
-    
+
     // Privacy Policy Page
     privacyTitle: 'गोपनीयता नीति',
     privacyLegal: 'कानूनी',
@@ -634,7 +687,7 @@ const UI_TRANSLATIONS = {
     privacyChangesTitle: '10. इस नीति में परिवर्तन',
     privacyChangesText: 'हम समय-समय पर इस गोपनीयता नीति को अपडेट कर सकते हैं। परिवर्तन इस पृष्ठ पर अपडेट की गई संशोधन तिथि के साथ पोस्ट किए जाएंगे। परिवर्तनों के बाद प्लेटफ़ॉर्म का निरंतर उपयोग संशोधित नीति की स्वीकृति है।',
     privacyNoSell: 'हम विपणन उद्देश्यों के लिए आपकी व्यक्तिगत जानकारी को तीसरे पक्ष को बेचते, किराए पर देते या व्यापार नहीं करते।',
-    
+
     // Common Actions
     loading: 'लोड हो रहा है...',
     error: 'त्रुटि',
@@ -646,11 +699,11 @@ const UI_TRANSLATIONS = {
     next: 'अगला',
     learnMore: 'और जानें',
     viewAll: 'सभी देखें',
-    
+
     // Wizard Modal
     askIpSaktiDetailed: 'IP-SAKTI से विस्तृत प्रश्न पूछें',
     retestFormulation: 'फॉर्मूलेशन पुनः परीक्षण करें',
-    
+
     // About Modal
     aboutTitle: 'IP-SAKTI सहायक के बारे में',
     aboutSubtitle: 'बौद्धिक संपदा सहायक',
@@ -662,11 +715,11 @@ const UI_TRANSLATIONS = {
     aboutCorporaTitle: 'मुख्य अंतर्ग्रहित कॉर्पोरा',
     aboutDisclaimer: 'IP-SAKTI सहायक आयुष नवप्रवर्तकों और वैद्यों के लिए एक सूचनात्मक अनुसंधान उपकरण है। यह पेटेंट नियंत्रक महानियंत्रक या उच्च न्यायालयों के समक्ष पेशेवर कानूनी प्रतिनिधित्व को प्रतिस्थापित नहीं करता।',
     disclaimer: 'अस्वीकरण',
-    
+
     // Chat Sidebar Demo Data
     today: 'आज',
     yesterday: 'कल',
-    
+
     // Login Page
     loginTitle: 'IP-SAKTI सहायक में साइन इन करें',
     loginSubtitle: 'अपने व्यक्तिगत IP मार्गदर्शन डैशबोर्ड तक पहुंचें',
@@ -712,13 +765,16 @@ const UI_TRANSLATIONS = {
 
 // Fallback to English for languages without full translation
 const getTranslation = (lang, key) => {
-  if (UI_TRANSLATIONS[lang] && UI_TRANSLATIONS[lang][key]) {
+  if (UI_TRANSLATIONS[lang] && UI_TRANSLATIONS[lang][key] !== undefined) {
     return UI_TRANSLATIONS[lang][key]
   }
-  return UI_TRANSLATIONS['en'][key] || key
+  if (UI_TRANSLATIONS['en'] && UI_TRANSLATIONS['en'][key] !== undefined) {
+    return UI_TRANSLATIONS['en'][key]
+  }
+  return key
 }
 
-const LanguageContext = createContext({ lang: 'en', setLang: () => {}, t: (key) => key })
+const LanguageContext = createContext({ lang: 'en', setLang: () => { }, t: (key) => key })
 
 function LanguageProvider({ children }) {
   const [lang, setLang] = useState(() => {
@@ -746,7 +802,7 @@ function useLanguage() {
 /* Global Language Selector Component */
 function GlobalLanguageSelector() {
   const { lang, setLang, languages } = useLanguage()
-  
+
   return (
     <div className="global-lang-selector">
       <select
@@ -847,14 +903,14 @@ function StatsCounter() {
       languages.start()
       users.start()
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible])
 
   const stats = [
-    { value: tkdl.value, suffix: '+', label: 'TKDL Formulations Protected', icon: '📚' },
-    { value: statutes.value, suffix: '', label: 'Core Statutes Indexed', icon: '⚖️' },
-    { value: languages.value, suffix: '+', label: 'Indian Languages Supported', icon: '🌐' },
-    { value: users.value, suffix: '+', label: 'User Categories Served', icon: '👥' },
+    { value: tkdl.value, suffix: '+', label: 'TKDL Formulations Protected', icon: <IconBook size={24} /> },
+    { value: statutes.value, suffix: '', label: 'Core Statutes Indexed', icon: <IconScales size={24} /> },
+    { value: languages.value, suffix: '+', label: 'Indian Languages Supported', icon: <IconGlobe size={24} /> },
+    { value: users.value, suffix: '+', label: 'User Categories Served', icon: <IconUsers size={24} /> },
   ]
 
   return (
@@ -882,35 +938,35 @@ function PersonasSection() {
   const { t } = useLanguage()
   const personas = [
     {
-      icon: '🧑‍⚕️',
+      icon: <IconShield size={24} />,
       title: 'Ayurvedic Practitioners',
       subtitle: 'Vaidyas & Traditional Healers',
       problem: 'Unsure if custom formulations can be legally protected',
       solution: 'Get clarity on Section 3(p) exemptions and trademark options',
     },
     {
-      icon: '🏢',
+      icon: <IconBuilding size={24} />,
       title: 'AYUSH Startups & MSMEs',
       subtitle: 'Herbal Product Companies',
       problem: 'Confused between drug licensing and IP protection paths',
       solution: 'Guided classification wizard + regulatory pathway mapping',
     },
     {
-      icon: '🔬',
+      icon: <IconMicroscope size={24} />,
       title: 'Researchers & Academia',
       subtitle: 'Scientists & PhD Scholars',
       problem: 'Need ABS compliance guidance before publishing',
       solution: 'Step-by-step NBA approval checker with Form guidance',
     },
     {
-      icon: '🌿',
+      icon: <IconLeaf size={24} />,
       title: 'Herb Cultivators & Farmers',
       subtitle: 'Traditional Growers',
       problem: 'Unaware of GI tags and plant variety rights',
       solution: 'Learn about geographical indications and PPV&FR Act',
     },
     {
-      icon: '📖',
+      icon: <IconBook size={24} />,
       title: 'Students & Learners',
       subtitle: 'BAMS, BNYS & Law Students',
       problem: 'Need educational resource on IP in traditional medicine',
@@ -977,10 +1033,14 @@ function ComparisonSection() {
               <tr>
                 <th>Feature</th>
                 <th className="col-ipsakti">
-                  <span className="table-badge ipsakti">🌿 IP-SAKTI Sahayak</span>
+                  <span className="table-badge ipsakti" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <IconShieldCheck size={16} /> IP-SAKTI Sahayak
+                  </span>
                 </th>
                 <th className="col-generic">
-                  <span className="table-badge generic">💬 Generic AI Chatbot</span>
+                  <span className="table-badge generic" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <IconMessageSquare size={16} /> Generic AI Chatbot
+                  </span>
                 </th>
               </tr>
             </thead>
@@ -988,8 +1048,8 @@ function ComparisonSection() {
               {features.map((f, i) => (
                 <tr key={i}>
                   <td>{f.feature}</td>
-                  <td className="col-ipsakti">{f.ipsakti ? <span className="check">✓</span> : <span className="cross">✗</span>}</td>
-                  <td className="col-generic">{f.generic ? <span className="check">✓</span> : <span className="cross">✗</span>}</td>
+                  <td className="col-ipsakti">{f.ipsakti ? <span className="check" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><IconCheck size={16} /></span> : <span className="cross" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><IconX size={16} /></span>}</td>
+                  <td className="col-generic">{f.generic ? <span className="check" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><IconCheck size={16} /></span> : <span className="cross" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><IconX size={16} /></span>}</td>
                 </tr>
               ))}
             </tbody>
@@ -1021,22 +1081,22 @@ function DemoPreview() {
           </div>
           <div className="demo-body">
             <div className="demo-msg user">
-              <div className="demo-avatar user">👤</div>
+              <div className="demo-avatar user"><IconUser size={18} /></div>
               <div className="demo-bubble user">{t('demoUserQuestion')}</div>
             </div>
             <div className="demo-msg ai">
-              <div className="demo-avatar ai">🌿</div>
+              <div className="demo-avatar ai"><IconLeaf size={18} /></div>
               <div className="demo-bubble ai">
                 <p>{t('demoAiResponse1')}</p>
                 <p style={{ marginTop: '0.75rem' }}>{t('demoAiResponse2')}</p>
                 <div className="demo-citations">
-                  <span className="demo-citation">📜 Patents Act 1970 §3(p)</span>
-                  <span className="demo-citation">📚 TKDL Database</span>
-                  <span className="demo-citation">📜 Patents Act 1970 §2(1)(j)</span>
+                  <span className="demo-citation"><IconScroll size={13} /> Patents Act 1970 §3(p)</span>
+                  <span className="demo-citation"><IconBook size={13} /> TKDL Database</span>
+                  <span className="demo-citation"><IconScroll size={13} /> Patents Act 1970 §2(1)(j)</span>
                 </div>
                 <div className="demo-meta">
                   <span className="demo-confidence high">● {t('demoHighConfidence')}</span>
-                  <span className="demo-disclaimer">ℹ️ {t('demoDisclaimer')}</span>
+                  <span className="demo-disclaimer"><IconInfo size={13} /> {t('demoDisclaimer')}</span>
                 </div>
               </div>
             </div>
@@ -1059,42 +1119,42 @@ function StatuteShowcase() {
   const { t } = useLanguage()
   const statutes = [
     {
-      icon: '📜',
+      icon: <IconScroll size={26} />,
       name: 'Patents Act, 1970',
       key: 'Sec 3(p), 3(e), 2(1)(j)',
       desc: 'Defines patentability and explicitly bars traditional knowledge from patent protection.',
       color: 'primary',
     },
     {
-      icon: '🌿',
+      icon: <IconLeaf size={26} />,
       name: 'Biological Diversity Act, 2002',
       key: 'Sec 3, 6, ABS',
       desc: 'Regulates access to biological resources and mandates benefit sharing with local communities.',
       color: 'secondary',
     },
     {
-      icon: '💊',
+      icon: <IconFlask size={26} />,
       name: 'Drugs & Cosmetics Act, 1940',
       key: 'Rule 158-B',
       desc: 'Governs licensing of Ayurvedic drug manufacturing: classical vs proprietary pathways.',
       color: 'primary',
     },
     {
-      icon: '📚',
+      icon: <IconBook size={26} />,
       name: 'TKDL (Traditional Knowledge Digital Library)',
       key: '3.5L+ Formulations',
       desc: 'Database preventing international biopiracy by documenting prior art from ancient texts.',
       color: 'secondary',
     },
     {
-      icon: '🌍',
+      icon: <IconGlobe size={26} />,
       name: 'WIPO GRATK Treaty, 2024',
       key: 'Disclosure Mandate',
       desc: 'New international treaty requiring patent applicants to disclose TK and genetic resource origins.',
       color: 'primary',
     },
     {
-      icon: '📋',
+      icon: <IconFileText size={26} />,
       name: 'Nagoya Protocol',
       key: 'Access & Benefit Sharing',
       desc: 'Global framework ensuring fair benefit sharing when accessing genetic resources across borders.',
@@ -1170,60 +1230,14 @@ function ThemeToggleBtn({ theme, toggleTheme }) {
       onClick={toggleTheme}
       title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
       aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+      style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
     >
-      {theme === 'dark' ? '☀️' : '🌙'}
+      {theme === 'dark' ? <IconSun size={16} /> : <IconMoon size={16} />}
     </button>
   )
 }
 
-/* ============================================================
-   TYPEWRITER EFFECT
-   ============================================================ */
-const TYPEWRITER_PHRASES = [
-  'Ayurvedic IP Guidance',
-  'पेटेंट सलाह',               // Hindi
-  'ಬೌದ್ಧಿಕ ಆಸ್ತಿ',           // Kannada
-  'पारंपरिक ज्ञान संरक्षण',    // Hindi
-  'Trademark Assistance',
-  'বুদ্ধিবৃত্তিক সম্পদ',      // Bengali
-]
-
-function useTypewriter(phrases, speed = 70, pause = 1800) {
-  const [displayText, setDisplayText] = useState('')
-  const [phraseIdx, setPhraseIdx] = useState(0)
-  const [charIdx, setCharIdx] = useState(0)
-  const [deleting, setDeleting] = useState(false)
-
-  useEffect(() => {
-    const tick = () => {
-      const current = phrases[phraseIdx]
-      if (!deleting) {
-        if (charIdx < current.length) {
-          setDisplayText(current.slice(0, charIdx + 1))
-          setCharIdx(c => c + 1)
-          timeout = setTimeout(tick, speed)
-        } else {
-          timeout = setTimeout(() => setDeleting(true), pause)
-        }
-      } else {
-        if (charIdx > 0) {
-          setDisplayText(current.slice(0, charIdx - 1))
-          setCharIdx(c => c - 1)
-          timeout = setTimeout(tick, speed / 2)
-        } else {
-          setDeleting(false)
-          setPhraseIdx(i => (i + 1) % phrases.length)
-          timeout = setTimeout(tick, speed)
-        }
-      }
-    }
-
-    let timeout = setTimeout(tick, speed)
-    return () => clearTimeout(timeout)
-  }, [phrases, speed, pause, phraseIdx, charIdx, deleting])
-
-  return displayText
-}
+/* (Typewriter effect removed per visual redesign to avoid partial substring artifacts) */
 
 /* ============================================================
    ABOUT IP-SAKTI MODAL / DRAWER
@@ -1236,8 +1250,8 @@ function AboutModal({ isOpen, onClose }) {
     <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
       <div className="modal-card" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <div className="modal-title-group">
-            <span style={{ fontSize: '1.5rem' }}>🌿</span>
+          <div className="modal-title-group" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <span style={{ display: 'flex', color: 'var(--primary-light)' }}><IconLeaf size={24} /></span>
             <div>
               <h2 style={{ fontSize: '1.2rem', margin: 0 }}>{t('aboutTitle')}</h2>
               <span className="devanagari" style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
@@ -1245,13 +1259,15 @@ function AboutModal({ isOpen, onClose }) {
               </span>
             </div>
           </div>
-          <button className="modal-close-btn" onClick={onClose} aria-label={t('closeModal')}>✕</button>
+          <button className="modal-close-btn" onClick={onClose} aria-label={t('closeModal')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <IconX size={18} />
+          </button>
         </div>
 
         <div className="modal-body">
           <section>
-            <h3 style={{ color: 'var(--primary-light)', fontSize: '1rem', marginBottom: '0.5rem' }}>
-              🎯 {t('aboutPurposeTitle')}
+            <h3 style={{ color: 'var(--primary-light)', fontSize: '1rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <IconSparkles size={16} /> {t('aboutPurposeTitle')}
             </h3>
             <p style={{ fontSize: '0.9rem', color: 'var(--text-primary)', lineHeight: 1.6 }}>
               {t('aboutPurposeText')}
@@ -1259,8 +1275,8 @@ function AboutModal({ isOpen, onClose }) {
           </section>
 
           <section>
-            <h3 style={{ color: 'var(--secondary-light)', fontSize: '1rem', marginBottom: '0.5rem' }}>
-              🛡️ {t('aboutGroundingTitle')}
+            <h3 style={{ color: 'var(--secondary-light)', fontSize: '1rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <IconShieldCheck size={16} /> {t('aboutGroundingTitle')}
             </h3>
             <p style={{ fontSize: '0.9rem', color: 'var(--text-primary)', lineHeight: 1.6 }}>
               {t('aboutGroundingText')}
@@ -1268,21 +1284,22 @@ function AboutModal({ isOpen, onClose }) {
           </section>
 
           <section>
-            <h3 style={{ color: 'var(--primary-light)', fontSize: '1rem', marginBottom: '0.5rem' }}>
-              📚 {t('aboutCorporaTitle')}
+            <h3 style={{ color: 'var(--primary-light)', fontSize: '1rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <IconBook size={16} /> {t('aboutCorporaTitle')}
             </h3>
-            <ul style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-              <li>📜 Patents Act 1970 (Sec 3p)</li>
-              <li>🌿 Biological Diversity Act 2002</li>
-              <li>💊 Drugs & Cosmetics Act 1940</li>
-              <li>📚 TKDL (Traditional Knowledge)</li>
-              <li>🌍 WIPO GRATK Treaty 2024</li>
-              <li>🏷️ GI of Goods Act 1999</li>
+            <ul style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', listStyle: 'none', paddingLeft: 0 }}>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IconScroll size={14} /> Patents Act 1970 (Sec 3p)</li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IconLeaf size={14} /> Biological Diversity Act 2002</li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IconFlask size={14} /> Drugs & Cosmetics Act 1940</li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IconBook size={14} /> TKDL (Traditional Knowledge)</li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IconGlobe size={14} /> WIPO GRATK Treaty 2024</li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IconTag size={14} /> GI of Goods Act 1999</li>
             </ul>
           </section>
 
-          <div style={{ background: 'rgba(217, 119, 6, 0.1)', border: '1px solid rgba(217, 119, 6, 0.3)', borderRadius: 'var(--radius-md)', padding: '0.75rem 1rem', fontSize: '0.82rem', color: 'var(--primary-light)' }}>
-            ⚠️ <strong>{t('disclaimer')}:</strong> {t('aboutDisclaimer')}
+          <div style={{ background: 'rgba(200, 122, 30, 0.08)', border: '1px solid var(--accent-gold)', borderRadius: 'var(--radius-md)', padding: '0.75rem 1rem', fontSize: '0.82rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <IconAlertTriangle size={18} style={{ color: 'var(--accent-gold)', flexShrink: 0 }} />
+            <span><strong>{t('disclaimer')}:</strong> {t('aboutDisclaimer')}</span>
           </div>
         </div>
       </div>
@@ -1319,7 +1336,7 @@ function FormulationWizardModal({ isOpen, onClose, onAskChat }) {
       return {
         type: 'Classical / Generic Ayurvedic Medicine (Shastriya)',
         cls: 'classical',
-        badge: '🚫 Patent Barred (Sec 3(p))',
+        badge: 'Patent Barred (Sec 3(p))',
         summary: 'Your formulation uses traditional ingredients and preparation methods documented in 1st Schedule texts of the Drugs & Cosmetics Act (e.g. Charaka Samhita, Sushruta Samhita).',
         legalAction: [
           'Barred from patenting in India under Patents Act 1970 §3(p).',
@@ -1334,7 +1351,7 @@ function FormulationWizardModal({ isOpen, onClose, onAskChat }) {
       return {
         type: 'Ayurveda-Aahar / Nutraceutical Supplement',
         cls: 'nutra',
-        badge: '🍏 FSSAI / AYUSH Food Regime',
+        badge: 'FSSAI / AYUSH Food Regime',
         summary: 'Your product contains herbal ingredients intended for health wellness, dietary supplementation, or functional food consumption.',
         legalAction: [
           'Regulated primarily under FSSAI (Ayurveda Aahar) Regulations 2022.',
@@ -1348,7 +1365,7 @@ function FormulationWizardModal({ isOpen, onClose, onAskChat }) {
     return {
       type: 'Patent / Proprietary Ayurvedic Medicine (Anubhavasiddha)',
       cls: 'proprietary',
-      badge: '💡 Potentially Patentable (Sec 2(1)(j))',
+      badge: 'Potentially Patentable (Sec 2(1)(j))',
       summary: 'Your formulation modifies traditional ingredients with a novel delivery mechanism, synergistic extract ratio, or proven unexpected therapeutic efficacy.',
       legalAction: [
         'Eligible for patent protection under Patents Act 1970 §2(1)(j) if novel and non-obvious.',
@@ -1366,8 +1383,8 @@ function FormulationWizardModal({ isOpen, onClose, onAskChat }) {
     <div className="modal-overlay" onClick={handleClose} role="dialog" aria-modal="true">
       <div className="modal-card" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <div className="modal-title-group">
-            <span style={{ fontSize: '1.5rem' }}>🧪</span>
+          <div className="modal-title-group" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <span style={{ display: 'flex', color: 'var(--primary-light)' }}><IconFlask size={22} /></span>
             <div>
               <h2 style={{ fontSize: '1.15rem', margin: 0 }}>{t('wizardTitle')}</h2>
               <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
@@ -1375,7 +1392,9 @@ function FormulationWizardModal({ isOpen, onClose, onAskChat }) {
               </span>
             </div>
           </div>
-          <button className="modal-close-btn" onClick={handleClose} aria-label={t('closeModal')}>✕</button>
+          <button className="modal-close-btn" onClick={handleClose} aria-label={t('closeModal')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <IconX size={18} />
+          </button>
         </div>
 
         <div className="modal-body">
@@ -1385,8 +1404,9 @@ function FormulationWizardModal({ isOpen, onClose, onAskChat }) {
               <div
                 key={s}
                 className={`wizard-progress-step ${step === s ? 'active' : step > s ? 'completed' : ''}`}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               >
-                {step > s ? '✓' : s}
+                {step > s ? <IconCheck size={14} /> : s}
               </div>
             ))}
           </div>
@@ -1401,19 +1421,19 @@ function FormulationWizardModal({ isOpen, onClose, onAskChat }) {
                 {[
                   {
                     id: 'classical',
-                    icon: '📜',
+                    icon: <IconScroll size={22} />,
                     title: 'Ancient Authoritative Text (First Schedule)',
                     desc: 'Recipe taken directly from Charaka Samhita, Sushruta Samhita, Sahasrayogam, or Bhaishajya Ratnavali.',
                   },
                   {
                     id: 'proprietary',
-                    icon: '🔬',
+                    icon: <IconMicroscope size={22} />,
                     title: 'Modified / Novel Herbal Blend',
                     desc: 'Unique combination, novel extract ratio, or new delivery mechanism developed by your R&D team.',
                   },
                   {
                     id: 'nutra',
-                    icon: '🥗',
+                    icon: <IconLeaf size={22} />,
                     title: 'Functional Dietary Supplement / Food',
                     desc: 'Herbal beverage, tonic, or dietary pill meant for daily health maintenance (Ayurveda Aahar).',
                   },
@@ -1423,7 +1443,7 @@ function FormulationWizardModal({ isOpen, onClose, onAskChat }) {
                     className={`wizard-option-btn ${answers.q1 === opt.id ? 'selected' : ''}`}
                     onClick={() => handleSelectOption('q1', opt.id)}
                   >
-                    <span className="option-icon">{opt.icon}</span>
+                    <span className="option-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{opt.icon}</span>
                     <div>
                       <div className="option-title">{opt.title}</div>
                       <div className="option-desc">{opt.desc}</div>
@@ -1455,13 +1475,13 @@ function FormulationWizardModal({ isOpen, onClose, onAskChat }) {
                 {[
                   {
                     id: 'traditional_proc',
-                    icon: '🏺',
+                    icon: <IconFlask size={22} />,
                     title: 'Traditional Ayurvedic Processing Methods',
                     desc: 'Standard Kwatha (decoction), Asava-Arishta (fermentation), Bhasma, or Churna preparation.',
                   },
                   {
                     id: 'novel_proc',
-                    icon: '⚙️',
+                    icon: <IconMicroscope size={22} />,
                     title: 'Modern Extraction or Nanotechnology',
                     desc: 'Supercritical CO2 extraction, targeted liposomal delivery, or standardized marker compound enrichment.',
                   },
@@ -1471,7 +1491,7 @@ function FormulationWizardModal({ isOpen, onClose, onAskChat }) {
                     className={`wizard-option-btn ${answers.q2 === opt.id ? 'selected' : ''}`}
                     onClick={() => handleSelectOption('q2', opt.id)}
                   >
-                    <span className="option-icon">{opt.icon}</span>
+                    <span className="option-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{opt.icon}</span>
                     <div>
                       <div className="option-title">{opt.title}</div>
                       <div className="option-desc">{opt.desc}</div>
@@ -1504,13 +1524,13 @@ function FormulationWizardModal({ isOpen, onClose, onAskChat }) {
                 {[
                   {
                     id: 'therapeutic',
-                    icon: '🏥',
+                    icon: <IconShieldCheck size={22} />,
                     title: 'Specific Disease Treatment or Cure',
                     desc: 'Claiming clinical cure or management for conditions like Arthritis, Diabetes, or Hypertension.',
                   },
                   {
                     id: 'wellness',
-                    icon: '🌿',
+                    icon: <IconLeaf size={22} />,
                     title: 'General Immunity & Wellness',
                     desc: 'Promoting overall vitality, digestion, or stress relief without disease-specific claims.',
                   },
@@ -1520,7 +1540,7 @@ function FormulationWizardModal({ isOpen, onClose, onAskChat }) {
                     className={`wizard-option-btn ${answers.q3 === opt.id ? 'selected' : ''}`}
                     onClick={() => handleSelectOption('q3', opt.id)}
                   >
-                    <span className="option-icon">{opt.icon}</span>
+                    <span className="option-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{opt.icon}</span>
                     <div>
                       <div className="option-title">{opt.title}</div>
                       <div className="option-desc">{opt.desc}</div>
@@ -1537,7 +1557,7 @@ function FormulationWizardModal({ isOpen, onClose, onAskChat }) {
                   onClick={() => setStep(4)}
                   style={{ opacity: answers.q3 ? 1 : 0.5, cursor: answers.q3 ? 'pointer' : 'not-allowed' }}
                 >
-                  Generate IP Assessment ✨
+                  Generate IP Assessment →
                 </button>
               </div>
             </div>
@@ -1579,8 +1599,16 @@ function FormulationWizardModal({ isOpen, onClose, onAskChat }) {
                 >
                   {t('askIpSaktiDetailed')} →
                 </button>
-                <button className="btn-secondary" onClick={resetWizard}>
-                  🔄 {t('retestFormulation')}
+                <Link
+                  to="/ip-calculator"
+                  className="btn-secondary"
+                  onClick={handleClose}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <IconCalculator size={16} /> Estimate Filing Fees
+                </Link>
+                <button className="btn-secondary" onClick={resetWizard} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <IconRotate size={16} /> {t('retestFormulation')}
                 </button>
               </div>
             </div>
@@ -1606,8 +1634,8 @@ function ChatSidebar({ collapsed, activeId, onSelectSession, onNewChat, onOpenWi
   return (
     <aside className={`chat-sidebar ${collapsed ? 'collapsed' : ''}`} aria-label={t('chatHistory')}>
       <div className="sidebar-header">
-        <button className="new-chat-btn" onClick={onNewChat} id="new-chat-btn">
-          <span>➕</span>
+        <button className="new-chat-btn" onClick={onNewChat} id="new-chat-btn" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+          <IconSparkles size={16} />
           <span>{t('newConsultation')}</span>
         </button>
       </div>
@@ -1633,20 +1661,24 @@ function ChatSidebar({ collapsed, activeId, onSelectSession, onNewChat, onOpenWi
       </div>
 
       <div className="sidebar-footer">
-        <button className="sidebar-link-btn" onClick={onOpenWizard}>
-          <span>🧪</span>
+        <button className="sidebar-link-btn" onClick={onOpenWizard} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <IconFlask size={16} />
           <span>{t('formulationWizard')}</span>
         </button>
-        <Link to="/abs-checker" className="sidebar-link-btn">
-          <span>🌿</span>
+        <Link to="/abs-checker" className="sidebar-link-btn" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <IconLeaf size={16} />
           <span>{t('absChecker')}</span>
         </Link>
-        <Link to="/sources" className="sidebar-link-btn">
-          <span>📚</span>
+        <Link to="/ip-calculator" className="sidebar-link-btn" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <IconCalculator size={16} />
+          <span>{t('ipCalculator')}</span>
+        </Link>
+        <Link to="/sources" className="sidebar-link-btn" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <IconBook size={16} />
           <span>{t('officialDataCorpora')}</span>
         </Link>
-        <button className="sidebar-link-btn" onClick={onOpenAbout}>
-          <span>ℹ️</span>
+        <button className="sidebar-link-btn" onClick={onOpenAbout} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <IconInfo size={16} />
           <span>{t('aboutIpSakti')}</span>
         </button>
       </div>
@@ -1661,7 +1693,7 @@ const DEMO_MESSAGES = [
   {
     id: 1,
     role: 'ai',
-    text: 'Namaste! 🙏 I am IP-SAKTI Sahayak, your guide to Intellectual Property in Ayurveda. Ask me about patents, trademarks, GI tags, TKDL, or any IP question related to traditional knowledge.',
+    text: 'Namaste. I am IP-SAKTI Sahayak, your authoritative guide to Intellectual Property in Ayurveda. Ask me about patents, trademarks, GI tags, TKDL prior art, or regulatory compliance.',
     citations: [],
     confidence: null,
     showDisclaimer: false,
@@ -1676,9 +1708,9 @@ const DEMO_MESSAGES = [
     role: 'ai',
     text: 'Under Indian patent law, purely traditional Ayurvedic formulations face significant barriers. Section 3(p) of the Patents Act 1970 bars patents on traditional knowledge, and the India Patent Office cross-checks all applications against the TKDL database.\n\nHowever, if your formulation has a novel modification, improved delivery mechanism, or enhanced efficacy backed by clinical data, it may qualify under Section 2(1)(j) as a "new invention".',
     citations: [
-      { title: '📜 Patents Act 1970 | §3(p) | Traditional Knowledge Bar', url: 'https://ipindia.gov.in/patents.htm' },
-      { title: '📜 TKDL Database | Cross-Reference Check', url: 'https://www.tkdl.res.in/' },
-      { title: '📜 Patents Act 1970 | §2(1)(j) | Definition of Invention', url: 'https://indiacode.nic.in/' },
+      { title: 'Patents Act 1970 | §3(p) | Traditional Knowledge Bar', url: 'https://ipindia.gov.in/patents.htm' },
+      { title: 'TKDL Database | Cross-Reference Check', url: 'https://www.tkdl.res.in/' },
+      { title: 'Patents Act 1970 | §2(1)(j) | Definition of Invention', url: 'https://indiacode.nic.in/' },
     ],
     confidence: 'high',
     showDisclaimer: true,
@@ -1693,8 +1725,8 @@ const DEMO_MESSAGES = [
     role: 'ai',
     text: 'A liposomal delivery gel containing standardized Ashwagandha extract has a much stronger patent pathway! Because the novelty lies in the bio-availability delivery system rather than the raw herb itself, it overcomes the Section 3(p) traditional knowledge bar.\n\nKey requirements:\n1. Must demonstrate non-obvious synergistic efficacy under Section 3(e).\n2. Must obtain NBA (National Biodiversity Authority) approval under Section 6 of Biological Diversity Act 2002 before patent grant.',
     citations: [
-      { title: '📜 Patents Act 1970 | §3(e) | Synergistic Admixture Exclusion', url: 'https://ipindia.gov.in/patents.htm' },
-      { title: '📜 Biological Diversity Act 2002 | §6 | Prior NBA Approval for IP', url: 'http://nbaindia.org/' },
+      { title: 'Patents Act 1970 | §3(e) | Synergistic Admixture Exclusion', url: 'https://ipindia.gov.in/patents.htm' },
+      { title: 'Biological Diversity Act 2002 | §6 | Prior NBA Approval for IP', url: 'http://nbaindia.org/' },
     ],
     confidence: 'medium',
     showDisclaimer: true,
@@ -1709,8 +1741,8 @@ const DEMO_MESSAGES = [
     role: 'ai',
     text: 'Yes! International export triggers obligations under the Nagoya Protocol and WIPO GRATK Treaty (2024).\n\nYou must ensure fair Access and Benefit Sharing (ABS) compliance with India’s National Biodiversity Authority before exporting raw bio-resources or filing foreign patent applications (PCT route). We recommend consulting an IP attorney for international patenting.',
     citations: [
-      { title: '🌍 WIPO GRATK Treaty 2024 | Mandatory Disclosure of Traditional Knowledge', url: 'https://www.wipo.int/' },
-      { title: '📋 Nagoya Protocol | Access & Benefit Sharing (ABS)', url: 'https://www.cbd.int/abs/' },
+      { title: 'WIPO GRATK Treaty 2024 | Mandatory Disclosure of Traditional Knowledge', url: 'https://www.wipo.int/' },
+      { title: 'Nagoya Protocol | Access & Benefit Sharing (ABS)', url: 'https://www.cbd.int/abs/' },
     ],
     confidence: 'low',
     showDisclaimer: true,
@@ -1727,12 +1759,12 @@ function formatTimestamp(timestamp) {
   const date = new Date(timestamp)
   const now = new Date()
   const isToday = date.toDateString() === now.toDateString()
-  
+
   if (isToday) {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
-  return date.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + 
-         date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  return date.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' +
+    date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
 // Copy to clipboard utility
@@ -1744,41 +1776,43 @@ function copyToClipboard(text, onSuccess) {
   })
 }
 
-// Citation source icon helper
+// Citation source icon helper (Clean SVG)
 function getSourceIcon(url) {
-  if (!url) return '📄'
-  if (url.includes('ipindia.gov.in')) return '🏛️'
-  if (url.includes('tkdl.res.in')) return '📚'
-  if (url.includes('wipo.int')) return '🌍'
-  if (url.includes('cbd.int') || url.includes('nagoya')) return '🌿'
-  if (url.includes('nbaindia.org')) return '🦋'
-  return '📜'
+  if (!url) return <IconFileText size={16} />
+  if (url.includes('ipindia.gov.in')) return <IconGovt size={16} />
+  if (url.includes('tkdl.res.in')) return <IconBook size={16} />
+  if (url.includes('wipo.int')) return <IconGlobe size={16} />
+  if (url.includes('cbd.int') || url.includes('nagoya')) return <IconLeaf size={16} />
+  if (url.includes('nbaindia.org')) return <IconShield size={16} />
+  return <IconScroll size={16} />
 }
 
 function CitationCard({ citation, isExpanded, onToggle }) {
+  // Strip any legacy emoji characters from title
+  const cleanTitle = (citation.title || '').replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim()
   return (
     <div className={`citation-card ${isExpanded ? 'expanded' : ''}`}>
-      <button 
+      <button
         className="citation-header"
         onClick={onToggle}
         aria-expanded={isExpanded}
       >
         <span className="citation-icon" aria-hidden="true">{getSourceIcon(citation.url)}</span>
-        <span className="citation-title">{citation.title}</span>
+        <span className="citation-title">{cleanTitle}</span>
         <span className={`citation-chevron ${isExpanded ? 'expanded' : ''}`} aria-hidden="true">
-          ▼
+          <IconChevronDown size={14} />
         </span>
       </button>
       {isExpanded && (
         <div className="citation-content">
-          <a 
-            href={citation.url} 
-            target="_blank" 
-            rel="noopener noreferrer" 
+          <a
+            href={citation.url}
+            target="_blank"
+            rel="noopener noreferrer"
             className="citation-link"
           >
-            <span className="citation-url">{citation.url}</span>
-            <span className="citation-external-icon" aria-hidden="true">↗</span>
+            <span>{citation.url}</span>
+            <IconExternalLink size={14} />
           </a>
         </div>
       )}
@@ -1809,19 +1843,22 @@ function CollapsibleCitations({ citations }) {
   return (
     <div className="citations-container">
       <div className="citations-header">
-        <span className="citations-label">📎 Sources ({citations.length})</span>
-        <button 
+        <span className="citations-label">
+          <IconScroll size={14} style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: 4 }} />
+          SUPPORTED BY ({citations.length} STATUTORY SOURCES)
+        </span>
+        <button
           className="citations-toggle-all"
           onClick={toggleAll}
         >
-          {allExpanded ? 'Collapse all' : 'Expand all'}
+          {allExpanded ? 'Collapse' : 'Expand details'}
         </button>
       </div>
       <div className="citation-list">
         {citations.map((c, i) => (
-          <CitationCard 
-            key={i} 
-            citation={c} 
+          <CitationCard
+            key={i}
+            citation={c}
             isExpanded={allExpanded || expandedIndex === i}
             onToggle={() => toggleSingle(i)}
           />
@@ -1833,43 +1870,59 @@ function CollapsibleCitations({ citations }) {
 
 function ConfidenceBadge({ level }) {
   const map = {
-    high:   { label: '● High Confidence (Direct Statute Match)', cls: 'high' },
-    medium: { label: '● Moderate Confidence: Verify details with expert', cls: 'medium' },
-    low:    { label: '● Low Confidence: Consult a registered IP attorney', cls: 'low' },
+    high: { label: 'Direct Statute Match (High Confidence)', cls: 'high', icon: <IconShieldCheck size={14} /> },
+    medium: { label: 'Statute-Grounded Guidance (Moderate Confidence — Verify specifics)', cls: 'medium', icon: <IconInfo size={14} /> },
+    low: { label: 'Human Review Recommended (Consult registered IP Attorney)', cls: 'low', icon: <IconAlertTriangle size={14} /> },
   }
   const m = map[level]
   if (!m) return null
   return (
-    <span className={`confidence-badge ${m.cls}`} role="status" aria-label={m.label}>
-      {m.label}
+    <span className={`confidence-badge ${m.cls}`} role="status" aria-label={m.label} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+      {m.icon}
+      <span>{m.label}</span>
     </span>
   )
 }
 
 function DisclaimerBanner() {
   return (
-    <div className="disclaimer" role="note">
-      <span aria-hidden="true">ℹ️</span>
-      <span>This is information only, grounded in retrieved statutes. Consult a qualified IP attorney for formal legal proceedings.</span>
+    <div className="disclaimer" role="note" style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
+      <IconInfo size={16} style={{ flexShrink: 0, marginTop: 2 }} />
+      <span>Informational assessment grounded in retrieved statutory corpora. Consult a registered Patent Agent or State AYUSH Authority for formal filings.</span>
     </div>
   )
 }
 
 function TypingIndicator() {
+  const [stepIndex, setStepIndex] = useState(0)
+  const steps = [
+    'Classifying innovation domain...',
+    'Searching official statutes (Patents Act & BD Act)...',
+    'Checking TKDL prior art & Section 3(p)...',
+    'Verifying Biological Diversity Act / ABS rules...',
+    'Preparing grounded legal guidance...'
+  ]
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setStepIndex(prev => (prev + 1) % steps.length)
+    }, 1200)
+    return () => clearInterval(timer)
+  }, [steps.length])
+
   return (
-    <div className="message-row ai-row typing-row" aria-label="IP-SAKTI is thinking">
+    <div className="message-row ai-row typing-row" aria-label="IP-SAKTI is analyzing official statutes">
       <div className="avatar ai-avatar" aria-hidden="true">
-        <div className="avatar-icon">🌿</div>
+        <IconShieldCheck size={18} style={{ color: '#fff' }} />
       </div>
       <div className="typing-container">
         <div className="typing-indicator">
-          <div className="typing-wave">
-            <span className="typing-dot" />
-            <span className="typing-dot" />
-            <span className="typing-dot" />
+          <div className="typing-spinner" aria-hidden="true" />
+          <div className="rag-stepper-text">
+            <span className="rag-stepper-step">Statutory Retrieval:</span>
+            <span>{steps[stepIndex]}</span>
           </div>
         </div>
-        <span className="typing-text">IP-SAKTI is thinking...</span>
       </div>
     </div>
   )
@@ -1878,22 +1931,22 @@ function TypingIndicator() {
 // Follow-up suggestion chips
 function FollowUpChips({ onSelect }) {
   const suggestions = [
-    { label: 'Tell me more', icon: '💡' },
-    { label: 'Related laws', icon: '📜' },
-    { label: 'Filing process', icon: '📋' },
-    { label: 'Cost estimate', icon: '💰' },
+    { label: 'Examine Section 3(p) criteria', icon: <IconScroll size={14} /> },
+    { label: 'NBA Form III approval process', icon: <IconLeaf size={14} /> },
+    { label: 'Novelty vs Prior Art requirements', icon: <IconSearch size={14} /> },
+    { label: 'Estimate filing fees', icon: <IconCalculator size={14} /> },
   ]
 
   return (
     <div className="follow-up-chips">
       {suggestions.map((s, i) => (
-        <button 
+        <button
           key={i}
           className="follow-up-chip"
           onClick={() => onSelect(s.label)}
         >
-          <span aria-hidden="true">{s.icon}</span>
-          {s.label}
+          <span aria-hidden="true" style={{ display: 'inline-flex', alignItems: 'center' }}>{s.icon}</span>
+          <span>{s.label}</span>
         </button>
       ))}
     </div>
@@ -1917,7 +1970,7 @@ function MessageActions({ msg, onRegenerate, onFeedback }) {
       navigator.share({
         title: 'IP-SAKTI Response',
         text: msg.text,
-      }).catch(() => {})
+      }).catch(() => { })
     } else {
       handleCopy()
     }
@@ -1930,94 +1983,95 @@ function MessageActions({ msg, onRegenerate, onFeedback }) {
 
   return (
     <div className="message-actions">
-      <button 
+      <button
         className={`msg-action-btn ${copied ? 'success' : ''}`}
         onClick={handleCopy}
         title="Copy to clipboard"
         aria-label="Copy message"
       >
-        {copied ? '✓' : '📋'}
+        {copied ? <IconCheck size={14} /> : <IconCopy size={14} />}
       </button>
-      <button 
+      <button
         className="msg-action-btn"
         onClick={handleShare}
         title="Share"
         aria-label="Share message"
       >
-        ↗
+        <IconExternalLink size={14} />
       </button>
       <div className="feedback-btns">
-        <button 
+        <button
           className={`msg-action-btn feedback-btn ${feedbackGiven === 'up' ? 'active' : ''}`}
           onClick={() => handleFeedback('up')}
           title="Helpful"
           aria-label="Mark as helpful"
           disabled={feedbackGiven !== null}
         >
-          👍
+          <IconThumbsUp size={14} />
         </button>
-        <button 
+        <button
           className={`msg-action-btn feedback-btn ${feedbackGiven === 'down' ? 'active' : ''}`}
           onClick={() => handleFeedback('down')}
           title="Not helpful"
           aria-label="Mark as not helpful"
           disabled={feedbackGiven !== null}
         >
-          👎
+          <IconThumbsDown size={14} />
         </button>
       </div>
       {onRegenerate && (
-        <button 
+        <button
           className="msg-action-btn"
           onClick={() => onRegenerate(msg.id)}
           title="Regenerate response"
           aria-label="Regenerate response"
         >
-          🔄
+          <IconRotate size={14} />
         </button>
       )}
     </div>
   )
 }
 
-// Welcome/Empty state component
+// Welcome/Empty state component (Guided Assessment)
 function ChatWelcome({ onPromptClick }) {
   const exampleQuestions = [
-    { icon: '🔬', text: 'Can I patent my Ayurvedic formulation?', category: 'Patent' },
-    { icon: '🌿', text: 'What is ABS compliance for bio-resources?', category: 'Compliance' },
-    { icon: '📚', text: 'How does TKDL prevent biopiracy?', category: 'TKDL' },
-    { icon: '🏷️', text: 'How to register a GI tag for herbs?', category: 'GI Tags' },
+    { icon: <IconScroll size={18} />, text: 'Can I patent my Ayurvedic formulation with novel extraction?', category: 'Patent / IP' },
+    { icon: <IconLeaf size={18} />, text: 'What are the ABS compliance requirements under Biological Diversity Act?', category: 'Biodiversity / ABS' },
+    { icon: <IconBook size={18} />, text: 'How does TKDL cross-checking affect classical formulations?', category: 'Traditional Knowledge' },
+    { icon: <IconTag size={18} />, text: 'How to register a Geographical Indication (GI) for regional herbs?', category: 'GI & Brand' },
   ]
 
   return (
     <div className="chat-welcome">
-      <div className="welcome-icon" aria-hidden="true">🌿</div>
-      <h2 className="welcome-title">Namaste! I'm IP-SAKTI Sahayak</h2>
+      <div className="welcome-icon" aria-hidden="true">
+        <IconShieldCheck size={32} style={{ color: 'var(--secondary)' }} />
+      </div>
+      <h2 className="welcome-title">What are you trying to do?</h2>
       <p className="welcome-subtitle">
-        Your trusted guide to Intellectual Property in Ayurveda. Ask me about patents, 
-        trademarks, GI tags, TKDL, or any IP question related to traditional knowledge.
+        Select a structured assessment pathway below, or describe your formulation, research, or compliance question for statute-grounded guidance.
       </p>
-      
+
       <div className="welcome-capabilities">
         <div className="capability-item">
-          <span className="capability-icon">📜</span>
+          <IconScroll size={16} />
           <span>Statute-cited answers</span>
         </div>
         <div className="capability-item">
-          <span className="capability-icon">🌍</span>
-          <span>India & International law</span>
+          <IconGlobe size={16} />
+          <span>Domestic & WIPO treaties</span>
         </div>
         <div className="capability-item">
-          <span className="capability-icon">🗣️</span>
-          <span>Multilingual support</span>
+          <IconCheck size={16} />
+          <span>Section 3(p) & TKDL screening</span>
         </div>
       </div>
 
       <div className="example-questions">
-        <p className="example-label">Try asking:</p>
+        <p className="example-label">Focused pathways to begin:</p>
         <div className="example-grid">
           {exampleQuestions.map((q, i) => (
-            <button 
+            <button
               key={i}
               className="example-question"
               onClick={() => onPromptClick(q.text)}
@@ -2037,12 +2091,12 @@ function ChatWelcome({ onPromptClick }) {
 function ScrollToBottomBtn({ onClick, visible }) {
   if (!visible) return null
   return (
-    <button 
+    <button
       className="scroll-to-bottom-btn"
       onClick={onClick}
       aria-label="Scroll to bottom"
     >
-      ↓
+      <IconChevronDown size={16} />
     </button>
   )
 }
@@ -2054,7 +2108,7 @@ function MessageBubble({ msg, onFollowUp, onRegenerate, onFeedback, isLatestAI }
     return (
       <div className="message-row user-row message-fade-in">
         <div className="avatar user-avatar" aria-hidden="true">
-          <div className="avatar-icon">👤</div>
+          <IconUser size={18} style={{ color: 'var(--text-secondary)' }} />
         </div>
         <div className="bubble-column">
           <div className="bubble user-bubble">{msg.text}</div>
@@ -2067,26 +2121,26 @@ function MessageBubble({ msg, onFollowUp, onRegenerate, onFeedback, isLatestAI }
   return (
     <div className="message-row ai-row message-fade-in">
       <div className="avatar ai-avatar" aria-hidden="true">
-        <div className="avatar-icon">🌿</div>
+        <IconShieldCheck size={18} style={{ color: '#fff' }} />
       </div>
       <div className="bubble-column">
         <div className="bubble ai-bubble" style={{ whiteSpace: 'pre-line' }}>
           {msg.text}
         </div>
-        
+
         <CollapsibleCitations citations={msg.citations} />
-        
+
         {msg.confidence && <ConfidenceBadge level={msg.confidence} />}
         {msg.showDisclaimer && <DisclaimerBanner />}
-        
-        <MessageActions 
-          msg={msg} 
+
+        <MessageActions
+          msg={msg}
           onRegenerate={onRegenerate}
           onFeedback={onFeedback}
         />
-        
+
         <span className="message-timestamp">{formatTimestamp(timestamp)}</span>
-        
+
         {isLatestAI && onFollowUp && (
           <FollowUpChips onSelect={onFollowUp} />
         )}
@@ -2105,7 +2159,7 @@ function JurisdictionToggle({ value, onChange }) {
       aria-label="Toggle between India and International jurisdiction"
     >
       <span className={`jurisdiction-label ${isIndia ? 'active' : ''}`}>
-        India 🇮🇳
+        India (Domestic)
       </span>
       <div
         className={`toggle-track ${isIndia ? 'india' : 'intl'}`}
@@ -2117,7 +2171,7 @@ function JurisdictionToggle({ value, onChange }) {
         <div className={`toggle-thumb ${isIndia ? 'india' : 'intl'}`} />
       </div>
       <span className={`jurisdiction-label ${!isIndia ? 'active' : ''}`}>
-        International 🌐
+        International (PCT / WIPO)
       </span>
     </div>
   )
@@ -2402,16 +2456,16 @@ const FAQ_DATA = [
 ]
 
 const FAQ_LANGUAGES = [
-  { code: 'en', label: 'English', flag: '🇬🇧' },
-  { code: 'hi', label: 'हिन्दी', flag: '🇮🇳' },
-  { code: 'kn', label: 'ಕನ್ನಡ', flag: '🇮🇳' },
-  { code: 'bn', label: 'বাংলা', flag: '🇮🇳' },
-  { code: 'ta', label: 'தமிழ்', flag: '🇮🇳' },
-  { code: 'te', label: 'తెలుగు', flag: '🇮🇳' },
-  { code: 'mr', label: 'मराठी', flag: '🇮🇳' },
-  { code: 'gu', label: 'ગુજરાતી', flag: '🇮🇳' },
-  { code: 'ml', label: 'മലയാളം', flag: '🇮🇳' },
-  { code: 'pa', label: 'ਪੰਜਾਬੀ', flag: '🇮🇳' },
+  { code: 'en', label: 'English', flag: 'EN' },
+  { code: 'hi', label: 'हिन्दी', flag: 'HI' },
+  { code: 'kn', label: 'ಕನ್ನಡ', flag: 'KN' },
+  { code: 'bn', label: 'বাংলা', flag: 'BN' },
+  { code: 'ta', label: 'தமிழ்', flag: 'TA' },
+  { code: 'te', label: 'తెలుగు', flag: 'TE' },
+  { code: 'mr', label: 'मराठी', flag: 'MR' },
+  { code: 'gu', label: 'ગુજરાતી', flag: 'GU' },
+  { code: 'ml', label: 'മലയാളം', flag: 'ML' },
+  { code: 'pa', label: 'ਪੰਜਾਬੀ', flag: 'PA' },
 ]
 
 const FAQ_TITLES = {
@@ -2445,10 +2499,10 @@ function FAQSection() {
   const { lang: globalLang, t } = useLanguage()
   // Use global language as default, but allow override
   const [faqLangOverride, setFaqLangOverride] = useState(null)
-  
+
   // Use override if set, otherwise use global language
   const faqLang = faqLangOverride || globalLang
-  
+
   // Function to set FAQ language (this overrides global)
   const setFaqLang = (newLang) => {
     setFaqLangOverride(newLang)
@@ -2471,8 +2525,8 @@ function FAQSection() {
 
       {/* Language Dropdown */}
       <div className="faq-lang-dropdown-wrap">
-        <label htmlFor="faq-lang-select" className="faq-lang-label">
-          🌐 {t('faqReadIn')}
+        <label htmlFor="faq-lang-select" className="faq-lang-label" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <IconGlobe size={15} /> {t('faqReadIn')}
         </label>
         <select
           id="faq-lang-select"
@@ -2483,7 +2537,7 @@ function FAQSection() {
         >
           {FAQ_LANGUAGES.map(lang => (
             <option key={lang.code} value={lang.code}>
-              {lang.flag} {lang.label}
+              [{lang.flag}] {lang.label}
             </option>
           ))}
         </select>
@@ -2492,8 +2546,8 @@ function FAQSection() {
       {/* FAQ Accordion */}
       <div className="faq-list">
         {FAQ_DATA.map((faq, index) => (
-          <div 
-            key={index} 
+          <div
+            key={index}
             className={`faq-item ${openIndex === index ? 'open' : ''}`}
           >
             <button
@@ -2502,17 +2556,17 @@ function FAQSection() {
               aria-expanded={openIndex === index}
               aria-controls={`faq-answer-${index}`}
             >
-              <span className="faq-icon" aria-hidden="true">
-                {faq.category === 'website' ? '🌐' : '📜'}
+              <span className="faq-icon" aria-hidden="true" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                {faq.category === 'website' ? <IconGlobe size={16} /> : <IconScroll size={16} />}
               </span>
               <span className="faq-question-text">
                 {getLocalizedText(faq.question)}
               </span>
-              <span className={`faq-chevron ${openIndex === index ? 'rotated' : ''}`} aria-hidden="true">
-                ▼
+              <span className={`faq-chevron ${openIndex === index ? 'rotated' : ''}`} aria-hidden="true" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                <IconChevronDown size={16} />
               </span>
             </button>
-            <div 
+            <div
               className={`faq-answer ${openIndex === index ? 'expanded' : ''}`}
               id={`faq-answer-${index}`}
               role="region"
@@ -2538,7 +2592,7 @@ function FAQSection() {
 }
 
 /* ============================================================
-   GOVERNMENT PORTAL ACCESSIBILITY BAR
+   INSTITUTIONAL ACCESSIBILITY STRIP (COMPACT GOV-TECH)
    ============================================================ */
 function GovtAccessibilityBar({ theme, toggleTheme, fontSize, setFontSize, setPrefillPrompt }) {
   const [searchQuery, setSearchQuery] = useState('')
@@ -2556,18 +2610,24 @@ function GovtAccessibilityBar({ theme, toggleTheme, fontSize, setFontSize, setPr
   }
 
   return (
-    <div className="top-access-bar" role="region" aria-label="Accessibility & Quick Tools Header">
-      <div className="top-access-container">
-        <div className="top-access-left">
-          <span>भारत सरकार | {t('govtOf')}</span>
-          <span className="divider">•</span>
-          <span>आयुष मंत्रालय | {t('ministry')}</span>
+    <div className="gov-utility-strip" role="region" aria-label="Institutional Identity & Accessibility">
+      <div className="gov-utility-container">
+        <div className="gov-utility-left">
+          <span className="gov-flag-marker" aria-hidden="true">
+            <span className="flag-stripe saffron" />
+            <span className="flag-stripe white" />
+            <span className="flag-stripe green" />
+          </span>
+          <span className="gov-identity-text">
+            <strong>भारत सरकार</strong> | Government of India
+          </span>
+          <span className="gov-identity-sep">•</span>
+          <span className="gov-identity-text">
+            <strong>आयुष मंत्रालय</strong> | Ministry of AYUSH
+          </span>
         </div>
 
-        <div className="top-access-right">
-          {/* Global Language Selector */}
-          <GlobalLanguageSelector />
-
+        <div className="gov-utility-right">
           <form className="top-search-form" onSubmit={handleSearchSubmit}>
             <input
               type="text"
@@ -2577,10 +2637,12 @@ function GovtAccessibilityBar({ theme, toggleTheme, fontSize, setFontSize, setPr
               className="top-search-input"
               aria-label="Search IP Statutes and Guidelines"
             />
-            <button type="submit" className="top-search-btn" title="Search Portal">🔍</button>
+            <button type="submit" className="top-search-btn" title="Search Portal" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+              <IconSearch size={13} />
+            </button>
           </form>
 
-          <div className="font-size-controls" aria-label="Font Size Accessibility Controls">
+          <div className="font-size-controls" aria-label="Font scale accessibility controls">
             <button
               className={`font-size-btn ${fontSize === 'sm' ? 'active' : ''}`}
               onClick={() => setFontSize('sm')}
@@ -2591,7 +2653,7 @@ function GovtAccessibilityBar({ theme, toggleTheme, fontSize, setFontSize, setPr
             <button
               className={`font-size-btn ${fontSize === 'md' ? 'active' : ''}`}
               onClick={() => setFontSize('md')}
-              title="Normal Font Size (A)"
+              title="Standard Font Size (A)"
             >
               A
             </button>
@@ -2604,10 +2666,12 @@ function GovtAccessibilityBar({ theme, toggleTheme, fontSize, setFontSize, setPr
             </button>
           </div>
 
+          <GlobalLanguageSelector />
+
           <ThemeToggleBtn theme={theme} toggleTheme={toggleTheme} />
 
-          <a href="#chat-messages" className="top-access-icon-link" title="Screen Reader Accessibility Access" aria-label="Screen Reader Access">
-            ♿
+          <a href="#hero-title" className="gov-skip-link" title="Skip to content" aria-label="Skip to main content" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+            <IconAccessibility size={15} />
           </a>
         </div>
       </div>
@@ -2616,167 +2680,204 @@ function GovtAccessibilityBar({ theme, toggleTheme, fontSize, setFontSize, setPr
 }
 
 /* ============================================================
-   GOVERNMENT PORTAL MAIN HEADER
-   ============================================================ */
-function GovtMainHeader() {
-  return (
-    <header className="gov-header" role="banner">
-      <div className="gov-header-container">
-        <div className="gov-emblem-wrap">
-          {/* Indian Government Emblem */}
-          <svg className="gov-emblem-svg" viewBox="0 0 100 100" width="56" height="56" aria-label="State Emblem of India Placeholder">
-            <circle cx="50" cy="50" r="46" fill="none" stroke="var(--primary)" strokeWidth="3" />
-            <circle cx="50" cy="50" r="38" fill="none" stroke="var(--secondary)" strokeWidth="1.5" strokeDasharray="3 3" />
-            <circle cx="50" cy="50" r="16" fill="none" stroke="var(--primary)" strokeWidth="2" />
-            <path d="M50 10 L50 90 M10 50 L90 50 M22 22 L78 78 M22 78 L78 22" stroke="var(--primary)" strokeWidth="1.2" opacity="0.85" />
-            <text x="50" y="54" textAnchor="middle" fontSize="13" fontWeight="bold" fill="var(--primary)">सत्यमेव</text>
-          </svg>
-          <div className="gov-emblem-text">
-            <span className="gov-title-hi">भारत सरकार</span>
-            <span className="gov-title-en">Government of India</span>
-            <span className="gov-dept-hi">आयुष मंत्रालय</span>
-            <span className="gov-dept-en">Ministry of AYUSH</span>
-          </div>
-        </div>
-
-        <div className="gov-portal-brand">
-          <Link to="/" className="gov-portal-badge">
-            {/* IP-SAKTI Premium Logo - Shield with Ayurvedic Leaf */}
-            <IpSaktiLogo className="ip-sakti-logo" size={56} />
-            <div>
-              <h1 className="gov-portal-name">IP-SAKTI Sahayak</h1>
-              <div className="gov-portal-sub">राष्ट्रीय आयुर्वेद बौद्धिक संपदा सहायता पोर्टल</div>
-              <div className="gov-portal-tagline">Smart Ayurveda IP & Regulatory Assistance Portal</div>
-            </div>
-          </Link>
-        </div>
-      </div>
-    </header>
-  )
-}
-
-/* ============================================================
    IP-SAKTI PREMIUM LOGO COMPONENT
    ============================================================ */
-function IpSaktiLogo({ className = '', size = 48 }) {
+function IpSaktiLogo({ className = '', size = 36 }) {
   return (
-    <svg 
-      className={className} 
-      viewBox="0 0 120 120" 
-      width={size} 
-      height={size} 
+    <svg
+      className={className}
+      viewBox="0 0 120 120"
+      width={size}
+      height={size}
       aria-label="IP-SAKTI Sahayak Logo"
     >
-      {/* Background Circle - Chakra inspired */}
-      <circle cx="60" cy="60" r="58" fill="#0F172A" />
-      <circle cx="60" cy="60" r="54" fill="none" stroke="#F59E0B" strokeWidth="2" />
-      
+      {/* Background Circle - Deep botanical forest green */}
+      <circle cx="60" cy="60" r="58" fill="#143D30" />
+      <circle cx="60" cy="60" r="54" fill="none" stroke="#C87A1E" strokeWidth="2" />
+
       {/* Inner decorative ring - 24 spokes like Ashoka Chakra */}
-      <circle cx="60" cy="60" r="48" fill="none" stroke="#1E40AF" strokeWidth="1" opacity="0.4" />
-      
+      <circle cx="60" cy="60" r="48" fill="none" stroke="#3D705E" strokeWidth="1" opacity="0.6" />
+
       {/* Shield Shape - IP Protection */}
-      <path 
-        d="M60 18 L92 32 L92 62 C92 82 76 98 60 104 C44 98 28 82 28 62 L28 32 Z" 
-        fill="#1D4ED8"
+      <path
+        d="M60 18 L92 32 L92 62 C92 82 76 98 60 104 C44 98 28 82 28 62 L28 32 Z"
+        fill="#1A4A3B"
       />
-      <path 
-        d="M60 24 L86 36 L86 60 C86 77 73 91 60 96 C47 91 34 77 34 60 L34 36 Z" 
-        fill="#1E40AF"
+      <path
+        d="M60 24 L86 36 L86 60 C86 77 73 91 60 96 C47 91 34 77 34 60 L34 36 Z"
+        fill="#0F2E24"
       />
-      
+
       {/* Ayurvedic Leaf - Traditional Knowledge */}
-      <path 
-        d="M60 32 C75 42 72 58 60 68 C48 58 45 42 60 32" 
-        fill="#10B981"
+      <path
+        d="M60 32 C75 42 72 58 60 68 C48 58 45 42 60 32"
+        fill="#3D705E"
       />
       {/* Leaf center vein */}
-      <path d="M60 36 L60 64" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" opacity="0.7" />
+      <path d="M60 36 L60 64" stroke="#FAF9F6" strokeWidth="1.5" strokeLinecap="round" opacity="0.8" />
       {/* Leaf side veins */}
-      <path d="M60 44 L52 50" stroke="#ffffff" strokeWidth="1" strokeLinecap="round" opacity="0.5" />
-      <path d="M60 44 L68 50" stroke="#ffffff" strokeWidth="1" strokeLinecap="round" opacity="0.5" />
-      <path d="M60 52 L54 57" stroke="#ffffff" strokeWidth="1" strokeLinecap="round" opacity="0.5" />
-      <path d="M60 52 L66 57" stroke="#ffffff" strokeWidth="1" strokeLinecap="round" opacity="0.5" />
-      
+      <path d="M60 44 L52 50" stroke="#FAF9F6" strokeWidth="1" strokeLinecap="round" opacity="0.6" />
+      <path d="M60 44 L68 50" stroke="#FAF9F6" strokeWidth="1" strokeLinecap="round" opacity="0.6" />
+      <path d="M60 52 L54 57" stroke="#FAF9F6" strokeWidth="1" strokeLinecap="round" opacity="0.6" />
+      <path d="M60 52 L66 57" stroke="#FAF9F6" strokeWidth="1" strokeLinecap="round" opacity="0.6" />
+
       {/* IP Text */}
-      <text x="60" y="88" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="14" fontWeight="bold" fill="#ffffff" letterSpacing="2">IP</text>
-      
-      {/* Three dots - representing Ayurveda's three doshas (Vata, Pitta, Kapha) */}
-      <circle cx="48" cy="76" r="3" fill="#F59E0B" />
-      <circle cx="60" cy="76" r="3" fill="#F59E0B" />
-      <circle cx="72" cy="76" r="3" fill="#F59E0B" />
-      
+      <text x="60" y="88" textAnchor="middle" fontFamily="'Plus Jakarta Sans', Arial, sans-serif" fontSize="14" fontWeight="800" fill="#FAF9F6" letterSpacing="2">IP</text>
+
+      {/* Three dots - representing Ayurveda's three doshas (Vata, Pitta, Kapha) in saffron */}
+      <circle cx="48" cy="76" r="3" fill="#C87A1E" />
+      <circle cx="60" cy="76" r="3" fill="#C87A1E" />
+      <circle cx="72" cy="76" r="3" fill="#C87A1E" />
+
       {/* Outer saffron accent ring */}
-      <circle cx="60" cy="60" r="58" fill="none" stroke="#F59E0B" strokeWidth="2" strokeDasharray="4 2" />
+      <circle cx="60" cy="60" r="58" fill="none" stroke="#C87A1E" strokeWidth="2" strokeDasharray="4 2" />
     </svg>
   )
 }
 
 /* ============================================================
-   GOVERNMENT PORTAL MAIN NAVIGATION BAR
+   GOVERNMENT PORTAL MAIN NAVIGATION BAR (CLEAN SINGLE ROW)
    ============================================================ */
 function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout }) {
   const { t } = useLanguage()
-  
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
   return (
     <nav className="gov-nav-bar" role="navigation" aria-label="Main Portal Navigation">
       <div className="gov-nav-container">
-        <ul className="gov-nav-menu">
+        {/* Left: Brand Identity */}
+        <Link to="/" className="gov-brand-wrap" onClick={() => setMobileMenuOpen(false)}>
+          <IpSaktiLogo size={36} className="gov-brand-icon" />
+          <div className="gov-brand-text">
+            <div className="gov-brand-title">
+              IP-SAKTI <span className="title-highlight">Sahayak</span>
+            </div>
+            <div className="gov-brand-subtitle">
+              <span className="ayush-dot" />
+              <span>Ayurveda IP & Regulatory Guidance</span>
+            </div>
+          </div>
+        </Link>
+
+        {/* Center: Clean single-row navigation links */}
+        <ul className={`gov-nav-menu ${mobileMenuOpen ? 'mobile-open' : ''}`}>
           <li>
-            <Link to="/" className="gov-nav-link">🏠 {t('home')}</Link>
-          </li>
-          <li>
-            <button className="gov-nav-link-btn" onClick={onOpenWizard}>
-              🧪 {t('formulationWizard')}
+            <button
+              type="button"
+              className="gov-nav-link-btn"
+              onClick={() => {
+                setMobileMenuOpen(false)
+                if (onOpenWizard) onOpenWizard()
+              }}
+            >
+              <IconFlask size={15} />
+              <span>Assess Innovation</span>
             </button>
           </li>
           <li>
-            <Link to="/abs-checker" className="gov-nav-link">🌿 {t('absChecker')}</Link>
+            <Link
+              to="/abs-checker"
+              className="gov-nav-link"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <IconLeaf size={15} />
+              <span>ABS Checker</span>
+            </Link>
           </li>
           <li>
-            <Link to="/ip-calculator" className="gov-nav-link">🧮 {t('ipCalculator')}</Link>
+            <Link
+              to="/ip-calculator"
+              className="gov-nav-link"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <IconCalculator size={15} />
+              <span>IP Calculator</span>
+            </Link>
           </li>
           <li>
-            <Link to="/sources" className="gov-nav-link">📚 {t('officialSources')}</Link>
-          </li>
-          <li>
-            <button className="gov-nav-link-btn" onClick={onOpenAbout}>
-              ℹ️ {t('aboutPortal')}
-            </button>
-          </li>
-          <li>
-            <a href="https://ayush.gov.in/" target="_blank" rel="noopener noreferrer" className="gov-nav-link">
-              🏛️ {t('ministry')} ↗
+            <a
+              href="#pathways"
+              className="gov-nav-link"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <IconBook size={15} />
+              <span>Knowledge</span>
             </a>
+          </li>
+          <li>
+            <Link
+              to="/sources"
+              className="gov-nav-link"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <IconScroll size={15} />
+              <span>Sources</span>
+            </Link>
+          </li>
+          <li>
+            <a
+              href="#how-it-works"
+              className="gov-nav-link"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <IconScales size={15} />
+              <span>How It Works</span>
+            </a>
+          </li>
+          <li>
+            <button
+              type="button"
+              className="gov-nav-link-btn"
+              onClick={() => {
+                setMobileMenuOpen(false)
+                if (onOpenAbout) onOpenAbout()
+              }}
+            >
+              <IconInfo size={15} />
+              <span>About</span>
+            </button>
           </li>
         </ul>
 
+        {/* Right: Actions */}
         <div className="gov-nav-actions">
           {isLoggedIn ? (
-            <>
-              <div className="gov-nav-user-welcome">
-                <span>👋</span>
-                <span>{t('welcomeBack')}, <strong>{userName}</strong></span>
+            <div className="gov-nav-user-group">
+              <div className="gov-nav-user-welcome" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <IconUser size={14} />
+                <span><strong>{userName || 'Innovator'}</strong></span>
               </div>
               <button className="gov-nav-logout-btn" onClick={onLogout}>
-                🚪 {t('logout')}
+                {t('logout')}
               </button>
               <Link to="/chat" className="gov-nav-cta" id="gov-nav-consult-btn">
-                <span>{t('consultAssistant')}</span>
-                <span>→</span>
+                <span>Start Assessment</span>
+                <IconArrowRight size={14} />
               </Link>
-            </>
+            </div>
           ) : (
-            <>
-              <Link to="/login" className="gov-nav-login-btn">
-                <span>👤</span>
+            <div className="gov-nav-guest-group">
+              <Link to="/login" className="gov-nav-login-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <IconUser size={14} />
                 <span>{t('loginOrRegister')}</span>
               </Link>
-              <Link to="/login" className="gov-nav-cta" id="gov-nav-consult-btn">
-                <span>{t('consultAssistant')}</span>
-                <span>→</span>
+              <Link to="/chat" className="gov-nav-cta" id="gov-nav-consult-btn">
+                <span>Start Assessment</span>
+                <IconArrowRight size={14} />
               </Link>
-            </>
+            </div>
           )}
+
+          {/* Mobile hamburger toggle */}
+          <button
+            type="button"
+            className="gov-mobile-toggle"
+            aria-label="Toggle navigation menu"
+            aria-expanded={mobileMenuOpen}
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? <IconX size={20} /> : <IconMenu size={20} />}
+          </button>
         </div>
       </div>
     </nav>
@@ -2788,7 +2889,7 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout 
    ============================================================ */
 function TranslatedFooter() {
   const { t } = useLanguage()
-  
+
   return (
     <footer className="gov-footer" role="contentinfo">
       {/* Main Footer Content */}
@@ -2796,8 +2897,8 @@ function TranslatedFooter() {
         <div className="gov-footer-container">
           {/* Column 1: Brand & Ministry Info */}
           <div className="gov-footer-col gov-footer-brand-col">
-            <div className="gov-footer-brand">
-              <span className="gov-footer-logo">🌿</span>
+            <div className="gov-footer-brand" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span className="gov-footer-logo" style={{ display: 'flex', color: 'var(--primary-light)' }}><IconLeaf size={24} /></span>
               <div className="gov-footer-brand-text">
                 <h3 className="gov-footer-title">IP-SAKTI Sahayak</h3>
                 <span className="gov-footer-subtitle">आईपी-शक्ति सहायक</span>
@@ -2816,11 +2917,11 @@ function TranslatedFooter() {
           <div className="gov-footer-col">
             <h4 className="gov-footer-col-title">Quick Links</h4>
             <ul className="gov-footer-links">
-              <li><Link to="/">🏠 Home</Link></li>
-              <li><Link to="/chat">💬 AI Consultation</Link></li>
-              <li><Link to="/abs-checker">🔍 ABS Checker</Link></li>
-              <li><Link to="/ip-calculator">📊 IP Calculator</Link></li>
-              <li><Link to="/sources">📚 Sources</Link></li>
+              <li><Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconHome size={14} /> Home</Link></li>
+              <li><Link to="/chat" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconMessageSquare size={14} /> AI Consultation</Link></li>
+              <li><Link to="/abs-checker" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconLeaf size={14} /> ABS Checker</Link></li>
+              <li><Link to="/ip-calculator" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconCalculator size={14} /> IP Calculator</Link></li>
+              <li><Link to="/sources" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconBook size={14} /> Sources</Link></li>
             </ul>
           </div>
 
@@ -2828,11 +2929,11 @@ function TranslatedFooter() {
           <div className="gov-footer-col">
             <h4 className="gov-footer-col-title">Resources</h4>
             <ul className="gov-footer-links">
-              <li><a href="https://www.ayush.gov.in" target="_blank" rel="noopener noreferrer">🏛️ AYUSH Portal</a></li>
-              <li><a href="https://tkdl.res.in" target="_blank" rel="noopener noreferrer">📖 TKDL Database</a></li>
-              <li><a href="https://nbaindia.org" target="_blank" rel="noopener noreferrer">🌱 NBA India</a></li>
-              <li><a href="https://ipindia.gov.in" target="_blank" rel="noopener noreferrer">⚖️ IP India</a></li>
-              <li><Link to="/privacy">🔒 Privacy Policy</Link></li>
+              <li><a href="https://www.ayush.gov.in" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconGovt size={14} /> AYUSH Portal</a></li>
+              <li><a href="https://tkdl.res.in" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconBook size={14} /> TKDL Database</a></li>
+              <li><a href="https://nbaindia.org" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconLeaf size={14} /> NBA India</a></li>
+              <li><a href="https://ipindia.gov.in" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconScales size={14} /> IP India</a></li>
+              <li><Link to="/privacy" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconLock size={14} /> Privacy Policy</Link></li>
             </ul>
           </div>
 
@@ -2840,16 +2941,16 @@ function TranslatedFooter() {
           <div className="gov-footer-col">
             <h4 className="gov-footer-col-title">Contact Us</h4>
             <div className="gov-footer-contact">
-              <p>📍 AYUSH Bhawan, B Block</p>
-              <p>GPO Complex, INA, New Delhi - 110023</p>
-              <p>📧 info-ayush@gov.in</p>
-              <p>📞 +91-11-24651950</p>
+              <p style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IconPin size={14} /> AYUSH Bhawan, B Block</p>
+              <p style={{ paddingLeft: '20px' }}>GPO Complex, INA, New Delhi - 110023</p>
+              <p style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IconMail size={14} /> info-ayush@gov.in</p>
+              <p style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IconPhone size={14} /> +91-11-24651950</p>
             </div>
             <div className="gov-footer-social">
-              <a href="https://twitter.com/moaboratory" target="_blank" rel="noopener noreferrer" aria-label="Twitter" className="gov-social-icon">𝕏</a>
-              <a href="https://facebook.com/moaboratory" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="gov-social-icon">f</a>
-              <a href="https://youtube.com/@ministryofayush" target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="gov-social-icon">▶</a>
-              <a href="https://instagram.com/ministryofayush" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="gov-social-icon">📷</a>
+              <a href="https://twitter.com/moaboratory" target="_blank" rel="noopener noreferrer" aria-label="Twitter" className="gov-social-icon">X</a>
+              <a href="https://facebook.com/moaboratory" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="gov-social-icon">fb</a>
+              <a href="https://youtube.com/@ministryofayush" target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="gov-social-icon">yt</a>
+              <a href="https://instagram.com/ministryofayush" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="gov-social-icon">ig</a>
             </div>
           </div>
         </div>
@@ -2868,7 +2969,7 @@ function TranslatedFooter() {
             <span>Accessibility Statement</span>
           </div>
           <div className="gov-footer-credits">
-            <span className="gov-footer-made">Made with ❤️ in India</span>
+            <span className="gov-footer-made">National Digital Health & IP Mission • India</span>
           </div>
         </div>
       </div>
@@ -2881,7 +2982,7 @@ function TranslatedFooter() {
    ============================================================ */
 function Navbar({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize, setPrefillPrompt, isLoggedIn, userName, onLogout }) {
   return (
-    <div className="gov-portal-header-wrapper">
+    <header className="gov-portal-header-wrapper" role="banner">
       <GovtAccessibilityBar
         theme={theme}
         toggleTheme={toggleTheme}
@@ -2889,14 +2990,178 @@ function Navbar({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFo
         setFontSize={setFontSize}
         setPrefillPrompt={setPrefillPrompt}
       />
-      <GovtMainHeader />
-      <GovtNavbar 
-        onOpenAbout={onOpenAbout} 
+      <GovtNavbar
+        onOpenAbout={onOpenAbout}
         onOpenWizard={onOpenWizard}
         isLoggedIn={isLoggedIn}
         userName={userName}
         onLogout={onLogout}
       />
+    </header>
+  )
+}
+
+/* ============================================================
+   INNOVATION ASSESSMENT CARD (HERO INTERACTIVE ENGINE)
+   ============================================================ */
+function InnovationAssessmentCard({ onStartAssessment }) {
+  const navigate = useNavigate()
+  const [selectedType, setSelectedType] = useState('formulation')
+
+  const options = [
+    {
+      id: 'formulation',
+      title: 'Ayurvedic formulation',
+      desc: 'Polyherbal composition, standardized extract, or modified classical recipe',
+      statute: 'Patents Act § 3(p) & TKDL Prior Art',
+      badge: 'TKDL Check',
+      route: 'Prior Art Screening + ASU Form 22 Licensing',
+      defaultPrompt: 'I am developing a polyherbal Ayurvedic formulation. Please assess patentability under Section 3(p), check TKDL exclusions, and identify required licensing under Drugs & Cosmetics Rules.'
+    },
+    {
+      id: 'process',
+      title: 'New process / method',
+      desc: 'Novel extraction technique, bio-enhancement, or modernized delivery method',
+      statute: 'Patents Act § 3(e) & Technical Step',
+      badge: 'Process Patent',
+      route: 'Process Patentability + Biological Diversity Act Form 1',
+      defaultPrompt: 'I am developing an innovative process/extraction method for Ayurvedic botanicals. Please assess patent eligibility under Section 3(e), technical step requirements, and NBA compliance.'
+    },
+    {
+      id: 'brand',
+      title: 'Product or brand',
+      desc: 'Proprietary finished formulation, brand identity, or distinctive packaging',
+      statute: 'Trade Marks Act Class 5 & 30',
+      badge: 'Trademark & Design',
+      route: 'Distinctiveness Screening + Schedule T GMP Compliance',
+      defaultPrompt: 'I am launching a proprietary Ayurvedic product brand. Please assess trademark availability under Class 5, avoiding generic Ayurvedic text conflicts, and GMP compliance.'
+    },
+    {
+      id: 'research',
+      title: 'Research innovation',
+      desc: 'Clinical trial data, active phytoconstituent isolation, or collaborative discovery',
+      statute: 'Biological Diversity Act § 3, 4, 6',
+      badge: 'ABS Clearance',
+      route: 'NBA Prior Approval + TK Protection Clearance',
+      defaultPrompt: 'I have research findings on Ayurvedic herbs. What are the mandatory NBA clearances and Biological Diversity Act obligations before publishing or patent filing?'
+    }
+  ]
+
+  const activeOption = options.find(o => o.id === selectedType) || options[0]
+
+  const handleProceed = () => {
+    if (onStartAssessment) {
+      onStartAssessment(activeOption.defaultPrompt)
+    }
+    navigate('/chat', { state: { prefill: activeOption.defaultPrompt } })
+  }
+
+  return (
+    <div className="hero-assessment-card" role="region" aria-label="Interactive Innovation Assessment Tool">
+      {/* Card Header */}
+      <div className="assessment-card-header">
+        <div className="assessment-card-title-group">
+          <span className="card-kicker-tag">INTERACTIVE DIAGNOSTIC</span>
+          <h2 className="assessment-card-heading">INNOVATION ASSESSMENT</h2>
+        </div>
+        <div className="assessment-progress-pill" aria-label="Step 1 of 4">
+          <span className="progress-num-active">01</span>
+          <span className="progress-num-divider">/</span>
+          <span className="progress-num-total">04</span>
+        </div>
+      </div>
+
+      {/* Progress Stepper */}
+      <div className="assessment-pipeline-steps" aria-hidden="true">
+        <div className="pipeline-step step-active">
+          <span className="step-bullet">1</span>
+          <span className="step-label">Innovation</span>
+        </div>
+        <div className="pipeline-connector active" />
+        <div className="pipeline-step">
+          <span className="step-bullet">2</span>
+          <span className="step-label">IP pathway</span>
+        </div>
+        <div className="pipeline-connector" />
+        <div className="pipeline-step">
+          <span className="step-bullet">3</span>
+          <span className="step-label">Regulation</span>
+        </div>
+        <div className="pipeline-connector" />
+        <div className="pipeline-step">
+          <span className="step-bullet">4</span>
+          <span className="step-label">Source verification</span>
+        </div>
+      </div>
+
+      {/* Question Bar */}
+      <div className="assessment-question-bar">
+        <span className="assessment-q-label">What are you developing?</span>
+        <span className="assessment-q-hint">Select your innovation type</span>
+      </div>
+
+      {/* 4 Interactive Selectable Options */}
+      <div className="assessment-options-list" role="radiogroup" aria-label="Innovation Type">
+        {options.map((opt) => {
+          const isSelected = selectedType === opt.id
+          return (
+            <button
+              key={opt.id}
+              type="button"
+              role="radio"
+              aria-checked={isSelected}
+              className={`assessment-option-btn ${isSelected ? 'selected' : ''}`}
+              onClick={() => setSelectedType(opt.id)}
+            >
+              <div className="option-radio-ring" aria-hidden="true">
+                {isSelected && <div className="option-radio-dot" />}
+              </div>
+              <div className="option-text-group">
+                <div className="option-header-row">
+                  <span className="option-title">{opt.title}</span>
+                  <span className="option-statute-badge">{opt.badge}</span>
+                </div>
+                <span className="option-desc">{opt.desc}</span>
+              </div>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Dynamic Statutory Determination Preview */}
+      <div className="assessment-dynamic-preview">
+        <div className="preview-indicator-bar">
+          <span className="live-engine-pulse" />
+          <span className="preview-engine-label">STATUTORY ROUTING PREVIEW</span>
+          <span className="preview-source-tag">OFFICIAL ACTS</span>
+        </div>
+        <div className="preview-grid">
+          <div className="preview-item">
+            <span className="preview-item-label">Applicable Framework:</span>
+            <span className="preview-item-val">{activeOption.statute}</span>
+          </div>
+          <div className="preview-item">
+            <span className="preview-item-label">Recommended Pathway:</span>
+            <span className="preview-item-val">{activeOption.route}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Action Footer */}
+      <div className="assessment-card-actions">
+        <button
+          type="button"
+          className="assessment-action-btn"
+          onClick={handleProceed}
+          id="start-with-selected-btn"
+        >
+          <span>Continue Guided Assessment</span>
+          <IconArrowRight size={16} />
+        </button>
+        <div className="assessment-card-footnote">
+          <span>Source-backed legal intelligence • Zero hallucination protocol</span>
+        </div>
+      </div>
     </div>
   )
 }
@@ -2905,7 +3170,6 @@ function Navbar({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFo
    LANDING PAGE
    ============================================================ */
 function LandingPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize, setPrefillPrompt, isLoggedIn, userName, onLogout }) {
-  const text = useTypewriter(TYPEWRITER_PHRASES)
   const { t } = useLanguage()
 
   return (
@@ -2923,52 +3187,79 @@ function LandingPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, 
         onLogout={onLogout}
       />
 
-      {/* Hero */}
+      {/* Hero Section - Two Column Split Composition */}
       <section className="hero-section" id="hero" aria-labelledby="hero-title">
-        {/* Animated mesh gradient background */}
-        <div className="hero-mesh" aria-hidden="true">
-          <div className="mesh-blob mesh-blob-1" />
-          <div className="mesh-blob mesh-blob-2" />
-          <div className="mesh-blob mesh-blob-3" />
-        </div>
+        <div className="hero-container">
+          <div className="hero-grid">
+            {/* Left Column: Narrative, Statues & CTAs */}
+            <div className="hero-content-col">
+              <div className="hero-eyebrow">
+                <span className="eyebrow-seal" aria-hidden="true">
+                  <IconGovt size={13} />
+                </span>
+                <span className="hero-eyebrow-text">AYUSH INNOVATION GUIDANCE</span>
+              </div>
 
-        <div className="hero-content">
-          <div className="hero-eyebrow">
-            <span className="eyebrow-pulse" />
-            <span>🏛️ {t('heroEyebrow')}</span>
-          </div>
+              <h1 className="hero-title" id="hero-title">
+                Protect your innovation.
+                <span className="hero-title-highlight">Know what comes next.</span>
+              </h1>
 
-          <h1 className="hero-title" id="hero-title">{t('heroTitle')}</h1>
-          <p className="hero-title-sub">{t('heroSubtitle')}</p>
+              <p className="hero-description">
+                Navigate intellectual property, regulation, traditional knowledge and biodiversity-related pathways through one guided assessment.
+              </p>
 
-          <div className="typewriter-wrap" aria-live="polite" aria-label="Rotating phrases">
-            <span className="typewriter">{text}</span>
-            <span className="typewriter-cursor" aria-hidden="true" />
-          </div>
+              <div className="hero-cta-group">
+                <Link to="/chat" className="btn-primary hero-btn-main" id="hero-start-btn">
+                  <span>Start Assessment</span>
+                  <IconArrowRight size={16} />
+                </Link>
+                <a href="#how-it-works" className="btn-secondary hero-btn-sub">
+                  <span>How it works</span>
+                </a>
+              </div>
 
-          <p className="hero-description">
-            {t('heroDesc')}
-            <strong>{t('heroDescBold')}</strong>
-          </p>
+              {/* Verified Statutory Trust Badges */}
+              <div className="hero-trust-indicators">
+                <div className="hero-trust-item">
+                  <div className="trust-icon-box"><IconScales size={15} /></div>
+                  <div className="trust-text-box">
+                    <strong>Patents Act 1970</strong>
+                    <span>§ 3(p) TKDL Exclusions</span>
+                  </div>
+                </div>
+                <div className="hero-trust-item">
+                  <div className="trust-icon-box"><IconBook size={15} /></div>
+                  <div className="trust-text-box">
+                    <strong>TKDL Database</strong>
+                    <span>2.5L+ Formulations Prior Art</span>
+                  </div>
+                </div>
+                <div className="hero-trust-item">
+                  <div className="trust-icon-box"><IconLeaf size={15} /></div>
+                  <div className="trust-text-box">
+                    <strong>Biodiversity Act 2002</strong>
+                    <span>Mandatory ABS Clearances</span>
+                  </div>
+                </div>
+                <div className="hero-trust-item">
+                  <div className="trust-icon-box"><IconShieldCheck size={15} /></div>
+                  <div className="trust-text-box">
+                    <strong>Drugs & Cosmetics Rules</strong>
+                    <span>ASU Regulatory Licensing</span>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-          <div className="hero-cta-group">
-            <Link to="/chat" className="btn-primary" id="hero-start-btn">
-              {t('startConsultation')}
-            </Link>
-            <button className="btn-secondary" onClick={onOpenWizard}>
-              {t('formulationWizard')}
-            </button>
-            <a href="#demo" className="btn-ghost">
-              {t('seeDemo')}
-            </a>
-          </div>
-
-          {/* Trust pills */}
-          <div className="hero-trust-pills">
-            <div className="trust-pill"><span>🛡️</span> {t('zeroHallucination')}</div>
-            <div className="trust-pill"><span>📜</span> {t('sourceCited')}</div>
-            <div className="trust-pill"><span>🌐</span> {t('multiLanguage')}</div>
-            <div className="trust-pill"><span>⚖️</span> {t('indiaIntl')}</div>
+            {/* Right Column: Interactive Innovation Assessment Card */}
+            <div className="hero-card-col">
+              <InnovationAssessmentCard
+                onStartAssessment={(prompt) => {
+                  if (setPrefillPrompt) setPrefillPrompt(prompt)
+                }}
+              />
+            </div>
           </div>
         </div>
       </section>
@@ -2988,39 +3279,39 @@ function LandingPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, 
         <div className="features-grid">
           {[
             {
-              icon: '📜',
+              icon: <IconScroll size={24} />,
               titleKey: 'featureStatuteCited',
               descKey: 'featureStatuteCitedDesc',
             },
             {
-              icon: '🧪',
+              icon: <IconFlask size={24} />,
               titleKey: 'featureFormulationWizard',
               descKey: 'featureFormulationWizardDesc',
             },
             {
-              icon: '🌐',
+              icon: <IconGlobe size={24} />,
               titleKey: 'featureMultilingual',
               descKey: 'featureMultilingualDesc',
             },
             {
-              icon: '⚖️',
+              icon: <IconScales size={24} />,
               titleKey: 'featureJurisdiction',
               descKey: 'featureJurisdictionDesc',
             },
             {
-              icon: '🌿',
+              icon: <IconLeaf size={24} />,
               titleKey: 'featureABS',
               descKey: 'featureABSDesc',
             },
             {
-              icon: '🔒',
+              icon: <IconLock size={24} />,
               titleKey: 'featureTKDL',
               descKey: 'featureTKDLDesc',
             },
           ].map((f, i) => (
             <Reveal key={f.titleKey} delay={i * 80}>
               <article className="feature-card">
-                <div className="feature-icon" aria-hidden="true">{f.icon}</div>
+                <div className="feature-icon" aria-hidden="true" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{f.icon}</div>
                 <h3>{t(f.titleKey)}</h3>
                 <p>{t(f.descKey)}</p>
               </article>
@@ -3078,7 +3369,7 @@ function handleExportPdf(messages, t, jurisdiction) {
   // Create PDF content as HTML
   const aiMessages = messages.filter(m => m.role === 'ai')
   const userMessages = messages.filter(m => m.role === 'user')
-  
+
   const currentDate = new Date().toLocaleDateString('en-IN', {
     year: 'numeric',
     month: 'long',
@@ -3165,7 +3456,7 @@ function handleExportPdf(messages, t, jurisdiction) {
     </head>
     <body>
       <div class="header">
-        <div class="logo">🌿 IP-SAKTI Sahayak</div>
+        <div class="logo">IP-SAKTI Sahayak</div>
         <div class="logo-sub">Ministry of AYUSH • Government of India</div>
         <h1 class="title">${t('ipAssessmentReport')}</h1>
         <div class="meta">
@@ -3176,15 +3467,15 @@ function handleExportPdf(messages, t, jurisdiction) {
       <div class="section">
         <h2 class="section-title">${t('consultationSummary')}</h2>
         ${userMessages.map((um, i) => {
-          const aiReply = aiMessages[i]
-          return `
+    const aiReply = aiMessages[i]
+    return `
             <div class="qa-item">
               <div class="question">${um.text}</div>
               ${aiReply ? `
                 <div class="answer">${aiReply.text}</div>
                 ${aiReply.citations ? `
                   <div class="citations">
-                    ${aiReply.citations.map(c => `<span class="citation">📜 ${c.title}</span>`).join('')}
+                    ${aiReply.citations.map(c => `<span class="citation">${c.title}</span>`).join('')}
                   </div>
                 ` : ''}
                 ${aiReply.confidence ? `
@@ -3193,11 +3484,11 @@ function handleExportPdf(messages, t, jurisdiction) {
               ` : ''}
             </div>
           `
-        }).join('')}
+  }).join('')}
       </div>
 
       <div class="disclaimer">
-        <div class="disclaimer-title">⚠️ ${t('legalDisclaimer')}</div>
+        <div class="disclaimer-title">${t('legalDisclaimer')}</div>
         <div class="disclaimer-text">${t('disclaimerText')}</div>
       </div>
 
@@ -3224,19 +3515,19 @@ function handleExportPdf(messages, t, jurisdiction) {
    Kannada, Malayalam, Bengali, Punjabi, Odia, Assamese, Urdu
    ============================================================ */
 const VOICE_LANGUAGES = [
-  { code: 'en-IN', label: 'English', flag: '🇬🇧' },
-  { code: 'hi-IN', label: 'हिन्दी', flag: '🇮🇳' },
-  { code: 'mr-IN', label: 'मराठी', flag: '🇮🇳' },
-  { code: 'gu-IN', label: 'ગુજરાતી', flag: '🇮🇳' },
-  { code: 'ta-IN', label: 'தமிழ்', flag: '🇮🇳' },
-  { code: 'te-IN', label: 'తెలుగు', flag: '🇮🇳' },
-  { code: 'kn-IN', label: 'ಕನ್ನಡ', flag: '🇮🇳' },
-  { code: 'ml-IN', label: 'മലയാളം', flag: '🇮🇳' },
-  { code: 'bn-IN', label: 'বাংলা', flag: '🇮🇳' },
-  { code: 'pa-IN', label: 'ਪੰਜਾਬੀ', flag: '🇮🇳' },
-  { code: 'or-IN', label: 'ଓଡ଼ିଆ', flag: '🇮🇳' },
-  { code: 'as-IN', label: 'অসমীয়া', flag: '🇮🇳' },
-  { code: 'ur-IN', label: 'اردو', flag: '🇮🇳' },
+  { code: 'en-IN', label: 'English', flag: 'EN' },
+  { code: 'hi-IN', label: 'हिन्दी', flag: 'HI' },
+  { code: 'mr-IN', label: 'मराठी', flag: 'MR' },
+  { code: 'gu-IN', label: 'ગુજરાતી', flag: 'GU' },
+  { code: 'ta-IN', label: 'தமிழ்', flag: 'TA' },
+  { code: 'te-IN', label: 'తెలుగు', flag: 'TE' },
+  { code: 'kn-IN', label: 'ಕನ್ನಡ', flag: 'KN' },
+  { code: 'ml-IN', label: 'മലയാളം', flag: 'ML' },
+  { code: 'bn-IN', label: 'বাংলা', flag: 'BN' },
+  { code: 'pa-IN', label: 'ਪੰਜਾਬੀ', flag: 'PA' },
+  { code: 'or-IN', label: 'ଓଡ଼ିଆ', flag: 'OR' },
+  { code: 'as-IN', label: 'অসমীয়া', flag: 'AS' },
+  { code: 'ur-IN', label: 'اردو', flag: 'UR' },
 ]
 
 function useVoiceInput(onResult, lang = 'hi-IN') {
@@ -3247,9 +3538,9 @@ function useVoiceInput(onResult, lang = 'hi-IN') {
   const recognitionRef = useRef(null)
   const onResultRef = useRef(onResult)
   const shouldRestartRef = useRef(false)
-  
+
   // Check support once
-  const isSupported = typeof window !== 'undefined' && 
+  const isSupported = typeof window !== 'undefined' &&
     !!(window.SpeechRecognition || window.webkitSpeechRecognition)
 
   // Keep callback ref updated
@@ -3260,33 +3551,33 @@ function useVoiceInput(onResult, lang = 'hi-IN') {
   // Initialize recognition when lang changes (or on mount)
   useEffect(() => {
     if (!isSupported) {
-      console.log('🎤 Speech recognition not supported in this browser')
+      console.log('[Speech] Speech recognition not supported in this browser')
       return
     }
-    
+
     // Cleanup old instance
     if (recognitionRef.current) {
       shouldRestartRef.current = false
-      try { 
-        recognitionRef.current.abort() 
+      try {
+        recognitionRef.current.abort()
       } catch (e) {
-        console.log('🎤 Cleanup abort error (safe to ignore):', e.message)
+        console.log('[Speech] Cleanup abort error (safe to ignore):', e.message)
       }
     }
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
     const recognition = new SpeechRecognition()
-    
+
     // Configuration optimized for better Hindi recognition accuracy
     recognition.continuous = false  // Single-shot mode for better accuracy
     recognition.interimResults = true  // Show partial results
     recognition.maxAlternatives = 1  // Single best result for better accuracy
     recognition.lang = lang
-    
-    console.log('🎤 Recognition initialized with lang:', lang, '(single-shot mode for accuracy)')
+
+    console.log('[Speech] Recognition initialized with lang:', lang, '(single-shot mode for accuracy)')
 
     recognition.onstart = () => {
-      console.log('🎤 Started listening - Lang:', lang)
+      console.log('[Speech] Started listening - Lang:', lang)
       setIsListening(true)
       setError(null)
       setInterimText('')
@@ -3304,12 +3595,12 @@ function useVoiceInput(onResult, lang = 'hi-IN') {
         const transcript = result[0].transcript
         const resultConfidence = result[0].confidence
 
-        console.log('🎤 Result:', transcript, 'Confidence:', resultConfidence, 'isFinal:', result.isFinal)
+        console.log('[Speech] Result:', transcript, 'Confidence:', resultConfidence, 'isFinal:', result.isFinal)
 
         if (result.isFinal) {
           finalTranscript += transcript + ' '
           lastConfidence = resultConfidence
-          console.log('🎤 Final result:', transcript, '| Confidence:', (resultConfidence * 100).toFixed(1) + '%')
+          console.log('[Speech] Final result:', transcript, '| Confidence:', (resultConfidence * 100).toFixed(1) + '%')
         } else {
           interimTranscript += transcript
         }
@@ -3333,8 +3624,8 @@ function useVoiceInput(onResult, lang = 'hi-IN') {
     }
 
     recognition.onerror = (event) => {
-      console.error('🔴 Speech recognition error:', event.error)
-      
+      console.error('[Speech] Speech recognition error:', event.error)
+
       // Handle specific errors
       switch (event.error) {
         case 'not-allowed':
@@ -3344,7 +3635,7 @@ function useVoiceInput(onResult, lang = 'hi-IN') {
           break
         case 'no-speech':
           // Don't stop - just keep listening
-          console.log('🎤 No speech detected, continuing...')
+          console.log('[Speech] No speech detected, continuing...')
           break
         case 'audio-capture':
           setError('माइक्रोफ़ोन नहीं मिला / No microphone found')
@@ -3363,16 +3654,16 @@ function useVoiceInput(onResult, lang = 'hi-IN') {
     }
 
     recognition.onend = () => {
-      console.log('🎤 Recognition ended, shouldRestart:', shouldRestartRef.current)
-      
+      console.log('[Speech] Recognition ended, shouldRestart:', shouldRestartRef.current)
+
       // Auto-restart if user wants to keep listening
       if (shouldRestartRef.current) {
         setTimeout(() => {
           try {
-            console.log('🎤 Auto-restarting...')
+            console.log('[Speech] Auto-restarting...')
             recognitionRef.current?.start()
           } catch (e) {
-            console.log('🎤 Restart failed:', e.message)
+            console.log('[Speech] Restart failed:', e.message)
             // If restart fails, stop listening
             shouldRestartRef.current = false
             setIsListening(false)
@@ -3385,28 +3676,28 @@ function useVoiceInput(onResult, lang = 'hi-IN') {
     }
 
     recognitionRef.current = recognition
-    
+
     // Cleanup on unmount or lang change
     return () => {
       shouldRestartRef.current = false
-      try { 
-        recognitionRef.current?.abort() 
+      try {
+        recognitionRef.current?.abort()
       } catch (e) {
-        console.log('🎤 Cleanup error (safe to ignore):', e.message)
+        console.log('[Speech] Cleanup error (safe to ignore):', e.message)
       }
     }
   }, [isSupported, lang])
 
   const startListening = useCallback(() => {
-    console.log('🎤 startListening called')
+    console.log('[Speech] startListening called')
     setError(null)
     shouldRestartRef.current = true
-    
+
     try {
       recognitionRef.current?.start()
-      console.log('🎤 start() called successfully')
+      console.log('[Speech] start() called successfully')
     } catch (e) {
-      console.log('🎤 start() error:', e.message)
+      console.log('[Speech] start() error:', e.message)
       if (e.name !== 'InvalidStateError') {
         setError('वॉइस शुरू नहीं हो सका / Failed to start voice')
       }
@@ -3415,27 +3706,27 @@ function useVoiceInput(onResult, lang = 'hi-IN') {
   }, [])
 
   const stopListening = useCallback(() => {
-    console.log('🎤 stopListening called')
+    console.log('[Speech] stopListening called')
     shouldRestartRef.current = false
-    
-    try { 
-      recognitionRef.current?.stop() 
+
+    try {
+      recognitionRef.current?.stop()
     } catch (e) {
-      console.log('🎤 stop() error (safe to ignore):', e.message)
+      console.log('[Speech] stop() error (safe to ignore):', e.message)
     }
-    
+
     setIsListening(false)
     setInterimText('')
   }, [])
 
-  return { 
-    isListening, 
-    isSupported, 
+  return {
+    isListening,
+    isSupported,
     interimText,
     error,
     confidence, // Expose confidence for UI display
-    startListening, 
-    stopListening 
+    startListening,
+    stopListening
   }
 }
 
@@ -3469,12 +3760,12 @@ function VoiceLanguageSelector({ value, onChange, isListening }) {
         title="Voice language"
       >
         <span className="voice-lang-current">{currentLang.label.slice(0, 3)}</span>
-        <span className="voice-lang-arrow">▼</span>
+        <span className="voice-lang-arrow" style={{ display: 'inline-flex', alignItems: 'center' }}><IconChevronDown size={12} /></span>
       </button>
-      
+
       {isOpen && (
         <div className="voice-lang-dropdown">
-          <div className="voice-lang-header">🎤 Voice Language</div>
+          <div className="voice-lang-header" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IconMic size={14} /> Voice Language</div>
           {VOICE_LANGUAGES.map(lang => (
             <button
               key={lang.code}
@@ -3485,9 +3776,9 @@ function VoiceLanguageSelector({ value, onChange, isListening }) {
                 setIsOpen(false)
               }}
             >
-              <span>{lang.flag}</span>
+              <span>[{lang.flag}]</span>
               <span>{lang.label}</span>
-              {value === lang.code && <span className="voice-lang-check">✓</span>}
+              {value === lang.code && <span className="voice-lang-check" style={{ display: 'inline-flex', alignItems: 'center' }}><IconCheck size={14} /></span>}
             </button>
           ))}
         </div>
@@ -3508,22 +3799,22 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
   const [typing, setTyping] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [activeSessionId, setActiveSessionId] = useState(1)
-  
+
   // New state for scroll management
   const [showScrollBtn, setShowScrollBtn] = useState(false)
   const chatBodyRef = useRef(null)
   const textareaRef = useRef(null)
-  
+
   // Character count limit
   const MAX_CHARS = 2000
 
   // Voice Input with language selection
   const [voiceLang, setVoiceLang] = useState('hi-IN')
-  
+
   const handleVoiceResult = useCallback((transcript) => {
     setInput(prev => prev ? prev + ' ' + transcript : transcript)
   }, [])
-  
+
   const { isListening, isSupported: voiceSupported, interimText, error: voiceError, confidence: voiceConfidence, startListening, stopListening } = useVoiceInput(handleVoiceResult, voiceLang)
 
   useEffect(() => {
@@ -3610,7 +3901,7 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
     setMessages(prev => [...prev, userMsg])
     setInput('')
     setTyping(true)
-    
+
     // Reset textarea height
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto'
@@ -3637,15 +3928,15 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
     } catch (error) {
       let aiText = `Under Section 3(p) of the Indian Patents Act 1970, traditional Ayurvedic formulations are excluded from patentability as prior art. However, novel, non-obvious synergistic combinations or extraction processes may be patentable subject matter.`
       let citations = [
-        { title: '📜 Indian Patents Act 1970 | §3(p)', url: 'https://ipindia.gov.in/' },
-        { title: '📚 Traditional Knowledge Digital Library (TKDL)', url: 'https://www.tkdl.res.in/' },
+        { title: 'Indian Patents Act 1970 | §3(p)', url: 'https://ipindia.gov.in/' },
+        { title: 'Traditional Knowledge Digital Library (TKDL)', url: 'https://www.tkdl.res.in/' },
       ]
 
       if (jurisdiction === 'international') {
         aiText = `Under WIPO GRATK Treaty (2024) and Nagoya Protocol, international patent applications utilizing genetic resources or traditional knowledge must disclose the origin of biological material and evidence of Prior Informed Consent (PIC).`
         citations = [
-          { title: '🌍 WIPO GRATK Treaty (2024) | Mandatory Disclosure Clause', url: 'https://www.wipo.int/' },
-          { title: '📋 Nagoya Protocol on ABS | Article 6 & 7', url: 'https://www.cbd.int/abs/' },
+          { title: 'WIPO GRATK Treaty (2024) | Mandatory Disclosure Clause', url: 'https://www.wipo.int/' },
+          { title: 'Nagoya Protocol on ABS | Article 6 & 7', url: 'https://www.cbd.int/abs/' },
         ]
       }
 
@@ -3692,7 +3983,7 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
           id: 202,
           role: 'ai',
           text: 'Yes. Under Section 3 of the Biological Diversity Act 2002, non-Indian citizens, NRIs, and foreign-incorporated companies must obtain prior approval from the National Biodiversity Authority (NBA) via Form I before accessing Indian bio-resources like Neem (Azadirachta indica) for commercial utilization.',
-          citations: [{ title: '🌿 Biological Diversity Act 2002 | §3 | Access Approval', url: 'http://nbaindia.org/' }],
+          citations: [{ title: 'Biological Diversity Act 2002 | §3 | Access Approval', url: 'http://nbaindia.org/' }],
           confidence: 'high',
           showDisclaimer: true,
           timestamp: Date.now() - 30000
@@ -3718,11 +4009,14 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
             className="sidebar-toggle-btn"
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             aria-label={t('toggleSidebar')}
+            style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
           >
-            ☰
+            <IconMenu size={18} />
           </button>
           <Link to="/" className="chat-brand" aria-label={t('backToHome')}>
-            <div className="chat-brand-icon" aria-hidden="true">🌿</div>
+            <div className="chat-brand-icon" aria-hidden="true" style={{ display: 'flex', color: 'var(--primary)' }}>
+              <IconLeaf size={20} />
+            </div>
             <div>
               <span className="chat-brand-name">IP-SAKTI Sahayak</span>
               <span className="devanagari" style={{ display: 'block', fontSize: '0.65rem', color: 'var(--primary)' }}>
@@ -3742,16 +4036,16 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
             aria-label={t('selectResponseLang')}
             id="lang-selector"
           >
-            <option value="en">🇬🇧 English</option>
-            <option value="hi">🇮🇳 हिन्दी</option>
-            <option value="kn">🇮🇳 ಕನ್ನಡ</option>
-            <option value="bn">🇮🇳 বাংলা</option>
-            <option value="ta">🇮🇳 தமிழ்</option>
-            <option value="te">🇮🇳 తెలుగు</option>
+            <option value="en">[EN] English</option>
+            <option value="hi">[HI] हिन्दी</option>
+            <option value="kn">[KN] ಕನ್ನಡ</option>
+            <option value="bn">[BN] বাংলা</option>
+            <option value="ta">[TA] தமிழ்</option>
+            <option value="te">[TE] తెలుగు</option>
           </select>
 
-          <button className="btn-secondary" style={{ padding: '0.3rem 0.75rem', fontSize: '0.78rem' }} onClick={onOpenAbout}>
-            ℹ️ {t('about')}
+          <button className="btn-secondary" style={{ padding: '0.3rem 0.75rem', fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '5px' }} onClick={onOpenAbout}>
+            <IconInfo size={14} /> {t('about')}
           </button>
           <ThemeToggleBtn theme={theme} toggleTheme={toggleTheme} />
         </div>
@@ -3771,10 +4065,10 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
 
         <div className="chat-main-area">
           {/* Chat Body */}
-          <div 
-            className="chat-body" 
-            id="chat-messages" 
-            role="log" 
+          <div
+            className="chat-body"
+            id="chat-messages"
+            role="log"
             aria-live="polite"
             ref={chatBodyRef}
             onScroll={handleScroll}
@@ -3783,15 +4077,15 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
             {!showWelcome && (
               <div className="wizard-shortcut-bar" aria-label={t('quickActions')}>
                 {[
-                  { icon: '🧪', labelKey: 'formulationWizard', action: onOpenWizard },
-                  { icon: '🌿', labelKey: 'absChecker', link: '/abs-checker' },
-                  { icon: '📜', labelKey: 'patentsActSection', prompt: 'What is Section 3(p) of Patents Act 1970?' },
-                  { icon: '📚', labelKey: 'tkdlCheck', prompt: 'How does TKDL prevent traditional knowledge biopiracy?' },
-                  { icon: '🏷️', labelKey: 'giTagging', prompt: 'How do I register a Geographical Indication for an Ayurvedic herb?' },
+                  { icon: <IconFlask size={14} />, labelKey: 'formulationWizard', action: onOpenWizard },
+                  { icon: <IconLeaf size={14} />, labelKey: 'absChecker', link: '/abs-checker' },
+                  { icon: <IconScroll size={14} />, labelKey: 'patentsActSection', prompt: 'What is Section 3(p) of Patents Act 1970?' },
+                  { icon: <IconBook size={14} />, labelKey: 'tkdlCheck', prompt: 'How does TKDL prevent traditional knowledge biopiracy?' },
+                  { icon: <IconTag size={14} />, labelKey: 'giTagging', prompt: 'How do I register a Geographical Indication for an Ayurvedic herb?' },
                 ].map((b, idx) => (
                   b.link ? (
-                    <Link key={idx} to={b.link} className="wizard-btn">
-                      <span aria-hidden="true">{b.icon}</span>
+                    <Link key={idx} to={b.link} className="wizard-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                      <span aria-hidden="true" style={{ display: 'flex' }}>{b.icon}</span>
                       {t(b.labelKey)}
                     </Link>
                   ) : (
@@ -3799,8 +4093,9 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
                       key={idx}
                       className="wizard-btn"
                       onClick={() => b.action ? b.action() : setInput(b.prompt)}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                     >
-                      <span aria-hidden="true">{b.icon}</span>
+                      <span aria-hidden="true" style={{ display: 'flex' }}>{b.icon}</span>
                       {t(b.labelKey)}
                     </button>
                   )
@@ -3810,7 +4105,7 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
 
             {/* Welcome state or Messages */}
             {showWelcome ? (
-              <ChatWelcome 
+              <ChatWelcome
                 onPromptClick={(text) => {
                   setInput(text)
                   if (textareaRef.current) textareaRef.current.focus()
@@ -3818,8 +4113,8 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
               />
             ) : (
               messages.map(msg => (
-                <MessageBubble 
-                  key={msg.id} 
+                <MessageBubble
+                  key={msg.id}
                   msg={msg}
                   onFollowUp={handleFollowUp}
                   onRegenerate={handleRegenerate}
@@ -3831,37 +4126,29 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
 
             {/* Typing indicator */}
             {typing && <TypingIndicator />}
-            
+
             {/* Scroll to bottom button */}
             <ScrollToBottomBtn onClick={scrollToBottom} visible={showScrollBtn} />
           </div>
 
           {/* Input Bar */}
-          <div className="chat-input-bar" role="form" aria-label={t('messageInput')}>
-            {/* Interim voice text display */}
-            {isListening && interimText && (
-              <div className="voice-interim-text">
-                <span className="voice-interim-icon">🎤</span>
-                <span className="voice-interim-content">{interimText}</span>
-              </div>
-            )}
-            
+          <div className="chat-input-bar">
             {/* Voice error display */}
             {voiceError && (
               <div className="voice-error-text">
-                <span>⚠️</span>
+                <IconAlertTriangle size={14} />
                 <span>{voiceError}</span>
               </div>
             )}
-            
+
             {/* Voice confidence indicator - show when confidence is low */}
             {voiceConfidence !== null && voiceConfidence < 0.5 && (
               <div className="voice-confidence-warning">
-                <span>⚠️</span>
+                <IconAlertTriangle size={14} />
                 <span>कम सटीकता / Low accuracy ({(voiceConfidence * 100).toFixed(0)}%) - कृपया स्पष्ट बोलें / Please speak clearly</span>
               </div>
             )}
-            
+
             <div className="input-row">
               <div className="chat-input-wrap">
                 <textarea
@@ -3878,8 +4165,8 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
                 {/* Voice Input Controls */}
                 {voiceSupported && (
                   <div className="voice-controls">
-                    <VoiceLanguageSelector 
-                      value={voiceLang} 
+                    <VoiceLanguageSelector
+                      value={voiceLang}
                       onChange={setVoiceLang}
                       isListening={isListening}
                     />
@@ -3889,12 +4176,13 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
                       onClick={isListening ? stopListening : startListening}
                       aria-label={isListening ? t('voiceListening') : t('tapToSpeak')}
                       title={t('voiceInput')}
+                      style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                     >
                       {isListening ? (
                         <span className="voice-waves">
                           <span></span><span></span><span></span>
                         </span>
-                      ) : '🎤'}
+                      ) : <IconMic size={16} />}
                     </button>
                   </div>
                 )}
@@ -3905,8 +4193,9 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
                 onClick={handleSend}
                 disabled={!input.trim() || typing}
                 aria-label={t('sendMessage')}
+                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
               >
-                ➤
+                <IconSend size={16} />
               </button>
             </div>
 
@@ -3919,21 +4208,22 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
             </div>
 
             <div className="input-actions">
-              <button className="action-btn" onClick={onOpenWizard}>
-                🧪 {t('formulationWizard')}
+              <button className="action-btn" onClick={onOpenWizard} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <IconFlask size={14} /> {t('formulationWizard')}
               </button>
-              <Link to="/abs-checker" className="action-btn">
-                🌿 {t('absCompliance')}
+              <Link to="/abs-checker" className="action-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <IconLeaf size={14} /> {t('absCompliance')}
               </Link>
-              <button 
-                className="action-btn pdf-export-btn" 
+              <button
+                className="action-btn pdf-export-btn"
                 onClick={() => handleExportPdf(messages, t, jurisdiction)}
                 disabled={messages.length === 0}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
               >
-                📄 {t('exportPdf')}
+                <IconFileText size={14} /> {t('exportPdf')}
               </button>
-              <button className="action-btn" id="clear-chat-btn" onClick={handleClear}>
-                🗑️ {t('clearSession')}
+              <button className="action-btn" id="clear-chat-btn" onClick={handleClear} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <IconTrash size={14} /> {t('clearSession')}
               </button>
             </div>
           </div>
@@ -3970,8 +4260,8 @@ function ABSCheckerPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSiz
       />
 
       <header className="page-header">
-        <span className="chip" style={{ background: 'rgba(6, 95, 70, 0.2)', color: 'var(--secondary-light)', marginBottom: '0.75rem' }}>
-          🌿 {t('absChipLabel')}
+        <span className="chip" style={{ background: 'rgba(6, 95, 70, 0.2)', color: 'var(--secondary-light)', marginBottom: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <IconLeaf size={14} /> {t('absChipLabel')}
         </span>
         <h1 className="page-title">{t('absPageTitle')}</h1>
         <p className="page-subtitle">{t('absPageSubtitle')}</p>
@@ -4025,7 +4315,7 @@ function ABSCheckerPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSiz
         {evaluated && (
           <div className="abs-result-card">
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ fontSize: '1.4rem' }}>📋</span>
+              <span style={{ display: 'flex', color: 'var(--primary-light)' }}><IconFileText size={22} /></span>
               <h3 style={{ fontSize: '1.1rem', color: 'var(--text-primary)', margin: 0 }}>
                 NBA Approval & ABS Regulatory Assessment
               </h3>
@@ -4075,12 +4365,12 @@ import {
 
 function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize }) {
   useLanguage() // For future translations
-  
+
   // Wizard state
   const [currentStep, setCurrentStep] = useState(1)
   const [isCalculating, setIsCalculating] = useState(false)
   const [estimate, setEstimate] = useState(null)
-  
+
   // Form state
   const [formData, setFormData] = useState({
     ipType: '',
@@ -4095,7 +4385,7 @@ function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, f
   })
 
   const TOTAL_STEPS = 5
-  
+
   const updateForm = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
@@ -4133,7 +4423,7 @@ function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, f
 
   const handleCalculate = () => {
     setIsCalculating(true)
-    
+
     // Simulate calculation delay for UX
     setTimeout(() => {
       const result = generateCostEstimate(formData)
@@ -4213,17 +4503,17 @@ function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, f
       </head>
       <body>
         <div class="header">
-          <div class="logo">🌿 IP-SAKTI Sahayak</div>
+          <div class="logo">IP-SAKTI Sahayak</div>
           <div class="subtitle">Intellectual Property Cost Estimate Report</div>
           <div class="ministry">Ministry of AYUSH | Government of India</div>
         </div>
 
-        <h1>📋 Estimate Configuration</h1>
+        <h1>Estimate Configuration</h1>
         <div class="config-grid">
-          <div class="config-item"><span>IP Type:</span><strong>${estimate.ipType?.icon || ''} ${estimate.ipType?.name || 'N/A'}</strong></div>
-          <div class="config-item"><span>Jurisdiction:</span><strong>${estimate.jurisdiction?.flag || ''} ${estimate.jurisdiction?.name || 'N/A'}</strong></div>
-          <div class="config-item"><span>Applicant:</span><strong>${estimate.applicantCategory?.icon || ''} ${estimate.applicantCategory?.name || 'N/A'}</strong></div>
-          <div class="config-item"><span>Filing Type:</span><strong>${estimate.filingType?.icon || ''} ${estimate.filingType?.name || 'N/A'}</strong></div>
+          <div class="config-item"><span>IP Type:</span><strong>${estimate.ipType?.name || 'N/A'}</strong></div>
+          <div class="config-item"><span>Jurisdiction:</span><strong>[${estimate.jurisdiction?.flag || ''}] ${estimate.jurisdiction?.name || 'N/A'}</strong></div>
+          <div class="config-item"><span>Applicant:</span><strong>${estimate.applicantCategory?.name || 'N/A'}</strong></div>
+          <div class="config-item"><span>Filing Type:</span><strong>${estimate.filingType?.name || 'N/A'}</strong></div>
           ${formData.ipType === 'patent' ? `<div class="config-item"><span>Claims:</span><strong>${formData.claims}</strong></div>` : ''}
           ${formData.ipType === 'patent' ? `<div class="config-item"><span>Pages:</span><strong>${formData.pages}</strong></div>` : ''}
           ${formData.ipType === 'trademark' ? `<div class="config-item"><span>Classes:</span><strong>${formData.classes}</strong></div>` : ''}
@@ -4257,7 +4547,7 @@ function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, f
           </div>
         </div>
 
-        <h1>🏛️ Government Fees Breakdown</h1>
+        <h1>Government Fees Breakdown</h1>
         <table>
           <thead><tr><th>Fee Type</th><th class="amount">Amount</th></tr></thead>
           <tbody>
@@ -4267,7 +4557,7 @@ function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, f
         </table>
 
         ${profBreakdown ? `
-        <h1>💼 Professional Services Fees</h1>
+        <h1>Professional Services Fees</h1>
         <table>
           <thead><tr><th>Service</th><th class="amount">Estimated Range</th></tr></thead>
           <tbody>
@@ -4277,14 +4567,14 @@ function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, f
         </table>
         ` : ''}
 
-        <h1>⏱️ Timeline & Important Notes</h1>
+        <h1>Estimated Timeline & Notes</h1>
         <div class="config-grid">
           <div class="config-item"><span>Estimated Timeline:</span><strong>${estimate.summary.timeline}</strong></div>
           <div class="config-item"><span>Generated On:</span><strong>${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</strong></div>
         </div>
 
         <div class="disclaimer">
-          <strong>⚠️ Important Disclaimer:</strong><br>
+          <strong>Important Disclaimer:</strong><br>
           ${estimate.disclaimer}
         </div>
 
@@ -4302,6 +4592,38 @@ function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, f
     setTimeout(() => printWindow.print(), 500)
   }
 
+  // Helper icon renderers for IP Calculator
+  const renderIpTypeIcon = (id) => {
+    switch (id) {
+      case 'patent': return <IconScroll size={22} />
+      case 'trademark': return <IconTag size={22} />
+      case 'copyright': return <IconBook size={22} />
+      case 'design': return <IconFlask size={22} />
+      case 'gi': return <IconLeaf size={22} />
+      default: return <IconFileText size={22} />
+    }
+  }
+
+  const renderApplicantIcon = (id) => {
+    switch (id) {
+      case 'individual': return <IconUser size={20} />
+      case 'startup': return <IconSparkles size={20} />
+      case 'small': return <IconBuilding size={20} />
+      case 'large': return <IconBuilding size={20} />
+      case 'educational': return <IconBook size={20} />
+      default: return <IconUsers size={20} />
+    }
+  }
+
+  const renderServiceIcon = (id) => {
+    switch (id) {
+      case 'prior_art_search': return <IconSearch size={18} />
+      case 'drafting': return <IconFileText size={18} />
+      case 'legal_review': return <IconScales size={18} />
+      default: return <IconBriefcase size={18} />
+    }
+  }
+
   // Render step content
   const renderStepContent = () => {
     switch (currentStep) {
@@ -4313,7 +4635,7 @@ function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, f
               Select IP Type
             </h2>
             <p className="calc-step-desc">What type of intellectual property do you want to protect?</p>
-            
+
             <div className="calc-ip-grid">
               {IP_TYPES.map(type => (
                 <button
@@ -4321,10 +4643,16 @@ function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, f
                   className={`calc-ip-card ${formData.ipType === type.id ? 'selected' : ''}`}
                   onClick={() => updateForm('ipType', type.id)}
                 >
-                  <span className="calc-ip-icon">{type.icon}</span>
+                  <span className="calc-ip-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {renderIpTypeIcon(type.id)}
+                  </span>
                   <span className="calc-ip-name">{type.name}</span>
                   <span className="calc-ip-desc">{type.description}</span>
-                  {formData.ipType === type.id && <span className="calc-ip-check">✓</span>}
+                  {formData.ipType === type.id && (
+                    <span className="calc-ip-check" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <IconCheck size={14} />
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -4339,7 +4667,7 @@ function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, f
               Filing Jurisdiction
             </h2>
             <p className="calc-step-desc">Where do you want to file your {formData.ipType ? IP_TYPES.find(t => t.id === formData.ipType)?.name : 'IP'}?</p>
-            
+
             <div className="calc-jurisdiction-grid">
               {JURISDICTIONS.map(j => (
                 <button
@@ -4347,10 +4675,14 @@ function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, f
                   className={`calc-jurisdiction-card ${formData.jurisdiction === j.id ? 'selected' : ''}`}
                   onClick={() => updateForm('jurisdiction', j.id)}
                 >
-                  <span className="calc-j-flag">{j.flag}</span>
+                  <span className="calc-j-flag" style={{ fontWeight: 700, fontSize: '0.85rem', letterSpacing: '0.05em' }}>{j.flag}</span>
                   <span className="calc-j-name">{j.name}</span>
                   <span className="calc-j-currency">{j.currency}</span>
-                  {formData.jurisdiction === j.id && <span className="calc-j-check">✓</span>}
+                  {formData.jurisdiction === j.id && (
+                    <span className="calc-j-check" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <IconCheck size={14} />
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -4425,7 +4757,7 @@ function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, f
               Applicant Category
             </h2>
             <p className="calc-step-desc">Startups and individuals get significant fee discounts in India!</p>
-            
+
             <div className="calc-applicant-grid">
               {APPLICANT_CATEGORIES.map(cat => (
                 <button
@@ -4434,16 +4766,22 @@ function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, f
                   onClick={() => updateForm('applicantCategory', cat.id)}
                 >
                   <div className="calc-a-header">
-                    <span className="calc-a-icon">{cat.icon}</span>
+                    <span className="calc-a-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {renderApplicantIcon(cat.id)}
+                    </span>
                     <span className="calc-a-name">{cat.name}</span>
                   </div>
                   <span className="calc-a-desc">{cat.description}</span>
                   {cat.discount < 1 && (
                     <span className="calc-a-discount">
-                      🎉 {Math.round((1 - cat.discount) * 100)}% Fee Discount
+                      {Math.round((1 - cat.discount) * 100)}% Fee Concession
                     </span>
                   )}
-                  {formData.applicantCategory === cat.id && <span className="calc-a-check">✓</span>}
+                  {formData.applicantCategory === cat.id && (
+                    <span className="calc-a-check" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <IconCheck size={14} />
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -4457,7 +4795,7 @@ function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, f
                     className={`calc-filing-btn ${formData.filingType === ft.id ? 'selected' : ''}`}
                     onClick={() => updateForm('filingType', ft.id)}
                   >
-                    {ft.icon} {ft.name}
+                    {ft.name}
                   </button>
                 ))}
               </div>
@@ -4473,7 +4811,7 @@ function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, f
               Professional Services
             </h2>
             <p className="calc-step-desc">Select optional services you may need (recommended services are highlighted)</p>
-            
+
             <div className="calc-services-grid">
               {PROFESSIONAL_SERVICES.map(service => (
                 <button
@@ -4482,13 +4820,21 @@ function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, f
                   onClick={() => toggleService(service.id)}
                 >
                   <div className="calc-s-header">
-                    <span className="calc-s-icon">{service.icon}</span>
+                    <span className="calc-s-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {renderServiceIcon(service.id)}
+                    </span>
                     <span className="calc-s-name">{service.name}</span>
                     {service.recommended && <span className="calc-s-badge">Recommended</span>}
                   </div>
                   <span className="calc-s-desc">{service.description}</span>
-                  <span className="calc-s-time">⏱️ {service.estimatedTime}</span>
-                  {formData.services.includes(service.id) && <span className="calc-s-check">✓</span>}
+                  <span className="calc-s-time" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                    <IconCalendar size={13} /> {service.estimatedTime}
+                  </span>
+                  {formData.services.includes(service.id) && (
+                    <span className="calc-s-check" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <IconCheck size={14} />
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -4503,31 +4849,31 @@ function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, f
               Review & Calculate
             </h2>
             <p className="calc-step-desc">Review your selections before calculating the estimate</p>
-            
+
             <div className="calc-review-card">
               <div className="calc-review-grid">
                 <div className="calc-review-item">
                   <span className="calc-r-label">IP Type</span>
-                  <span className="calc-r-value">
-                    {IP_TYPES.find(t => t.id === formData.ipType)?.icon} {IP_TYPES.find(t => t.id === formData.ipType)?.name}
+                  <span className="calc-r-value" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    {renderIpTypeIcon(formData.ipType)} {IP_TYPES.find(t => t.id === formData.ipType)?.name}
                   </span>
                 </div>
                 <div className="calc-review-item">
                   <span className="calc-r-label">Jurisdiction</span>
                   <span className="calc-r-value">
-                    {JURISDICTIONS.find(j => j.id === formData.jurisdiction)?.flag} {JURISDICTIONS.find(j => j.id === formData.jurisdiction)?.name}
+                    [{JURISDICTIONS.find(j => j.id === formData.jurisdiction)?.flag}] {JURISDICTIONS.find(j => j.id === formData.jurisdiction)?.name}
                   </span>
                 </div>
                 <div className="calc-review-item">
                   <span className="calc-r-label">Applicant</span>
-                  <span className="calc-r-value">
-                    {APPLICANT_CATEGORIES.find(c => c.id === formData.applicantCategory)?.icon} {APPLICANT_CATEGORIES.find(c => c.id === formData.applicantCategory)?.name}
+                  <span className="calc-r-value" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    {renderApplicantIcon(formData.applicantCategory)} {APPLICANT_CATEGORIES.find(c => c.id === formData.applicantCategory)?.name}
                   </span>
                 </div>
                 <div className="calc-review-item">
                   <span className="calc-r-label">Filing Type</span>
                   <span className="calc-r-value">
-                    {FILING_TYPES.find(f => f.id === formData.filingType)?.icon} {FILING_TYPES.find(f => f.id === formData.filingType)?.name}
+                    {FILING_TYPES.find(f => f.id === formData.filingType)?.name}
                   </span>
                 </div>
                 {formData.ipType === 'patent' && (
@@ -4563,8 +4909,8 @@ function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, f
                     {formData.services.map(sId => {
                       const service = PROFESSIONAL_SERVICES.find(s => s.id === sId)
                       return (
-                        <span key={sId} className="calc-r-service-tag">
-                          {service?.icon} {service?.name}
+                        <span key={sId} className="calc-r-service-tag" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                          {renderServiceIcon(service?.id)} {service?.name}
                         </span>
                       )
                     })}
@@ -4590,15 +4936,17 @@ function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, f
 
     // Chart data for donut
     const chartData = [
-      { label: 'Government Fees', value: govtTotal, color: '#1D4ED8' },
-      { label: 'Professional Fees', value: profMin, color: '#10B981' },
+      { label: 'Government Fees', value: govtTotal, color: '#143D30' },
+      { label: 'Professional Fees', value: profMin, color: '#3D705E' },
     ]
     const chartTotal = chartData.reduce((sum, d) => sum + d.value, 0)
 
     return (
       <div className="calc-results">
         <div className="calc-results-header">
-          <h2>📊 Cost Estimate Results</h2>
+          <h2 style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+            <IconTrendingUp size={22} /> Cost Estimate Results
+          </h2>
           <p>For {estimate.ipType?.name} filing in {estimate.jurisdiction?.name}</p>
         </div>
 
@@ -4614,22 +4962,30 @@ function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, f
         {/* Summary Grid */}
         <div className="calc-summary-grid">
           <div className="calc-summary-card">
-            <span className="calc-sum-icon">💰</span>
+            <span className="calc-sum-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+              <IconCurrencyRupee size={20} />
+            </span>
             <span className="calc-sum-label">One-Time Costs</span>
             <span className="calc-sum-value">{formatCurrency(estimate.summary.oneTimeCosts)}</span>
           </div>
           <div className="calc-summary-card">
-            <span className="calc-sum-icon">🔄</span>
+            <span className="calc-sum-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+              <IconRotate size={20} />
+            </span>
             <span className="calc-sum-label">Recurring (Annual)</span>
             <span className="calc-sum-value">{formatCurrency(estimate.summary.recurringCosts)}</span>
           </div>
           <div className="calc-summary-card">
-            <span className="calc-sum-icon">🏛️</span>
+            <span className="calc-sum-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+              <IconGovt size={20} />
+            </span>
             <span className="calc-sum-label">Government Fees</span>
             <span className="calc-sum-value">{formatCurrency(govtTotal)}</span>
           </div>
           <div className="calc-summary-card">
-            <span className="calc-sum-icon">💼</span>
+            <span className="calc-sum-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+              <IconBriefcase size={20} />
+            </span>
             <span className="calc-sum-label">Professional Fees</span>
             <span className="calc-sum-value">{formatCurrency(profMin)} - {formatCurrency(profMax)}</span>
           </div>
@@ -4637,7 +4993,9 @@ function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, f
 
         {/* Visual Chart */}
         <div className="calc-chart-section">
-          <h3>📈 Cost Distribution</h3>
+          <h3 style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+            <IconTrendingUp size={18} /> Cost Distribution
+          </h3>
           <div className="calc-chart-container">
             {/* Simple Bar Chart */}
             <div className="calc-bar-chart">
@@ -4645,11 +5003,11 @@ function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, f
                 <div key={idx} className="calc-bar-item">
                   <div className="calc-bar-label">{item.label}</div>
                   <div className="calc-bar-track">
-                    <div 
-                      className="calc-bar-fill" 
-                      style={{ 
+                    <div
+                      className="calc-bar-fill"
+                      style={{
                         width: `${chartTotal > 0 ? (item.value / chartTotal * 100) : 0}%`,
-                        backgroundColor: item.color 
+                        backgroundColor: item.color
                       }}
                     />
                   </div>
@@ -4706,7 +5064,9 @@ function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, f
 
         {/* Detailed Breakdown */}
         <div className="calc-breakdown-section">
-          <h3>🏛️ Government Fees Breakdown</h3>
+          <h3 style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+            <IconGovt size={18} /> Government Fees Breakdown
+          </h3>
           <div className="calc-breakdown-table">
             {estimate.governmentFees.breakdown.map((item, idx) => (
               <div key={idx} className="calc-breakdown-row">
@@ -4723,7 +5083,9 @@ function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, f
 
         {estimate.professionalFees.breakdown.length > 0 && (
           <div className="calc-breakdown-section">
-            <h3>💼 Professional Services Breakdown</h3>
+            <h3 style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+              <IconBriefcase size={18} /> Professional Services Breakdown
+            </h3>
             <div className="calc-breakdown-table">
               {estimate.professionalFees.breakdown.map((item, idx) => (
                 <div key={idx} className="calc-breakdown-row">
@@ -4741,29 +5103,35 @@ function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, f
 
         {/* Timeline */}
         <div className="calc-timeline-section">
-          <h3>⏱️ Estimated Timeline</h3>
+          <h3 style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+            <IconCalendar size={18} /> Estimated Timeline
+          </h3>
           <div className="calc-timeline-card">
-            <span className="calc-timeline-icon">📅</span>
+            <span className="calc-timeline-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+              <IconCalendar size={18} />
+            </span>
             <span className="calc-timeline-value">{estimate.summary.timeline}</span>
           </div>
         </div>
 
         {/* Disclaimer */}
         <div className="calc-disclaimer">
-          <span className="calc-disclaimer-icon">⚠️</span>
+          <span className="calc-disclaimer-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+            <IconAlertTriangle size={18} />
+          </span>
           <p>{estimate.disclaimer}</p>
         </div>
 
         {/* Actions */}
         <div className="calc-results-actions">
-          <button className="calc-btn-primary" onClick={handleExportCostPdf}>
-            📄 Download PDF Report
+          <button className="calc-btn-primary" onClick={handleExportCostPdf} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+            <IconFileText size={16} /> Download PDF Report
           </button>
-          <button className="calc-btn-secondary" onClick={handleReset}>
-            🔄 Start New Calculation
+          <button className="calc-btn-secondary" onClick={handleReset} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+            <IconRotate size={16} /> Start New Calculation
           </button>
-          <Link to="/chat" className="calc-btn-outline">
-            💬 Ask IP Expert
+          <Link to="/chat" className="calc-btn-outline" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+            <IconMessageSquare size={16} /> Ask IP Expert
           </Link>
         </div>
       </div>
@@ -4782,8 +5150,8 @@ function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, f
       />
 
       <header className="page-header">
-        <span className="chip" style={{ background: 'rgba(29, 78, 216, 0.2)', color: '#60A5FA', marginBottom: '0.75rem' }}>
-          🧮 IP Cost Calculator
+        <span className="chip" style={{ background: 'var(--color-primary-light, #eaf2ed)', color: 'var(--color-primary, #143D30)', marginBottom: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <IconCalculator size={14} /> IP Cost Calculator
         </span>
         <h1 className="page-title">IP Filing Cost Estimator</h1>
         <p className="page-subtitle">
@@ -4797,18 +5165,20 @@ function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, f
             {/* Progress Bar */}
             <div className="calc-progress">
               <div className="calc-progress-bar">
-                <div 
-                  className="calc-progress-fill" 
+                <div
+                  className="calc-progress-fill"
                   style={{ width: `${(currentStep / TOTAL_STEPS) * 100}%` }}
                 />
               </div>
               <div className="calc-progress-steps">
                 {[1, 2, 3, 4, 5].map(step => (
-                  <div 
-                    key={step} 
+                  <div
+                    key={step}
                     className={`calc-progress-step ${currentStep >= step ? 'active' : ''} ${currentStep === step ? 'current' : ''}`}
                   >
-                    <span className="calc-step-dot">{currentStep > step ? '✓' : step}</span>
+                    <span className="calc-step-dot" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {currentStep > step ? <IconCheck size={14} /> : step}
+                    </span>
                     <span className="calc-step-label">
                       {step === 1 && 'IP Type'}
                       {step === 2 && 'Jurisdiction'}
@@ -4828,34 +5198,35 @@ function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, f
 
             {/* Navigation Buttons */}
             <div className="calc-nav">
-              <button 
-                className="calc-btn-back" 
+              <button
+                className="calc-btn-back"
                 onClick={handleBack}
                 disabled={currentStep === 1}
               >
                 ← Back
               </button>
-              
+
               {currentStep < TOTAL_STEPS ? (
-                <button 
-                  className="calc-btn-next" 
+                <button
+                  className="calc-btn-next"
                   onClick={handleNext}
                   disabled={!canProceed()}
                 >
                   Next →
                 </button>
               ) : (
-                <button 
-                  className="calc-btn-calculate" 
+                <button
+                  className="calc-btn-calculate"
                   onClick={handleCalculate}
                   disabled={isCalculating || !canProceed()}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
                 >
                   {isCalculating ? (
                     <>
                       <span className="calc-spinner" /> Calculating...
                     </>
                   ) : (
-                    <>🧮 Calculate Estimate</>
+                    <>Calculate Estimate →</>
                   )}
                 </button>
               )}
@@ -4876,42 +5247,42 @@ function SourcesPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, 
   const { t } = useLanguage()
   const SOURCES = [
     {
-      icon: '🏛️',
+      icon: <IconGovt size={24} />,
       name: 'India Code statutory archive',
       tag: 'Statute Corpus',
       desc: 'Official repository of Indian legislation including Patents Act 1970, Biological Diversity Act 2002, and Drugs & Cosmetics Act 1940.',
       url: 'https://indiacode.nic.in/',
     },
     {
-      icon: '🔖',
+      icon: <IconTag size={24} />,
       name: 'IP India Patent & Design Office',
       tag: 'Patent Office',
       desc: 'Official portal of the Controller General of Patents, Designs & Trade Marks (CGPDTM) detailing examination guidelines.',
       url: 'https://ipindia.gov.in/',
     },
     {
-      icon: '📚',
+      icon: <IconBook size={24} />,
       name: 'TKDL (Traditional Knowledge Digital Library)',
       tag: 'Prior Art DB',
       desc: 'Joint initiative of CSIR and Ministry of AYUSH mapping traditional formulas to prevent international biopiracy.',
       url: 'https://www.tkdl.res.in/',
     },
     {
-      icon: '🌍',
+      icon: <IconGlobe size={24} />,
       name: 'WIPO GRATK Treaty (2024)',
       tag: 'International Law',
       desc: 'WIPO Treaty on Intellectual Property, Genetic Resources and Associated Traditional Knowledge establishing disclosure rules.',
       url: 'https://www.wipo.int/',
     },
     {
-      icon: '📋',
+      icon: <IconFileText size={24} />,
       name: 'Nagoya Protocol on ABS',
       tag: 'Treaty Corpus',
       desc: 'Global treaty under the Convention on Biological Diversity governing fair access and equitable benefit-sharing.',
       url: 'https://www.cbd.int/abs/',
     },
     {
-      icon: '🌿',
+      icon: <IconLeaf size={24} />,
       name: 'Ministry of AYUSH Regulatory Portal',
       tag: 'AYUSH Rules',
       desc: 'Official AYUSH guidelines including Rule 158-B licensing parameters and Ayurveda Aahar regulations.',
@@ -4931,8 +5302,8 @@ function SourcesPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, 
       />
 
       <header className="page-header">
-        <span className="chip" style={{ background: 'rgba(217, 119, 6, 0.2)', color: 'var(--primary-light)', marginBottom: '0.75rem' }}>
-          📚 {t('sourcesChipLabel')}
+        <span className="chip" style={{ background: 'rgba(217, 119, 6, 0.2)', color: 'var(--primary-light)', marginBottom: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <IconBook size={14} /> {t('sourcesChipLabel')}
         </span>
         <h1 className="page-title">{t('sourcesPageTitle')}</h1>
         <p className="page-subtitle">{t('sourcesPageSubtitle')}</p>
@@ -4942,7 +5313,7 @@ function SourcesPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, 
         {SOURCES.map(s => (
           <a key={s.name} href={s.url} target="_blank" rel="noopener noreferrer" className="source-card">
             <div className="source-header">
-              <span className="source-icon">{s.icon}</span>
+              <span className="source-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{s.icon}</span>
               <div>
                 <div className="source-title">{s.name}</div>
                 <span className="source-tag">{s.tag}</span>
@@ -4966,7 +5337,7 @@ function SourcesPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, 
    ============================================================ */
 function PrivacyPolicyPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize }) {
   const { t } = useLanguage()
-  
+
   return (
     <div className="page-container">
       <Navbar
@@ -4979,8 +5350,8 @@ function PrivacyPolicyPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, font
       />
 
       <header className="page-header">
-        <span className="chip" style={{ background: 'rgba(99, 102, 241, 0.2)', color: '#A5B4FC', marginBottom: '0.75rem' }}>
-          🔒 {t('privacyLegal')}
+        <span className="chip" style={{ background: 'var(--color-primary-light, #eaf2ed)', color: 'var(--color-primary, #143D30)', marginBottom: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <IconLock size={13} /> {t('privacyLegal')}
         </span>
         <h1 className="page-title">{t('privacyTitle')}</h1>
         <p className="page-subtitle">
@@ -5032,7 +5403,7 @@ function PrivacyPolicyPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, font
             <h2>{t('privacyStorageTitle')}</h2>
             <p>{t('privacyStorageText')}</p>
             <div className="privacy-highlight">
-              <span>🛡️</span>
+              <span style={{ display: 'flex', color: 'var(--primary-light)' }}><IconShieldCheck size={20} /></span>
               <p>{t('privacyNoSell')}</p>
             </div>
           </section>
@@ -5119,7 +5490,7 @@ function LoginPage({ theme, toggleTheme, fontSize, setFontSize, onLogin }) {
     e.preventDefault()
     setError('')
     setIsLoading(true)
-    
+
     // Simulate API call (frontend only)
     setTimeout(() => {
       setIsLoading(false)
@@ -5161,28 +5532,28 @@ function LoginPage({ theme, toggleTheme, fontSize, setFontSize, onLogin }) {
               <IpSaktiLogo className="login-logo-svg" size={64} />
               <span className="login-logo-text">IP-SAKTI Sahayak</span>
             </Link>
-            
+
             <h1 className="login-brand-title">
               {t('heroSubtitle')}
             </h1>
-            
+
             <div className="login-features">
               <div className="login-feature">
-                <span className="login-feature-icon">✓</span>
+                <span className="login-feature-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><IconCheck size={14} /></span>
                 <span>{t('zeroHallucination')}</span>
               </div>
               <div className="login-feature">
-                <span className="login-feature-icon">✓</span>
+                <span className="login-feature-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><IconCheck size={14} /></span>
                 <span>{t('sourceCited')}</span>
               </div>
               <div className="login-feature">
-                <span className="login-feature-icon">✓</span>
+                <span className="login-feature-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><IconCheck size={14} /></span>
                 <span>{t('multiLanguage')}</span>
               </div>
             </div>
 
             <div className="login-govt-badge">
-              <span>🏛️</span>
+              <span style={{ display: 'flex' }}><IconGovt size={16} /></span>
               <span>{t('ministry')} · {t('govtOf')}</span>
             </div>
           </div>
@@ -5198,42 +5569,43 @@ function LoginPage({ theme, toggleTheme, fontSize, setFontSize, onLogin }) {
 
             {/* Social Login Buttons */}
             <div className="login-social-buttons">
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="login-social-btn google"
                 onClick={() => handleSocialLogin('google')}
                 disabled={isLoading}
               >
                 <svg viewBox="0 0 24 24" width="20" height="20">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                 </svg>
                 <span>{t('loginWithGoogle')}</span>
               </button>
 
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="login-social-btn apple"
                 onClick={() => handleSocialLogin('apple')}
                 disabled={isLoading}
               >
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                  <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+                  <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
                 </svg>
                 <span>{t('loginWithApple')}</span>
               </button>
             </div>
 
             {/* Magic Link */}
-            <button 
-              type="button" 
+            <button
+              type="button"
               className="login-magic-btn"
               onClick={handleMagicLink}
               disabled={isLoading}
+              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
             >
-              <span>✨</span>
+              <IconSparkles size={16} />
               <span>{t('loginWithMagicLink')}</span>
             </button>
 
@@ -5295,8 +5667,9 @@ function LoginPage({ theme, toggleTheme, fontSize, setFontSize, onLogin }) {
                     className="login-password-toggle"
                     onClick={() => setShowPassword(!showPassword)}
                     aria-label={showPassword ? t('hidePassword') : t('showPassword')}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                   >
-                    {showPassword ? '👁️' : '👁️‍🗨️'}
+                    {showPassword ? <IconEyeOff size={16} /> : <IconEye size={16} />}
                   </button>
                 </div>
                 {!isRegister && (
@@ -5304,12 +5677,12 @@ function LoginPage({ theme, toggleTheme, fontSize, setFontSize, onLogin }) {
                 )}
               </div>
 
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="login-submit-btn"
                 disabled={isLoading}
               >
-                {isLoading 
+                {isLoading
                   ? (isRegister ? t('creating') : t('signingIn'))
                   : (isRegister ? t('registerButton') : t('signInButton'))
                 }
@@ -5319,8 +5692,8 @@ function LoginPage({ theme, toggleTheme, fontSize, setFontSize, onLogin }) {
             {/* Toggle */}
             <div className="login-toggle">
               <span>{isRegister ? t('haveAccount') : t('noAccount')}</span>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={() => { setIsRegister(!isRegister); setError(''); setSuccess(''); }}
               >
                 {isRegister ? t('signInHere') : t('registerHere')}
@@ -5333,8 +5706,8 @@ function LoginPage({ theme, toggleTheme, fontSize, setFontSize, onLogin }) {
             </p>
 
             {/* Security Badge */}
-            <div className="login-security">
-              <span>🔒</span>
+            <div className="login-security" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <IconLock size={14} />
               <span>{t('secureLogin')}</span>
             </div>
           </div>
@@ -5349,12 +5722,14 @@ function LoginPage({ theme, toggleTheme, fontSize, setFontSize, onLogin }) {
    ============================================================ */
 function ProtectedRoute({ children, isLoggedIn }) {
   const { t } = useLanguage()
-  
+
   if (!isLoggedIn) {
     return (
       <div className="protected-route-message">
         <div className="protected-content">
-          <span className="protected-icon">🔒</span>
+          <span className="protected-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+            <IconLock size={32} />
+          </span>
           <h2>{t('loginTitle')}</h2>
           <p>Please login to access the AI consultation feature.</p>
           <Link to="/login" className="btn-primary">
@@ -5364,7 +5739,7 @@ function ProtectedRoute({ children, isLoggedIn }) {
       </div>
     )
   }
-  
+
   return children
 }
 
@@ -5377,7 +5752,7 @@ export default function App() {
   const [prefillPrompt, setPrefillPrompt] = useState('')
   const { theme, toggleTheme } = useTheme()
   const { fontSize, setFontSize } = useFontSize()
-  
+
   // Authentication state
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     return localStorage.getItem('ip_sakti_logged_in') === 'true'
@@ -5407,117 +5782,117 @@ export default function App() {
 
   return (
     <LanguageProvider>
-    <BrowserRouter>
-      <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
-      <FormulationWizardModal
-        isOpen={isWizardOpen}
-        onClose={() => setIsWizardOpen(false)}
-        onAskChat={handleAskChatFromWizard}
-      />
-
-      <Routes>
-        <Route
-          path="/"
-          element={
-            <LandingPage
-              onOpenAbout={() => setIsAboutOpen(true)}
-              onOpenWizard={() => setIsWizardOpen(true)}
-              theme={theme}
-              toggleTheme={toggleTheme}
-              fontSize={fontSize}
-              setFontSize={setFontSize}
-              setPrefillPrompt={setPrefillPrompt}
-              isLoggedIn={isLoggedIn}
-              userName={userName}
-              onLogout={handleLogout}
-            />
-          }
+      <BrowserRouter>
+        <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
+        <FormulationWizardModal
+          isOpen={isWizardOpen}
+          onClose={() => setIsWizardOpen(false)}
+          onAskChat={handleAskChatFromWizard}
         />
-        <Route
-          path="/chat"
-          element={
-            <ProtectedRoute isLoggedIn={isLoggedIn}>
-              <ChatPage
+
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <LandingPage
                 onOpenAbout={() => setIsAboutOpen(true)}
                 onOpenWizard={() => setIsWizardOpen(true)}
-                prefillPrompt={prefillPrompt}
+                theme={theme}
+                toggleTheme={toggleTheme}
+                fontSize={fontSize}
+                setFontSize={setFontSize}
                 setPrefillPrompt={setPrefillPrompt}
+                isLoggedIn={isLoggedIn}
+                userName={userName}
+                onLogout={handleLogout}
+              />
+            }
+          />
+          <Route
+            path="/chat"
+            element={
+              <ProtectedRoute isLoggedIn={isLoggedIn}>
+                <ChatPage
+                  onOpenAbout={() => setIsAboutOpen(true)}
+                  onOpenWizard={() => setIsWizardOpen(true)}
+                  prefillPrompt={prefillPrompt}
+                  setPrefillPrompt={setPrefillPrompt}
+                  theme={theme}
+                  toggleTheme={toggleTheme}
+                  fontSize={fontSize}
+                  setFontSize={setFontSize}
+                />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/abs-checker"
+            element={
+              <ABSCheckerPage
+                onOpenAbout={() => setIsAboutOpen(true)}
+                onOpenWizard={() => setIsWizardOpen(true)}
+                theme={theme}
+                toggleTheme={toggleTheme}
+                fontSize={fontSize}
+                setFontSize={setFontSize}
+                setPrefillPrompt={setPrefillPrompt}
+              />
+            }
+          />
+          <Route
+            path="/sources"
+            element={
+              <SourcesPage
+                onOpenAbout={() => setIsAboutOpen(true)}
+                onOpenWizard={() => setIsWizardOpen(true)}
+                theme={theme}
+                toggleTheme={toggleTheme}
+                fontSize={fontSize}
+                setFontSize={setFontSize}
+                setPrefillPrompt={setPrefillPrompt}
+              />
+            }
+          />
+          <Route
+            path="/privacy"
+            element={
+              <PrivacyPolicyPage
+                onOpenAbout={() => setIsAboutOpen(true)}
+                onOpenWizard={() => setIsWizardOpen(true)}
                 theme={theme}
                 toggleTheme={toggleTheme}
                 fontSize={fontSize}
                 setFontSize={setFontSize}
               />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/abs-checker"
-          element={
-            <ABSCheckerPage
-              onOpenAbout={() => setIsAboutOpen(true)}
-              onOpenWizard={() => setIsWizardOpen(true)}
-              theme={theme}
-              toggleTheme={toggleTheme}
-              fontSize={fontSize}
-              setFontSize={setFontSize}
-              setPrefillPrompt={setPrefillPrompt}
-            />
-          }
-        />
-        <Route
-          path="/sources"
-          element={
-            <SourcesPage
-              onOpenAbout={() => setIsAboutOpen(true)}
-              onOpenWizard={() => setIsWizardOpen(true)}
-              theme={theme}
-              toggleTheme={toggleTheme}
-              fontSize={fontSize}
-              setFontSize={setFontSize}
-              setPrefillPrompt={setPrefillPrompt}
-            />
-          }
-        />
-        <Route
-          path="/privacy"
-          element={
-            <PrivacyPolicyPage
-              onOpenAbout={() => setIsAboutOpen(true)}
-              onOpenWizard={() => setIsWizardOpen(true)}
-              theme={theme}
-              toggleTheme={toggleTheme}
-              fontSize={fontSize}
-              setFontSize={setFontSize}
-            />
-          }
-        />
-        <Route
-          path="/ip-calculator"
-          element={
-            <IPCostCalculatorPage
-              onOpenAbout={() => setIsAboutOpen(true)}
-              onOpenWizard={() => setIsWizardOpen(true)}
-              theme={theme}
-              toggleTheme={toggleTheme}
-              fontSize={fontSize}
-              setFontSize={setFontSize}
-            />
-          }
-        />
-        <Route
-          path="/login"
-          element={
-            <LoginPage
-              theme={theme}
-              toggleTheme={toggleTheme}
-              fontSize={fontSize}
-              setFontSize={setFontSize}
-              onLogin={handleLogin}
-            />
-          }
-        />
-      </Routes>
-    </BrowserRouter>
+            }
+          />
+          <Route
+            path="/ip-calculator"
+            element={
+              <IPCostCalculatorPage
+                onOpenAbout={() => setIsAboutOpen(true)}
+                onOpenWizard={() => setIsWizardOpen(true)}
+                theme={theme}
+                toggleTheme={toggleTheme}
+                fontSize={fontSize}
+                setFontSize={setFontSize}
+              />
+            }
+          />
+          <Route
+            path="/login"
+            element={
+              <LoginPage
+                theme={theme}
+                toggleTheme={toggleTheme}
+                fontSize={fontSize}
+                setFontSize={setFontSize}
+                onLogin={handleLogin}
+              />
+            }
+          />
+        </Routes>
+      </BrowserRouter>
     </LanguageProvider>
   )
 }

@@ -19,35 +19,35 @@ export const IP_TYPES = [
   { 
     id: 'patent', 
     name: 'Patent', 
-    icon: '📜',
+    icon: 'patent',
     description: 'Protect novel inventions, processes, or formulations',
     examples: ['Novel drug delivery system', 'New extraction process', 'Synergistic herbal combination']
   },
   { 
     id: 'trademark', 
     name: 'Trademark', 
-    icon: '™️',
+    icon: 'trademark',
     description: 'Protect brand names, logos, and product identities',
     examples: ['Brand name', 'Logo design', 'Product packaging', 'Tagline']
   },
   { 
     id: 'copyright', 
     name: 'Copyright', 
-    icon: '©️',
+    icon: 'copyright',
     description: 'Protect original creative works and documentation',
     examples: ['Research papers', 'Product literature', 'Software', 'Marketing materials']
   },
   { 
     id: 'design', 
     name: 'Industrial Design', 
-    icon: '🎨',
+    icon: 'design',
     description: 'Protect unique visual appearance of products',
     examples: ['Packaging design', 'Product shape', 'Container design', 'Label artwork']
   },
   { 
     id: 'gi', 
     name: 'Geographical Indication', 
-    icon: '🏷️',
+    icon: 'gi',
     description: 'Protect products with specific geographical origin',
     examples: ['Darjeeling Tea', 'Alphonso Mango', 'Kashmir Saffron', 'Tirupati Laddu']
   },
@@ -57,13 +57,13 @@ export const IP_TYPES = [
 // JURISDICTIONS
 // ============================================================
 export const JURISDICTIONS = [
-  { id: 'india', name: 'India', flag: '🇮🇳', currency: 'INR', symbol: '₹' },
-  { id: 'usa', name: 'United States', flag: '🇺🇸', currency: 'USD', symbol: '$' },
-  { id: 'eu', name: 'European Union', flag: '🇪🇺', currency: 'EUR', symbol: '€' },
-  { id: 'uk', name: 'United Kingdom', flag: '🇬🇧', currency: 'GBP', symbol: '£' },
-  { id: 'china', name: 'China', flag: '🇨🇳', currency: 'CNY', symbol: '¥' },
-  { id: 'japan', name: 'Japan', flag: '🇯🇵', currency: 'JPY', symbol: '¥' },
-  { id: 'wipo', name: 'WIPO (PCT/Madrid)', flag: '🌍', currency: 'CHF', symbol: 'CHF' },
+  { id: 'india', name: 'India', flag: 'IN', currency: 'INR', symbol: '₹' },
+  { id: 'usa', name: 'United States', flag: 'US', currency: 'USD', symbol: '$' },
+  { id: 'eu', name: 'European Union', flag: 'EU', currency: 'EUR', symbol: '€' },
+  { id: 'uk', name: 'United Kingdom', flag: 'UK', currency: 'GBP', symbol: '£' },
+  { id: 'china', name: 'China', flag: 'CN', currency: 'CNY', symbol: '¥' },
+  { id: 'japan', name: 'Japan', flag: 'JP', currency: 'JPY', symbol: '¥' },
+  { id: 'wipo', name: 'WIPO (PCT/Madrid)', flag: 'WO', currency: 'CHF', symbol: 'CHF' },
 ]
 
 // ============================================================
@@ -75,35 +75,35 @@ export const APPLICANT_CATEGORIES = [
     name: 'Individual / Natural Person',
     description: 'Solo inventor, researcher, or Vaidya',
     discount: 0.2, // 80% fee for individuals in India
-    icon: '👤'
+    icon: 'individual'
   },
   { 
     id: 'startup', 
     name: 'Startup (DPIIT Recognized)',
     description: 'DPIIT registered startup entity',
     discount: 0.2, // 80% fee for startups in India
-    icon: '🚀'
+    icon: 'startup'
   },
   { 
     id: 'small', 
     name: 'Small Entity / MSME',
     description: 'Micro, Small, or Medium Enterprise',
     discount: 0.5, // 50% fee for small entities
-    icon: '🏪'
+    icon: 'small'
   },
   { 
     id: 'large', 
     name: 'Large Entity / Corporation',
     description: 'Large company or multinational',
     discount: 1.0, // Full fee
-    icon: '🏢'
+    icon: 'large'
   },
   { 
     id: 'educational', 
     name: 'Educational Institution',
     description: 'University, college, or research institute',
     discount: 0.2, // 80% fee for educational
-    icon: '🎓'
+    icon: 'educational'
   },
 ]
 
@@ -111,12 +111,12 @@ export const APPLICANT_CATEGORIES = [
 // FILING TYPES
 // ============================================================
 export const FILING_TYPES = [
-  { id: 'new', name: 'New Application', icon: '📝' },
-  { id: 'renewal', name: 'Renewal / Maintenance', icon: '🔄' },
-  { id: 'amendment', name: 'Amendment / Modification', icon: '✏️' },
-  { id: 'pct', name: 'PCT International Filing', icon: '🌍' },
-  { id: 'paris', name: 'Paris Convention Filing', icon: '🗼' },
-  { id: 'opposition', name: 'Opposition Proceedings', icon: '⚖️' },
+  { id: 'new', name: 'New Application', icon: 'new' },
+  { id: 'renewal', name: 'Renewal / Maintenance', icon: 'renewal' },
+  { id: 'amendment', name: 'Amendment / Modification', icon: 'amendment' },
+  { id: 'pct', name: 'PCT International Filing', icon: 'pct' },
+  { id: 'paris', name: 'Paris Convention Filing', icon: 'paris' },
+  { id: 'opposition', name: 'Opposition Proceedings', icon: 'opposition' },
 ]
 
 // ============================================================
@@ -127,7 +127,7 @@ export const PROFESSIONAL_SERVICES = [
     id: 'prior_art_search',
     name: 'Prior Art / Novelty Search',
     description: 'Comprehensive search of existing patents and publications',
-    icon: '🔍',
+    icon: 'search',
     estimatedTime: '5-10 days',
     recommended: true,
   },
@@ -135,7 +135,7 @@ export const PROFESSIONAL_SERVICES = [
     id: 'drafting',
     name: 'Patent / Trademark Drafting',
     description: 'Professional preparation of application documents',
-    icon: '📄',
+    icon: 'drafting',
     estimatedTime: '10-20 days',
     recommended: true,
   },
@@ -143,7 +143,7 @@ export const PROFESSIONAL_SERVICES = [
     id: 'legal_review',
     name: 'Legal Review & Opinion',
     description: 'Expert legal analysis and patentability opinion',
-    icon: '⚖️',
+    icon: 'review',
     estimatedTime: '7-14 days',
     recommended: false,
   },
@@ -151,7 +151,7 @@ export const PROFESSIONAL_SERVICES = [
     id: 'filing_assistance',
     name: 'Filing Assistance',
     description: 'Complete filing and submission support',
-    icon: '📬',
+    icon: 'filing',
     estimatedTime: '2-5 days',
     recommended: true,
   },
@@ -159,7 +159,7 @@ export const PROFESSIONAL_SERVICES = [
     id: 'translation',
     name: 'Translation Services',
     description: 'Professional translation for international filings',
-    icon: '🌐',
+    icon: 'translation',
     estimatedTime: '5-15 days',
     recommended: false,
   },
@@ -167,7 +167,7 @@ export const PROFESSIONAL_SERVICES = [
     id: 'office_action',
     name: 'Office Action Response',
     description: 'Prepare and file responses to examiner objections',
-    icon: '📩',
+    icon: 'response',
     estimatedTime: '15-30 days',
     recommended: false,
   },
@@ -175,7 +175,7 @@ export const PROFESSIONAL_SERVICES = [
     id: 'expedited',
     name: 'Expedited Processing',
     description: 'Fast-track examination and processing',
-    icon: '⚡',
+    icon: 'expedited',
     estimatedTime: 'Reduced timeline',
     recommended: false,
   },
@@ -183,7 +183,7 @@ export const PROFESSIONAL_SERVICES = [
     id: 'renewal_monitoring',
     name: 'Renewal Monitoring & Management',
     description: 'Track and manage renewal deadlines',
-    icon: '📅',
+    icon: 'renewal',
     estimatedTime: 'Ongoing',
     recommended: false,
   },
