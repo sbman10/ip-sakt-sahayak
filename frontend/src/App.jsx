@@ -1720,12 +1720,114 @@ const DEMO_MESSAGES = [
 /* ============================================================
    CHAT COMPONENTS
    ============================================================ */
-function CitationCard({ citation }) {
+
+// Helper to format timestamp
+function formatTimestamp(timestamp) {
+  if (!timestamp) return ''
+  const date = new Date(timestamp)
+  const now = new Date()
+  const isToday = date.toDateString() === now.toDateString()
+  
+  if (isToday) {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  }
+  return date.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + 
+         date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
+// Copy to clipboard utility
+function copyToClipboard(text, onSuccess) {
+  navigator.clipboard.writeText(text).then(() => {
+    if (onSuccess) onSuccess()
+  }).catch(err => {
+    console.error('Failed to copy:', err)
+  })
+}
+
+// Citation source icon helper
+function getSourceIcon(url) {
+  if (!url) return '📄'
+  if (url.includes('ipindia.gov.in')) return '🏛️'
+  if (url.includes('tkdl.res.in')) return '📚'
+  if (url.includes('wipo.int')) return '🌍'
+  if (url.includes('cbd.int') || url.includes('nagoya')) return '🌿'
+  if (url.includes('nbaindia.org')) return '🦋'
+  return '📜'
+}
+
+function CitationCard({ citation, isExpanded, onToggle }) {
   return (
-    <a href={citation.url} target="_blank" rel="noopener noreferrer" className="citation-card">
-      <span className="citation-title">{citation.title}</span>
-      <span className="citation-url">{citation.url}</span>
-    </a>
+    <div className={`citation-card ${isExpanded ? 'expanded' : ''}`}>
+      <button 
+        className="citation-header"
+        onClick={onToggle}
+        aria-expanded={isExpanded}
+      >
+        <span className="citation-icon" aria-hidden="true">{getSourceIcon(citation.url)}</span>
+        <span className="citation-title">{citation.title}</span>
+        <span className={`citation-chevron ${isExpanded ? 'expanded' : ''}`} aria-hidden="true">
+          ▼
+        </span>
+      </button>
+      {isExpanded && (
+        <div className="citation-content">
+          <a 
+            href={citation.url} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="citation-link"
+          >
+            <span className="citation-url">{citation.url}</span>
+            <span className="citation-external-icon" aria-hidden="true">↗</span>
+          </a>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function CollapsibleCitations({ citations }) {
+  const [expandedIndex, setExpandedIndex] = useState(null)
+  const [allExpanded, setAllExpanded] = useState(false)
+
+  const toggleAll = () => {
+    setAllExpanded(!allExpanded)
+    setExpandedIndex(null)
+  }
+
+  const toggleSingle = (index) => {
+    if (allExpanded) {
+      setAllExpanded(false)
+      setExpandedIndex(index === expandedIndex ? null : index)
+    } else {
+      setExpandedIndex(index === expandedIndex ? null : index)
+    }
+  }
+
+  if (!citations?.length) return null
+
+  return (
+    <div className="citations-container">
+      <div className="citations-header">
+        <span className="citations-label">📎 Sources ({citations.length})</span>
+        <button 
+          className="citations-toggle-all"
+          onClick={toggleAll}
+        >
+          {allExpanded ? 'Collapse all' : 'Expand all'}
+        </button>
+      </div>
+      <div className="citation-list">
+        {citations.map((c, i) => (
+          <CitationCard 
+            key={i} 
+            citation={c} 
+            isExpanded={allExpanded || expandedIndex === i}
+            onToggle={() => toggleSingle(i)}
+          />
+        ))}
+      </div>
+    </div>
   )
 }
 
@@ -1755,45 +1857,239 @@ function DisclaimerBanner() {
 
 function TypingIndicator() {
   return (
-    <div className="message-row ai-row" aria-label="IP-SAKTI is thinking">
-      <div className="avatar ai-avatar" aria-hidden="true">🌿</div>
-      <div className="typing-indicator">
-        <div className="typing-dot" />
-        <div className="typing-dot" />
-        <div className="typing-dot" />
+    <div className="message-row ai-row typing-row" aria-label="IP-SAKTI is thinking">
+      <div className="avatar ai-avatar" aria-hidden="true">
+        <div className="avatar-icon">🌿</div>
+      </div>
+      <div className="typing-container">
+        <div className="typing-indicator">
+          <div className="typing-wave">
+            <span className="typing-dot" />
+            <span className="typing-dot" />
+            <span className="typing-dot" />
+          </div>
+        </div>
+        <span className="typing-text">IP-SAKTI is thinking...</span>
       </div>
     </div>
   )
 }
 
-function MessageBubble({ msg }) {
+// Follow-up suggestion chips
+function FollowUpChips({ onSelect }) {
+  const suggestions = [
+    { label: 'Tell me more', icon: '💡' },
+    { label: 'Related laws', icon: '📜' },
+    { label: 'Filing process', icon: '📋' },
+    { label: 'Cost estimate', icon: '💰' },
+  ]
+
+  return (
+    <div className="follow-up-chips">
+      {suggestions.map((s, i) => (
+        <button 
+          key={i}
+          className="follow-up-chip"
+          onClick={() => onSelect(s.label)}
+        >
+          <span aria-hidden="true">{s.icon}</span>
+          {s.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+// Message action buttons
+function MessageActions({ msg, onRegenerate, onFeedback }) {
+  const [copied, setCopied] = useState(false)
+  const [feedbackGiven, setFeedbackGiven] = useState(null)
+
+  const handleCopy = () => {
+    copyToClipboard(msg.text, () => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: 'IP-SAKTI Response',
+        text: msg.text,
+      }).catch(() => {})
+    } else {
+      handleCopy()
+    }
+  }
+
+  const handleFeedback = (type) => {
+    setFeedbackGiven(type)
+    if (onFeedback) onFeedback(msg.id, type)
+  }
+
+  return (
+    <div className="message-actions">
+      <button 
+        className={`msg-action-btn ${copied ? 'success' : ''}`}
+        onClick={handleCopy}
+        title="Copy to clipboard"
+        aria-label="Copy message"
+      >
+        {copied ? '✓' : '📋'}
+      </button>
+      <button 
+        className="msg-action-btn"
+        onClick={handleShare}
+        title="Share"
+        aria-label="Share message"
+      >
+        ↗
+      </button>
+      <div className="feedback-btns">
+        <button 
+          className={`msg-action-btn feedback-btn ${feedbackGiven === 'up' ? 'active' : ''}`}
+          onClick={() => handleFeedback('up')}
+          title="Helpful"
+          aria-label="Mark as helpful"
+          disabled={feedbackGiven !== null}
+        >
+          👍
+        </button>
+        <button 
+          className={`msg-action-btn feedback-btn ${feedbackGiven === 'down' ? 'active' : ''}`}
+          onClick={() => handleFeedback('down')}
+          title="Not helpful"
+          aria-label="Mark as not helpful"
+          disabled={feedbackGiven !== null}
+        >
+          👎
+        </button>
+      </div>
+      {onRegenerate && (
+        <button 
+          className="msg-action-btn"
+          onClick={() => onRegenerate(msg.id)}
+          title="Regenerate response"
+          aria-label="Regenerate response"
+        >
+          🔄
+        </button>
+      )}
+    </div>
+  )
+}
+
+// Welcome/Empty state component
+function ChatWelcome({ onPromptClick }) {
+  const exampleQuestions = [
+    { icon: '🔬', text: 'Can I patent my Ayurvedic formulation?', category: 'Patent' },
+    { icon: '🌿', text: 'What is ABS compliance for bio-resources?', category: 'Compliance' },
+    { icon: '📚', text: 'How does TKDL prevent biopiracy?', category: 'TKDL' },
+    { icon: '🏷️', text: 'How to register a GI tag for herbs?', category: 'GI Tags' },
+  ]
+
+  return (
+    <div className="chat-welcome">
+      <div className="welcome-icon" aria-hidden="true">🌿</div>
+      <h2 className="welcome-title">Namaste! I'm IP-SAKTI Sahayak</h2>
+      <p className="welcome-subtitle">
+        Your trusted guide to Intellectual Property in Ayurveda. Ask me about patents, 
+        trademarks, GI tags, TKDL, or any IP question related to traditional knowledge.
+      </p>
+      
+      <div className="welcome-capabilities">
+        <div className="capability-item">
+          <span className="capability-icon">📜</span>
+          <span>Statute-cited answers</span>
+        </div>
+        <div className="capability-item">
+          <span className="capability-icon">🌍</span>
+          <span>India & International law</span>
+        </div>
+        <div className="capability-item">
+          <span className="capability-icon">🗣️</span>
+          <span>Multilingual support</span>
+        </div>
+      </div>
+
+      <div className="example-questions">
+        <p className="example-label">Try asking:</p>
+        <div className="example-grid">
+          {exampleQuestions.map((q, i) => (
+            <button 
+              key={i}
+              className="example-question"
+              onClick={() => onPromptClick(q.text)}
+            >
+              <span className="example-icon" aria-hidden="true">{q.icon}</span>
+              <span className="example-text">{q.text}</span>
+              <span className="example-category">{q.category}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Scroll to bottom button
+function ScrollToBottomBtn({ onClick, visible }) {
+  if (!visible) return null
+  return (
+    <button 
+      className="scroll-to-bottom-btn"
+      onClick={onClick}
+      aria-label="Scroll to bottom"
+    >
+      ↓
+    </button>
+  )
+}
+
+function MessageBubble({ msg, onFollowUp, onRegenerate, onFeedback, isLatestAI }) {
+  const timestamp = msg.timestamp || msg.id
+
   if (msg.role === 'user') {
     return (
-      <div className="message-row user-row">
-        <div className="avatar user-avatar" aria-hidden="true">👤</div>
+      <div className="message-row user-row message-fade-in">
+        <div className="avatar user-avatar" aria-hidden="true">
+          <div className="avatar-icon">👤</div>
+        </div>
         <div className="bubble-column">
           <div className="bubble user-bubble">{msg.text}</div>
+          <span className="message-timestamp">{formatTimestamp(timestamp)}</span>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="message-row ai-row">
-      <div className="avatar ai-avatar" aria-hidden="true">🌿</div>
+    <div className="message-row ai-row message-fade-in">
+      <div className="avatar ai-avatar" aria-hidden="true">
+        <div className="avatar-icon">🌿</div>
+      </div>
       <div className="bubble-column">
         <div className="bubble ai-bubble" style={{ whiteSpace: 'pre-line' }}>
           {msg.text}
         </div>
-        {msg.citations?.length > 0 && (
-          <div className="citation-list">
-            {msg.citations.map((c, i) => (
-              <CitationCard key={i} citation={c} />
-            ))}
-          </div>
-        )}
+        
+        <CollapsibleCitations citations={msg.citations} />
+        
         {msg.confidence && <ConfidenceBadge level={msg.confidence} />}
         {msg.showDisclaimer && <DisclaimerBanner />}
+        
+        <MessageActions 
+          msg={msg} 
+          onRegenerate={onRegenerate}
+          onFeedback={onFeedback}
+        />
+        
+        <span className="message-timestamp">{formatTimestamp(timestamp)}</span>
+        
+        {isLatestAI && onFollowUp && (
+          <FollowUpChips onSelect={onFollowUp} />
+        )}
       </div>
     </div>
   )
@@ -2488,36 +2784,93 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout 
 }
 
 /* ============================================================
-   TRANSLATED FOOTER COMPONENT
+   TRANSLATED FOOTER COMPONENT - Professional Government Style
    ============================================================ */
 function TranslatedFooter() {
   const { t } = useLanguage()
   
   return (
-    <footer className="footer" role="contentinfo">
-      <div className="footer-content">
-        <div className="footer-brand">
-          <span className="footer-logo">🌿</span>
-          <div>
-            <h3>IP-SAKTI Sahayak</h3>
-            <span className="devanagari">{t('footerDesc')}</span>
+    <footer className="gov-footer" role="contentinfo">
+      {/* Main Footer Content */}
+      <div className="gov-footer-main">
+        <div className="gov-footer-container">
+          {/* Column 1: Brand & Ministry Info */}
+          <div className="gov-footer-col gov-footer-brand-col">
+            <div className="gov-footer-brand">
+              <span className="gov-footer-logo">🌿</span>
+              <div className="gov-footer-brand-text">
+                <h3 className="gov-footer-title">IP-SAKTI Sahayak</h3>
+                <span className="gov-footer-subtitle">आईपी-शक्ति सहायक</span>
+              </div>
+            </div>
+            <div className="gov-footer-ministry">
+              <p className="gov-footer-ministry-name">{t('ministry')}</p>
+              <p className="gov-footer-govt">{t('govtOf')}</p>
+            </div>
+            <p className="gov-footer-tagline">
+              Smart IP & Regulatory Assistance Portal for Traditional Knowledge
+            </p>
+          </div>
+
+          {/* Column 2: Quick Links */}
+          <div className="gov-footer-col">
+            <h4 className="gov-footer-col-title">Quick Links</h4>
+            <ul className="gov-footer-links">
+              <li><Link to="/">🏠 Home</Link></li>
+              <li><Link to="/chat">💬 AI Consultation</Link></li>
+              <li><Link to="/abs-checker">🔍 ABS Checker</Link></li>
+              <li><Link to="/ip-calculator">📊 IP Calculator</Link></li>
+              <li><Link to="/sources">📚 Sources</Link></li>
+            </ul>
+          </div>
+
+          {/* Column 3: Resources */}
+          <div className="gov-footer-col">
+            <h4 className="gov-footer-col-title">Resources</h4>
+            <ul className="gov-footer-links">
+              <li><a href="https://www.ayush.gov.in" target="_blank" rel="noopener noreferrer">🏛️ AYUSH Portal</a></li>
+              <li><a href="https://tkdl.res.in" target="_blank" rel="noopener noreferrer">📖 TKDL Database</a></li>
+              <li><a href="https://nbaindia.org" target="_blank" rel="noopener noreferrer">🌱 NBA India</a></li>
+              <li><a href="https://ipindia.gov.in" target="_blank" rel="noopener noreferrer">⚖️ IP India</a></li>
+              <li><Link to="/privacy">🔒 Privacy Policy</Link></li>
+            </ul>
+          </div>
+
+          {/* Column 4: Contact & Social */}
+          <div className="gov-footer-col">
+            <h4 className="gov-footer-col-title">Contact Us</h4>
+            <div className="gov-footer-contact">
+              <p>📍 AYUSH Bhawan, B Block</p>
+              <p>GPO Complex, INA, New Delhi - 110023</p>
+              <p>📧 info-ayush@gov.in</p>
+              <p>📞 +91-11-24651950</p>
+            </div>
+            <div className="gov-footer-social">
+              <a href="https://twitter.com/moaboratory" target="_blank" rel="noopener noreferrer" aria-label="Twitter" className="gov-social-icon">𝕏</a>
+              <a href="https://facebook.com/moaboratory" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="gov-social-icon">f</a>
+              <a href="https://youtube.com/@ministryofayush" target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="gov-social-icon">▶</a>
+              <a href="https://instagram.com/ministryofayush" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="gov-social-icon">📷</a>
+            </div>
           </div>
         </div>
-        <div className="footer-info">
-          <p>{t('ministry')} · {t('govtOf')}</p>
-          <p className="footer-disclaimer">
-            ⚠️ {t('footerDisclaimer')}
-          </p>
-        </div>
-        <div className="footer-links">
-          <Link to="/chat">{t('startConsultation')}</Link>
-          <Link to="/abs-checker">{t('absChecker')}</Link>
-          <Link to="/sources">{t('officialSources')}</Link>
-          <Link to="/privacy">{t('privacyPolicy')}</Link>
-        </div>
       </div>
-      <div className="footer-bottom">
-        <p>{t('footerCopyright')}</p>
+
+      {/* Footer Bottom Bar */}
+      <div className="gov-footer-bottom">
+        <div className="gov-footer-container gov-footer-bottom-content">
+          <div className="gov-footer-legal">
+            <span>© 2026 Ministry of AYUSH, Government of India</span>
+            <span className="gov-footer-separator">|</span>
+            <Link to="/privacy">Privacy Policy</Link>
+            <span className="gov-footer-separator">|</span>
+            <Link to="/sources">Terms of Use</Link>
+            <span className="gov-footer-separator">|</span>
+            <span>Accessibility Statement</span>
+          </div>
+          <div className="gov-footer-credits">
+            <span className="gov-footer-made">Made with ❤️ in India</span>
+          </div>
+        </div>
       </div>
     </footer>
   )
@@ -3155,6 +3508,14 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
   const [typing, setTyping] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [activeSessionId, setActiveSessionId] = useState(1)
+  
+  // New state for scroll management
+  const [showScrollBtn, setShowScrollBtn] = useState(false)
+  const chatBodyRef = useRef(null)
+  const textareaRef = useRef(null)
+  
+  // Character count limit
+  const MAX_CHARS = 2000
 
   // Voice Input with language selection
   const [voiceLang, setVoiceLang] = useState('hi-IN')
@@ -3172,14 +3533,88 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
     }
   }, [prefillPrompt, setPrefillPrompt])
 
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (chatBodyRef.current) {
+      const { scrollHeight, clientHeight, scrollTop } = chatBodyRef.current
+      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100
+      if (isNearBottom || typing) {
+        chatBodyRef.current.scrollTo({ top: scrollHeight, behavior: 'smooth' })
+      }
+    }
+  }, [messages, typing])
+
+  // Handle scroll position for scroll-to-bottom button
+  const handleScroll = useCallback(() => {
+    if (chatBodyRef.current) {
+      const { scrollHeight, clientHeight, scrollTop } = chatBodyRef.current
+      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100
+      setShowScrollBtn(!isNearBottom)
+    }
+  }, [])
+
+  // Scroll to bottom handler
+  const scrollToBottom = () => {
+    if (chatBodyRef.current) {
+      chatBodyRef.current.scrollTo({ top: chatBodyRef.current.scrollHeight, behavior: 'smooth' })
+    }
+  }
+
+  // Auto-resize textarea
+  const handleInputChange = (e) => {
+    const value = e.target.value
+    if (value.length <= MAX_CHARS) {
+      setInput(value)
+    }
+    // Auto-resize
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 150) + 'px'
+    }
+  }
+
+  // Handle follow-up suggestion click
+  const handleFollowUp = (text) => {
+    setInput(text)
+    if (textareaRef.current) {
+      textareaRef.current.focus()
+    }
+  }
+
+  // Handle regenerate
+  const handleRegenerate = (msgId) => {
+    // Find the user message before this AI message
+    const aiIndex = messages.findIndex(m => m.id === msgId)
+    if (aiIndex > 0) {
+      const userMsg = messages[aiIndex - 1]
+      if (userMsg.role === 'user') {
+        // Remove the AI message and resend
+        setMessages(prev => prev.filter(m => m.id !== msgId))
+        setInput(userMsg.text)
+        setTimeout(() => handleSend(), 100)
+      }
+    }
+  }
+
+  // Handle feedback
+  const handleFeedback = (msgId, type) => {
+    console.log('Feedback:', msgId, type)
+    // Could send to backend in the future
+  }
+
   const handleSend = async () => {
     const trimmed = input.trim()
     if (!trimmed) return
 
-    const userMsg = { id: Date.now(), role: 'user', text: trimmed }
+    const userMsg = { id: Date.now(), role: 'user', text: trimmed, timestamp: Date.now() }
     setMessages(prev => [...prev, userMsg])
     setInput('')
     setTyping(true)
+    
+    // Reset textarea height
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+    }
 
     try {
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'}/api/chat`, {
@@ -3197,6 +3632,7 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
         citations: data.citations,
         confidence: data.confidence === 'unavailable' ? null : data.confidence,
         showDisclaimer: true,
+        timestamp: Date.now(),
       }])
     } catch (error) {
       let aiText = `Under Section 3(p) of the Indian Patents Act 1970, traditional Ayurvedic formulations are excluded from patentability as prior art. However, novel, non-obvious synergistic combinations or extraction processes may be patentable subject matter.`
@@ -3220,6 +3656,7 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
         citations,
         confidence: 'high',
         showDisclaimer: true,
+        timestamp: Date.now(),
       }])
     } finally {
       setTyping(false)
@@ -3234,12 +3671,12 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
   }
 
   const handleClear = () => {
-    setMessages([DEMO_MESSAGES[0]])
+    setMessages([])
     setInput('')
   }
 
   const handleNewChat = () => {
-    setMessages([DEMO_MESSAGES[0]])
+    setMessages([])
     setInput('')
     setActiveSessionId(null)
   }
@@ -3250,18 +3687,25 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
     else if (id === 2) {
       setMessages([
         DEMO_MESSAGES[0],
-        { id: 201, role: 'user', text: 'Do I need National Biodiversity Authority approval for exporting Neem oil extract?' },
+        { id: 201, role: 'user', text: 'Do I need National Biodiversity Authority approval for exporting Neem oil extract?', timestamp: Date.now() - 60000 },
         {
           id: 202,
           role: 'ai',
           text: 'Yes. Under Section 3 of the Biological Diversity Act 2002, non-Indian citizens, NRIs, and foreign-incorporated companies must obtain prior approval from the National Biodiversity Authority (NBA) via Form I before accessing Indian bio-resources like Neem (Azadirachta indica) for commercial utilization.',
           citations: [{ title: '🌿 Biological Diversity Act 2002 | §3 | Access Approval', url: 'http://nbaindia.org/' }],
           confidence: 'high',
-          showDisclaimer: true
+          showDisclaimer: true,
+          timestamp: Date.now() - 30000
         }
       ])
     }
   }
+
+  // Check if we should show welcome screen (empty or only welcome message)
+  const showWelcome = messages.length === 0
+
+  // Find the latest AI message for follow-up chips
+  const latestAIMessage = messages.filter(m => m.role === 'ai').slice(-1)[0]
 
   return (
     <div className="chat-layout" role="main">
@@ -3325,43 +3769,71 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
           onOpenAbout={onOpenAbout}
         />
 
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+        <div className="chat-main-area">
           {/* Chat Body */}
-          <div className="chat-body" id="chat-messages" role="log" aria-live="polite">
-            {/* Wizard shortcuts */}
-            <div className="wizard-shortcut-bar" aria-label={t('quickActions')}>
-              {[
-                { icon: '🧪', labelKey: 'formulationWizard', action: onOpenWizard },
-                { icon: '🌿', labelKey: 'absChecker', link: '/abs-checker' },
-                { icon: '📜', labelKey: 'patentsActSection', prompt: 'What is Section 3(p) of Patents Act 1970?' },
-                { icon: '📚', labelKey: 'tkdlCheck', prompt: 'How does TKDL prevent traditional knowledge biopiracy?' },
-                { icon: '🏷️', labelKey: 'giTagging', prompt: 'How do I register a Geographical Indication for an Ayurvedic herb?' },
-              ].map((b, idx) => (
-                b.link ? (
-                  <Link key={idx} to={b.link} className="wizard-btn">
-                    <span aria-hidden="true">{b.icon}</span>
-                    {t(b.labelKey)}
-                  </Link>
-                ) : (
-                  <button
-                    key={idx}
-                    className="wizard-btn"
-                    onClick={() => b.action ? b.action() : setInput(b.prompt)}
-                  >
-                    <span aria-hidden="true">{b.icon}</span>
-                    {t(b.labelKey)}
-                  </button>
-                )
-              ))}
-            </div>
+          <div 
+            className="chat-body" 
+            id="chat-messages" 
+            role="log" 
+            aria-live="polite"
+            ref={chatBodyRef}
+            onScroll={handleScroll}
+          >
+            {/* Wizard shortcuts - only show when not in welcome state */}
+            {!showWelcome && (
+              <div className="wizard-shortcut-bar" aria-label={t('quickActions')}>
+                {[
+                  { icon: '🧪', labelKey: 'formulationWizard', action: onOpenWizard },
+                  { icon: '🌿', labelKey: 'absChecker', link: '/abs-checker' },
+                  { icon: '📜', labelKey: 'patentsActSection', prompt: 'What is Section 3(p) of Patents Act 1970?' },
+                  { icon: '📚', labelKey: 'tkdlCheck', prompt: 'How does TKDL prevent traditional knowledge biopiracy?' },
+                  { icon: '🏷️', labelKey: 'giTagging', prompt: 'How do I register a Geographical Indication for an Ayurvedic herb?' },
+                ].map((b, idx) => (
+                  b.link ? (
+                    <Link key={idx} to={b.link} className="wizard-btn">
+                      <span aria-hidden="true">{b.icon}</span>
+                      {t(b.labelKey)}
+                    </Link>
+                  ) : (
+                    <button
+                      key={idx}
+                      className="wizard-btn"
+                      onClick={() => b.action ? b.action() : setInput(b.prompt)}
+                    >
+                      <span aria-hidden="true">{b.icon}</span>
+                      {t(b.labelKey)}
+                    </button>
+                  )
+                ))}
+              </div>
+            )}
 
-            {/* Messages */}
-            {messages.map(msg => (
-              <MessageBubble key={msg.id} msg={msg} />
-            ))}
+            {/* Welcome state or Messages */}
+            {showWelcome ? (
+              <ChatWelcome 
+                onPromptClick={(text) => {
+                  setInput(text)
+                  if (textareaRef.current) textareaRef.current.focus()
+                }}
+              />
+            ) : (
+              messages.map(msg => (
+                <MessageBubble 
+                  key={msg.id} 
+                  msg={msg}
+                  onFollowUp={handleFollowUp}
+                  onRegenerate={handleRegenerate}
+                  onFeedback={handleFeedback}
+                  isLatestAI={latestAIMessage && msg.id === latestAIMessage.id && !typing}
+                />
+              ))
+            )}
 
             {/* Typing indicator */}
             {typing && <TypingIndicator />}
+            
+            {/* Scroll to bottom button */}
+            <ScrollToBottomBtn onClick={scrollToBottom} visible={showScrollBtn} />
           </div>
 
           {/* Input Bar */}
@@ -3376,17 +3848,7 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
             
             {/* Voice error display */}
             {voiceError && (
-              <div className="voice-error-text" style={{
-                background: 'linear-gradient(90deg, #fef2f2, #fee2e2)',
-                color: '#dc2626',
-                padding: '8px 12px',
-                borderRadius: '8px',
-                fontSize: '13px',
-                marginBottom: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
+              <div className="voice-error-text">
                 <span>⚠️</span>
                 <span>{voiceError}</span>
               </div>
@@ -3394,17 +3856,7 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
             
             {/* Voice confidence indicator - show when confidence is low */}
             {voiceConfidence !== null && voiceConfidence < 0.5 && (
-              <div className="voice-confidence-warning" style={{
-                background: 'linear-gradient(90deg, #fef9c3, #fef08a)',
-                color: '#a16207',
-                padding: '8px 12px',
-                borderRadius: '8px',
-                fontSize: '13px',
-                marginBottom: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
+              <div className="voice-confidence-warning">
                 <span>⚠️</span>
                 <span>कम सटीकता / Low accuracy ({(voiceConfidence * 100).toFixed(0)}%) - कृपया स्पष्ट बोलें / Please speak clearly</span>
               </div>
@@ -3413,12 +3865,13 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
             <div className="input-row">
               <div className="chat-input-wrap">
                 <textarea
+                  ref={textareaRef}
                   className="chat-input"
                   id="chat-input-field"
                   value={input}
-                  onChange={e => setInput(e.target.value)}
+                  onChange={handleInputChange}
                   onKeyDown={handleKeyDown}
-                  placeholder={isListening ? t('voiceListening') : t('chatPlaceholder')}
+                  placeholder={isListening ? t('voiceListening') : "Ask about Patents Act, ABS clearance, BD Act, TKDL, trademarks... (e.g., 'Can I patent my Ayurvedic formulation?')"}
                   rows={1}
                   aria-label={t('typeYourQuestion')}
                 />
@@ -3457,6 +3910,14 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
               </button>
             </div>
 
+            {/* Character count indicator */}
+            <div className="input-meta">
+              <span className={`char-count ${input.length > MAX_CHARS * 0.9 ? 'warning' : ''} ${input.length >= MAX_CHARS ? 'limit' : ''}`}>
+                {input.length}/{MAX_CHARS}
+              </span>
+              <span className="input-hint">Press Enter to send, Shift+Enter for new line</span>
+            </div>
+
             <div className="input-actions">
               <button className="action-btn" onClick={onOpenWizard}>
                 🧪 {t('formulationWizard')}
@@ -3467,7 +3928,7 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
               <button 
                 className="action-btn pdf-export-btn" 
                 onClick={() => handleExportPdf(messages, t, jurisdiction)}
-                disabled={messages.length <= 1}
+                disabled={messages.length === 0}
               >
                 📄 {t('exportPdf')}
               </button>
