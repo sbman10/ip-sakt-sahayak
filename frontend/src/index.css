@@ -186,7 +186,7 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: clip;
+  overflow-x: hidden;
 }
 
 #root {
@@ -391,7 +391,7 @@ h6 {
   display: flex;
   flex-direction: column;
   position: relative;
-  overflow-x: clip;
+  overflow: hidden;
 }
 
 /* REMOVED: .particles and .particle rules are disabled since background herbs were removed */
@@ -404,43 +404,9 @@ h6 {
   display: flex;
   flex-direction: column;
   width: 100%;
-  position: sticky;
-  top: 0;
-  z-index: 1000;
+  position: relative;
+  z-index: 100;
   box-shadow: 0 4px 20px rgba(10, 25, 20, 0.08);
-  transition: box-shadow 0.35s ease, backdrop-filter 0.35s ease;
-}
-
-/* Scrolled state: subtle glass effect + deeper shadow */
-.gov-portal-header-wrapper.is-scrolled {
-  box-shadow: 0 4px 24px rgba(10, 25, 20, 0.18), 0 1px 3px rgba(0,0,0,0.10);
-  backdrop-filter: blur(12px) saturate(1.2);
-  -webkit-backdrop-filter: blur(12px) saturate(1.2);
-}
-
-/* Collapse the utility strip when scrolled for a compact header */
-.gov-portal-header-wrapper.is-scrolled .gov-utility-strip {
-  max-height: 0;
-  padding-top: 0;
-  padding-bottom: 0;
-  border-bottom-width: 0;
-  overflow: hidden;
-  transition: max-height 0.35s ease, padding 0.35s ease;
-}
-
-.gov-utility-strip {
-  max-height: 50px;
-  transition: max-height 0.35s ease, padding 0.35s ease;
-}
-
-/* Slightly reduce nav height when scrolled */
-.gov-portal-header-wrapper.is-scrolled .gov-nav-container {
-  min-height: 52px;
-  transition: min-height 0.35s ease;
-}
-
-.gov-nav-container {
-  transition: min-height 0.35s ease;
 }
 
 /* --- 1. Institutional Utility Strip (Compact 30px) --- */
@@ -822,20 +788,12 @@ h6 {
   display: flex;
   align-items: center;
   padding: 3.5rem 1.5rem 4.5rem;
-  background-image: linear-gradient(180deg, rgba(250, 249, 246, 0.60) 0%, rgba(245, 242, 234, 0.70) 100%),
-                    url('/ayurveda-hero-bg.jpg');
-  background-position: center;
-  background-size: cover;
-  background-repeat: no-repeat;
+  background: linear-gradient(180deg, #FAF9F6 0%, #F5F2EA 100%);
   border-bottom: 1px solid #E6E1D7;
 }
 
 [data-theme="dark"] .hero-section {
-  background-image: linear-gradient(180deg, rgba(12, 18, 23, 0.68) 0%, rgba(15, 23, 29, 0.78) 100%),
-                    url('/ayurveda-hero-bg.jpg');
-  background-position: center;
-  background-size: cover;
-  background-repeat: no-repeat;
+  background: linear-gradient(180deg, #0C1217 0%, #0F171D 100%);
   border-bottom-color: #1E293B;
 }
 
@@ -4440,7 +4398,17 @@ h6 {
   z-index: 1;
 }
 
-/* Legacy .hero-section rules superseded by modern composition above */
+.hero-section {
+  position: relative;
+  min-height: calc(100vh - 140px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 3rem var(--space-6) var(--space-12);
+  overflow: hidden;
+}
 
 .eyebrow-pulse {
   width: 8px;
@@ -4745,24 +4713,7 @@ h6 {
 
 /* ---------- Demo Preview Section ---------- */
 .demo-section {
-  position: relative;
-  background-image: linear-gradient(180deg, rgba(250, 249, 246, 0.60) 0%, rgba(245, 242, 234, 0.70) 100%),
-                    url('/ayurveda-hero-bg.jpg');
-  background-position: center;
-  background-size: cover;
-  background-repeat: no-repeat;
-  border-top: 1px solid #E6E1D7;
-  border-bottom: 1px solid #E6E1D7;
-}
-
-[data-theme="dark"] .demo-section {
-  background-image: linear-gradient(180deg, rgba(12, 18, 23, 0.68) 0%, rgba(15, 23, 29, 0.78) 100%),
-                    url('/ayurveda-hero-bg.jpg');
-  background-position: center;
-  background-size: cover;
-  background-repeat: no-repeat;
-  border-top-color: #1E293B;
-  border-bottom-color: #1E293B;
+  background: var(--bg-primary);
 }
 
 .demo-card {
