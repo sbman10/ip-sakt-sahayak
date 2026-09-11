@@ -48,20 +48,20 @@ class ChatRequest(BaseModel):
         description="The natural-language legal question from the user.",
         examples=["Can a formulation based on Ashwagandha be patented in India?"],
     )
-    jurisdiction: Literal["India", "International"] = Field(
+    jurisdiction: Literal["india", "international"] = Field(
         ...,
         description=(
-            'Jurisdiction toggle. Must be exactly "India" or "International". '
-            "Controls which ChromaDB collection is queried."
+            'Jurisdiction toggle. Must be exactly "india" or "international" '
+            "(lowercase, matching the frontend toggle values)."
         ),
     )
     language: str = Field(
-        default="EN",
+        default="en",
         description=(
             "ISO 639-1 language code for the response language. "
-            'Defaults to "EN" (English). Future values: "HI", "SA", etc.'
+            'Defaults to "en" (English). Values: "en", "hi", "kn", "bn", "ta", "te", etc.'
         ),
-        examples=["EN", "HI"],
+        examples=["en", "hi"],
     )
 
     @field_validator("question")
@@ -74,16 +74,16 @@ class ChatRequest(BaseModel):
 
     @field_validator("language")
     @classmethod
-    def language_to_upper(cls, v: str) -> str:
-        """Normalise language codes to uppercase (e.g. 'en' -> 'EN')."""
-        return v.strip().upper()
+    def language_to_lower(cls, v: str) -> str:
+        """Normalise language codes to lowercase (e.g. 'EN' -> 'en')."""
+        return v.strip().lower()
 
     model_config = {
         "json_schema_extra": {
             "example": {
                 "question": "Is Ashwagandha extract patentable under Indian law?",
-                "jurisdiction": "India",
-                "language": "EN",
+                "jurisdiction": "india",
+                "language": "en",
             }
         }
     }

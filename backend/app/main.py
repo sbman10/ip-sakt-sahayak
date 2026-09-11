@@ -45,8 +45,8 @@ app = FastAPI(
     description=(
         "Ayurvedic Intellectual Property Assistant — a RAG-powered legal Q&A backend "
         "supporting Ministry of AYUSH Problem Statement 26045. "
-        "Uses ChromaDB vector search, SentenceTransformers (local), and "
-        "Google Gemini 1.5 Flash for grounded, citation-backed answers. "
+        "Uses ChromaDB vector search, BGE embeddings (BAAI/bge-small-en-v1.5), and "
+        "Google Gemini 2.5 Flash for grounded, citation-backed answers. "
         "DPDP Act compliant: all queries are PII-scrubbed before external API calls "
         "and audit-logged to a local SQLite database."
     ),

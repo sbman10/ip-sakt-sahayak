@@ -1721,19 +1721,21 @@ const DEMO_MESSAGES = [
    CHAT COMPONENTS
    ============================================================ */
 function CitationCard({ citation }) {
+  // Backend returns { source, section, text } — display as a styled card
   return (
-    <a href={citation.url} target="_blank" rel="noopener noreferrer" className="citation-card">
-      <span className="citation-title">{citation.title}</span>
-      <span className="citation-url">{citation.url}</span>
-    </a>
+    <div className="citation-card">
+      <span className="citation-title">📜 {citation.source} | {citation.section}</span>
+      {citation.text && <span className="citation-url">{citation.text}</span>}
+    </div>
   )
 }
 
 function ConfidenceBadge({ level }) {
   const map = {
-    high:   { label: '● High Confidence (Direct Statute Match)', cls: 'high' },
-    medium: { label: '● Moderate Confidence: Verify details with expert', cls: 'medium' },
-    low:    { label: '● Low Confidence: Consult a registered IP attorney', cls: 'low' },
+    high:     { label: '● High Confidence (Direct Statute Match)', cls: 'high' },
+    moderate: { label: '● Moderate Confidence: Verify details with expert', cls: 'medium' },
+    medium:   { label: '● Moderate Confidence: Verify details with expert', cls: 'medium' },
+    low:      { label: '● Low Confidence: Consult a registered IP attorney', cls: 'low' },
   }
   const m = map[level]
   if (!m) return null
@@ -3182,44 +3184,33 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
     setTyping(true)
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'}/api/chat`, {
+      const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question: trimmed, jurisdiction, language: lang }),
       })
 
-      if (!response.ok) throw new Error(`Backend returned HTTP ${response.status}`)
+      if (!response.ok) {
+        const errBody = await response.json().catch(() => null)
+        throw new Error(errBody?.detail || `Backend returned HTTP ${response.status}`)
+      }
       const data = await response.json()
       setMessages(prev => [...prev, {
         id: Date.now() + 1,
         role: 'ai',
         text: data.answer,
-        citations: data.citations,
+        citations: data.citations || [],
         confidence: data.confidence === 'unavailable' ? null : data.confidence,
-        showDisclaimer: true,
+        showDisclaimer: !!data.disclaimer,
       }])
     } catch (error) {
-      let aiText = `Under Section 3(p) of the Indian Patents Act 1970, traditional Ayurvedic formulations are excluded from patentability as prior art. However, novel, non-obvious synergistic combinations or extraction processes may be patentable subject matter.`
-      let citations = [
-        { title: '📜 Indian Patents Act 1970 | §3(p)', url: 'https://ipindia.gov.in/' },
-        { title: '📚 Traditional Knowledge Digital Library (TKDL)', url: 'https://www.tkdl.res.in/' },
-      ]
-
-      if (jurisdiction === 'international') {
-        aiText = `Under WIPO GRATK Treaty (2024) and Nagoya Protocol, international patent applications utilizing genetic resources or traditional knowledge must disclose the origin of biological material and evidence of Prior Informed Consent (PIC).`
-        citations = [
-          { title: '🌍 WIPO GRATK Treaty (2024) | Mandatory Disclosure Clause', url: 'https://www.wipo.int/' },
-          { title: '📋 Nagoya Protocol on ABS | Article 6 & 7', url: 'https://www.cbd.int/abs/' },
-        ]
-      }
-
       setMessages(prev => [...prev, {
         id: Date.now() + 1,
         role: 'ai',
-        text: `Development Mode Fallback:\n\nBackend connection note: ${error.message}\n\n${aiText}`,
-        citations,
-        confidence: 'high',
-        showDisclaimer: true,
+        text: `The consultation service is unavailable. Please try again.\n\n(${error.message})`,
+        citations: [],
+        confidence: null,
+        showDisclaimer: false,
       }])
     } finally {
       setTyping(false)
