@@ -11,7 +11,7 @@ import re
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
-import fitz  # PyMuPDF
+import pymupdf as fitz
 
 # Setup structured logging
 logging.basicConfig(

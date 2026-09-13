@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Dict, List
 
 import chromadb
+from chromadb.config import Settings
 from sentence_transformers import SentenceTransformer
 
 # Setup structured logging
@@ -81,7 +82,10 @@ def run_ingestion() -> None:
         return
 
     logger.info(f"Initializing persistent ChromaDB client at: {CHROMA_DB_PATH}")
-    client = chromadb.PersistentClient(path=str(CHROMA_DB_PATH))
+    client = chromadb.PersistentClient(
+        path=str(CHROMA_DB_PATH),
+        settings=Settings(anonymized_telemetry=False),
+    )
 
     # Initialize / retrieve isolated collections
     collections: Dict[str, chromadb.Collection] = {
@@ -96,7 +100,9 @@ def run_ingestion() -> None:
     }
 
     logger.info("Loading local SentenceTransformer model ('all-MiniLM-L6-v2')...")
-    embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+    # The model is pre-cached locally. Avoid a network call at startup, which
+    # also makes ingestion reliable on networks with restrictive SSL proxies.
+    embedding_model = SentenceTransformer("all-MiniLM-L6-v2", local_files_only=True)
     logger.info("SentenceTransformer model loaded successfully on local CPU.")
 
     collection_counts: Dict[str, int] = {

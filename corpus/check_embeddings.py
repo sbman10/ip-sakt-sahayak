@@ -24,7 +24,7 @@ else:
 print("\n" + "="*60)
 print("Testing query similarity...")
 
-model = SentenceTransformer("all-MiniLM-L6-v2")
+model = SentenceTransformer("all-MiniLM-L6-v2", local_files_only=True)
 query = "What are patent fees in India?"
 query_emb = model.encode(query).tolist()
 

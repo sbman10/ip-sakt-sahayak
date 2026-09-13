@@ -38,7 +38,7 @@ def main():
     client = chromadb.PersistentClient(path=str(CHROMA_DB_PATH))
 
     print("Loading local SentenceTransformer ('all-MiniLM-L6-v2') on CPU...")
-    model = SentenceTransformer("all-MiniLM-L6-v2")
+    model = SentenceTransformer("all-MiniLM-L6-v2", local_files_only=True)
     print("Model initialized successfully.\n")
 
     while True:

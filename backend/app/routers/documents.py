@@ -47,7 +47,7 @@ from app.routers.auth import require_auth
 # Third-party imports with clear startup guards
 # ---------------------------------------------------------------------------
 try:
-    import fitz  # PyMuPDF
+    import pymupdf as fitz
 except ImportError:  # pragma: no cover
     fitz = None  # type: ignore
 
@@ -100,7 +100,10 @@ def _get_embedding_model() -> "SentenceTransformer":
                 detail="sentence-transformers not installed on the server.",
             )
         log.info("Loading embedding model '%s' for user uploads...", EMBEDDING_MODEL_NAME)
-        _embedding_model = SentenceTransformer(EMBEDDING_MODEL_NAME)
+        _embedding_model = SentenceTransformer(
+            EMBEDDING_MODEL_NAME,
+            local_files_only=True,
+        )
     return _embedding_model
 
 

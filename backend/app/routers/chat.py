@@ -281,7 +281,10 @@ def _get_embedding_model() -> SentenceTransformer:
     global _embedding_model
     if _embedding_model is None:
         log.info("Loading embedding model: %s ...", EMBEDDING_MODEL_NAME)
-        _embedding_model = SentenceTransformer(EMBEDDING_MODEL_NAME)
+        _embedding_model = SentenceTransformer(
+            EMBEDDING_MODEL_NAME,
+            local_files_only=True,
+        )
         log.info("Embedding model loaded.")
     return _embedding_model
 
@@ -291,7 +294,10 @@ def _get_reranker() -> CrossEncoder:
     global _reranker_model
     if _reranker_model is None:
         log.info("Loading re-ranker model: %s ...", RERANKER_MODEL_NAME)
-        _reranker_model = CrossEncoder(RERANKER_MODEL_NAME)
+        _reranker_model = CrossEncoder(
+            RERANKER_MODEL_NAME,
+            local_files_only=True,
+        )
         log.info("Re-ranker model loaded.")
     return _reranker_model
 
