@@ -26,6 +26,18 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers import chat as chat_router
 from app.routers import classify as classify_router
+from app.routers import conversations as conversations_router
+from app.routers import auth as auth_router
+from app.routers import uploads as uploads_router
+from app.routers import documents as documents_router
+from app.routers import matters as matters_router
+from app.routers import drafts as drafts_router
+from app.routers import checklists as checklists_router
+from app.routers import experts as experts_router
+from app.routers import analytics as analytics_router
+from app.routers import subscription as subscription_router
+from app.models.database import init_db
+from app.models import matters as _matters_models  # noqa: F401  (register tables)
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -75,7 +87,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=_ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization", "Accept"],
 )
 
@@ -94,6 +106,62 @@ app.include_router(
     classify_router.router,
     prefix="/api",
     tags=["Classify — Formulation Wizard"],
+)
+
+app.include_router(
+    conversations_router.router,
+    prefix="/api",
+    tags=["Conversations & Sessions"],
+)
+
+app.include_router(
+    auth_router.router,
+    prefix="/api/auth",
+    tags=["Authentication"],
+)
+
+app.include_router(
+    uploads_router.router,
+    prefix="/api",
+    tags=["Document Uploads"],
+)
+
+app.include_router(
+    documents_router.router,
+    prefix="/api/documents",
+    tags=["Documents — RAG Ingestion"],
+)
+
+app.include_router(
+    matters_router.router,
+    prefix="/api",
+    tags=["Matter Workspace"],
+)
+
+app.include_router(
+    drafts_router.router,
+    prefix="/api",
+    tags=["Drafts — Document Generation"],
+)
+
+app.include_router(
+    checklists_router.router,
+    tags=["Checklists — Filing Process"],
+)
+
+app.include_router(
+    experts_router.router,
+    tags=["Experts — Consultation"],
+)
+
+app.include_router(
+    analytics_router.router,
+    tags=["Analytics Dashboard"],
+)
+
+app.include_router(
+    subscription_router.router,
+    tags=["Subscription & Pricing"],
 )
 
 # ---------------------------------------------------------------------------
@@ -118,7 +186,9 @@ def health_check() -> dict[str, str]:
 @app.on_event("startup")
 async def on_startup() -> None:
     """Log startup confirmation so the operator knows the app is live."""
+    init_db()  # Initialize SQLAlchemy tables
     log.info("IP-SAKTI Sahayak API started successfully.")
+    log.info("Database initialized: ip_sakti.db")
     log.info("Swagger UI available at:  http://127.0.0.1:8000/docs")
     log.info("ReDoc available at:       http://127.0.0.1:8000/redoc")
     log.info("Health check at:          http://127.0.0.1:8000/health")

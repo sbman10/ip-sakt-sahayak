@@ -1,6 +1,11 @@
-import { useEffect, useState, useRef, createContext, useContext, useCallback } from 'react'
+import { useEffect, useState, useRef, createContext, useContext, useCallback, useMemo } from 'react'
 import { BrowserRouter, Routes, Route, useNavigate, Link } from 'react-router-dom'
 import './index.css'
+import MatterWorkspace from './components/MatterWorkspace'
+import DocumentUpload from './components/DocumentUpload'
+import IPChecklist from './components/IPChecklist'
+import ExpertConnect from './components/ExpertConnect'
+import PricingPage from './components/PricingPage'
 import {
   IconHome,
   IconFlask,
@@ -50,7 +55,20 @@ import {
   IconCurrencyRupee,
   IconMessageSquare,
   IconBriefcase,
+  IconPaperClip,
+  IconEdit,
 } from './components/Icons'
+import DraftGenerator from './components/DraftGenerator'
+
+// IconClose component (X icon)
+function IconClose({ size = 16 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  )
+}
 
 /* ============================================================
    GLOBAL LANGUAGE CONTEXT & TRANSLATIONS
@@ -84,6 +102,38 @@ const UI_TRANSLATIONS = {
     aboutPortal: 'About Portal',
     consultAssistant: 'Consult IP Assistant',
 
+    // Patent Fee Calculator (Patents Rules 2003, First Schedule — e-filing)
+    pfcTitle: 'Quick Patent Fee Calculator',
+    pfcSubtitle: 'Instant Indian Patent Office fee estimate based on the Patents Rules 2003, First Schedule (e-filing rates).',
+    pfcApplicantType: 'Applicant Type',
+    pfcAppNatural: 'Natural Person',
+    pfcAppStartup: 'Startup',
+    pfcAppSmall: 'Small Entity',
+    pfcAppOthers: 'Others (Large Entity)',
+    pfcApplicationType: 'Application Type',
+    pfcTypeOrdinary: 'Ordinary',
+    pfcTypeConvention: 'Convention',
+    pfcTypePct: 'PCT National Phase',
+    pfcClaims: 'Number of Claims',
+    pfcClaimsHint: 'First 10 claims included. Extra fee applies beyond 10.',
+    pfcPages: 'Number of Pages',
+    pfcPagesHint: 'First 30 pages included. Extra fee applies beyond 30.',
+    pfcEarlyPub: 'Request Early Publication (Form 9)',
+    pfcExamReq: 'Request for Examination (Form 18)',
+    pfcOptions: 'Optional Fees',
+    pfcBreakdown: 'Fee Breakdown',
+    pfcBaseFee: 'Filing Fee (Form 1)',
+    pfcExtraClaims: 'Extra Claims',
+    pfcExtraPages: 'Extra Pages',
+    pfcEarlyPubFee: 'Early Publication (Form 9)',
+    pfcExamFee: 'Examination Request (Form 18)',
+    pfcTotal: 'Total Statutory Fee',
+    pfcPerClaim: 'per claim',
+    pfcPerPage: 'per page',
+    pfcDisclaimer: 'Indicative Indian Patent Office statutory fees only (e-filing). Excludes attorney/agent professional charges. Verify current rates on the official IP India portal before filing.',
+    pfcReset: 'Reset',
+    pfcOpenFull: 'Open Full Cost Estimator',
+
     // Hero Section
     heroEyebrow: 'AYUSH INNOVATION GUIDANCE',
     heroTitle: 'Protect your innovation.',
@@ -100,6 +150,16 @@ const UI_TRANSLATIONS = {
     sourceCited: 'Source-cited',
     multiLanguage: '10+ Languages',
     indiaIntl: 'India & International',
+
+    // Trust Badges (Hero Section)
+    trustPatentsAct: 'Patents Act 1970',
+    trustPatentsActDesc: '§ 3(p) TKDL Exclusions',
+    trustTkdl: 'TKDL Database',
+    trustTkdlDesc: '2.5L+ Formulations Prior Art',
+    trustBdAct: 'Biodiversity Act 2002',
+    trustBdActDesc: 'Mandatory ABS Clearances',
+    trustDrugsRules: 'Drugs & Cosmetics Rules',
+    trustDrugsRulesDesc: 'ASU Regulatory Licensing',
 
     // Stats Section
     statutesCovered: 'Statutes Covered',
@@ -122,6 +182,20 @@ const UI_TRANSLATIONS = {
     featureABSDesc: 'Verify Nagoya Protocol and BD Act compliance before commercializing formulations with endemic ingredients.',
     featureTKDL: 'TKDL Integration',
     featureTKDLDesc: 'Cross-reference against Traditional Knowledge Digital Library to assess prior art barriers.',
+
+    // Tools Section
+    toolsLabel: 'Free Tools',
+    toolsTitle: 'IP Calculators & Utilities',
+    toolsSubtitle: 'Essential tools for patent applicants — calculate fees, track deadlines, and plan your IP strategy',
+    feeCalcTitle: 'Patent Fee Calculator',
+    feeCalcDesc: 'Calculate filing, examination, and renewal fees based on applicant type (Natural Person, Startup, Small Entity, Large Entity) per Patents Rules 2003.',
+    calculateNow: 'Calculate Now',
+    deadlineCalcTitle: 'Deadline Calculator',
+    deadlineCalcDesc: 'Track statutory deadlines — RFE (48 months), FER response (6 months), renewals, PCT national phase (31 months), and convention priority (12 months).',
+    checkDeadlines: 'Check Deadlines',
+    aiAssistantTitle: 'AI Legal Assistant',
+    aiAssistantDesc: 'Ask questions about Indian IP law, traditional knowledge protection, ABS compliance, and get citation-backed answers from authoritative sources.',
+    askNow: 'Ask Now',
 
     // How It Works
     howItWorksLabel: 'Simple Process',
@@ -414,6 +488,50 @@ const UI_TRANSLATIONS = {
     termsLink: 'Terms of Service',
     andText: 'and',
     privacyLink: 'Privacy Policy',
+
+    // Deadline Calculator
+    deadlineCalc: 'Deadline Calculator',
+    deadlineChip: 'Statutory Deadline Calculator',
+    deadlineTitle: 'Indian Patent Deadline Calculator',
+    deadlineSubtitle: 'Compute every statutory patent deadline from your filing / priority date — RFE, examination response, renewals, PCT & convention windows.',
+    deadlineFilingLabel: 'Filing Date',
+    deadlinePriorityLabel: 'Priority Date (optional)',
+    deadlinePriorityHint: 'Set this if you are claiming Convention / earlier priority. RFE is counted from the earliest of filing or priority.',
+    deadlineCalcBtn: 'Calculate Deadlines',
+    deadlineResetBtn: 'Reset',
+    deadlineTimelineTitle: 'Deadline Timeline',
+    deadlineEmptyHint: 'Enter a filing date to see your statutory deadlines.',
+    deadlineDueIn: 'due in',
+    deadlineOverdue: 'Overdue',
+    deadlineDueToday: 'Due today',
+    deadlineDays: 'days',
+    deadlineMonths: 'months',
+    deadlineYears: 'years',
+    deadlineUrgent: 'Action needed soon',
+    deadlinePassed: 'Deadline passed',
+    deadlineUpcoming: 'Upcoming',
+    deadlineLegendUrgent: 'Within 3 months',
+    deadlineLegendUpcoming: 'Upcoming',
+    deadlineLegendPassed: 'Passed',
+    deadlineDisclaimer: 'Indicative only. Deadlines depend on the exact procedural facts of your application (e.g. date the First Examination Report issues, extensions granted). Confirm every date with a registered patent agent and the official IP India records before relying on it.',
+    deadlineAskExpert: 'Ask IP Expert',
+    // Deadline item labels
+    dlRfeTitle: 'Request for Examination (RFE)',
+    dlRfeDesc: 'File Form 18 within 48 months of the priority / filing date, else the application is treated as withdrawn (Rule 24B).',
+    dlPublishTitle: 'Early Publication Window',
+    dlPublishDesc: 'Application publishes automatically at 18 months. File Form 9 before then to request early publication.',
+    dlFerTitle: 'Response to First Examination Report (FER)',
+    dlFerDesc: 'Reply within 6 months of the FER; extendable by up to 3 months on Form 4. (Shown from filing as a planning estimate — the real clock starts when the FER issues.)',
+    dlTermTitle: 'Patent Term Expiry',
+    dlTermDesc: '20 years from the date of filing (Section 53), subject to payment of renewal fees.',
+    dlPctTitle: 'PCT National Phase Entry',
+    dlPctDesc: 'Enter the Indian national phase within 31 months of the priority date (Rule 20).',
+    dlConventionTitle: 'Convention Priority Deadline',
+    dlConventionDesc: 'File the corresponding foreign/convention application within 12 months of the priority date (Paris Convention).',
+    dlRenewalTitle: 'Renewal Fee',
+    dlRenewalDescFrom: 'Renewal fee for year',
+    dlRenewalDescDue: 'due from the 3rd year onward (Section 53 / Rule 80).',
+    dlYearN: 'Year',
   },
   hi: {
     // Government Header
@@ -428,6 +546,38 @@ const UI_TRANSLATIONS = {
     officialSources: 'आधिकारिक स्रोत',
     aboutPortal: 'पोर्टल के बारे में',
     consultAssistant: 'IP सहायक से परामर्श',
+
+    // Patent Fee Calculator (पेटेंट नियम 2003, प्रथम अनुसूची — ई-फाइलिंग)
+    pfcTitle: 'त्वरित पेटेंट शुल्क कैलकुलेटर',
+    pfcSubtitle: 'पेटेंट नियम 2003, प्रथम अनुसूची (ई-फाइलिंग दरें) के आधार पर भारतीय पेटेंट कार्यालय शुल्क का तत्काल अनुमान।',
+    pfcApplicantType: 'आवेदक का प्रकार',
+    pfcAppNatural: 'प्राकृतिक व्यक्ति',
+    pfcAppStartup: 'स्टार्टअप',
+    pfcAppSmall: 'लघु इकाई',
+    pfcAppOthers: 'अन्य (बड़ी इकाई)',
+    pfcApplicationType: 'आवेदन का प्रकार',
+    pfcTypeOrdinary: 'साधारण',
+    pfcTypeConvention: 'कन्वेंशन',
+    pfcTypePct: 'PCT राष्ट्रीय चरण',
+    pfcClaims: 'दावों की संख्या',
+    pfcClaimsHint: 'पहले 10 दावे शामिल हैं। 10 से अधिक पर अतिरिक्त शुल्क।',
+    pfcPages: 'पृष्ठों की संख्या',
+    pfcPagesHint: 'पहले 30 पृष्ठ शामिल हैं। 30 से अधिक पर अतिरिक्त शुल्क।',
+    pfcEarlyPub: 'शीघ्र प्रकाशन का अनुरोध (फॉर्म 9)',
+    pfcExamReq: 'परीक्षा हेतु अनुरोध (फॉर्म 18)',
+    pfcOptions: 'वैकल्पिक शुल्क',
+    pfcBreakdown: 'शुल्क विवरण',
+    pfcBaseFee: 'फाइलिंग शुल्क (फॉर्म 1)',
+    pfcExtraClaims: 'अतिरिक्त दावे',
+    pfcExtraPages: 'अतिरिक्त पृष्ठ',
+    pfcEarlyPubFee: 'शीघ्र प्रकाशन (फॉर्म 9)',
+    pfcExamFee: 'परीक्षा अनुरोध (फॉर्म 18)',
+    pfcTotal: 'कुल वैधानिक शुल्क',
+    pfcPerClaim: 'प्रति दावा',
+    pfcPerPage: 'प्रति पृष्ठ',
+    pfcDisclaimer: 'केवल सांकेतिक भारतीय पेटेंट कार्यालय वैधानिक शुल्क (ई-फाइलिंग)। इसमें वकील/एजेंट शुल्क शामिल नहीं। फाइलिंग से पहले आधिकारिक IP India पोर्टल पर वर्तमान दरें सत्यापित करें।',
+    pfcReset: 'रीसेट',
+    pfcOpenFull: 'पूर्ण लागत अनुमानक खोलें',
 
     // Hero Section
     heroEyebrow: 'आयुष मंत्रालय · भारत सरकार पहल',
@@ -446,6 +596,16 @@ const UI_TRANSLATIONS = {
     sourceCited: 'स्रोत-उद्धृत',
     multiLanguage: '10+ भाषाएं',
     indiaIntl: 'भारत और अंतर्राष्ट्रीय',
+
+    // Trust Badges (Hero Section)
+    trustPatentsAct: 'पेटेंट अधिनियम 1970',
+    trustPatentsActDesc: 'धारा 3(p) TKDL अपवर्जन',
+    trustTkdl: 'TKDL डेटाबेस',
+    trustTkdlDesc: '2.5 लाख+ फॉर्मूलेशन पूर्व कला',
+    trustBdAct: 'जैव विविधता अधिनियम 2002',
+    trustBdActDesc: 'अनिवार्य ABS अनुमोदन',
+    trustDrugsRules: 'औषधि एवं प्रसाधन नियम',
+    trustDrugsRulesDesc: 'ASU नियामक लाइसेंसिंग',
 
     // Stats Section
     statutesCovered: 'कवर किए गए क़ानून',
@@ -468,6 +628,20 @@ const UI_TRANSLATIONS = {
     featureABSDesc: 'स्थानिक सामग्री वाले फॉर्मूलेशन को व्यावसायीकृत करने से पहले नागोया प्रोटोकॉल और BD अधिनियम अनुपालन सत्यापित करें।',
     featureTKDL: 'TKDL एकीकरण',
     featureTKDLDesc: 'पूर्व कला बाधाओं का आकलन करने के लिए पारंपरिक ज्ञान डिजिटल लाइब्रेरी के विरुद्ध क्रॉस-रेफरेंस।',
+
+    // Tools Section
+    toolsLabel: 'मुफ्त उपकरण',
+    toolsTitle: 'IP कैलकुलेटर और उपयोगिताएँ',
+    toolsSubtitle: 'पेटेंट आवेदकों के लिए आवश्यक उपकरण — शुल्क की गणना करें, समय-सीमाएँ ट्रैक करें, और अपनी IP रणनीति की योजना बनाएं',
+    feeCalcTitle: 'पेटेंट शुल्क कैलकुलेटर',
+    feeCalcDesc: 'पेटेंट नियम 2003 के अनुसार आवेदक प्रकार (प्राकृतिक व्यक्ति, स्टार्टअप, लघु इकाई, बड़ी इकाई) के आधार पर फाइलिंग, परीक्षा और नवीनीकरण शुल्क की गणना करें।',
+    calculateNow: 'अभी गणना करें',
+    deadlineCalcTitle: 'समय-सीमा कैलकुलेटर',
+    deadlineCalcDesc: 'वैधानिक समय-सीमाएँ ट्रैक करें — RFE (48 माह), FER प्रतिक्रिया (6 माह), नवीनीकरण, PCT राष्ट्रीय चरण (31 माह), और कन्वेंशन प्राथमिकता (12 माह)।',
+    checkDeadlines: 'समय-सीमाएँ जाँचें',
+    aiAssistantTitle: 'AI कानूनी सहायक',
+    aiAssistantDesc: 'भारतीय IP कानून, पारंपरिक ज्ञान संरक्षण, ABS अनुपालन के बारे में प्रश्न पूछें और आधिकारिक स्रोतों से उद्धरण-समर्थित उत्तर प्राप्त करें।',
+    askNow: 'अभी पूछें',
 
     // How It Works
     howItWorksLabel: 'सरल प्रक्रिया',
@@ -760,6 +934,201 @@ const UI_TRANSLATIONS = {
     termsLink: 'सेवा की शर्तें',
     andText: 'और',
     privacyLink: 'गोपनीयता नीति',
+
+    // Deadline Calculator
+    deadlineCalc: 'समय-सीमा कैलकुलेटर',
+    deadlineChip: 'वैधानिक समय-सीमा कैलकुलेटर',
+    deadlineTitle: 'भारतीय पेटेंट समय-सीमा कैलकुलेटर',
+    deadlineSubtitle: 'अपनी फाइलिंग / प्राथमिकता तिथि से सभी वैधानिक पेटेंट समय-सीमाओं की गणना करें — RFE, परीक्षा उत्तर, नवीनीकरण, PCT और कन्वेंशन विंडो।',
+    deadlineFilingLabel: 'फाइलिंग तिथि',
+    deadlinePriorityLabel: 'प्राथमिकता तिथि (वैकल्पिक)',
+    deadlinePriorityHint: 'यदि आप कन्वेंशन / पूर्व प्राथमिकता का दावा कर रहे हैं तो इसे भरें। RFE फाइलिंग या प्राथमिकता में से जो पहले हो, उससे गिना जाता है।',
+    deadlineCalcBtn: 'समय-सीमा की गणना करें',
+    deadlineResetBtn: 'रीसेट करें',
+    deadlineTimelineTitle: 'समय-सीमा टाइमलाइन',
+    deadlineEmptyHint: 'अपनी वैधानिक समय-सीमाएँ देखने के लिए फाइलिंग तिथि दर्ज करें।',
+    deadlineDueIn: 'शेष',
+    deadlineOverdue: 'समय बीत चुका',
+    deadlineDueToday: 'आज देय',
+    deadlineDays: 'दिन',
+    deadlineMonths: 'महीने',
+    deadlineYears: 'वर्ष',
+    deadlineUrgent: 'शीघ्र कार्रवाई आवश्यक',
+    deadlinePassed: 'समय-सीमा समाप्त',
+    deadlineUpcoming: 'आगामी',
+    deadlineLegendUrgent: '3 महीने के भीतर',
+    deadlineLegendUpcoming: 'आगामी',
+    deadlineLegendPassed: 'बीत चुकी',
+    deadlineDisclaimer: 'केवल सांकेतिक। समय-सीमाएँ आपके आवेदन के सटीक प्रक्रियात्मक तथ्यों पर निर्भर करती हैं (जैसे पहली परीक्षा रिपोर्ट जारी होने की तिथि, दी गई विस्तार अवधि)। किसी भी तिथि पर निर्भर होने से पहले पंजीकृत पेटेंट एजेंट और आधिकारिक IP India रिकॉर्ड से पुष्टि करें।',
+    deadlineAskExpert: 'IP विशेषज्ञ से पूछें',
+    dlRfeTitle: 'परीक्षा हेतु अनुरोध (RFE)',
+    dlRfeDesc: 'प्राथमिकता / फाइलिंग तिथि से 48 महीनों के भीतर फॉर्म 18 दाखिल करें, अन्यथा आवेदन वापस लिया गया माना जाएगा (नियम 24B)।',
+    dlPublishTitle: 'शीघ्र प्रकाशन विंडो',
+    dlPublishDesc: 'आवेदन 18 महीनों में स्वतः प्रकाशित होता है। शीघ्र प्रकाशन हेतु उससे पहले फॉर्म 9 दाखिल करें।',
+    dlFerTitle: 'पहली परीक्षा रिपोर्ट (FER) का उत्तर',
+    dlFerDesc: 'FER के 6 महीनों के भीतर उत्तर दें; फॉर्म 4 पर 3 महीने तक विस्तार संभव। (फाइलिंग से नियोजन अनुमान के रूप में दिखाया गया — वास्तविक घड़ी FER जारी होने पर शुरू होती है।)',
+    dlTermTitle: 'पेटेंट अवधि समाप्ति',
+    dlTermDesc: 'फाइलिंग तिथि से 20 वर्ष (धारा 53), नवीनीकरण शुल्क के भुगतान के अधीन।',
+    dlPctTitle: 'PCT राष्ट्रीय चरण प्रवेश',
+    dlPctDesc: 'प्राथमिकता तिथि से 31 महीनों के भीतर भारतीय राष्ट्रीय चरण में प्रवेश करें (नियम 20)।',
+    dlConventionTitle: 'कन्वेंशन प्राथमिकता समय-सीमा',
+    dlConventionDesc: 'प्राथमिकता तिथि से 12 महीनों के भीतर संबंधित विदेशी/कन्वेंशन आवेदन दाखिल करें (पेरिस कन्वेंशन)।',
+    dlRenewalTitle: 'नवीनीकरण शुल्क',
+    dlRenewalDescFrom: 'वर्ष के लिए नवीनीकरण शुल्क',
+    dlRenewalDescDue: 'तीसरे वर्ष से देय (धारा 53 / नियम 80)।',
+    dlYearN: 'वर्ष',
+  },
+  // ಕನ್ನಡ (Kannada)
+  kn: {
+    govtOf: 'ಭಾರತ ಸರ್ಕಾರ', ministry: 'ಆಯುಷ್ ಸಚಿವಾಲಯ', searchPlaceholder: 'ಕಾಯಿದೆಗಳನ್ನು ಹುಡುಕಿ...',
+    home: 'ಮುಖಪುಟ', absChecker: 'ABS ಪರಿಶೀಲಕ', ipCalculator: 'IP ಕ್ಯಾಲ್ಕುಲೇಟರ್', officialSources: 'ಅಧಿಕೃತ ಮೂಲಗಳು', aboutPortal: 'ಪೋರ್ಟಲ್ ಬಗ್ಗೆ', consultAssistant: 'IP ಸಹಾಯಕರನ್ನು ಸಂಪರ್ಕಿಸಿ',
+    heroEyebrow: 'ಆಯುಷ್ ನವೀನತೆ ಮಾರ್ಗದರ್ಶನ', heroTitle: 'ನಿಮ್ಮ ನವೀನತೆಯನ್ನು ರಕ್ಷಿಸಿ.', heroSubtitle: 'ಮುಂದೆ ಏನು ಎಂದು ತಿಳಿಯಿರಿ.', heroDesc: 'ಒಂದು ಮಾರ್ಗದರ್ಶಿ ಮೌಲ್ಯಮಾಪನದ ಮೂಲಕ ಬೌದ್ಧಿಕ ಆಸ್ತಿ, ನಿಯಂತ್ರಣ ಮತ್ತು ಜೈವಿಕ ವೈವಿಧ್ಯತೆ ಮಾರ್ಗಗಳನ್ನು ಅನ್ವೇಷಿಸಿ.',
+    startAssessment: 'ಮೌಲ್ಯಮಾಪನ ಪ್ರಾರಂಭಿಸಿ →', startConsultation: 'ಮೌಲ್ಯಮಾಪನ ಪ್ರಾರಂಭಿಸಿ →', howItWorksBtn: 'ಇದು ಹೇಗೆ ಕೆಲಸ ಮಾಡುತ್ತದೆ', formulationWizard: 'ಫಾರ್ಮುಲೇಶನ್ ವಿಝಾರ್ಡ್', seeDemo: 'ಡೆಮೊ ನೋಡಿ',
+    zeroHallucination: 'ಶೂನ್ಯ-ಭ್ರಮೆ', sourceCited: 'ಮೂಲ-ಉಲ್ಲೇಖಿತ', multiLanguage: '10+ ಭಾಷೆಗಳು', indiaIntl: 'ಭಾರತ ಮತ್ತು ಅಂತರರಾಷ್ಟ್ರೀಯ',
+    trustPatentsAct: 'ಪೇಟೆಂಟ್ ಕಾಯಿದೆ 1970', trustPatentsActDesc: 'ವಿಭಾಗ 3(p) TKDL ಅಪವಾದಗಳು', trustTkdl: 'TKDL ಡೇಟಾಬೇಸ್', trustTkdlDesc: '2.5 ಲಕ್ಷ+ ಫಾರ್ಮುಲೇಶನ್ ಪೂರ್ವ ಕಲೆ', trustBdAct: 'ಜೈವಿಕ ವೈವಿಧ್ಯತಾ ಕಾಯಿದೆ 2002', trustBdActDesc: 'ಕಡ್ಡಾಯ ABS ಅನುಮೋದನೆ', trustDrugsRules: 'ಔಷಧಿ ಮತ್ತು ಸೌಂದರ್ಯ ನಿಯಮಗಳು', trustDrugsRulesDesc: 'ASU ನಿಯಂತ್ರಕ ಪರವಾನಗಿ',
+    statutesCovered: 'ಒಳಗೊಂಡಿರುವ ಕಾಯಿದೆಗಳು', languagesSupported: 'ಬೆಂಬಲಿತ ಭಾಷೆಗಳು', averageResponseTime: 'ಸರಾಸರಿ ಪ್ರತಿಕ್ರಿಯೆ ಸಮಯ', userSatisfaction: 'ಬಳಕೆದಾರರ ತೃಪ್ತಿ',
+    chatWelcome: 'ನಮಸ್ಕಾರ! ನಾನು IP-SAKTI ಸಹಾಯಕ, ಆಯುರ್ವೇದದಲ್ಲಿ ಬೌದ್ಧಿಕ ಆಸ್ತಿಗೆ ನಿಮ್ಮ ಮಾರ್ಗದರ್ಶಿ.', chatPlaceholder: 'ಪೇಟೆಂಟ್ ಕಾಯಿದೆ, ABS, TKDL ಬಗ್ಗೆ ಕೇಳಿ...', sendMessage: 'ಕಳುಹಿಸಿ',
+    voiceInput: 'ಧ್ವನಿ ಇನ್‌ಪುಟ್', voiceListening: 'ಆಲಿಸುತ್ತಿದೆ...', voiceNotSupported: 'ಧ್ವನಿ ಬೆಂಬಲಿತವಾಗಿಲ್ಲ', voiceError: 'ಧ್ವನಿ ದೋಷ. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.', tapToSpeak: 'ಮಾತನಾಡಲು ಟ್ಯಾಪ್ ಮಾಡಿ',
+    exportPdf: 'PDF ರಫ್ತು', jurisdiction: 'ಅಧಿಕಾರ ವ್ಯಾಪ್ತಿ', jurisdictionIndia: 'ಭಾರತ', jurisdictionInternational: 'ಅಂತರರಾಷ್ಟ್ರೀಯ',
+    newChat: 'ಹೊಸ ಚಾಟ್', chatHistory: 'ಚಾಟ್ ಇತಿಹಾಸ', typing: 'ಟೈಪ್ ಮಾಡುತ್ತಿದೆ...', about: 'ಬಗ್ಗೆ', clearSession: 'ಸೆಶನ್ ತೆರವುಗೊಳಿಸಿ',
+    absCompliance: 'ABS ಅನುಸರಣೆ', patentsActSection: 'ಪೇಟೆಂಟ್ ಕಾಯಿದೆ', tkdlCheck: 'TKDL ಪರಿಶೀಲನೆ', giTagging: 'GI ಟ್ಯಾಗಿಂಗ್',
+    highConfidence: 'ಹೆಚ್ಚಿನ ವಿಶ್ವಾಸ', mediumConfidence: 'ಮಧ್ಯಮ ವಿಶ್ವಾಸ', lowConfidence: 'ಕಡಿಮೆ ವಿಶ್ವಾಸ',
+    loading: 'ಲೋಡ್ ಆಗುತ್ತಿದೆ...', error: 'ದೋಷ', retry: 'ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ', close: 'ಮುಚ್ಚಿ', submit: 'ಸಲ್ಲಿಸಿ', cancel: 'ರದ್ದುಮಾಡಿ', back: 'ಹಿಂದೆ', next: 'ಮುಂದೆ',
+    today: 'ಇಂದು', yesterday: 'ನಿನ್ನೆ', privacyPolicy: 'ಗೌಪ್ಯತಾ ನೀತಿ', termsOfService: 'ಸೇವೆಯ ನಿಯಮಗಳು',
+    selectResponseLang: 'ಪ್ರತಿಕ್ರಿಯೆ ಭಾಷೆ ಆಯ್ಕೆಮಾಡಿ', typeYourQuestion: 'ನಿಮ್ಮ ಪ್ರಶ್ನೆ ಟೈಪ್ ಮಾಡಿ',
+  },
+  // বাংলা (Bengali)
+  bn: {
+    govtOf: 'ভারত সরকার', ministry: 'আয়ুষ মন্ত্রণালয়', searchPlaceholder: 'আইন অনুসন্ধান করুন...',
+    home: 'হোম', absChecker: 'ABS চেকার', ipCalculator: 'IP ক্যালকুলেটর', officialSources: 'অফিসিয়াল উৎস', aboutPortal: 'পোর্টাল সম্পর্কে', consultAssistant: 'IP সহায়ক পরামর্শ',
+    heroEyebrow: 'আয়ুষ উদ্ভাবন নির্দেশনা', heroTitle: 'আপনার উদ্ভাবন রক্ষা করুন।', heroSubtitle: 'পরবর্তী কী তা জানুন।', heroDesc: 'একটি নির্দেশিত মূল্যায়নের মাধ্যমে বৌদ্ধিক সম্পত্তি, নিয়ন্ত্রণ এবং জীববৈচিত্র্য পথ অন্বেষণ করুন।',
+    startAssessment: 'মূল্যায়ন শুরু করুন →', startConsultation: 'মূল্যায়ন শুরু করুন →', howItWorksBtn: 'এটি কিভাবে কাজ করে', formulationWizard: 'ফর্মুলেশন উইজার্ড', seeDemo: 'ডেমো দেখুন',
+    zeroHallucination: 'শূন্য-বিভ্রম', sourceCited: 'উৎস-উদ্ধৃত', multiLanguage: '10+ ভাষা', indiaIntl: 'ভারত এবং আন্তর্জাতিক',
+    trustPatentsAct: 'পেটেন্ট আইন 1970', trustPatentsActDesc: 'ধারা 3(p) TKDL ব্যতিক্রম', trustTkdl: 'TKDL ডেটাবেস', trustTkdlDesc: '2.5 লক্ষ+ ফর্মুলেশন পূর্ব শিল্প', trustBdAct: 'জীববৈচিত্র্য আইন 2002', trustBdActDesc: 'বাধ্যতামূলক ABS অনুমোদন', trustDrugsRules: 'ওষুধ ও প্রসাধনী নিয়ম', trustDrugsRulesDesc: 'ASU নিয়ন্ত্রক লাইসেন্সিং',
+    statutesCovered: 'আচ্ছাদিত আইন', languagesSupported: 'সমর্থিত ভাষা', averageResponseTime: 'গড় প্রতিক্রিয়া সময়', userSatisfaction: 'ব্যবহারকারীর সন্তুষ্টি',
+    chatWelcome: 'নমস্কার! আমি IP-SAKTI সহায়ক, আয়ুর্বেদে বৌদ্ধিক সম্পত্তির জন্য আপনার গাইড।', chatPlaceholder: 'পেটেন্ট আইন, ABS, TKDL সম্পর্কে জিজ্ঞাসা করুন...', sendMessage: 'পাঠান',
+    voiceInput: 'ভয়েস ইনপুট', voiceListening: 'শুনছি...', voiceNotSupported: 'ভয়েস সমর্থিত নয়', voiceError: 'ভয়েস ত্রুটি। আবার চেষ্টা করুন।', tapToSpeak: 'বলতে ট্যাপ করুন',
+    exportPdf: 'PDF রপ্তানি', jurisdiction: 'এখতিয়ার', jurisdictionIndia: 'ভারত', jurisdictionInternational: 'আন্তর্জাতিক',
+    newChat: 'নতুন চ্যাট', chatHistory: 'চ্যাট ইতিহাস', typing: 'টাইপ করছে...', about: 'সম্পর্কে', clearSession: 'সেশন পরিষ্কার করুন',
+    absCompliance: 'ABS সম্মতি', patentsActSection: 'পেটেন্ট আইন', tkdlCheck: 'TKDL চেক', giTagging: 'GI ট্যাগিং',
+    highConfidence: 'উচ্চ আত্মবিশ্বাস', mediumConfidence: 'মাঝারি আত্মবিশ্বাস', lowConfidence: 'কম আত্মবিশ্বাস',
+    loading: 'লোড হচ্ছে...', error: 'ত্রুটি', retry: 'পুনরায় চেষ্টা', close: 'বন্ধ', submit: 'জমা দিন', cancel: 'বাতিল', back: 'পিছনে', next: 'পরবর্তী',
+    today: 'আজ', yesterday: 'গতকাল', privacyPolicy: 'গোপনীয়তা নীতি', termsOfService: 'পরিষেবার শর্তাবলী',
+    selectResponseLang: 'প্রতিক্রিয়া ভাষা নির্বাচন করুন', typeYourQuestion: 'আপনার প্রশ্ন টাইপ করুন',
+  },
+  // தமிழ் (Tamil)
+  ta: {
+    govtOf: 'இந்திய அரசு', ministry: 'ஆயுஷ் அமைச்சகம்', searchPlaceholder: 'சட்டங்களைத் தேடுங்கள்...',
+    home: 'முகப்பு', absChecker: 'ABS சோதனை', ipCalculator: 'IP கணிப்பான்', officialSources: 'அதிகாரப்பூர்வ ஆதாரங்கள்', aboutPortal: 'போர்டல் பற்றி', consultAssistant: 'IP உதவியாளரை அணுகவும்',
+    heroEyebrow: 'ஆயுஷ் புதுமை வழிகாட்டுதல்', heroTitle: 'உங்கள் புதுமையைப் பாதுகாக்கவும்.', heroSubtitle: 'அடுத்தது என்னவென்று தெரிந்துகொள்ளுங்கள்.', heroDesc: 'ஒரு வழிகாட்டி மதிப்பீட்டின் மூலம் அறிவுசார் சொத்து, ஒழுங்குமுறை மற்றும் உயிர் பன்முகத்தன்மை பாதைகளை ஆராயுங்கள்.',
+    startAssessment: 'மதிப்பீட்டைத் தொடங்கு →', startConsultation: 'மதிப்பீட்டைத் தொடங்கு →', howItWorksBtn: 'இது எப்படி வேலை செய்கிறது', formulationWizard: 'ஃபார்முலேஷன் விஸார்ட்', seeDemo: 'டெமோ பார்',
+    zeroHallucination: 'பூஜ்ஜிய-மாயை', sourceCited: 'ஆதாரம்-மேற்கோள்', multiLanguage: '10+ மொழிகள்', indiaIntl: 'இந்தியா மற்றும் சர்வதேசம்',
+    trustPatentsAct: 'காப்புரிமை சட்டம் 1970', trustPatentsActDesc: 'பிரிவு 3(p) TKDL விலக்குகள்', trustTkdl: 'TKDL தரவுத்தளம்', trustTkdlDesc: '2.5 லட்சம்+ ஃபார்முலேஷன் முந்தைய கலை', trustBdAct: 'உயிர் பன்முகத்தன்மை சட்டம் 2002', trustBdActDesc: 'கட்டாய ABS அனுமதி', trustDrugsRules: 'மருந்துகள் மற்றும் அழகுசாதனப் விதிகள்', trustDrugsRulesDesc: 'ASU ஒழுங்குமுறை உரிமம்',
+    statutesCovered: 'உள்ளடக்கிய சட்டங்கள்', languagesSupported: 'ஆதரிக்கப்படும் மொழிகள்', averageResponseTime: 'சராசரி பதில் நேரம்', userSatisfaction: 'பயனர் திருப்தி',
+    chatWelcome: 'வணக்கம்! நான் IP-SAKTI சஹாயக், ஆயுர்வேதத்தில் அறிவுசார் சொத்துக்கான உங்கள் வழிகாட்டி.', chatPlaceholder: 'காப்புரிமை சட்டம், ABS, TKDL பற்றி கேளுங்கள்...', sendMessage: 'அனுப்பு',
+    voiceInput: 'குரல் உள்ளீடு', voiceListening: 'கேட்கிறது...', voiceNotSupported: 'குரல் ஆதரிக்கப்படவில்லை', voiceError: 'குரல் பிழை. மீண்டும் முயற்சிக்கவும்.', tapToSpeak: 'பேச தட்டவும்',
+    exportPdf: 'PDF ஏற்றுமதி', jurisdiction: 'அதிகார வரம்பு', jurisdictionIndia: 'இந்தியா', jurisdictionInternational: 'சர்வதேசம்',
+    newChat: 'புதிய அரட்டை', chatHistory: 'அரட்டை வரலாறு', typing: 'தட்டச்சு செய்கிறது...', about: 'பற்றி', clearSession: 'அமர்வை அழி',
+    absCompliance: 'ABS இணக்கம்', patentsActSection: 'காப்புரிமை சட்டம்', tkdlCheck: 'TKDL சோதனை', giTagging: 'GI குறியிடல்',
+    highConfidence: 'உயர் நம்பிக்கை', mediumConfidence: 'மிதமான நம்பிக்கை', lowConfidence: 'குறைந்த நம்பிக்கை',
+    loading: 'ஏற்றுகிறது...', error: 'பிழை', retry: 'மீண்டும் முயற்சி', close: 'மூடு', submit: 'சமர்ப்பி', cancel: 'ரத்து', back: 'பின்னால்', next: 'அடுத்து',
+    today: 'இன்று', yesterday: 'நேற்று', privacyPolicy: 'தனியுரிமைக் கொள்கை', termsOfService: 'சேவை விதிமுறைகள்',
+    selectResponseLang: 'பதில் மொழியைத் தேர்ந்தெடுக்கவும்', typeYourQuestion: 'உங்கள் கேள்வியை தட்டச்சு செய்யவும்',
+  },
+  // తెలుగు (Telugu)
+  te: {
+    govtOf: 'భారత ప్రభుత్వం', ministry: 'ఆయుష్ మంత్రిత్వ శాఖ', searchPlaceholder: 'చట్టాలను వెతకండి...',
+    home: 'హోమ్', absChecker: 'ABS తనిఖీ', ipCalculator: 'IP కాలిక్యులేటర్', officialSources: 'అధికారిక మూలాలు', aboutPortal: 'పోర్టల్ గురించి', consultAssistant: 'IP సహాయకుడిని సంప్రదించండి',
+    heroEyebrow: 'ఆయుష్ ఆవిష్కరణ మార్గదర్శకత్వం', heroTitle: 'మీ ఆవిష్కరణను రక్షించండి.', heroSubtitle: 'తర్వాత ఏమిటో తెలుసుకోండి.', heroDesc: 'ఒక మార్గదర్శక మూల్యాంకనం ద్వారా మేధో సంపత్తి, నియంత్రణ మరియు జీవవైవిధ్య మార్గాలను అన్వేషించండి.',
+    startAssessment: 'మూల్యాంకనం ప్రారంభించండి →', startConsultation: 'మూల్యాంకనం ప్రారంభించండి →', howItWorksBtn: 'ఇది ఎలా పని చేస్తుంది', formulationWizard: 'ఫార్ములేషన్ విజార్డ్', seeDemo: 'డెమో చూడండి',
+    zeroHallucination: 'సున్నా-భ్రమ', sourceCited: 'మూలం-ఉదహరించబడింది', multiLanguage: '10+ భాషలు', indiaIntl: 'భారతదేశం మరియు అంతర్జాతీయ',
+    trustPatentsAct: 'పేటెంట్ చట్టం 1970', trustPatentsActDesc: 'సెక్షన్ 3(p) TKDL మినహాయింపులు', trustTkdl: 'TKDL డేటాబేస్', trustTkdlDesc: '2.5 లక్షల+ ఫార్ములేషన్ పూర్వ కళ', trustBdAct: 'జీవవైవిధ్య చట్టం 2002', trustBdActDesc: 'తప్పనిసరి ABS ఆమోదం', trustDrugsRules: 'మందులు & సౌందర్య సాధనాల నియమాలు', trustDrugsRulesDesc: 'ASU నియంత్రణ లైసెన్సింగ్',
+    statutesCovered: 'కవర్ చేయబడిన చట్టాలు', languagesSupported: 'మద్దతు ఉన్న భాషలు', averageResponseTime: 'సగటు ప్రతిస్పందన సమయం', userSatisfaction: 'వినియోగదారు సంతృప్తి',
+    chatWelcome: 'నమస్కారం! నేను IP-SAKTI సహాయక్, ఆయుర్వేదంలో మేధో సంపత్తికి మీ గైడ్.', chatPlaceholder: 'పేటెంట్ చట్టం, ABS, TKDL గురించి అడగండి...', sendMessage: 'పంపు',
+    voiceInput: 'వాయిస్ ఇన్‌పుట్', voiceListening: 'వింటోంది...', voiceNotSupported: 'వాయిస్ మద్దతు లేదు', voiceError: 'వాయిస్ లోపం. మళ్ళీ ప్రయత్నించండి.', tapToSpeak: 'మాట్లాడటానికి ట్యాప్ చేయండి',
+    exportPdf: 'PDF ఎగుమతి', jurisdiction: 'అధికార పరిధి', jurisdictionIndia: 'భారతదేశం', jurisdictionInternational: 'అంతర్జాతీయ',
+    newChat: 'కొత్త చాట్', chatHistory: 'చాట్ చరిత్ర', typing: 'టైప్ చేస్తోంది...', about: 'గురించి', clearSession: 'సెషన్ క్లియర్ చేయండి',
+    absCompliance: 'ABS సమ్మతి', patentsActSection: 'పేటెంట్ చట్టం', tkdlCheck: 'TKDL తనిఖీ', giTagging: 'GI ట్యాగింగ్',
+    highConfidence: 'అధిక విశ్వాసం', mediumConfidence: 'మధ్యస్థ విశ్వాసం', lowConfidence: 'తక్కువ విశ్వాసం',
+    loading: 'లోడ్ అవుతోంది...', error: 'లోపం', retry: 'మళ్ళీ ప్రయత్నించు', close: 'మూసివేయి', submit: 'సమర్పించు', cancel: 'రద్దు', back: 'వెనుకకు', next: 'తదుపరి',
+    today: 'ఈరోజు', yesterday: 'నిన్న', privacyPolicy: 'గోప్యతా విధానం', termsOfService: 'సేవా నిబంధనలు',
+    selectResponseLang: 'ప్రతిస్పందన భాషను ఎంచుకోండి', typeYourQuestion: 'మీ ప్రశ్నను టైప్ చేయండి',
+  },
+  // मराठी (Marathi)
+  mr: {
+    govtOf: 'भारत सरकार', ministry: 'आयुष मंत्रालय', searchPlaceholder: 'कायदे शोधा...',
+    home: 'मुख्यपृष्ठ', absChecker: 'ABS तपासणी', ipCalculator: 'IP कॅल्क्युलेटर', officialSources: 'अधिकृत स्रोत', aboutPortal: 'पोर्टलबद्दल', consultAssistant: 'IP सहाय्यकाशी सल्ला',
+    heroEyebrow: 'आयुष नवोन्मेष मार्गदर्शन', heroTitle: 'तुमची नवनिर्मिती सुरक्षित करा.', heroSubtitle: 'पुढे काय ते जाणून घ्या.', heroDesc: 'एका मार्गदर्शित मूल्यांकनाद्वारे बौद्धिक संपदा, नियमन आणि जैवविविधता मार्ग शोधा.',
+    startAssessment: 'मूल्यांकन सुरू करा →', startConsultation: 'मूल्यांकन सुरू करा →', howItWorksBtn: 'हे कसे कार्य करते', formulationWizard: 'फॉर्म्युलेशन विझार्ड', seeDemo: 'डेमो पहा',
+    zeroHallucination: 'शून्य-भ्रम', sourceCited: 'स्रोत-उद्धृत', multiLanguage: '10+ भाषा', indiaIntl: 'भारत आणि आंतरराष्ट्रीय',
+    trustPatentsAct: 'पेटंट कायदा 1970', trustPatentsActDesc: 'कलम 3(p) TKDL अपवाद', trustTkdl: 'TKDL डेटाबेस', trustTkdlDesc: '2.5 लाख+ फॉर्म्युलेशन पूर्व कला', trustBdAct: 'जैवविविधता कायदा 2002', trustBdActDesc: 'अनिवार्य ABS मंजुरी', trustDrugsRules: 'औषधी व सौंदर्य प्रसाधने नियम', trustDrugsRulesDesc: 'ASU नियामक परवाना',
+    statutesCovered: 'समाविष्ट कायदे', languagesSupported: 'समर्थित भाषा', averageResponseTime: 'सरासरी प्रतिसाद वेळ', userSatisfaction: 'वापरकर्ता समाधान',
+    chatWelcome: 'नमस्कार! मी IP-SAKTI सहायक, आयुर्वेदातील बौद्धिक संपदेसाठी तुमचा मार्गदर्शक.', chatPlaceholder: 'पेटंट कायदा, ABS, TKDL बद्दल विचारा...', sendMessage: 'पाठवा',
+    voiceInput: 'व्हॉइस इनपुट', voiceListening: 'ऐकत आहे...', voiceNotSupported: 'व्हॉइस समर्थित नाही', voiceError: 'व्हॉइस त्रुटी. पुन्हा प्रयत्न करा.', tapToSpeak: 'बोलण्यासाठी टॅप करा',
+    exportPdf: 'PDF निर्यात', jurisdiction: 'अधिकारक्षेत्र', jurisdictionIndia: 'भारत', jurisdictionInternational: 'आंतरराष्ट्रीय',
+    newChat: 'नवीन चॅट', chatHistory: 'चॅट इतिहास', typing: 'टाइप करत आहे...', about: 'बद्दल', clearSession: 'सत्र साफ करा',
+    absCompliance: 'ABS अनुपालन', patentsActSection: 'पेटंट कायदा', tkdlCheck: 'TKDL तपासणी', giTagging: 'GI टॅगिंग',
+    highConfidence: 'उच्च आत्मविश्वास', mediumConfidence: 'मध्यम आत्मविश्वास', lowConfidence: 'कमी आत्मविश्वास',
+    loading: 'लोड होत आहे...', error: 'त्रुटी', retry: 'पुन्हा प्रयत्न', close: 'बंद करा', submit: 'सबमिट करा', cancel: 'रद्द करा', back: 'मागे', next: 'पुढे',
+    today: 'आज', yesterday: 'काल', privacyPolicy: 'गोपनीयता धोरण', termsOfService: 'सेवेच्या अटी',
+    selectResponseLang: 'प्रतिसाद भाषा निवडा', typeYourQuestion: 'तुमचा प्रश्न टाइप करा',
+  },
+  // ગુજરાતી (Gujarati)
+  gu: {
+    govtOf: 'ભારત સરકાર', ministry: 'આયુષ મંત્રાલય', searchPlaceholder: 'કાયદા શોધો...',
+    home: 'હોમ', absChecker: 'ABS ચેકર', ipCalculator: 'IP કેલ્ક્યુલેટર', officialSources: 'અધિકૃત સ્ત્રોતો', aboutPortal: 'પોર્ટલ વિશે', consultAssistant: 'IP સહાયકનો સંપર્ક કરો',
+    heroEyebrow: 'આયુષ નવીનતા માર્ગદર્શન', heroTitle: 'તમારી નવીનતાને સુરક્ષિત કરો.', heroSubtitle: 'આગળ શું છે તે જાણો.', heroDesc: 'એક માર્ગદર્શિત મૂલ્યાંકન દ્વારા બૌદ્ધિક સંપત્તિ, નિયમન અને જૈવવિવિધતા માર્ગો શોધો.',
+    startAssessment: 'મૂલ્યાંકન શરૂ કરો →', startConsultation: 'મૂલ્યાંકન શરૂ કરો →', howItWorksBtn: 'આ કેવી રીતે કામ કરે છે', formulationWizard: 'ફોર્મ્યુલેશન વિઝાર્ડ', seeDemo: 'ડેમો જુઓ',
+    zeroHallucination: 'શૂન્ય-ભ્રમ', sourceCited: 'સ્ત્રોત-ટાંકેલ', multiLanguage: '10+ ભાષાઓ', indiaIntl: 'ભારત અને આંતરરાષ્ટ્રીય',
+    trustPatentsAct: 'પેટન્ટ કાયદો 1970', trustPatentsActDesc: 'કલમ 3(p) TKDL અપવાદો', trustTkdl: 'TKDL ડેટાબેસ', trustTkdlDesc: '2.5 લાખ+ ફોર્મ્યુલેશન પૂર્વ કળા', trustBdAct: 'જૈવવિવિધતા કાયદો 2002', trustBdActDesc: 'ફરજિયાત ABS મંજૂરી', trustDrugsRules: 'દવા અને સૌંદર્ય પ્રસાધન નિયમો', trustDrugsRulesDesc: 'ASU નિયમનકારી લાઇસન્સ',
+    statutesCovered: 'આવરી લેવાયેલા કાયદા', languagesSupported: 'સમર્થિત ભાષાઓ', averageResponseTime: 'સરેરાશ પ્રતિસાદ સમય', userSatisfaction: 'વપરાશકર્તા સંતોષ',
+    chatWelcome: 'નમસ્તે! હું IP-SAKTI સહાયક, આયુર્વેદમાં બૌદ્ધિક સંપત્તિ માટે તમારું માર્ગદર્શક.', chatPlaceholder: 'પેટન્ટ કાયદો, ABS, TKDL વિશે પૂછો...', sendMessage: 'મોકલો',
+    voiceInput: 'વૉઇસ ઇનપુટ', voiceListening: 'સાંભળી રહ્યું છે...', voiceNotSupported: 'વૉઇસ સમર્થિત નથી', voiceError: 'વૉઇસ ભૂલ. ફરી પ્રયાસ કરો.', tapToSpeak: 'બોલવા માટે ટેપ કરો',
+    exportPdf: 'PDF નિકાસ', jurisdiction: 'અધિકારક્ષેત્ર', jurisdictionIndia: 'ભારત', jurisdictionInternational: 'આંતરરાષ્ટ્રીય',
+    newChat: 'નવી ચેટ', chatHistory: 'ચેટ ઇતિહાસ', typing: 'ટાઇપ કરી રહ્યું છે...', about: 'વિશે', clearSession: 'સત્ર સાફ કરો',
+    absCompliance: 'ABS અનુપાલન', patentsActSection: 'પેટન્ટ કાયદો', tkdlCheck: 'TKDL તપાસ', giTagging: 'GI ટેગિંગ',
+    highConfidence: 'ઉચ્ચ વિશ્વાસ', mediumConfidence: 'મધ્યમ વિશ્વાસ', lowConfidence: 'ઓછો વિશ્વાસ',
+    loading: 'લોડ થઈ રહ્યું છે...', error: 'ભૂલ', retry: 'ફરી પ્રયાસ', close: 'બંધ કરો', submit: 'સબમિટ કરો', cancel: 'રદ કરો', back: 'પાછળ', next: 'આગળ',
+    today: 'આજે', yesterday: 'ગઈકાલે', privacyPolicy: 'ગોપનીયતા નીતિ', termsOfService: 'સેવાની શરતો',
+    selectResponseLang: 'પ્રતિસાદ ભાષા પસંદ કરો', typeYourQuestion: 'તમારો પ્રશ્ન ટાઇપ કરો',
+  },
+  // മലയാളം (Malayalam)
+  ml: {
+    govtOf: 'ഇന്ത്യൻ സർക്കാർ', ministry: 'ആയുഷ് മന്ത്രാലയം', searchPlaceholder: 'നിയമങ്ങൾ തിരയുക...',
+    home: 'ഹോം', absChecker: 'ABS ചെക്കർ', ipCalculator: 'IP കാൽക്കുലേറ്റർ', officialSources: 'ഔദ്യോഗിക ഉറവിടങ്ങൾ', aboutPortal: 'പോർട്ടലിനെക്കുറിച്ച്', consultAssistant: 'IP സഹായിയെ ബന്ധപ്പെടുക',
+    heroEyebrow: 'ആയുഷ് നവീകരണ മാർഗ്ഗനിർദ്ദേശം', heroTitle: 'നിങ്ങളുടെ നവീകരണം സംരക്ഷിക്കുക.', heroSubtitle: 'അടുത്തത് എന്താണെന്ന് അറിയുക.', heroDesc: 'ഒരു മാർഗ്ഗനിർദ്ദേശ മൂല്യനിർണ്ണയത്തിലൂടെ ബൗദ്ധിക സ്വത്ത്, നിയന്ത്രണം, ജൈവവൈവിധ്യ പാതകൾ പര്യവേക്ഷണം ചെയ്യുക.',
+    startAssessment: 'മൂല്യനിർണ്ണയം ആരംഭിക്കുക →', startConsultation: 'മൂല്യനിർണ്ണയം ആരംഭിക്കുക →', howItWorksBtn: 'ഇത് എങ്ങനെ പ്രവർത്തിക്കുന്നു', formulationWizard: 'ഫോർമുലേഷൻ വിസാർഡ്', seeDemo: 'ഡെമോ കാണുക',
+    zeroHallucination: 'സീറോ-ഭ്രമം', sourceCited: 'ഉറവിടം-ഉദ്ധരിച്ചത്', multiLanguage: '10+ ഭാഷകൾ', indiaIntl: 'ഇന്ത്യയും അന്താരാഷ്ട്രവും',
+    trustPatentsAct: 'പേറ്റന്റ് നിയമം 1970', trustPatentsActDesc: 'വകുപ്പ് 3(p) TKDL ഒഴിവാക്കലുകൾ', trustTkdl: 'TKDL ഡാറ്റാബേസ്', trustTkdlDesc: '2.5 ലക്ഷം+ ഫോർമുലേഷൻ മുൻകല', trustBdAct: 'ജൈവവൈവിധ്യ നിയമം 2002', trustBdActDesc: 'നിർബന്ധിത ABS അംഗീകാരം', trustDrugsRules: 'മരുന്ന് & സൗന്ദര്യവർധക നിയമങ്ങൾ', trustDrugsRulesDesc: 'ASU റെഗുലേറ്ററി ലൈസൻസിംഗ്',
+    statutesCovered: 'ഉൾപ്പെടുത്തിയ നിയമങ്ങൾ', languagesSupported: 'പിന്തുണയ്ക്കുന്ന ഭാഷകൾ', averageResponseTime: 'ശരാശരി പ്രതികരണ സമയം', userSatisfaction: 'ഉപയോക്തൃ സംതൃപ്തി',
+    chatWelcome: 'നമസ്കാരം! ഞാൻ IP-SAKTI സഹായക്, ആയുർവേദത്തിലെ ബൗദ്ധിക സ്വത്തിനുള്ള നിങ്ങളുടെ ഗൈഡ്.', chatPlaceholder: 'പേറ്റന്റ് നിയമം, ABS, TKDL എന്നിവയെക്കുറിച്ച് ചോദിക്കുക...', sendMessage: 'അയയ്ക്കുക',
+    voiceInput: 'വോയ്സ് ഇൻപുട്ട്', voiceListening: 'കേൾക്കുന്നു...', voiceNotSupported: 'വോയ്സ് പിന്തുണയില്ല', voiceError: 'വോയ്സ് പിശക്. വീണ്ടും ശ്രമിക്കുക.', tapToSpeak: 'സംസാരിക്കാൻ ടാപ്പ് ചെയ്യുക',
+    exportPdf: 'PDF എക്സ്പോർട്ട്', jurisdiction: 'അധികാരപരിധി', jurisdictionIndia: 'ഇന്ത്യ', jurisdictionInternational: 'അന്താരാഷ്ട്ര',
+    newChat: 'പുതിയ ചാറ്റ്', chatHistory: 'ചാറ്റ് ചരിത്രം', typing: 'ടൈപ്പ് ചെയ്യുന്നു...', about: 'കുറിച്ച്', clearSession: 'സെഷൻ മായ്ക്കുക',
+    absCompliance: 'ABS പാലനം', patentsActSection: 'പേറ്റന്റ് നിയമം', tkdlCheck: 'TKDL പരിശോധന', giTagging: 'GI ടാഗിംഗ്',
+    highConfidence: 'ഉയർന്ന ആത്മവിശ്വാസം', mediumConfidence: 'മിതമായ ആത്മവിശ്വാസം', lowConfidence: 'കുറഞ്ഞ ആത്മവിശ്വാസം',
+    loading: 'ലോഡ് ചെയ്യുന്നു...', error: 'പിശക്', retry: 'വീണ്ടും ശ്രമിക്കുക', close: 'അടയ്ക്കുക', submit: 'സമർപ്പിക്കുക', cancel: 'റദ്ദാക്കുക', back: 'പിന്നിലേക്ക്', next: 'അടുത്തത്',
+    today: 'ഇന്ന്', yesterday: 'ഇന്നലെ', privacyPolicy: 'സ്വകാര്യതാ നയം', termsOfService: 'സേവന നിബന്ധനകൾ',
+    selectResponseLang: 'പ്രതികരണ ഭാഷ തിരഞ്ഞെടുക്കുക', typeYourQuestion: 'നിങ്ങളുടെ ചോദ്യം ടൈപ്പ് ചെയ്യുക',
+  },
+  // ਪੰਜਾਬੀ (Punjabi)
+  pa: {
+    govtOf: 'ਭਾਰਤ ਸਰਕਾਰ', ministry: 'ਆਯੁਸ਼ ਮੰਤਰਾਲਾ', searchPlaceholder: 'ਕਾਨੂੰਨ ਖੋਜੋ...',
+    home: 'ਹੋਮ', absChecker: 'ABS ਚੈੱਕਰ', ipCalculator: 'IP ਕੈਲਕੁਲੇਟਰ', officialSources: 'ਅਧਿਕਾਰਤ ਸਰੋਤ', aboutPortal: 'ਪੋਰਟਲ ਬਾਰੇ', consultAssistant: 'IP ਸਹਾਇਕ ਨਾਲ ਸੰਪਰਕ ਕਰੋ',
+    heroEyebrow: 'ਆਯੁਸ਼ ਨਵੀਨਤਾ ਮਾਰਗਦਰਸ਼ਨ', heroTitle: 'ਆਪਣੀ ਨਵੀਨਤਾ ਦੀ ਰੱਖਿਆ ਕਰੋ।', heroSubtitle: 'ਜਾਣੋ ਅੱਗੇ ਕੀ ਹੈ।', heroDesc: 'ਇੱਕ ਮਾਰਗਦਰਸ਼ਿਤ ਮੁਲਾਂਕਣ ਦੁਆਰਾ ਬੌਧਿਕ ਸੰਪੱਤੀ, ਨਿਯਮ ਅਤੇ ਜੈਵ ਵਿਭਿੰਨਤਾ ਮਾਰਗਾਂ ਦੀ ਖੋਜ ਕਰੋ।',
+    startAssessment: 'ਮੁਲਾਂਕਣ ਸ਼ੁਰੂ ਕਰੋ →', startConsultation: 'ਮੁਲਾਂਕਣ ਸ਼ੁਰੂ ਕਰੋ →', howItWorksBtn: 'ਇਹ ਕਿਵੇਂ ਕੰਮ ਕਰਦਾ ਹੈ', formulationWizard: 'ਫਾਰਮੂਲੇਸ਼ਨ ਵਿਜ਼ਾਰਡ', seeDemo: 'ਡੈਮੋ ਦੇਖੋ',
+    zeroHallucination: 'ਜ਼ੀਰੋ-ਭਰਮ', sourceCited: 'ਸਰੋਤ-ਹਵਾਲਾ', multiLanguage: '10+ ਭਾਸ਼ਾਵਾਂ', indiaIntl: 'ਭਾਰਤ ਅਤੇ ਅੰਤਰਰਾਸ਼ਟਰੀ',
+    trustPatentsAct: 'ਪੇਟੈਂਟ ਐਕਟ 1970', trustPatentsActDesc: 'ਧਾਰਾ 3(p) TKDL ਛੋਟ', trustTkdl: 'TKDL ਡੇਟਾਬੇਸ', trustTkdlDesc: '2.5 ਲੱਖ+ ਫਾਰਮੂਲੇਸ਼ਨ ਪੂਰਵ ਕਲਾ', trustBdAct: 'ਜੈਵ ਵਿਭਿੰਨਤਾ ਐਕਟ 2002', trustBdActDesc: 'ਲਾਜ਼ਮੀ ABS ਮਨਜ਼ੂਰੀ', trustDrugsRules: 'ਦਵਾਈਆਂ ਅਤੇ ਸ਼ਿੰਗਾਰ ਨਿਯਮ', trustDrugsRulesDesc: 'ASU ਰੈਗੂਲੇਟਰੀ ਲਾਇਸੈਂਸਿੰਗ',
+    statutesCovered: 'ਸ਼ਾਮਲ ਕਾਨੂੰਨ', languagesSupported: 'ਸਮਰਥਿਤ ਭਾਸ਼ਾਵਾਂ', averageResponseTime: 'ਔਸਤ ਜਵਾਬ ਸਮਾਂ', userSatisfaction: 'ਉਪਭੋਗਤਾ ਸੰਤੁਸ਼ਟੀ',
+    chatWelcome: 'ਸਤ ਸ੍ਰੀ ਅਕਾਲ! ਮੈਂ IP-SAKTI ਸਹਾਇਕ, ਆਯੁਰਵੇਦ ਵਿੱਚ ਬੌਧਿਕ ਸੰਪੱਤੀ ਲਈ ਤੁਹਾਡਾ ਗਾਈਡ।', chatPlaceholder: 'ਪੇਟੈਂਟ ਐਕਟ, ABS, TKDL ਬਾਰੇ ਪੁੱਛੋ...', sendMessage: 'ਭੇਜੋ',
+    voiceInput: 'ਵੌਇਸ ਇਨਪੁੱਟ', voiceListening: 'ਸੁਣ ਰਿਹਾ ਹੈ...', voiceNotSupported: 'ਵੌਇਸ ਸਮਰਥਿਤ ਨਹੀਂ', voiceError: 'ਵੌਇਸ ਗਲਤੀ। ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।', tapToSpeak: 'ਬੋਲਣ ਲਈ ਟੈਪ ਕਰੋ',
+    exportPdf: 'PDF ਐਕਸਪੋਰਟ', jurisdiction: 'ਅਧਿਕਾਰ ਖੇਤਰ', jurisdictionIndia: 'ਭਾਰਤ', jurisdictionInternational: 'ਅੰਤਰਰਾਸ਼ਟਰੀ',
+    newChat: 'ਨਵੀਂ ਚੈਟ', chatHistory: 'ਚੈਟ ਇਤਿਹਾਸ', typing: 'ਟਾਈਪ ਕਰ ਰਿਹਾ ਹੈ...', about: 'ਬਾਰੇ', clearSession: 'ਸੈਸ਼ਨ ਸਾਫ਼ ਕਰੋ',
+    absCompliance: 'ABS ਪਾਲਣਾ', patentsActSection: 'ਪੇਟੈਂਟ ਐਕਟ', tkdlCheck: 'TKDL ਚੈੱਕ', giTagging: 'GI ਟੈਗਿੰਗ',
+    highConfidence: 'ਉੱਚ ਭਰੋਸਾ', mediumConfidence: 'ਮੱਧਮ ਭਰੋਸਾ', lowConfidence: 'ਘੱਟ ਭਰੋਸਾ',
+    loading: 'ਲੋਡ ਹੋ ਰਿਹਾ ਹੈ...', error: 'ਗਲਤੀ', retry: 'ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼', close: 'ਬੰਦ ਕਰੋ', submit: 'ਜਮ੍ਹਾਂ ਕਰੋ', cancel: 'ਰੱਦ ਕਰੋ', back: 'ਪਿੱਛੇ', next: 'ਅੱਗੇ',
+    today: 'ਅੱਜ', yesterday: 'ਕੱਲ੍ਹ', privacyPolicy: 'ਗੋਪਨੀਯਤਾ ਨੀਤੀ', termsOfService: 'ਸੇਵਾ ਦੀਆਂ ਸ਼ਰਤਾਂ',
+    selectResponseLang: 'ਜਵਾਬ ਭਾਸ਼ਾ ਚੁਣੋ', typeYourQuestion: 'ਆਪਣਾ ਸਵਾਲ ਟਾਈਪ ਕਰੋ',
   },
 }
 
@@ -1105,7 +1474,10 @@ function DemoPreview() {
       </Reveal>
       <Reveal delay={250}>
         <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-          <Link to="/chat" className="btn-primary">{t('demoTryIt')} →</Link>
+          <Link to="/chat" className="btn-primary demo-try-btn">
+            {t('demoTryIt')}
+            <IconArrowRight size={17} className="btn-arrow" />
+          </Link>
         </div>
       </Reveal>
     </section>
@@ -1622,14 +1994,23 @@ function FormulationWizardModal({ isOpen, onClose, onAskChat }) {
 /* ============================================================
    HISTORY SIDEBAR RAIL
    ============================================================ */
-function ChatSidebar({ collapsed, activeId, onSelectSession, onNewChat, onOpenWizard, onOpenAbout }) {
+function ChatSidebar({ collapsed, activeId, onSelectSession, onNewChat, onOpenWizard, onOpenAbout, sessions = [], onDeleteSession, onRenameSession, loadingSessions }) {
   const { t } = useLanguage()
-  const SESSIONS = [
-    { id: 1, title: 'Arthritis Formulation Patentability', tag: 'Patents', date: 'Today' },
-    { id: 2, title: 'ABS Compliance for Neem Extract', tag: 'BD Act', date: 'Yesterday' },
-    { id: 3, title: 'TKDL Prior Art Section 3(p)', tag: 'TKDL', date: 'Aug 29' },
-    { id: 4, title: 'Ayurvedic Herbal Cosmetic Trademark', tag: 'Trademark', date: 'Aug 26' },
-  ]
+  const [editingId, setEditingId] = useState(null)
+  const [editValue, setEditValue] = useState('')
+
+  const startRename = (e, s) => {
+    e.stopPropagation()
+    setEditingId(s.id)
+    setEditValue(s.title || '')
+  }
+
+  const commitRename = (id) => {
+    const v = editValue.trim()
+    if (v && onRenameSession) onRenameSession(id, v)
+    setEditingId(null)
+    setEditValue('')
+  }
 
   return (
     <aside className={`chat-sidebar ${collapsed ? 'collapsed' : ''}`} aria-label={t('chatHistory')}>
@@ -1645,17 +2026,63 @@ function ChatSidebar({ collapsed, activeId, onSelectSession, onNewChat, onOpenWi
       </div>
 
       <div className="sidebar-history-list">
-        {SESSIONS.map(s => (
+        {loadingSessions && (
+          <div style={{ padding: '0.75rem 1rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>Loading…</div>
+        )}
+        {!loadingSessions && sessions.length === 0 && (
+          <div style={{ padding: '0.75rem 1rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+            No past conversations yet. Start a new consultation.
+          </div>
+        )}
+        {sessions.map(s => (
           <div
             key={s.id}
             className={`history-item ${activeId === s.id ? 'active' : ''}`}
-            onClick={() => onSelectSession(s.id)}
+            onClick={() => editingId !== s.id && onSelectSession(s.id)}
+            style={{ alignItems: 'center' }}
           >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <span className="history-item-title">{s.title}</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1, minWidth: 0 }}>
+              {editingId === s.id ? (
+                <input
+                  autoFocus
+                  className="history-rename-input"
+                  value={editValue}
+                  onChange={e => setEditValue(e.target.value)}
+                  onClick={e => e.stopPropagation()}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') commitRename(s.id)
+                    if (e.key === 'Escape') { setEditingId(null); setEditValue('') }
+                  }}
+                  onBlur={() => commitRename(s.id)}
+                  style={{ width: '100%', fontSize: '0.82rem', padding: '2px 4px' }}
+                />
+              ) : (
+                <span className="history-item-title" title={s.title} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.title}</span>
+              )}
               <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{s.date}</span>
             </div>
-            <span className="history-item-tag">{s.tag}</span>
+            {editingId !== s.id && (
+              <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                <button
+                  className="history-action-btn"
+                  onClick={(e) => startRename(e, s)}
+                  aria-label="Rename conversation"
+                  title="Rename"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '2px', display: 'inline-flex' }}
+                >
+                  <IconEdit size={13} />
+                </button>
+                <button
+                  className="history-action-btn"
+                  onClick={(e) => { e.stopPropagation(); if (onDeleteSession) onDeleteSession(s.id) }}
+                  aria-label="Delete conversation"
+                  title="Delete"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '2px', display: 'inline-flex' }}
+                >
+                  <IconTrash size={13} />
+                </button>
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -1672,6 +2099,10 @@ function ChatSidebar({ collapsed, activeId, onSelectSession, onNewChat, onOpenWi
         <Link to="/ip-calculator" className="sidebar-link-btn" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <IconCalculator size={16} />
           <span>{t('ipCalculator')}</span>
+        </Link>
+        <Link to="/deadline-calculator" className="sidebar-link-btn" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <IconCalendar size={16} />
+          <span>{t('deadlineCalc')}</span>
         </Link>
         <Link to="/sources" className="sidebar-link-btn" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <IconBook size={16} />
@@ -1693,9 +2124,12 @@ const DEMO_MESSAGES = [
   {
     id: 1,
     role: 'ai',
-    text: 'Namaste. I am IP-SAKTI Sahayak, your authoritative guide to Intellectual Property in Ayurveda. Ask me about patents, trademarks, GI tags, TKDL prior art, or regulatory compliance.',
+    text: 'Namaste. I am Ragvyn AI, your authoritative guide to Intellectual Property in Ayurveda. Ask me about patents, trademarks, GI tags, TKDL prior art, or regulatory compliance.',
+    sections: [],
     citations: [],
-    confidence: null,
+    confidence: { score: 100, label: 'High', reason: 'Welcome message' },
+    followUpQuestions: ['Can I patent my Ayurvedic formulation?', 'What is TKDL?', 'How do I check NBA compliance?'],
+    status: 'answered',
     showDisclaimer: false,
   },
   {
@@ -1707,12 +2141,15 @@ const DEMO_MESSAGES = [
     id: 3,
     role: 'ai',
     text: 'Under Indian patent law, purely traditional Ayurvedic formulations face significant barriers. Section 3(p) of the Patents Act 1970 bars patents on traditional knowledge, and the India Patent Office cross-checks all applications against the TKDL database.\n\nHowever, if your formulation has a novel modification, improved delivery mechanism, or enhanced efficacy backed by clinical data, it may qualify under Section 2(1)(j) as a "new invention".',
+    sections: [],
     citations: [
-      { title: 'Patents Act 1970 | §3(p) | Traditional Knowledge Bar', url: 'https://ipindia.gov.in/patents.htm' },
-      { title: 'TKDL Database | Cross-Reference Check', url: 'https://www.tkdl.res.in/' },
-      { title: 'Patents Act 1970 | §2(1)(j) | Definition of Invention', url: 'https://indiacode.nic.in/' },
+      { source: 'Patents Act 1970', section: '§3(p)', text: 'Section 3(p): An invention which, in effect, is traditional knowledge or which is an aggregation or duplication of known properties of traditionally known component or components, is not patentable.', relevance: 'Primary exclusion for traditional formulations' },
+      { source: 'TKDL Database', section: 'Cross-Reference Check', text: 'The Traditional Knowledge Digital Library (TKDL) is a database of traditional knowledge documented in searchable format to prevent misappropriation of Indian traditional knowledge through patents.', relevance: 'Prior art verification source' },
+      { source: 'Patents Act 1970', section: '§2(1)(j)', text: 'Section 2(1)(j): "Invention" means a new product or process involving an inventive step and capable of industrial application.', relevance: 'Definition of patentable invention' },
     ],
-    confidence: 'high',
+    confidence: { score: 85, label: 'High', reason: 'Based on 3 statutory sources with direct relevance.' },
+    followUpQuestions: ['What modifications make a formulation patentable?', 'How do I check TKDL for prior art?', 'What are the patent filing fees?'],
+    status: 'answered',
     showDisclaimer: true,
   },
   {
@@ -1724,11 +2161,14 @@ const DEMO_MESSAGES = [
     id: 5,
     role: 'ai',
     text: 'A liposomal delivery gel containing standardized Ashwagandha extract has a much stronger patent pathway! Because the novelty lies in the bio-availability delivery system rather than the raw herb itself, it overcomes the Section 3(p) traditional knowledge bar.\n\nKey requirements:\n1. Must demonstrate non-obvious synergistic efficacy under Section 3(e).\n2. Must obtain NBA (National Biodiversity Authority) approval under Section 6 of Biological Diversity Act 2002 before patent grant.',
+    sections: [],
     citations: [
-      { title: 'Patents Act 1970 | §3(e) | Synergistic Admixture Exclusion', url: 'https://ipindia.gov.in/patents.htm' },
-      { title: 'Biological Diversity Act 2002 | §6 | Prior NBA Approval for IP', url: 'http://nbaindia.org/' },
+      { source: 'Patents Act 1970', section: '§3(e)', text: 'Section 3(e): A substance obtained by a mere admixture resulting only in the aggregation of the properties of the components thereof or a process for producing such substance is not patentable.', relevance: 'Synergy requirement for combinations' },
+      { source: 'Biological Diversity Act 2002', section: '§6', text: 'Section 6: No person shall apply for any intellectual property right in or outside India for any invention based on any research or information on a biological resource obtained from India without obtaining prior approval of the NBA.', relevance: 'Mandatory NBA approval requirement' },
     ],
-    confidence: 'medium',
+    confidence: { score: 72, label: 'Medium', reason: 'Based on 2 sources; specific formulation assessment requires detailed review.' },
+    followUpQuestions: ['What is the NBA approval process?', 'What evidence of synergy is needed?', 'How long does patent examination take?'],
+    status: 'answered',
     showDisclaimer: true,
   },
   {
@@ -1741,10 +2181,12 @@ const DEMO_MESSAGES = [
     role: 'ai',
     text: 'Yes! International export triggers obligations under the Nagoya Protocol and WIPO GRATK Treaty (2024).\n\nYou must ensure fair Access and Benefit Sharing (ABS) compliance with India’s National Biodiversity Authority before exporting raw bio-resources or filing foreign patent applications (PCT route). We recommend consulting an IP attorney for international patenting.',
     citations: [
-      { title: 'WIPO GRATK Treaty 2024 | Mandatory Disclosure of Traditional Knowledge', url: 'https://www.wipo.int/' },
-      { title: 'Nagoya Protocol | Access & Benefit Sharing (ABS)', url: 'https://www.cbd.int/abs/' },
+      { source: 'wipo_gratk_treaty_2024', section: 'Mandatory Disclosure', text: 'The WIPO Treaty on IP, Genetic Resources and Associated Traditional Knowledge requires patent applicants to disclose the country of origin of genetic resources and associated traditional knowledge.' },
+      { source: 'nagoya_protocol', section: 'ABS Articles 6 & 7', text: 'Articles 6 & 7 establish requirements for Prior Informed Consent (PIC) and Mutually Agreed Terms (MAT) for access to genetic resources and traditional knowledge associated with genetic resources.' },
     ],
-    confidence: 'low',
+    confidence: { score: 55, label: 'Medium', reason: 'International jurisdiction; specific requirements vary.' },
+    followUpQuestions: ['What is the PCT filing process?', 'How do I obtain NBA export approval?'],
+    status: 'answered',
     showDisclaimer: true,
   },
 ]
@@ -1776,20 +2218,35 @@ function copyToClipboard(text, onSuccess) {
   })
 }
 
-// Citation source icon helper (Clean SVG)
-function getSourceIcon(url) {
-  if (!url) return <IconFileText size={16} />
-  if (url.includes('ipindia.gov.in')) return <IconGovt size={16} />
-  if (url.includes('tkdl.res.in')) return <IconBook size={16} />
-  if (url.includes('wipo.int')) return <IconGlobe size={16} />
-  if (url.includes('cbd.int') || url.includes('nagoya')) return <IconLeaf size={16} />
-  if (url.includes('nbaindia.org')) return <IconShield size={16} />
+// Citation source icon helper - matches source name from backend
+function getSourceIcon(source) {
+  if (!source) return <IconFileText size={16} />
+  const s = source.toLowerCase()
+  if (s.includes('patent')) return <IconGovt size={16} />
+  if (s.includes('tkdl')) return <IconBook size={16} />
+  if (s.includes('wipo') || s.includes('trips')) return <IconGlobe size={16} />
+  if (s.includes('nagoya') || s.includes('biodiversity') || s.includes('biological')) return <IconLeaf size={16} />
+  if (s.includes('nba') || s.includes('abs')) return <IconShield size={16} />
+  if (s.includes('drugs') || s.includes('cosmetics')) return <IconFlask size={16} />
   return <IconScroll size={16} />
 }
 
+// Format source name for display (e.g., "patents_act_1970" -> "Patents Act 1970")
+function formatSourceName(source) {
+  if (!source) return 'Unknown Source'
+  return source
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase())
+    .replace(/\s+chunks?$/i, '')
+    .trim()
+}
+
 function CitationCard({ citation, isExpanded, onToggle }) {
-  // Strip any legacy emoji characters from title
-  const cleanTitle = (citation.title || '').replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim()
+  // Backend sends: source (document name), section (page/section), text (chunk content)
+  const displayTitle = formatSourceName(citation.source || citation.title || '')
+  const sectionLabel = citation.section || ''
+  const snippetText = citation.text || ''
+  
   return (
     <div className={`citation-card ${isExpanded ? 'expanded' : ''}`}>
       <button
@@ -1797,23 +2254,30 @@ function CitationCard({ citation, isExpanded, onToggle }) {
         onClick={onToggle}
         aria-expanded={isExpanded}
       >
-        <span className="citation-icon" aria-hidden="true">{getSourceIcon(citation.url)}</span>
-        <span className="citation-title">{cleanTitle}</span>
+        <span className="citation-icon" aria-hidden="true">{getSourceIcon(citation.source)}</span>
+        <span className="citation-title">{displayTitle}{sectionLabel && ` — ${sectionLabel}`}</span>
         <span className={`citation-chevron ${isExpanded ? 'expanded' : ''}`} aria-hidden="true">
           <IconChevronDown size={14} />
         </span>
       </button>
       {isExpanded && (
         <div className="citation-content">
-          <a
-            href={citation.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="citation-link"
-          >
-            <span>{citation.url}</span>
-            <IconExternalLink size={14} />
-          </a>
+          {snippetText ? (
+            <p className="citation-snippet">{snippetText.length > 300 ? snippetText.slice(0, 300) + '…' : snippetText}</p>
+          ) : (
+            <p className="citation-snippet" style={{ opacity: 0.7 }}>Source document retrieved from verified legal corpus.</p>
+          )}
+          {citation.url && (
+            <a
+              href={citation.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="citation-link"
+            >
+              <span>{citation.url}</span>
+              <IconExternalLink size={14} />
+            </a>
+          )}
         </div>
       )}
     </div>
@@ -1869,18 +2333,56 @@ function CollapsibleCitations({ citations }) {
 }
 
 function ConfidenceBadge({ level }) {
-  const map = {
-    high: { label: 'Direct Statute Match (High Confidence)', cls: 'high', icon: <IconShieldCheck size={14} /> },
-    medium: { label: 'Statute-Grounded Guidance (Moderate Confidence — Verify specifics)', cls: 'medium', icon: <IconInfo size={14} /> },
-    low: { label: 'Human Review Recommended (Consult registered IP Attorney)', cls: 'low', icon: <IconAlertTriangle size={14} /> },
+  // Handle both old string format and new object format
+  let label, cls, icon, score, reason
+  
+  if (typeof level === 'object' && level !== null) {
+    // New structured format: { score, label, reason }
+    score = level.score
+    reason = level.reason || ''
+    const levelLabel = (level.label || 'Medium').toLowerCase()
+    
+    if (levelLabel === 'high' || score >= 70) {
+      label = `High Confidence (${score}%)`
+      cls = 'high'
+      icon = <IconShieldCheck size={14} />
+    } else if (levelLabel === 'medium' || score >= 40) {
+      label = `Moderate Confidence (${score}%)`
+      cls = 'medium'
+      icon = <IconInfo size={14} />
+    } else {
+      label = `Low Confidence (${score}%)`
+      cls = 'low'
+      icon = <IconAlertTriangle size={14} />
+    }
+  } else {
+    // Legacy string format: 'high', 'medium', 'low'
+    const map = {
+      high: { label: 'High Confidence', cls: 'high', icon: <IconShieldCheck size={14} /> },
+      medium: { label: 'Moderate Confidence', cls: 'medium', icon: <IconInfo size={14} /> },
+      moderate: { label: 'Moderate Confidence', cls: 'medium', icon: <IconInfo size={14} /> },
+      low: { label: 'Low Confidence', cls: 'low', icon: <IconAlertTriangle size={14} /> },
+    }
+    const m = map[level]
+    if (!m) return null
+    label = m.label
+    cls = m.cls
+    icon = m.icon
+    reason = ''
   }
-  const m = map[level]
-  if (!m) return null
+  
   return (
-    <span className={`confidence-badge ${m.cls}`} role="status" aria-label={m.label} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
-      {m.icon}
-      <span>{m.label}</span>
-    </span>
+    <div className="confidence-wrapper" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+      <span className={`confidence-badge ${cls}`} role="status" aria-label={label} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+        {icon}
+        <span>{label}</span>
+      </span>
+      {reason && (
+        <span className="confidence-reason" style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '1.2rem' }}>
+          {reason}
+        </span>
+      )}
+    </div>
   )
 }
 
@@ -1893,25 +2395,174 @@ function DisclaimerBanner() {
   )
 }
 
-function TypingIndicator() {
+/* ============================================================
+   TYPEWRITER TEXT COMPONENT - ChatGPT-like typing animation
+   ============================================================ */
+function TypewriterText({ text, speed = 15, onComplete }) {
+  const [displayedText, setDisplayedText] = useState('')
+  const [isComplete, setIsComplete] = useState(false)
+
+  useEffect(() => {
+    if (!text) return
+    
+    let currentIndex = 0
+    setDisplayedText('')
+    setIsComplete(false)
+
+    const typeNextChar = () => {
+      if (currentIndex < text.length) {
+        // Type 2-3 characters at once for smoother effect
+        const charsToAdd = Math.min(3, text.length - currentIndex)
+        setDisplayedText(text.slice(0, currentIndex + charsToAdd))
+        currentIndex += charsToAdd
+        setTimeout(typeNextChar, speed)
+      } else {
+        setIsComplete(true)
+        if (onComplete) onComplete()
+      }
+    }
+
+    const timer = setTimeout(typeNextChar, 100)
+    return () => clearTimeout(timer)
+  }, [text, speed, onComplete])
+
+  return (
+    <span className="typewriter-text">
+      {displayedText}
+      {!isComplete && <span className="typewriter-cursor" aria-hidden="true">|</span>}
+    </span>
+  )
+}
+
+/* ============================================================
+   DPDP PROTECTION BADGE - Shows data privacy compliance
+   ============================================================ */
+function DPDPProtectionBadge() {
+  const [showTooltip, setShowTooltip] = useState(false)
+
+  return (
+    <div 
+      className="dpdp-badge"
+      onMouseEnter={() => setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
+      role="status"
+      aria-label="Your data is protected under DPDP Act 2023"
+    >
+      <IconShield size={14} />
+      <span>DPDP Protected</span>
+      {showTooltip && (
+        <div className="dpdp-tooltip">
+          <strong>Data Protection Compliance</strong>
+          <ul>
+            <li><IconCheck size={12} /> PII auto-scrubbed before AI processing</li>
+            <li><IconCheck size={12} /> No personal data sent to external APIs</li>
+            <li><IconCheck size={12} /> Compliant with DPDP Act 2023</li>
+            <li><IconCheck size={12} /> Audit log maintained locally</li>
+          </ul>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ============================================================
+   VOICE INPUT VISUAL INDICATOR - Enhanced UI for voice recording
+   ============================================================ */
+function VoiceInputIndicator({ isListening, interimText, confidence, voiceLang }) {
+  if (!isListening && !interimText) return null
+
+  return (
+    <div className={`voice-input-indicator ${isListening ? 'listening' : ''}`}>
+      <div className="voice-waves">
+        <span className="wave"></span>
+        <span className="wave"></span>
+        <span className="wave"></span>
+        <span className="wave"></span>
+        <span className="wave"></span>
+      </div>
+      <div className="voice-status">
+        <span className="voice-lang-badge">{voiceLang === 'hi-IN' ? 'हिंदी' : 'EN'}</span>
+        <span className="voice-text">
+          {isListening ? 'Listening...' : interimText}
+        </span>
+        {confidence && (
+          <span className="voice-confidence">
+            {Math.round(confidence * 100)}% sure
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/* ============================================================
+   CONFIDENCE METER - Visual bar showing answer confidence
+   ============================================================ */
+function ConfidenceMeter({ level }) {
+  let label, fill, percent
+  
+  if (typeof level === 'object' && level !== null) {
+    // New structured format: { score, label, reason }
+    percent = level.score || 0
+    const levelLabel = (level.label || 'Medium').toLowerCase()
+    
+    if (levelLabel === 'high' || percent >= 70) {
+      label = 'High Confidence'
+      fill = 'high'
+    } else if (levelLabel === 'medium' || percent >= 40) {
+      label = 'Moderate'
+      fill = 'medium'
+    } else {
+      label = 'Low - Verify'
+      fill = 'low'
+    }
+  } else {
+    // Legacy string format
+    const levelMap = {
+      high: { label: 'High Confidence', fill: 'high', percent: 100 },
+      medium: { label: 'Moderate', fill: 'medium', percent: 66 },
+      moderate: { label: 'Moderate', fill: 'medium', percent: 66 },
+      low: { label: 'Low - Verify', fill: 'low', percent: 33 },
+    }
+    const m = levelMap[level]
+    if (!m) return null
+    label = m.label
+    fill = m.fill
+    percent = m.percent
+  }
+
+  return (
+    <div className="confidence-meter">
+      <div className="confidence-bar">
+        <div className={`confidence-fill ${fill}`} style={{ width: `${percent}%` }} />
+      </div>
+      <span className={`confidence-label ${fill}`}>{label}</span>
+    </div>
+  )
+}
+
+function TypingIndicator({ retrievalState }) {
   const [stepIndex, setStepIndex] = useState(0)
   const steps = [
-    'Classifying innovation domain...',
-    'Searching official statutes (Patents Act & BD Act)...',
-    'Checking TKDL prior art & Section 3(p)...',
-    'Verifying Biological Diversity Act / ABS rules...',
-    'Preparing grounded legal guidance...'
+    'Searching trusted sources...',
+    'Reviewing relevant documents...',
+    'Checking statutory references...',
+    'Validating citations...',
+    'Preparing cited answer...'
   ]
 
   useEffect(() => {
     const timer = setInterval(() => {
       setStepIndex(prev => (prev + 1) % steps.length)
-    }, 1200)
+    }, 1500)
     return () => clearInterval(timer)
   }, [steps.length])
 
+  // Use passed retrieval state if available, otherwise cycle through steps
+  const displayText = retrievalState || steps[stepIndex]
+
   return (
-    <div className="message-row ai-row typing-row" aria-label="IP-SAKTI is analyzing official statutes">
+    <div className="message-row ai-row typing-row" aria-label="Ragvyn AI is searching knowledge base">
       <div className="avatar ai-avatar" aria-hidden="true">
         <IconShieldCheck size={18} style={{ color: '#fff' }} />
       </div>
@@ -1919,8 +2570,8 @@ function TypingIndicator() {
         <div className="typing-indicator">
           <div className="typing-spinner" aria-hidden="true" />
           <div className="rag-stepper-text">
-            <span className="rag-stepper-step">Statutory Retrieval:</span>
-            <span>{steps[stepIndex]}</span>
+            <span className="rag-stepper-step">Retrieval:</span>
+            <span>{displayText}</span>
           </div>
         </div>
       </div>
@@ -2118,6 +2769,9 @@ function MessageBubble({ msg, onFollowUp, onRegenerate, onFeedback, isLatestAI }
     )
   }
 
+  // Get follow-up questions from response or use defaults
+  const followUps = msg.followUpQuestions || []
+
   return (
     <div className="message-row ai-row message-fade-in">
       <div className="avatar ai-avatar" aria-hidden="true">
@@ -2126,11 +2780,17 @@ function MessageBubble({ msg, onFollowUp, onRegenerate, onFeedback, isLatestAI }
       <div className="bubble-column">
         <div className="bubble ai-bubble" style={{ whiteSpace: 'pre-line' }}>
           {msg.text}
+          {msg.streaming && <span className="typewriter-cursor" aria-hidden="true">|</span>}
         </div>
 
         <CollapsibleCitations citations={msg.citations} />
 
-        {msg.confidence && <ConfidenceBadge level={msg.confidence} />}
+        {msg.confidence && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <ConfidenceBadge level={msg.confidence} />
+            <ConfidenceMeter level={msg.confidence} />
+          </div>
+        )}
         {msg.showDisclaimer && <DisclaimerBanner />}
 
         <MessageActions
@@ -2141,7 +2801,43 @@ function MessageBubble({ msg, onFollowUp, onRegenerate, onFeedback, isLatestAI }
 
         <span className="message-timestamp">{formatTimestamp(timestamp)}</span>
 
-        {isLatestAI && onFollowUp && (
+        {/* Follow-up questions from response */}
+        {isLatestAI && followUps.length > 0 && onFollowUp && (
+          <div className="follow-up-section" style={{ marginTop: '12px' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>
+              Related questions you might want to ask:
+            </span>
+            <div className="follow-up-chips">
+              {followUps.map((q, idx) => (
+                <button
+                  key={idx}
+                  className="follow-up-chip"
+                  onClick={() => onFollowUp(q)}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 14px',
+                    fontSize: '0.82rem',
+                    background: 'var(--surface-elevated)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '20px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    marginRight: '8px',
+                    marginBottom: '8px',
+                  }}
+                >
+                  <IconArrowRight size={14} style={{ color: 'var(--primary)' }} />
+                  {q}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Fallback to generic FollowUpChips only if no response follow-ups */}
+        {isLatestAI && followUps.length === 0 && onFollowUp && (
           <FollowUpChips onSelect={onFollowUp} />
         )}
       </div>
@@ -2684,54 +3380,14 @@ function GovtAccessibilityBar({ theme, toggleTheme, fontSize, setFontSize, setPr
    ============================================================ */
 function IpSaktiLogo({ className = '', size = 36 }) {
   return (
-    <svg
+    <img
+      src="/logo.png"
+      alt="IP-SAKTI Sahayak Logo"
       className={className}
-      viewBox="0 0 120 120"
       width={size}
       height={size}
-      aria-label="IP-SAKTI Sahayak Logo"
-    >
-      {/* Background Circle - Deep botanical forest green */}
-      <circle cx="60" cy="60" r="58" fill="#143D30" />
-      <circle cx="60" cy="60" r="54" fill="none" stroke="#C87A1E" strokeWidth="2" />
-
-      {/* Inner decorative ring - 24 spokes like Ashoka Chakra */}
-      <circle cx="60" cy="60" r="48" fill="none" stroke="#3D705E" strokeWidth="1" opacity="0.6" />
-
-      {/* Shield Shape - IP Protection */}
-      <path
-        d="M60 18 L92 32 L92 62 C92 82 76 98 60 104 C44 98 28 82 28 62 L28 32 Z"
-        fill="#1A4A3B"
-      />
-      <path
-        d="M60 24 L86 36 L86 60 C86 77 73 91 60 96 C47 91 34 77 34 60 L34 36 Z"
-        fill="#0F2E24"
-      />
-
-      {/* Ayurvedic Leaf - Traditional Knowledge */}
-      <path
-        d="M60 32 C75 42 72 58 60 68 C48 58 45 42 60 32"
-        fill="#3D705E"
-      />
-      {/* Leaf center vein */}
-      <path d="M60 36 L60 64" stroke="#FAF9F6" strokeWidth="1.5" strokeLinecap="round" opacity="0.8" />
-      {/* Leaf side veins */}
-      <path d="M60 44 L52 50" stroke="#FAF9F6" strokeWidth="1" strokeLinecap="round" opacity="0.6" />
-      <path d="M60 44 L68 50" stroke="#FAF9F6" strokeWidth="1" strokeLinecap="round" opacity="0.6" />
-      <path d="M60 52 L54 57" stroke="#FAF9F6" strokeWidth="1" strokeLinecap="round" opacity="0.6" />
-      <path d="M60 52 L66 57" stroke="#FAF9F6" strokeWidth="1" strokeLinecap="round" opacity="0.6" />
-
-      {/* IP Text */}
-      <text x="60" y="88" textAnchor="middle" fontFamily="'Plus Jakarta Sans', Arial, sans-serif" fontSize="14" fontWeight="800" fill="#FAF9F6" letterSpacing="2">IP</text>
-
-      {/* Three dots - representing Ayurveda's three doshas (Vata, Pitta, Kapha) in saffron */}
-      <circle cx="48" cy="76" r="3" fill="#C87A1E" />
-      <circle cx="60" cy="76" r="3" fill="#C87A1E" />
-      <circle cx="72" cy="76" r="3" fill="#C87A1E" />
-
-      {/* Outer saffron accent ring */}
-      <circle cx="60" cy="60" r="58" fill="none" stroke="#C87A1E" strokeWidth="2" strokeDasharray="4 2" />
-    </svg>
+      style={{ objectFit: 'contain' }}
+    />
   )
 }
 
@@ -2741,9 +3397,35 @@ function IpSaktiLogo({ className = '', size = 36 }) {
 function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout }) {
   const { t } = useLanguage()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+  const [toolsDropdownOpen, setToolsDropdownOpen] = useState(false)
+  const [servicesDropdownOpen, setServicesDropdownOpen] = useState(false)
+  const toolsDropdownRef = useRef(null)
+  const servicesDropdownRef = useRef(null)
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (toolsDropdownRef.current && !toolsDropdownRef.current.contains(event.target)) {
+        setToolsDropdownOpen(false)
+      }
+      if (servicesDropdownRef.current && !servicesDropdownRef.current.contains(event.target)) {
+        setServicesDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   return (
-    <nav className="gov-nav-bar" role="navigation" aria-label="Main Portal Navigation">
+    <nav className={`gov-nav-bar${scrolled ? ' nav-scrolled' : ''}`} role="navigation" aria-label="Main Portal Navigation">
       <div className="gov-nav-container">
         {/* Left: Brand Identity */}
         <Link to="/" className="gov-brand-wrap" onClick={() => setMobileMenuOpen(false)}>
@@ -2759,70 +3441,120 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout 
           </div>
         </Link>
 
-        {/* Center: Clean single-row navigation links */}
+        {/* Center: Professional navigation with dropdowns */}
         <ul className={`gov-nav-menu ${mobileMenuOpen ? 'mobile-open' : ''}`}>
-          <li>
+          {/* Tools Dropdown */}
+          <li className="gov-nav-dropdown" ref={toolsDropdownRef}>
             <button
               type="button"
-              className="gov-nav-link-btn"
+              className="gov-nav-link-btn gov-nav-dropdown-trigger"
               onClick={() => {
-                setMobileMenuOpen(false)
-                if (onOpenWizard) onOpenWizard()
+                setToolsDropdownOpen(!toolsDropdownOpen)
+                setServicesDropdownOpen(false)
               }}
-            >
-              <IconFlask size={15} />
-              <span>Assess Innovation</span>
-            </button>
-          </li>
-          <li>
-            <Link
-              to="/abs-checker"
-              className="gov-nav-link"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <IconLeaf size={15} />
-              <span>ABS Checker</span>
-            </Link>
-          </li>
-          <li>
-            <Link
-              to="/ip-calculator"
-              className="gov-nav-link"
-              onClick={() => setMobileMenuOpen(false)}
+              aria-expanded={toolsDropdownOpen}
             >
               <IconCalculator size={15} />
-              <span>IP Calculator</span>
-            </Link>
+              <span>IP Tools</span>
+              <IconChevronDown size={12} className={`dropdown-chevron ${toolsDropdownOpen ? 'open' : ''}`} />
+            </button>
+            {toolsDropdownOpen && (
+              <div className="gov-nav-dropdown-menu">
+                <Link to="/ip-calculator" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
+                  <IconCurrencyRupee size={16} />
+                  <div className="dropdown-item-content">
+                    <span className="dropdown-item-title">Fee Calculator</span>
+                    <span className="dropdown-item-desc">Patent filing fees estimate</span>
+                  </div>
+                </Link>
+                <Link to="/deadline-calculator" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
+                  <IconCalendar size={16} />
+                  <div className="dropdown-item-content">
+                    <span className="dropdown-item-title">Deadline Calculator</span>
+                    <span className="dropdown-item-desc">Track RFE, FER & renewals</span>
+                  </div>
+                </Link>
+                <Link to="/abs-checker" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
+                  <IconLeaf size={16} />
+                  <div className="dropdown-item-content">
+                    <span className="dropdown-item-title">ABS Checker</span>
+                    <span className="dropdown-item-desc">Biodiversity compliance</span>
+                  </div>
+                </Link>
+                <Link to="/checklists" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
+                  <IconCheck size={16} />
+                  <div className="dropdown-item-content">
+                    <span className="dropdown-item-title">Filing Checklists</span>
+                    <span className="dropdown-item-desc">Patent, TM, GI checklists</span>
+                  </div>
+                </Link>
+              </div>
+            )}
           </li>
-          <li>
-            <a
-              href="#pathways"
-              className="gov-nav-link"
-              onClick={() => setMobileMenuOpen(false)}
+
+          {/* Services Dropdown */}
+          <li className="gov-nav-dropdown" ref={servicesDropdownRef}>
+            <button
+              type="button"
+              className="gov-nav-link-btn gov-nav-dropdown-trigger"
+              onClick={() => {
+                setServicesDropdownOpen(!servicesDropdownOpen)
+                setToolsDropdownOpen(false)
+              }}
+              aria-expanded={servicesDropdownOpen}
             >
+              <IconBriefcase size={15} />
+              <span>Services</span>
+              <IconChevronDown size={12} className={`dropdown-chevron ${servicesDropdownOpen ? 'open' : ''}`} />
+            </button>
+            {servicesDropdownOpen && (
+              <div className="gov-nav-dropdown-menu">
+                <Link to="/drafts" className="gov-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
+                  <IconEdit size={16} />
+                  <div className="dropdown-item-content">
+                    <span className="dropdown-item-title">Draft Generator</span>
+                    <span className="dropdown-item-desc">Form-1, NBA templates</span>
+                  </div>
+                </Link>
+                <Link to="/workspace" className="gov-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
+                  <IconBriefcase size={16} />
+                  <div className="dropdown-item-content">
+                    <span className="dropdown-item-title">Matter Workspace</span>
+                    <span className="dropdown-item-desc">Track your IP cases</span>
+                    {!isLoggedIn && <span className="dropdown-item-badge">Login required</span>}
+                  </div>
+                </Link>
+                <Link to="/documents" className="gov-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
+                  <IconPaperClip size={16} />
+                  <div className="dropdown-item-content">
+                    <span className="dropdown-item-title">Document Upload</span>
+                    <span className="dropdown-item-desc">Upload & search PDFs</span>
+                    {!isLoggedIn && <span className="dropdown-item-badge">Login required</span>}
+                  </div>
+                </Link>
+                <Link to="/experts" className="gov-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
+                  <IconUsers size={16} />
+                  <div className="dropdown-item-content">
+                    <span className="dropdown-item-title">Expert Connect</span>
+                    <span className="dropdown-item-desc">Find IP experts & FAQs</span>
+                  </div>
+                </Link>
+              </div>
+            )}
+          </li>
+
+          {/* Direct Links */}
+          <li>
+            <Link to="/sources" className="gov-nav-link" onClick={() => setMobileMenuOpen(false)}>
               <IconBook size={15} />
-              <span>Knowledge</span>
-            </a>
-          </li>
-          <li>
-            <Link
-              to="/sources"
-              className="gov-nav-link"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <IconScroll size={15} />
               <span>Sources</span>
             </Link>
           </li>
           <li>
-            <a
-              href="#how-it-works"
-              className="gov-nav-link"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <IconScales size={15} />
-              <span>How It Works</span>
-            </a>
+            <Link to="/pricing" className="gov-nav-link" onClick={() => setMobileMenuOpen(false)}>
+              <IconTag size={15} />
+              <span>Pricing</span>
+            </Link>
           </li>
           <li>
             <button
@@ -2843,15 +3575,20 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout 
         <div className="gov-nav-actions">
           {isLoggedIn ? (
             <div className="gov-nav-user-group">
-              <div className="gov-nav-user-welcome" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                <IconUser size={14} />
-                <span><strong>{userName || 'Innovator'}</strong></span>
+              <div className="gov-nav-welcome-badge">
+                <div className="welcome-avatar">
+                  {(userName || 'U').charAt(0).toUpperCase()}
+                </div>
+                <div className="welcome-text">
+                  <span className="welcome-label">Welcome back,</span>
+                  <span className="welcome-name">{userName || 'Innovator'}</span>
+                </div>
               </div>
               <button className="gov-nav-logout-btn" onClick={onLogout}>
                 {t('logout')}
               </button>
               <Link to="/chat" className="gov-nav-cta" id="gov-nav-consult-btn">
-                <span>Start Assessment</span>
+                <span>AI Assistant</span>
                 <IconArrowRight size={14} />
               </Link>
             </div>
@@ -2862,7 +3599,7 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout 
                 <span>{t('loginOrRegister')}</span>
               </Link>
               <Link to="/chat" className="gov-nav-cta" id="gov-nav-consult-btn">
-                <span>Start Assessment</span>
+                <span>AI Assistant</span>
                 <IconArrowRight size={14} />
               </Link>
             </div>
@@ -2921,6 +3658,7 @@ function TranslatedFooter() {
               <li><Link to="/chat" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconMessageSquare size={14} /> AI Consultation</Link></li>
               <li><Link to="/abs-checker" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconLeaf size={14} /> ABS Checker</Link></li>
               <li><Link to="/ip-calculator" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconCalculator size={14} /> IP Calculator</Link></li>
+              <li><Link to="/deadline-calculator" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconCalendar size={14} /> {t('deadlineCalc')}</Link></li>
               <li><Link to="/sources" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconBook size={14} /> Sources</Link></li>
             </ul>
           </div>
@@ -3197,25 +3935,25 @@ function LandingPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, 
                 <span className="eyebrow-seal" aria-hidden="true">
                   <IconGovt size={13} />
                 </span>
-                <span className="hero-eyebrow-text">AYUSH INNOVATION GUIDANCE</span>
+                <span className="hero-eyebrow-text">{t('heroEyebrow')}</span>
               </div>
 
               <h1 className="hero-title" id="hero-title">
-                Protect your innovation.
-                <span className="hero-title-highlight">Know what comes next.</span>
+                {t('heroTitle')}
+                <span className="hero-title-highlight">{t('heroSubtitle')}</span>
               </h1>
 
               <p className="hero-description">
-                Navigate intellectual property, regulation, traditional knowledge and biodiversity-related pathways through one guided assessment.
+                {t('heroDesc')}
               </p>
 
               <div className="hero-cta-group">
                 <Link to="/chat" className="btn-primary hero-btn-main" id="hero-start-btn">
-                  <span>Start Assessment</span>
+                  <span>{t('startAssessment')}</span>
                   <IconArrowRight size={16} />
                 </Link>
                 <a href="#how-it-works" className="btn-secondary hero-btn-sub">
-                  <span>How it works</span>
+                  <span>{t('howItWorksBtn')}</span>
                 </a>
               </div>
 
@@ -3224,29 +3962,29 @@ function LandingPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, 
                 <div className="hero-trust-item">
                   <div className="trust-icon-box"><IconScales size={15} /></div>
                   <div className="trust-text-box">
-                    <strong>Patents Act 1970</strong>
-                    <span>§ 3(p) TKDL Exclusions</span>
+                    <strong>{t('trustPatentsAct')}</strong>
+                    <span>{t('trustPatentsActDesc')}</span>
                   </div>
                 </div>
                 <div className="hero-trust-item">
                   <div className="trust-icon-box"><IconBook size={15} /></div>
                   <div className="trust-text-box">
-                    <strong>TKDL Database</strong>
-                    <span>2.5L+ Formulations Prior Art</span>
+                    <strong>{t('trustTkdl')}</strong>
+                    <span>{t('trustTkdlDesc')}</span>
                   </div>
                 </div>
                 <div className="hero-trust-item">
                   <div className="trust-icon-box"><IconLeaf size={15} /></div>
                   <div className="trust-text-box">
-                    <strong>Biodiversity Act 2002</strong>
-                    <span>Mandatory ABS Clearances</span>
+                    <strong>{t('trustBdAct')}</strong>
+                    <span>{t('trustBdActDesc')}</span>
                   </div>
                 </div>
                 <div className="hero-trust-item">
                   <div className="trust-icon-box"><IconShieldCheck size={15} /></div>
                   <div className="trust-text-box">
-                    <strong>Drugs & Cosmetics Rules</strong>
-                    <span>ASU Regulatory Licensing</span>
+                    <strong>{t('trustDrugsRules')}</strong>
+                    <span>{t('trustDrugsRulesDesc')}</span>
                   </div>
                 </div>
               </div>
@@ -3266,6 +4004,43 @@ function LandingPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, 
 
       {/* Stats Counter */}
       <StatsCounter />
+
+      {/* ===== IP TOOLS SECTION ===== */}
+      <section className="section tools-section" id="tools" aria-labelledby="tools-title">
+        <Reveal>
+          <p className="section-label">🛠️ {t('toolsLabel') || 'Free Tools'}</p>
+          <h2 className="section-title" id="tools-title">{t('toolsTitle') || 'IP Calculators & Utilities'}</h2>
+          <p className="section-subtitle" style={{ textAlign: 'center', maxWidth: '700px', margin: '0 auto 2rem', opacity: 0.85 }}>
+            {t('toolsSubtitle') || 'Essential tools for patent applicants — calculate fees, track deadlines, and plan your IP strategy'}
+          </p>
+        </Reveal>
+        <div className="tools-grid">
+          <Reveal delay={0}>
+            <Link to="/ip-calculator" className="tool-card tool-card-fee">
+              <div className="tool-icon">🧮</div>
+              <h3>{t('feeCalcTitle') || 'Patent Fee Calculator'}</h3>
+              <p>{t('feeCalcDesc') || 'Calculate filing, examination, and renewal fees based on applicant type (Natural Person, Startup, Small Entity, Large Entity) per Patents Rules 2003.'}</p>
+              <span className="tool-cta">{t('calculateNow') || 'Calculate Now'} →</span>
+            </Link>
+          </Reveal>
+          <Reveal delay={100}>
+            <Link to="/deadline-calculator" className="tool-card tool-card-deadline">
+              <div className="tool-icon">📅</div>
+              <h3>{t('deadlineCalcTitle') || 'Deadline Calculator'}</h3>
+              <p>{t('deadlineCalcDesc') || 'Track statutory deadlines — RFE (48 months), FER response (6 months), renewals, PCT national phase (31 months), and convention priority (12 months).'}</p>
+              <span className="tool-cta">{t('checkDeadlines') || 'Check Deadlines'} →</span>
+            </Link>
+          </Reveal>
+          <Reveal delay={200}>
+            <Link to="/chat" className="tool-card tool-card-chat">
+              <div className="tool-icon">💬</div>
+              <h3>{t('aiAssistantTitle') || 'AI Legal Assistant'}</h3>
+              <p>{t('aiAssistantDesc') || 'Ask questions about Indian IP law, traditional knowledge protection, ABS compliance, and get citation-backed answers from authoritative sources.'}</p>
+              <span className="tool-cta">{t('askNow') || 'Ask Now'} →</span>
+            </Link>
+          </Reveal>
+        </div>
+      </section>
 
       {/* Live Demo Preview */}
       <DemoPreview />
@@ -3791,14 +4566,22 @@ function VoiceLanguageSelector({ value, onChange, isListening }) {
    CHAT PAGE
    ============================================================ */
 function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, theme, toggleTheme, fontSize, setFontSize }) {
-  const { t } = useLanguage()
-  const [messages, setMessages] = useState(DEMO_MESSAGES)
+  const { t, lang, setLang, languages } = useLanguage()
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
+  const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [jurisdiction, setJurisdiction] = useState('india')
-  const [lang, setLang] = useState('en')
   const [typing, setTyping] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [activeSessionId, setActiveSessionId] = useState(1)
+  const [activeSessionId, setActiveSessionId] = useState(null)
+
+  // Persisted conversation state
+  const [conversationId, setConversationId] = useState(null)
+  const [sessions, setSessions] = useState([])
+  const [loadingSessions, setLoadingSessions] = useState(false)
+  
+  // File attachment state
+  const [attachedFile, setAttachedFile] = useState(null)
 
   // New state for scroll management
   const [showScrollBtn, setShowScrollBtn] = useState(false)
@@ -3808,8 +4591,28 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
   // Character count limit
   const MAX_CHARS = 2000
 
-  // Voice Input with language selection
-  const [voiceLang, setVoiceLang] = useState('hi-IN')
+  // Voice Input - auto-sync with UI language
+  // Map UI lang code to Speech Recognition lang code
+  const UI_TO_VOICE_LANG = {
+    'en': 'en-IN',
+    'hi': 'hi-IN',
+    'kn': 'kn-IN',
+    'bn': 'bn-IN',
+    'ta': 'ta-IN',
+    'te': 'te-IN',
+    'mr': 'mr-IN',
+    'gu': 'gu-IN',
+    'ml': 'ml-IN',
+    'pa': 'pa-IN',
+  }
+  const [voiceLang, setVoiceLang] = useState(() => UI_TO_VOICE_LANG[lang] || 'hi-IN')
+
+  // Auto-sync voice language when UI language changes
+  useEffect(() => {
+    const newVoiceLang = UI_TO_VOICE_LANG[lang] || 'en-IN'
+    setVoiceLang(newVoiceLang)
+    console.log('[Lang Sync] UI lang changed to:', lang, '→ Voice lang:', newVoiceLang)
+  }, [lang])
 
   const handleVoiceResult = useCallback((transcript) => {
     setInput(prev => prev ? prev + ' ' + transcript : transcript)
@@ -3823,6 +4626,76 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
       setPrefillPrompt('')
     }
   }, [prefillPrompt, setPrefillPrompt])
+
+  // ----- Conversation persistence helpers -----
+  const formatSessionDate = useCallback((iso) => {
+    if (!iso) return ''
+    const d = new Date(iso)
+    if (Number.isNaN(d.getTime())) return ''
+    const now = new Date()
+    const sameDay = d.toDateString() === now.toDateString()
+    const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1)
+    const isYesterday = d.toDateString() === yesterday.toDateString()
+    if (sameDay) return `Today, ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+    if (isYesterday) return 'Yesterday'
+    return d.toLocaleDateString([], { month: 'short', day: 'numeric' })
+  }, [])
+
+  const refreshSessions = useCallback(async () => {
+    setLoadingSessions(true)
+    try {
+      const res = await fetch(`${API_BASE}/api/conversations?limit=50`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      setSessions(data.map(c => ({
+        id: c.id,
+        title: c.title || 'Untitled consultation',
+        date: formatSessionDate(c.updated_at || c.created_at),
+        messageCount: c.message_count,
+      })))
+    } catch (err) {
+      console.warn('[Conversations] Could not load history:', err.message)
+    } finally {
+      setLoadingSessions(false)
+    }
+  }, [API_BASE, formatSessionDate])
+
+  // Load conversation history on mount
+  useEffect(() => {
+    refreshSessions()
+  }, [refreshSessions])
+
+  const loadConversation = useCallback(async (id) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/conversations/${id}`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      const loaded = (data.messages || []).map(m => {
+        if (m.role === 'user') {
+          return { id: m.id, role: 'user', text: m.content, timestamp: new Date(m.created_at).getTime() }
+        }
+        const label = (m.confidence || 'medium')
+        const labelCap = label.charAt(0).toUpperCase() + label.slice(1)
+        return {
+          id: m.id,
+          role: 'ai',
+          text: m.content,
+          sections: [],
+          citations: m.citations || [],
+          confidence: { score: label === 'high' ? 85 : label === 'low' ? 20 : 55, label: labelCap, reason: 'Loaded from saved conversation.' },
+          followUpQuestions: [],
+          status: 'answered',
+          showDisclaimer: true,
+          timestamp: new Date(m.created_at).getTime(),
+        }
+      })
+      setMessages(loaded)
+      setConversationId(id)
+      setActiveSessionId(id)
+    } catch (err) {
+      console.warn('[Conversations] Could not load conversation:', err.message)
+    }
+  }, [API_BASE])
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -3888,10 +4761,35 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
   }
 
   // Handle feedback
+  // File upload handler
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    // Validate file type
+    const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword', 'text/plain', 'image/png', 'image/jpeg']
+    if (!allowedTypes.includes(file.type)) {
+      alert('File type not supported. Please upload PDF, Word, Text, or Image files.')
+      return
+    }
+    
+    // Validate file size (10MB max)
+    if (file.size > 10 * 1024 * 1024) {
+      alert('File too large. Maximum size is 10MB.')
+      return
+    }
+    
+    setAttachedFile(file)
+    e.target.value = '' // Reset input
+  }
+
   const handleFeedback = (msgId, type) => {
     console.log('Feedback:', msgId, type)
     // Could send to backend in the future
   }
+
+  // Retrieval state messages
+  const [retrievalState, setRetrievalState] = useState('')
 
   const handleSend = async () => {
     const trimmed = input.trim()
@@ -3901,56 +4799,232 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
     setMessages(prev => [...prev, userMsg])
     setInput('')
     setTyping(true)
+    setRetrievalState('Searching trusted sources...')
 
     // Reset textarea height
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto'
     }
 
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'}/api/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: trimmed, jurisdiction, language: lang }),
-      })
+    const apiBase = API_BASE
+    const requestBody = {
+      question: trimmed,
+      jurisdiction: jurisdiction.charAt(0).toUpperCase() + jurisdiction.slice(1),
+      language: lang.toUpperCase(),
+      conversation_id: conversationId,
+    }
 
-      if (!response.ok) throw new Error(`Backend returned HTTP ${response.status}`)
-      const data = await response.json()
-      setMessages(prev => [...prev, {
-        id: Date.now() + 1,
-        role: 'ai',
-        text: data.answer,
-        citations: data.citations,
-        confidence: data.confidence === 'unavailable' ? null : data.confidence,
-        showDisclaimer: true,
-        timestamp: Date.now(),
-      }])
-    } catch (error) {
-      let aiText = `Under Section 3(p) of the Indian Patents Act 1970, traditional Ayurvedic formulations are excluded from patentability as prior art. However, novel, non-obvious synergistic combinations or extraction processes may be patentable subject matter.`
-      let citations = [
-        { title: 'Indian Patents Act 1970 | §3(p)', url: 'https://ipindia.gov.in/' },
-        { title: 'Traditional Knowledge Digital Library (TKDL)', url: 'https://www.tkdl.res.in/' },
-      ]
+    // Stable id for the streaming AI message so we can patch it as tokens arrive.
+    const aiMsgId = Date.now() + 1
 
-      if (jurisdiction === 'international') {
-        aiText = `Under WIPO GRATK Treaty (2024) and Nagoya Protocol, international patent applications utilizing genetic resources or traditional knowledge must disclose the origin of biological material and evidence of Prior Informed Consent (PIC).`
-        citations = [
-          { title: 'WIPO GRATK Treaty (2024) | Mandatory Disclosure Clause', url: 'https://www.wipo.int/' },
-          { title: 'Nagoya Protocol on ABS | Article 6 & 7', url: 'https://www.cbd.int/abs/' },
-        ]
+    // ---- Attempt 1: streaming via SSE (fetch + ReadableStream reader) ----
+    // Returns true on success, false if the caller should fall back to /api/chat.
+    const tryStream = async () => {
+      let response
+      try {
+        setRetrievalState('Reviewing relevant documents...')
+        response = await fetch(`${apiBase}/api/chat/stream`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
+          body: JSON.stringify(requestBody),
+        })
+      } catch (err) {
+        return false // network / connection failure -> fallback
       }
 
-      setMessages(prev => [...prev, {
-        id: Date.now() + 1,
-        role: 'ai',
-        text: `Development Mode Fallback:\n\nBackend connection note: ${error.message}\n\n${aiText}`,
-        citations,
-        confidence: 'high',
-        showDisclaimer: true,
-        timestamp: Date.now(),
-      }])
+      if (!response.ok || !response.body) {
+        return false // HTTP error or no stream body -> fallback
+      }
+
+      // Create the placeholder AI message that we'll fill token-by-token.
+      let placeholderCreated = false
+      const ensurePlaceholder = () => {
+        if (placeholderCreated) return
+        placeholderCreated = true
+        setMessages(prev => [...prev, {
+          id: aiMsgId,
+          role: 'ai',
+          text: '',
+          sections: [],
+          citations: [],
+          confidence: null,
+          followUpQuestions: [],
+          status: 'streaming',
+          showDisclaimer: true,
+          streaming: true,
+          timestamp: Date.now(),
+        }])
+      }
+
+      const appendToken = (token) => {
+        ensurePlaceholder()
+        setMessages(prev => prev.map(m =>
+          m.id === aiMsgId ? { ...m, text: (m.text || '') + token } : m
+        ))
+      }
+
+      const finalize = (payload) => {
+        ensurePlaceholder()
+        const confidenceData = payload.confidence && typeof payload.confidence === 'object'
+          ? payload.confidence
+          : { score: 50, label: 'Medium', reason: 'Confidence information unavailable' }
+        setMessages(prev => prev.map(m =>
+          m.id === aiMsgId ? {
+            ...m,
+            citations: payload.citations || [],
+            confidence: confidenceData,
+            followUpQuestions: payload.follow_up_questions || [],
+            status: payload.status || 'answered',
+            streaming: false,
+          } : m
+        ))
+        if (payload.conversation_id) {
+          setConversationId(payload.conversation_id)
+          setActiveSessionId(payload.conversation_id)
+          refreshSessions()
+        }
+      }
+
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      let sawError = false
+      let gotToken = false
+
+      setRetrievalState('Preparing cited answer...')
+
+      try {
+        // Loop over the byte stream, splitting complete SSE frames on blank lines.
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          const { value, done } = await reader.read()
+          if (done) break
+          buffer += decoder.decode(value, { stream: true })
+
+          let sepIndex
+          while ((sepIndex = buffer.indexOf('\n\n')) !== -1) {
+            const frame = buffer.slice(0, sepIndex)
+            buffer = buffer.slice(sepIndex + 2)
+
+            // A frame may contain multiple `data:` lines; concatenate them.
+            const dataLines = frame
+              .split('\n')
+              .filter(line => line.startsWith('data:'))
+              .map(line => line.slice(5).trimStart())
+            if (dataLines.length === 0) continue
+
+            let parsed
+            try {
+              parsed = JSON.parse(dataLines.join('\n'))
+            } catch {
+              continue // ignore malformed frame
+            }
+
+            if (parsed.error) {
+              sawError = true
+              // If no tokens streamed yet, we can cleanly fall back.
+              if (!gotToken) return false
+              // Partial content already shown — close it out gracefully.
+              finalize({ status: 'answered' })
+              return true
+            }
+
+            if (typeof parsed.token === 'string') {
+              gotToken = true
+              appendToken(parsed.token)
+            }
+
+            if (parsed.done) {
+              finalize(parsed)
+              return true
+            }
+          }
+        }
+      } catch (err) {
+        // Stream broke mid-flight.
+        if (!gotToken) return false // nothing shown -> fallback to /api/chat
+        finalize({ status: 'answered' }) // keep partial answer
+        return true
+      }
+
+      // Stream ended without an explicit `done` frame.
+      if (!gotToken && !sawError) return false
+      finalize({ status: 'answered' })
+      return true
+    }
+
+    // ---- Attempt 2: non-streaming fallback (original behaviour) ----
+    const fallbackNonStreaming = async () => {
+      try {
+        setRetrievalState('Preparing cited answer...')
+        const response = await fetch(`${apiBase}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody),
+        })
+
+        if (!response.ok) throw new Error(`Backend returned HTTP ${response.status}`)
+        const data = await response.json()
+
+        const confidenceData = data.confidence && typeof data.confidence === 'object'
+          ? data.confidence
+          : { score: 50, label: 'Medium', reason: 'Confidence information unavailable' }
+
+        setMessages(prev => [...prev, {
+          id: Date.now() + 1,
+          role: 'ai',
+          text: data.answer,
+          sections: data.sections || [],
+          citations: data.citations || [],
+          confidence: confidenceData,
+          followUpQuestions: data.follow_up_questions || [],
+          status: data.status || 'answered',
+          showDisclaimer: true,
+          timestamp: Date.now(),
+        }])
+        if (data.conversation_id) {
+          setConversationId(data.conversation_id)
+          setActiveSessionId(data.conversation_id)
+          refreshSessions()
+        }
+      } catch (error) {
+        let aiText = `Under Section 3(p) of the Indian Patents Act 1970, traditional Ayurvedic formulations are excluded from patentability as prior art. However, novel, non-obvious synergistic combinations or extraction processes may be patentable subject matter.`
+        let citations = [
+          { source: 'patents_act_1970', section: '§3(p)', text: 'Traditional Ayurvedic formulations are excluded from patentability as prior art under Section 3(p) of the Patents Act 1970.', relevance: 'Primary statutory reference' },
+          { source: 'tkdl_database', section: 'Overview', text: 'The Traditional Knowledge Digital Library contains over 3.6 lakh formulations from Ayurveda, Unani, Siddha and Yoga documented to prevent misappropriation.', relevance: 'Prior art database' },
+        ]
+
+        if (jurisdiction === 'international') {
+          aiText = `Under WIPO GRATK Treaty (2024) and Nagoya Protocol, international patent applications utilizing genetic resources or traditional knowledge must disclose the origin of biological material and evidence of Prior Informed Consent (PIC).`
+          citations = [
+            { source: 'wipo_gratk_treaty_2024', section: 'Mandatory Disclosure', text: 'Patent applicants must disclose the country of origin of genetic resources and associated traditional knowledge used in the invention.', relevance: 'Treaty requirement' },
+            { source: 'nagoya_protocol', section: 'ABS Articles 6 & 7', text: 'Access to genetic resources requires Prior Informed Consent (PIC) and benefit-sharing on Mutually Agreed Terms (MAT).', relevance: 'Protocol compliance' },
+          ]
+        }
+
+        setMessages(prev => [...prev, {
+          id: Date.now() + 1,
+          role: 'ai',
+          text: `Development Mode Fallback:\n\nBackend connection note: ${error.message}\n\n${aiText}`,
+          sections: [],
+          citations,
+          confidence: { score: 70, label: 'Medium', reason: 'Fallback response used due to backend connection issue.' },
+          followUpQuestions: ['What are the patent filing fees?', 'How does TKDL prevent biopiracy?', 'What is the NBA approval process?'],
+          status: 'error',
+          showDisclaimer: true,
+          timestamp: Date.now(),
+        }])
+      }
+    }
+
+    try {
+      const streamed = await tryStream()
+      if (!streamed) {
+        await fallbackNonStreaming()
+      }
     } finally {
       setTyping(false)
+      setRetrievalState('')
     }
   }
 
@@ -3970,25 +5044,43 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
     setMessages([])
     setInput('')
     setActiveSessionId(null)
+    setConversationId(null)
   }
 
   const handleSelectSession = (id) => {
-    setActiveSessionId(id)
-    if (id === 1) setMessages(DEMO_MESSAGES)
-    else if (id === 2) {
-      setMessages([
-        DEMO_MESSAGES[0],
-        { id: 201, role: 'user', text: 'Do I need National Biodiversity Authority approval for exporting Neem oil extract?', timestamp: Date.now() - 60000 },
-        {
-          id: 202,
-          role: 'ai',
-          text: 'Yes. Under Section 3 of the Biological Diversity Act 2002, non-Indian citizens, NRIs, and foreign-incorporated companies must obtain prior approval from the National Biodiversity Authority (NBA) via Form I before accessing Indian bio-resources like Neem (Azadirachta indica) for commercial utilization.',
-          citations: [{ title: 'Biological Diversity Act 2002 | §3 | Access Approval', url: 'http://nbaindia.org/' }],
-          confidence: 'high',
-          showDisclaimer: true,
-          timestamp: Date.now() - 30000
-        }
-      ])
+    loadConversation(id)
+  }
+
+  const handleDeleteSession = async (id) => {
+    if (!window.confirm('Delete this conversation? This cannot be undone.')) return
+    try {
+      const res = await fetch(`${API_BASE}/api/conversations/${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      setSessions(prev => prev.filter(s => s.id !== id))
+      // If the deleted conversation is the active one, reset to a fresh chat
+      if (id === conversationId || id === activeSessionId) {
+        setMessages([])
+        setConversationId(null)
+        setActiveSessionId(null)
+      }
+    } catch (err) {
+      console.warn('[Conversations] Delete failed:', err.message)
+      alert('Could not delete the conversation. Please try again.')
+    }
+  }
+
+  const handleRenameSession = async (id, title) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/conversations/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title }),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      setSessions(prev => prev.map(s => s.id === id ? { ...s, title } : s))
+    } catch (err) {
+      console.warn('[Conversations] Rename failed:', err.message)
+      alert('Could not rename the conversation. Please try again.')
     }
   }
 
@@ -4036,12 +5128,9 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
             aria-label={t('selectResponseLang')}
             id="lang-selector"
           >
-            <option value="en">[EN] English</option>
-            <option value="hi">[HI] हिन्दी</option>
-            <option value="kn">[KN] ಕನ್ನಡ</option>
-            <option value="bn">[BN] বাংলা</option>
-            <option value="ta">[TA] தமிழ்</option>
-            <option value="te">[TE] తెలుగు</option>
+            {languages.map(l => (
+              <option key={l.code} value={l.code}>[{l.flag}] {l.label}</option>
+            ))}
           </select>
 
           <button className="btn-secondary" style={{ padding: '0.3rem 0.75rem', fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '5px' }} onClick={onOpenAbout}>
@@ -4061,6 +5150,10 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
           onNewChat={handleNewChat}
           onOpenWizard={onOpenWizard}
           onOpenAbout={onOpenAbout}
+          sessions={sessions}
+          loadingSessions={loadingSessions}
+          onDeleteSession={handleDeleteSession}
+          onRenameSession={handleRenameSession}
         />
 
         <div className="chat-main-area">
@@ -4124,8 +5217,8 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
               ))
             )}
 
-            {/* Typing indicator */}
-            {typing && <TypingIndicator />}
+            {/* Typing indicator with retrieval state */}
+            {typing && <TypingIndicator retrievalState={retrievalState} />}
 
             {/* Scroll to bottom button */}
             <ScrollToBottomBtn onClick={scrollToBottom} visible={showScrollBtn} />
@@ -4133,6 +5226,14 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
 
           {/* Input Bar */}
           <div className="chat-input-bar">
+            {/* Voice Input Visual Indicator */}
+            <VoiceInputIndicator
+              isListening={isListening}
+              interimText={interimText}
+              confidence={voiceConfidence}
+              voiceLang={voiceLang}
+            />
+
             {/* Voice error display */}
             {voiceError && (
               <div className="voice-error-text">
@@ -4162,6 +5263,26 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
                   rows={1}
                   aria-label={t('typeYourQuestion')}
                 />
+                {/* File Upload Button */}
+                <div className="chat-file-upload">
+                  <input
+                    type="file"
+                    id="chat-file-input"
+                    accept=".pdf,.docx,.doc,.txt,.png,.jpg,.jpeg"
+                    onChange={handleFileSelect}
+                    style={{ display: 'none' }}
+                  />
+                  <button
+                    type="button"
+                    className="file-upload-btn"
+                    onClick={() => document.getElementById('chat-file-input')?.click()}
+                    aria-label="Attach file"
+                    title="Upload PDF, Word, or Image"
+                    style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <IconPaperClip size={16} />
+                  </button>
+                </div>
                 {/* Voice Input Controls */}
                 {voiceSupported && (
                   <div className="voice-controls">
@@ -4199,6 +5320,25 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
               </button>
             </div>
 
+            {/* Attached file preview */}
+            {attachedFile && (
+              <div className="attached-file-preview">
+                <div className="attached-file-info">
+                  <IconFileText size={16} />
+                  <span className="attached-file-name">{attachedFile.name}</span>
+                  <span className="attached-file-size">({(attachedFile.size / 1024).toFixed(1)} KB)</span>
+                </div>
+                <button
+                  type="button"
+                  className="remove-file-btn"
+                  onClick={() => setAttachedFile(null)}
+                  aria-label="Remove file"
+                >
+                  <IconClose size={14} />
+                </button>
+              </div>
+            )}
+
             {/* Character count indicator */}
             <div className="input-meta">
               <span className={`char-count ${input.length > MAX_CHARS * 0.9 ? 'warning' : ''} ${input.length >= MAX_CHARS ? 'limit' : ''}`}>
@@ -4208,6 +5348,7 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
             </div>
 
             <div className="input-actions">
+              <DPDPProtectionBadge />
               <button className="action-btn" onClick={onOpenWizard} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                 <IconFlask size={14} /> {t('formulationWizard')}
               </button>
@@ -4350,6 +5491,220 @@ function ABSCheckerPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSiz
 }
 
 /* ============================================================
+   PATENT FEE CALCULATOR (Tools)
+   Real Indian Patent Office statutory fees — Patents Rules 2003,
+   First Schedule (e-filing rates). Natural Person / Startup /
+   Small Entity share the concessional slab; "Others" is the full slab.
+   ============================================================ */
+const PATENT_FEE_SCHEDULE = {
+  // slab key -> { base (Form 1), extraClaim (per claim >10), extraPage (per page >30),
+  //               earlyPub (Form 9), examReq (Form 18) }
+  natural: { base: 1600, extraClaim: 320, extraPage: 160, earlyPub: 2500, examReq: 4000 },
+  startup: { base: 4000, extraClaim: 800, extraPage: 400, earlyPub: 6250, examReq: 10000 },
+  small:   { base: 4000, extraClaim: 800, extraPage: 400, earlyPub: 6250, examReq: 10000 },
+  others:  { base: 8000, extraClaim: 1600, extraPage: 800, earlyPub: 12500, examReq: 20000 },
+}
+
+// Convention / PCT National Phase applications carry the same First-Schedule
+// statutory scale for filing; the entry-type selector is retained for clarity
+// and future surcharge extension.
+const PATENT_APP_TYPES = ['ordinary', 'convention', 'pct']
+
+function formatINR(amount) {
+  return `₹${Number(amount || 0).toLocaleString('en-IN')}`
+}
+
+function PatentFeeCalculator() {
+  const { t } = useLanguage()
+
+  const [applicant, setApplicant] = useState('natural')
+  const [appType, setAppType] = useState('ordinary')
+  const [claims, setClaims] = useState(10)
+  const [pages, setPages] = useState(30)
+  const [earlyPub, setEarlyPub] = useState(false)
+  const [examReq, setExamReq] = useState(true)
+
+  const applicantOptions = [
+    { id: 'natural', label: t('pfcAppNatural'), icon: <IconUser size={16} /> },
+    { id: 'startup', label: t('pfcAppStartup'), icon: <IconSparkles size={16} /> },
+    { id: 'small', label: t('pfcAppSmall'), icon: <IconBuilding size={16} /> },
+    { id: 'others', label: t('pfcAppOthers'), icon: <IconGovt size={16} /> },
+  ]
+
+  const appTypeOptions = [
+    { id: 'ordinary', label: t('pfcTypeOrdinary') },
+    { id: 'convention', label: t('pfcTypeConvention') },
+    { id: 'pct', label: t('pfcTypePct') },
+  ]
+
+  const slab = PATENT_FEE_SCHEDULE[applicant] || PATENT_FEE_SCHEDULE.natural
+  const safeClaims = Number.isFinite(claims) ? Math.max(1, claims) : 1
+  const safePages = Number.isFinite(pages) ? Math.max(1, pages) : 1
+
+  const extraClaimCount = Math.max(0, safeClaims - 10)
+  const extraPageCount = Math.max(0, safePages - 30)
+
+  const baseFee = slab.base
+  const extraClaimsFee = extraClaimCount * slab.extraClaim
+  const extraPagesFee = extraPageCount * slab.extraPage
+  const earlyPubFee = earlyPub ? slab.earlyPub : 0
+  const examFee = examReq ? slab.examReq : 0
+  const total = baseFee + extraClaimsFee + extraPagesFee + earlyPubFee + examFee
+
+  const lineItems = [
+    { key: 'base', label: t('pfcBaseFee'), amount: baseFee, show: true },
+    {
+      key: 'claims',
+      label: `${t('pfcExtraClaims')} (${extraClaimCount} × ${formatINR(slab.extraClaim)})`,
+      amount: extraClaimsFee,
+      show: extraClaimCount > 0,
+    },
+    {
+      key: 'pages',
+      label: `${t('pfcExtraPages')} (${extraPageCount} × ${formatINR(slab.extraPage)})`,
+      amount: extraPagesFee,
+      show: extraPageCount > 0,
+    },
+    { key: 'earlyPub', label: t('pfcEarlyPubFee'), amount: earlyPubFee, show: earlyPub },
+    { key: 'exam', label: t('pfcExamFee'), amount: examFee, show: examReq },
+  ].filter(item => item.show)
+
+  const handleReset = () => {
+    setApplicant('natural')
+    setAppType('ordinary')
+    setClaims(10)
+    setPages(30)
+    setEarlyPub(false)
+    setExamReq(true)
+  }
+
+  return (
+    <section className="pfc-card">
+      <div className="pfc-header">
+        <span className="pfc-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <IconScroll size={14} /> Patents Rules 2003 · First Schedule
+        </span>
+        <h2 className="pfc-title" style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
+          <IconCalculator size={22} /> {t('pfcTitle')}
+        </h2>
+        <p className="pfc-subtitle">{t('pfcSubtitle')}</p>
+      </div>
+
+      <div className="pfc-grid">
+        {/* Inputs */}
+        <div className="pfc-inputs">
+          <div className="pfc-field">
+            <label className="pfc-label">{t('pfcApplicantType')}</label>
+            <div className="pfc-chip-row">
+              {applicantOptions.map(opt => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  className={`pfc-chip ${applicant === opt.id ? 'active' : ''}`}
+                  onClick={() => setApplicant(opt.id)}
+                  aria-pressed={applicant === opt.id}
+                >
+                  <span className="pfc-chip-icon" style={{ display: 'inline-flex' }}>{opt.icon}</span>
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="pfc-field">
+            <label className="pfc-label">{t('pfcApplicationType')}</label>
+            <div className="pfc-chip-row">
+              {appTypeOptions.map(opt => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  className={`pfc-chip ${appType === opt.id ? 'active' : ''}`}
+                  onClick={() => setAppType(opt.id)}
+                  aria-pressed={appType === opt.id}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="pfc-number-row">
+            <div className="calc-input-group">
+              <label>{t('pfcClaims')}</label>
+              <input
+                type="number"
+                min="1"
+                max="500"
+                value={claims}
+                onChange={e => setClaims(parseInt(e.target.value, 10))}
+              />
+              <span className="calc-input-hint">{t('pfcClaimsHint')} · {formatINR(slab.extraClaim)} {t('pfcPerClaim')}</span>
+            </div>
+            <div className="calc-input-group">
+              <label>{t('pfcPages')}</label>
+              <input
+                type="number"
+                min="1"
+                max="2000"
+                value={pages}
+                onChange={e => setPages(parseInt(e.target.value, 10))}
+              />
+              <span className="calc-input-hint">{t('pfcPagesHint')} · {formatINR(slab.extraPage)} {t('pfcPerPage')}</span>
+            </div>
+          </div>
+
+          <div className="pfc-field">
+            <label className="pfc-label">{t('pfcOptions')}</label>
+            <div className="pfc-toggle-row">
+              <label className="pfc-toggle">
+                <input type="checkbox" checked={examReq} onChange={e => setExamReq(e.target.checked)} />
+                <span>{t('pfcExamReq')} · {formatINR(slab.examReq)}</span>
+              </label>
+              <label className="pfc-toggle">
+                <input type="checkbox" checked={earlyPub} onChange={e => setEarlyPub(e.target.checked)} />
+                <span>{t('pfcEarlyPub')} · {formatINR(slab.earlyPub)}</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        {/* Result */}
+        <div className="pfc-result">
+          <h3 className="pfc-result-title" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+            <IconFileText size={16} /> {t('pfcBreakdown')}
+          </h3>
+          <div className="pfc-breakdown">
+            {lineItems.map(item => (
+              <div key={item.key} className="pfc-line">
+                <span className="pfc-line-label">{item.label}</span>
+                <span className="pfc-line-amount">{formatINR(item.amount)}</span>
+              </div>
+            ))}
+          </div>
+          <div className="pfc-total">
+            <span className="pfc-total-label" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <IconCurrencyRupee size={18} /> {t('pfcTotal')}
+            </span>
+            <span className="pfc-total-amount">{formatINR(total)}</span>
+          </div>
+
+          <div className="pfc-actions">
+            <button type="button" className="calc-btn-secondary" onClick={handleReset} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
+              <IconRotate size={15} /> {t('pfcReset')}
+            </button>
+          </div>
+
+          <div className="pfc-disclaimer" style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+            <span style={{ display: 'inline-flex', flexShrink: 0, marginTop: '2px' }}><IconInfo size={15} /></span>
+            <p>{t('pfcDisclaimer')}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/* ============================================================
    IP COST CALCULATOR PAGE
    Professional IP Cost Estimation Tool with Step-by-Step Wizard
    ============================================================ */
@@ -4362,6 +5717,397 @@ import {
   generateCostEstimate,
   formatCurrency,
 } from './data/ipCostData'
+
+/* ============================================================
+   STATUTORY DEADLINE CALCULATOR PAGE
+   Computes key Indian patent deadlines from a filing / priority
+   date, with a timeline visualization + urgency alerts.
+   ============================================================ */
+function DocumentsPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize }) {
+  return (
+    <div className="page-container calc-page">
+      <Navbar
+        onOpenAbout={onOpenAbout}
+        onOpenWizard={onOpenWizard}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        fontSize={fontSize}
+        setFontSize={setFontSize}
+      />
+
+      <header className="page-header">
+        <span
+          className="chip"
+          style={{
+            background: 'var(--color-primary-light, #eaf2ed)',
+            color: 'var(--color-primary, #143D30)',
+            marginBottom: '0.75rem',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+          }}
+        >
+          <IconFileText size={14} /> Document Library
+        </span>
+        <h1 className="page-title">My Documents</h1>
+        <p className="page-subtitle">
+          Upload your own PDFs — case files, prior-art references, notes — to make them
+          searchable inside your AI consultations. Files are parsed, chunked and indexed
+          into a private knowledge collection scoped to your account.
+        </p>
+      </header>
+
+      <DocumentUpload />
+    </div>
+  )
+}
+
+function DraftsPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize }) {
+  return (
+    <div className="page-container calc-page">
+      <Navbar
+        onOpenAbout={onOpenAbout}
+        onOpenWizard={onOpenWizard}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        fontSize={fontSize}
+        setFontSize={setFontSize}
+      />
+
+      <header className="page-header">
+        <span
+          className="chip"
+          style={{
+            background: 'var(--color-primary-light, #eaf2ed)',
+            color: 'var(--color-primary, #143D30)',
+            marginBottom: '0.75rem',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+          }}
+        >
+          <IconFileText size={14} /> Draft Generation
+        </span>
+        <h1 className="page-title">IP Document Draft Generator</h1>
+        <p className="page-subtitle">
+          Auto-generate a structured draft of a Patent Form-1, an NBA application, or a
+          Section 3(p) opposition petition. Review with a registered patent agent before filing.
+        </p>
+      </header>
+
+      <DraftGenerator />
+    </div>
+  )
+}
+
+function DeadlineCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize }) {
+  const { t, lang } = useLanguage()
+
+  const [filingDate, setFilingDate] = useState('')
+  const [priorityDate, setPriorityDate] = useState('')
+  const [computed, setComputed] = useState(null)
+
+  const today = useMemo(() => {
+    const d = new Date()
+    d.setHours(0, 0, 0, 0)
+    return d
+  }, [])
+
+  const MS_PER_DAY = 24 * 60 * 60 * 1000
+
+  // Add whole calendar months to a date (clamps end-of-month, e.g. Jan 31 + 1mo -> Feb 28/29)
+  const addMonths = (date, months) => {
+    const d = new Date(date.getTime())
+    const targetDay = d.getDate()
+    d.setDate(1)
+    d.setMonth(d.getMonth() + months)
+    const daysInTargetMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()
+    d.setDate(Math.min(targetDay, daysInTargetMonth))
+    return d
+  }
+
+  const addYears = (date, years) => addMonths(date, years * 12)
+
+  const parseDate = (str) => {
+    if (!str) return null
+    const d = new Date(str + 'T00:00:00')
+    return isNaN(d.getTime()) ? null : d
+  }
+
+  const localeFor = (l) => {
+    const map = { hi: 'hi-IN', bn: 'bn-IN', ta: 'ta-IN', te: 'te-IN', mr: 'mr-IN', gu: 'gu-IN', ml: 'ml-IN', pa: 'pa-IN', kn: 'kn-IN', en: 'en-IN' }
+    return map[l] || 'en-IN'
+  }
+
+  const formatDate = (date) =>
+    date.toLocaleDateString(localeFor(lang), { day: 'numeric', month: 'short', year: 'numeric' })
+
+  const daysBetween = (from, to) => Math.round((to.getTime() - from.getTime()) / MS_PER_DAY)
+
+  // Human "due in" string with urgency status
+  const describeCountdown = (date) => {
+    const diffDays = daysBetween(today, date)
+    if (diffDays < 0) return { status: 'passed', label: t('deadlineOverdue'), diffDays }
+    if (diffDays === 0) return { status: 'urgent', label: t('deadlineDueToday'), diffDays }
+    const months = Math.floor(diffDays / 30)
+    const years = Math.floor(diffDays / 365)
+    let human
+    if (years >= 2) human = `${years} ${t('deadlineYears')}`
+    else if (months >= 2) human = `${months} ${t('deadlineMonths')}`
+    else human = `${diffDays} ${t('deadlineDays')}`
+    const status = diffDays <= 90 ? 'urgent' : 'upcoming'
+    return { status, label: `${t('deadlineDueIn')} ${human}`, diffDays }
+  }
+
+  const handleCalculate = () => {
+    const filing = parseDate(filingDate)
+    if (!filing) return
+    const priority = parseDate(priorityDate) || filing
+    // The date from which priority-based windows run = earliest of filing/priority
+    const priorityAnchor = priority.getTime() < filing.getTime() ? priority : filing
+
+    const items = []
+
+    items.push({
+      id: 'convention',
+      title: t('dlConventionTitle'),
+      desc: t('dlConventionDesc'),
+      date: addMonths(priorityAnchor, 12),
+      section: 'Paris Convention Art. 4',
+    })
+    items.push({
+      id: 'publish',
+      title: t('dlPublishTitle'),
+      desc: t('dlPublishDesc'),
+      date: addMonths(priorityAnchor, 18),
+      section: 'Section 11A / Rule 24',
+    })
+    items.push({
+      id: 'pct',
+      title: t('dlPctTitle'),
+      desc: t('dlPctDesc'),
+      date: addMonths(priorityAnchor, 31),
+      section: 'PCT Rule 20 / §138',
+    })
+    items.push({
+      id: 'rfe',
+      title: t('dlRfeTitle'),
+      desc: t('dlRfeDesc'),
+      date: addMonths(priorityAnchor, 48),
+      section: 'Rule 24B',
+    })
+    items.push({
+      id: 'fer',
+      title: t('dlFerTitle'),
+      desc: t('dlFerDesc'),
+      // Planning estimate: FER response window shown from filing (6 + 3 mo extendable)
+      date: addMonths(filing, 6),
+      section: 'Rule 24B(6)',
+      estimate: true,
+    })
+    items.push({
+      id: 'term',
+      title: t('dlTermTitle'),
+      desc: t('dlTermDesc'),
+      date: addYears(filing, 20),
+      section: 'Section 53',
+    })
+
+    // Renewal fees: annual, from the 3rd year onward, up to year 20 (term).
+    // Renewal for year N is payable before the anniversary at year (N-1).
+    for (let year = 3; year <= 20; year++) {
+      items.push({
+        id: `renewal-${year}`,
+        title: `${t('dlRenewalTitle')} — ${t('dlYearN')} ${year}`,
+        desc: `${t('dlRenewalDescFrom')} ${year} ${t('dlRenewalDescDue')}`,
+        date: addYears(filing, year - 1),
+        section: 'Section 53 / Rule 80',
+        renewal: true,
+      })
+    }
+
+    items.sort((a, b) => a.date.getTime() - b.date.getTime())
+
+    const enriched = items.map((it) => ({ ...it, countdown: describeCountdown(it.date) }))
+    setComputed({ filing, priority, items: enriched })
+  }
+
+  const handleReset = () => {
+    setFilingDate('')
+    setPriorityDate('')
+    setComputed(null)
+  }
+
+  // ---- scoped styles (theme-variable driven glassmorphism) ----
+  const cardStyle = {
+    background: 'var(--glass-bg, rgba(255,255,255,0.06))',
+    backdropFilter: 'blur(14px)',
+    WebkitBackdropFilter: 'blur(14px)',
+    border: '1px solid var(--glass-border, rgba(255,255,255,0.12))',
+    borderRadius: '18px',
+    padding: '1.6rem',
+    boxShadow: '0 10px 40px -12px rgba(0,0,0,0.35)',
+  }
+
+  const inputStyle = {
+    width: '100%',
+    padding: '0.7rem 0.9rem',
+    borderRadius: '12px',
+    border: '1px solid var(--glass-border, rgba(255,255,255,0.18))',
+    background: 'var(--input-bg, rgba(255,255,255,0.08))',
+    color: 'var(--text-primary, inherit)',
+    fontSize: '0.95rem',
+    outline: 'none',
+  }
+
+  const statusColor = (status) => {
+    if (status === 'passed') return { fg: 'var(--text-secondary, #9aa0a6)', bg: 'rgba(148,163,184,0.14)', dot: '#94a3b8' }
+    if (status === 'urgent') return { fg: '#dc2626', bg: 'rgba(220,38,38,0.12)', dot: '#dc2626' }
+    return { fg: 'var(--color-primary, #143D30)', bg: 'var(--color-primary-light, rgba(20,61,48,0.12))', dot: 'var(--primary-light, #2f855a)' }
+  }
+
+  const urgentCount = computed ? computed.items.filter(i => i.countdown.status === 'urgent').length : 0
+
+  return (
+    <div className="page-container calc-page">
+      <Navbar
+        onOpenAbout={onOpenAbout}
+        onOpenWizard={onOpenWizard}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        fontSize={fontSize}
+        setFontSize={setFontSize}
+      />
+
+      <header className="page-header">
+        <span className="chip" style={{ background: 'var(--color-primary-light, #eaf2ed)', color: 'var(--color-primary, #143D30)', marginBottom: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <IconCalendar size={14} /> {t('deadlineChip')}
+        </span>
+        <h1 className="page-title">{t('deadlineTitle')}</h1>
+        <p className="page-subtitle">{t('deadlineSubtitle')}</p>
+      </header>
+
+      <main className="calc-main" style={{ display: 'grid', gap: '1.5rem' }}>
+        {/* Input card */}
+        <div style={cardStyle}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.1rem' }}>
+            <div>
+              <label htmlFor="dl-filing" style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>
+                {t('deadlineFilingLabel')}
+              </label>
+              <input
+                id="dl-filing"
+                type="date"
+                value={filingDate}
+                onChange={(e) => setFilingDate(e.target.value)}
+                style={inputStyle}
+                aria-label={t('deadlineFilingLabel')}
+              />
+            </div>
+            <div>
+              <label htmlFor="dl-priority" style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>
+                {t('deadlinePriorityLabel')}
+              </label>
+              <input
+                id="dl-priority"
+                type="date"
+                value={priorityDate}
+                onChange={(e) => setPriorityDate(e.target.value)}
+                style={inputStyle}
+                aria-label={t('deadlinePriorityLabel')}
+              />
+            </div>
+          </div>
+          <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary, #9aa0a6)', margin: '0.75rem 0 1.1rem', display: 'flex', gap: '6px', alignItems: 'flex-start' }}>
+            <IconInfo size={14} style={{ flexShrink: 0, marginTop: '2px' }} /> {t('deadlinePriorityHint')}
+          </p>
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <button
+              className="calc-btn-primary"
+              onClick={handleCalculate}
+              disabled={!filingDate}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center', opacity: filingDate ? 1 : 0.55, cursor: filingDate ? 'pointer' : 'not-allowed' }}
+            >
+              <IconCalculator size={16} /> {t('deadlineCalcBtn')}
+            </button>
+            <button
+              className="calc-btn-secondary"
+              onClick={handleReset}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
+            >
+              <IconRotate size={16} /> {t('deadlineResetBtn')}
+            </button>
+          </div>
+        </div>
+
+        {/* Results / timeline */}
+        {computed ? (
+          <div style={cardStyle}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
+              <h2 style={{ fontSize: '1.15rem', margin: 0, display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                <IconCalendar size={18} /> {t('deadlineTimelineTitle')}
+              </h2>
+              {urgentCount > 0 && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: 600, color: '#dc2626', background: 'rgba(220,38,38,0.12)', padding: '4px 10px', borderRadius: '999px' }}>
+                  <IconAlertTriangle size={14} /> {urgentCount} {t('deadlineUrgent')}
+                </span>
+              )}
+            </div>
+
+            {/* Legend */}
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', fontSize: '0.75rem', color: 'var(--text-secondary, #9aa0a6)', marginBottom: '1.25rem' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span style={{ width: 10, height: 10, borderRadius: '50%', background: '#dc2626', display: 'inline-block' }} /> {t('deadlineLegendUrgent')}</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--primary-light, #2f855a)', display: 'inline-block' }} /> {t('deadlineLegendUpcoming')}</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span style={{ width: 10, height: 10, borderRadius: '50%', background: '#94a3b8', display: 'inline-block' }} /> {t('deadlineLegendPassed')}</span>
+            </div>
+
+            {/* Timeline */}
+            <div style={{ position: 'relative', paddingLeft: '1.75rem' }}>
+              <span style={{ position: 'absolute', left: '9px', top: '4px', bottom: '4px', width: '2px', background: 'var(--glass-border, rgba(255,255,255,0.18))' }} aria-hidden="true" />
+              {computed.items.map((item) => {
+                const c = statusColor(item.countdown.status)
+                return (
+                  <div key={item.id} style={{ position: 'relative', marginBottom: '1.1rem' }}>
+                    <span style={{ position: 'absolute', left: '-1.75rem', top: '4px', width: 18, height: 18, borderRadius: '50%', background: c.dot, border: '3px solid var(--glass-bg, rgba(0,0,0,0.2))', boxShadow: item.countdown.status === 'urgent' ? '0 0 0 4px rgba(220,38,38,0.18)' : 'none' }} aria-hidden="true" />
+                    <div style={{ background: c.bg, border: `1px solid ${c.dot}33`, borderRadius: '14px', padding: '0.9rem 1rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'baseline' }}>
+                        <strong style={{ fontSize: '0.95rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                          {item.countdown.status === 'urgent' && <IconAlertTriangle size={14} style={{ color: '#dc2626' }} />}
+                          {item.title}
+                        </strong>
+                        <span style={{ fontSize: '0.9rem', fontWeight: 700, color: c.fg }}>{formatDate(item.date)}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap', marginTop: '4px' }}>
+                        <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary, #9aa0a6)' }}>{item.section}</span>
+                        <span style={{ fontSize: '0.78rem', fontWeight: 600, color: c.fg }}>{item.countdown.label}</span>
+                      </div>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #9aa0a6)', margin: '0.5rem 0 0', lineHeight: 1.5 }}>{item.desc}</p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary, #9aa0a6)', marginTop: '1.25rem', padding: '0.85rem 1rem', borderRadius: '12px', background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.3)', display: 'flex', gap: '8px', alignItems: 'flex-start', lineHeight: 1.5 }}>
+              <IconAlertTriangle size={15} style={{ flexShrink: 0, marginTop: '1px', color: '#d97706' }} /> {t('deadlineDisclaimer')}
+            </p>
+
+            <div style={{ marginTop: '1.1rem' }}>
+              <Link to="/chat" className="calc-btn-outline" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                <IconMessageSquare size={16} /> {t('deadlineAskExpert')}
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div style={{ ...cardStyle, textAlign: 'center', color: 'var(--text-secondary, #9aa0a6)' }}>
+            <IconCalendar size={40} style={{ opacity: 0.4, marginBottom: '0.5rem' }} />
+            <p style={{ margin: 0 }}>{t('deadlineEmptyHint')}</p>
+          </div>
+        )}
+      </main>
+    </div>
+  )
+}
 
 function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize }) {
   useLanguage() // For future translations
@@ -5160,6 +6906,9 @@ function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, f
       </header>
 
       <main className="calc-main">
+        {/* Tools: Quick Patent Fee Calculator (Patents Rules 2003, First Schedule) */}
+        <PatentFeeCalculator />
+
         {currentStep <= TOTAL_STEPS ? (
           <>
             {/* Progress Bar */}
@@ -5469,6 +7218,159 @@ function PrivacyPolicyPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, font
 }
 
 /* ============================================================
+   AUTH CALLBACK PAGE - Handles OAuth redirects
+   ============================================================ */
+function AuthCallbackPage({ onLogin }) {
+  const navigate = useNavigate()
+  const [error, setError] = useState('')
+  const [processing, setProcessing] = useState(true)
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
+
+  useEffect(() => {
+    const handleOAuthCallback = async () => {
+      try {
+        // Get tokens from URL params
+        const params = new URLSearchParams(window.location.search)
+        const accessToken = params.get('access_token')
+        const refreshToken = params.get('refresh_token')
+        const errorParam = params.get('error')
+
+        if (errorParam) {
+          // Handle OAuth errors
+          const errorMessages = {
+            'invalid_state': 'Security verification failed. Please try again.',
+            'oauth_not_configured': 'Google login is not configured.',
+            'token_exchange_failed': 'Failed to complete login. Please try again.',
+            'userinfo_failed': 'Failed to get user info from Google.',
+            'oauth_error': 'An error occurred during login. Please try again.',
+            'no_email': 'No email received from Google.',
+            'account_deactivated': 'Your account has been deactivated.'
+          }
+          setError(errorMessages[errorParam] || 'Login failed. Please try again.')
+          setProcessing(false)
+          return
+        }
+
+        if (!accessToken) {
+          setError('No authentication token received.')
+          setProcessing(false)
+          return
+        }
+
+        // Store tokens
+        localStorage.setItem('ip_sakti_access_token', accessToken)
+        if (refreshToken) {
+          localStorage.setItem('ip_sakti_refresh_token', refreshToken)
+        }
+
+        // Get user info with the token
+        const response = await fetch(`${API_BASE}/api/auth/me`, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`
+          }
+        })
+
+        if (response.ok) {
+          const user = await response.json()
+          localStorage.setItem('ip_sakti_user', JSON.stringify(user))
+          
+          // Trigger login
+          onLogin(user.email, user.full_name || user.email.split('@')[0])
+          
+          // Redirect to home
+          navigate('/')
+        } else {
+          setError('Failed to verify login. Please try again.')
+          setProcessing(false)
+        }
+      } catch (err) {
+        console.error('Auth callback error:', err)
+        setError('An error occurred. Please try again.')
+        setProcessing(false)
+      }
+    }
+
+    handleOAuthCallback()
+  }, [navigate, onLogin])
+
+  if (processing) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #1a472a 0%, #2d5a3d 50%, #1a472a 100%)',
+        color: 'white',
+        fontFamily: 'system-ui, -apple-system, sans-serif'
+      }}>
+        <div style={{
+          width: '60px',
+          height: '60px',
+          border: '4px solid rgba(255,255,255,0.3)',
+          borderTop: '4px solid #d4af37',
+          borderRadius: '50%',
+          animation: 'spin 1s linear infinite',
+          marginBottom: '24px'
+        }} />
+        <h2 style={{ margin: 0, fontSize: '1.5rem' }}>Completing sign in...</h2>
+        <p style={{ opacity: 0.8, marginTop: '8px' }}>Please wait</p>
+        <style>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
+      </div>
+    )
+  }
+
+  // Error state
+  return (
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'linear-gradient(135deg, #1a472a 0%, #2d5a3d 50%, #1a472a 100%)',
+      color: 'white',
+      fontFamily: 'system-ui, -apple-system, sans-serif',
+      padding: '20px'
+    }}>
+      <div style={{
+        background: 'rgba(220, 53, 69, 0.2)',
+        border: '1px solid rgba(220, 53, 69, 0.5)',
+        borderRadius: '12px',
+        padding: '24px 32px',
+        textAlign: 'center',
+        maxWidth: '400px'
+      }}>
+        <div style={{ fontSize: '3rem', marginBottom: '16px' }}>⚠️</div>
+        <h2 style={{ margin: '0 0 12px 0', fontSize: '1.25rem' }}>Login Failed</h2>
+        <p style={{ opacity: 0.9, margin: '0 0 24px 0' }}>{error}</p>
+        <button
+          onClick={() => navigate('/login')}
+          style={{
+            background: '#d4af37',
+            color: '#1a472a',
+            border: 'none',
+            borderRadius: '8px',
+            padding: '12px 32px',
+            fontSize: '1rem',
+            fontWeight: '600',
+            cursor: 'pointer'
+          }}
+        >
+          Back to Login
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/* ============================================================
    LOGIN PAGE
    ============================================================ */
 function LoginPage({ theme, toggleTheme, fontSize, setFontSize, onLogin }) {
@@ -5478,48 +7380,196 @@ function LoginPage({ theme, toggleTheme, fontSize, setFontSize, onLogin }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
+  const [organization, setOrganization] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  
+  // Password strength state
+  const [passwordStrength, setPasswordStrength] = useState({ score: 0, feedback: [], isValid: false })
+  const [showStrengthMeter, setShowStrengthMeter] = useState(false)
 
   // Theme props available for future use
   void theme; void toggleTheme; void fontSize; void setFontSize;
 
-  const handleSubmit = (e) => {
+  // Password strength checker
+  const checkPasswordStrength = (pwd) => {
+    const feedback = []
+    let score = 0
+    
+    if (pwd.length >= 8) score += 1
+    else feedback.push('At least 8 characters')
+    
+    if (pwd.length >= 12) score += 1
+    
+    if (/[A-Z]/.test(pwd)) score += 1
+    else feedback.push('At least 1 uppercase letter')
+    
+    if (/[a-z]/.test(pwd)) score += 1
+    else feedback.push('At least 1 lowercase letter')
+    
+    if (/\d/.test(pwd)) score += 1
+    else feedback.push('At least 1 number')
+    
+    if (/[!@#$%^&*(),.?":{}|<>\-_=+\[\]\\;'`~]/.test(pwd)) score += 1
+    else feedback.push('At least 1 special character')
+    
+    const commonPatterns = ['password', '123456', 'qwerty', 'abc123', 'letmein', 'welcome', 'admin']
+    if (commonPatterns.some(p => pwd.toLowerCase().includes(p))) {
+      feedback.push('Avoid common patterns')
+      score = Math.max(0, score - 2)
+    }
+    
+    return { score: Math.min(5, score), feedback, isValid: feedback.length === 0 }
+  }
+
+  const handlePasswordChange = (e) => {
+    const pwd = e.target.value
+    setPassword(pwd)
+    if (isRegister && pwd) {
+      setShowStrengthMeter(true)
+      setPasswordStrength(checkPasswordStrength(pwd))
+    } else {
+      setShowStrengthMeter(false)
+    }
+  }
+
+  const getStrengthLabel = (score) => {
+    if (score <= 1) return { label: 'Weak', color: '#ef4444' }
+    if (score <= 2) return { label: 'Fair', color: '#f97316' }
+    if (score <= 3) return { label: 'Good', color: '#eab308' }
+    if (score <= 4) return { label: 'Strong', color: '#22c55e' }
+    return { label: 'Very Strong', color: '#10b981' }
+  }
+
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+    setSuccess('')
     setIsLoading(true)
 
-    // Simulate API call (frontend only)
-    setTimeout(() => {
+    // Validate password strength for registration
+    if (isRegister && !passwordStrength.isValid) {
+      setError('Please fix password issues: ' + passwordStrength.feedback.join(', '))
       setIsLoading(false)
-      // Save login state with name and redirect to home
-      const userName = isRegister ? fullName : email.split('@')[0]
-      onLogin(email, userName)
-      navigate('/')
-    }, 1500)
-  }
-
-  const handleSocialLogin = () => {
-    setIsLoading(true)
-    setTimeout(() => {
-      setIsLoading(false)
-      onLogin('user@example.com', 'User')
-      navigate('/')
-    }, 1000)
-  }
-
-  const handleMagicLink = () => {
-    if (!email) {
-      setError('Please enter your email first')
       return
     }
-    setIsLoading(true)
-    setTimeout(() => {
+
+    try {
+      const endpoint = isRegister ? '/api/auth/signup' : '/api/auth/login'
+      const payload = isRegister 
+        ? { email, password, full_name: fullName, organization: organization || null }
+        : { email, password }
+
+      const response = await fetch(`${API_BASE}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.detail || 'Authentication failed')
+      }
+
+      // Store tokens and user data
+      localStorage.setItem('ip_sakti_access_token', data.tokens.access_token)
+      localStorage.setItem('ip_sakti_refresh_token', data.tokens.refresh_token)
+      localStorage.setItem('ip_sakti_user', JSON.stringify(data.user))
+      
+      // Call the onLogin callback
+      onLogin(data.user.email, data.user.full_name)
+      
+      setSuccess(data.message)
+      
+      // Navigate after short delay
+      setTimeout(() => navigate('/'), 1000)
+      
+    } catch (err) {
+      console.error('Auth error:', err)
+      // Provide user-friendly error messages
+      if (err.message === 'Failed to fetch' || err.name === 'TypeError') {
+        setError('Cannot connect to server. Please make sure the backend is running on port 8000.')
+      } else {
+        setError(err.message || 'Something went wrong. Please try again.')
+      }
+    } finally {
       setIsLoading(false)
-      setSuccess(t('magicLinkSent'))
-    }, 1000)
+    }
+  }
+
+  const handleSocialLogin = async (provider) => {
+    if (provider === 'apple') {
+      setError('Apple login coming soon! Please use Google or email/password for now.')
+      return
+    }
+    
+    // Google OAuth
+    setIsLoading(true)
+    setError('')
+    
+    try {
+      // Get OAuth URL from backend
+      const response = await fetch(`${API_BASE}/api/auth/google/url`)
+      
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.detail || 'Failed to initiate Google login')
+      }
+      
+      const data = await response.json()
+      
+      // Redirect to Google OAuth consent screen
+      window.location.href = data.url
+    } catch (err) {
+      console.error('Google OAuth error:', err)
+      if (err.message.includes('Failed to fetch')) {
+        setError('Backend not running. Start it with: python -m uvicorn app.main:app --reload --port 8000')
+      } else {
+        setError(err.message || 'Failed to start Google login. Please try email/password.')
+      }
+      setIsLoading(false)
+    }
+  }
+
+  // Password strength meter component
+  const PasswordStrengthMeter = () => {
+    if (!showStrengthMeter || !password) return null
+    
+    const { label, color } = getStrengthLabel(passwordStrength.score)
+    const percentage = (passwordStrength.score / 5) * 100
+    
+    return (
+      <div className="password-strength-meter">
+        <div className="strength-bar-container">
+          <div 
+            className="strength-bar-fill" 
+            style={{ width: `${percentage}%`, backgroundColor: color }}
+          />
+        </div>
+        <div className="strength-info">
+          <span className="strength-label" style={{ color }}>{label}</span>
+          {passwordStrength.feedback.length > 0 && (
+            <ul className="strength-feedback">
+              {passwordStrength.feedback.map((item, i) => (
+                <li key={i} className="feedback-item">
+                  <span className="feedback-x">✕</span> {item}
+                </li>
+              ))}
+            </ul>
+          )}
+          {passwordStrength.isValid && (
+            <div className="strength-valid">
+              <span className="feedback-check">✓</span> Password meets all requirements
+            </div>
+          )}
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -5567,46 +7617,20 @@ function LoginPage({ theme, toggleTheme, fontSize, setFontSize, onLogin }) {
               <p>{isRegister ? t('registerSubtitle') : t('loginSubtitle')}</p>
             </div>
 
-            {/* Social Login Buttons */}
-            <div className="login-social-buttons">
-              <button
-                type="button"
-                className="login-social-btn google"
-                onClick={() => handleSocialLogin('google')}
-                disabled={isLoading}
-              >
-                <svg viewBox="0 0 24 24" width="20" height="20">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                </svg>
-                <span>{t('loginWithGoogle')}</span>
-              </button>
-
-              <button
-                type="button"
-                className="login-social-btn apple"
-                onClick={() => handleSocialLogin('apple')}
-                disabled={isLoading}
-              >
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                  <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
-                </svg>
-                <span>{t('loginWithApple')}</span>
-              </button>
-            </div>
-
-            {/* Magic Link */}
+            {/* Google Login Button - Full Width Premium Style */}
             <button
               type="button"
-              className="login-magic-btn"
-              onClick={handleMagicLink}
+              className="login-google-btn-premium"
+              onClick={() => handleSocialLogin('google')}
               disabled={isLoading}
-              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
             >
-              <IconSparkles size={16} />
-              <span>{t('loginWithMagicLink')}</span>
+              <svg viewBox="0 0 24 24" width="20" height="20">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+              </svg>
+              <span>{t('loginWithGoogle')}</span>
             </button>
 
             {/* Divider */}
@@ -5635,6 +7659,20 @@ function LoginPage({ theme, toggleTheme, fontSize, setFontSize, onLogin }) {
                 </div>
               )}
 
+              {isRegister && (
+                <div className="login-field">
+                  <label htmlFor="organization">Organization (Optional)</label>
+                  <input
+                    type="text"
+                    id="organization"
+                    value={organization}
+                    onChange={(e) => setOrganization(e.target.value)}
+                    placeholder="Company, University, or Firm"
+                    disabled={isLoading}
+                  />
+                </div>
+              )}
+
               <div className="login-field">
                 <label htmlFor="email">{t('emailLabel')}</label>
                 <input
@@ -5656,11 +7694,12 @@ function LoginPage({ theme, toggleTheme, fontSize, setFontSize, onLogin }) {
                     type={showPassword ? 'text' : 'password'}
                     id="password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder={t('passwordPlaceholder')}
+                    onChange={handlePasswordChange}
+                    placeholder={isRegister ? 'Min 8 chars, upper, lower, number, special' : t('passwordPlaceholder')}
                     required
                     disabled={isLoading}
                     aria-label={t('passwordLabel')}
+                    minLength={isRegister ? 8 : undefined}
                   />
                   <button
                     type="button"
@@ -5672,10 +7711,12 @@ function LoginPage({ theme, toggleTheme, fontSize, setFontSize, onLogin }) {
                     {showPassword ? <IconEyeOff size={16} /> : <IconEye size={16} />}
                   </button>
                 </div>
-                {!isRegister && (
-                  <a href="#" className="login-forgot">{t('forgotPassword')}</a>
-                )}
+                <PasswordStrengthMeter />
               </div>
+
+              {!isRegister && (
+                <a href="#" className="login-forgot">{t('forgotPassword')}</a>
+              )}
 
               <button
                 type="submit"
@@ -5771,6 +7812,11 @@ export default function App() {
   const handleLogout = () => {
     setIsLoggedIn(false)
     setUserName('')
+    localStorage.removeItem('ip_sakti_logged_in')
+    localStorage.removeItem('ip_sakti_user_name')
+    localStorage.removeItem('ip_sakti_access_token')
+    localStorage.removeItem('ip_sakti_refresh_token')
+    localStorage.removeItem('ip_sakti_user')
     localStorage.removeItem('ip_sakti_logged_in')
     localStorage.removeItem('ip_sakti_user_name')
   }
@@ -5880,6 +7926,32 @@ export default function App() {
             }
           />
           <Route
+            path="/deadline-calculator"
+            element={
+              <DeadlineCalculatorPage
+                onOpenAbout={() => setIsAboutOpen(true)}
+                onOpenWizard={() => setIsWizardOpen(true)}
+                theme={theme}
+                toggleTheme={toggleTheme}
+                fontSize={fontSize}
+                setFontSize={setFontSize}
+              />
+            }
+          />
+          <Route
+            path="/drafts"
+            element={
+              <DraftsPage
+                onOpenAbout={() => setIsAboutOpen(true)}
+                onOpenWizard={() => setIsWizardOpen(true)}
+                theme={theme}
+                toggleTheme={toggleTheme}
+                fontSize={fontSize}
+                setFontSize={setFontSize}
+              />
+            }
+          />
+          <Route
             path="/login"
             element={
               <LoginPage
@@ -5889,6 +7961,53 @@ export default function App() {
                 setFontSize={setFontSize}
                 onLogin={handleLogin}
               />
+            }
+          />
+          <Route
+            path="/workspace"
+            element={
+              <ProtectedRoute isLoggedIn={isLoggedIn}>
+                <MatterWorkspace />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/documents"
+            element={
+              <ProtectedRoute isLoggedIn={isLoggedIn}>
+                <DocumentsPage
+                  onOpenAbout={() => setIsAboutOpen(true)}
+                  onOpenWizard={() => setIsWizardOpen(true)}
+                  theme={theme}
+                  toggleTheme={toggleTheme}
+                  fontSize={fontSize}
+                  setFontSize={setFontSize}
+                />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/auth/callback"
+            element={
+              <AuthCallbackPage onLogin={handleLogin} />
+            }
+          />
+          <Route
+            path="/checklists"
+            element={
+              <IPChecklist />
+            }
+          />
+          <Route
+            path="/experts"
+            element={
+              <ExpertConnect />
+            }
+          />
+          <Route
+            path="/pricing"
+            element={
+              <PricingPage />
             }
           />
         </Routes>

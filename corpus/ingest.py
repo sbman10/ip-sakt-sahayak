@@ -26,6 +26,7 @@ logger = logging.getLogger("VectorIngestor")
 BASE_DIR = Path(__file__).resolve().parent
 CHROMA_DB_PATH = BASE_DIR / "chroma_db"
 PROCESSED_DATA_DIR = BASE_DIR / "data" / "processed"
+CURATED_DATA_DIR = BASE_DIR / "data" / "curated"
 
 # Collection Constants
 COLLECTION_INDIA = "india_statutes"
@@ -63,10 +64,19 @@ def run_ingestion() -> None:
         return
 
     jsonl_files = sorted(list(PROCESSED_DATA_DIR.glob("*_chunks.jsonl")))
-    if not jsonl_files:
+    
+    # Also include curated JSONL files (hand-crafted knowledge chunks)
+    curated_files = []
+    if CURATED_DATA_DIR.exists():
+        curated_files = sorted(list(CURATED_DATA_DIR.glob("*.jsonl")))
+        logger.info(f"Found {len(curated_files)} curated knowledge files in {CURATED_DATA_DIR}")
+    
+    all_jsonl_files = jsonl_files + curated_files
+    
+    if not all_jsonl_files:
         logger.warning(
-            f"No processed JSONL chunk files found in {PROCESSED_DATA_DIR}. "
-            f"Please run 'parser.py' first."
+            f"No processed JSONL chunk files found in {PROCESSED_DATA_DIR} or {CURATED_DATA_DIR}. "
+            f"Please run 'parser.py' first or add curated files."
         )
         return
 
@@ -94,7 +104,7 @@ def run_ingestion() -> None:
         COLLECTION_INTERNATIONAL: 0,
     }
 
-    for jsonl_path in jsonl_files:
+    for jsonl_path in all_jsonl_files:
         stem = jsonl_path.stem.replace("_chunks", "")
         target_collection_name = get_target_collection_name(stem)
         target_collection = collections[target_collection_name]
@@ -118,7 +128,7 @@ def run_ingestion() -> None:
         texts = [chunk["text"] for chunk in chunks]
         metadatas = [
             {
-                "source": chunk.get("source_title", stem),
+                "source": chunk.get("source_title") or chunk.get("source", stem),
                 "section": chunk.get("section", "General"),
             }
             for chunk in chunks

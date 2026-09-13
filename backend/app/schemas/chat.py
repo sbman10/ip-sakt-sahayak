@@ -43,7 +43,7 @@ class ChatRequest(BaseModel):
 
     question: str = Field(
         ...,
-        min_length=3,
+        min_length=1,
         max_length=2000,
         description="The natural-language legal question from the user.",
         examples=["Can a formulation based on Ashwagandha be patented in India?"],
@@ -62,6 +62,14 @@ class ChatRequest(BaseModel):
             'Defaults to "EN" (English). Future values: "HI", "SA", etc.'
         ),
         examples=["EN", "HI"],
+    )
+    conversation_id: str | None = Field(
+        default=None,
+        description=(
+            "Optional existing conversation id to append this turn to. "
+            "When omitted, the backend creates a new conversation and returns "
+            "its id in the response so the client can persist follow-up turns."
+        ),
     )
 
     @field_validator("question")
@@ -104,6 +112,42 @@ class CitationItem(BaseModel):
         ...,
         description="Verbatim chunk snippet that was retrieved and passed to the LLM.",
     )
+    relevance: str = Field(
+        default="",
+        description="Short explanation of why this source supports the answer.",
+    )
+
+
+class AnswerSection(BaseModel):
+    """Optional structured section within the answer."""
+    
+    title: str = Field(
+        ...,
+        description="Section heading.",
+    )
+    content: str = Field(
+        ...,
+        description="Section content text.",
+    )
+
+
+class ConfidenceScore(BaseModel):
+    """Structured confidence assessment."""
+    
+    score: int = Field(
+        ...,
+        ge=0,
+        le=100,
+        description="Numeric confidence score from 0 to 100.",
+    )
+    label: Literal["High", "Medium", "Low"] = Field(
+        ...,
+        description="Human-readable confidence label.",
+    )
+    reason: str = Field(
+        ...,
+        description="Short explanation of the confidence level.",
+    )
 
 
 class ChatResponse(BaseModel):
@@ -113,6 +157,10 @@ class ChatResponse(BaseModel):
         ...,
         description="The LLM-generated (or guardrail) answer to the user's question.",
     )
+    sections: list[AnswerSection] = Field(
+        default_factory=list,
+        description="Optional structured sections within the answer.",
+    )
     citations: list[CitationItem] = Field(
         default_factory=list,
         description=(
@@ -120,17 +168,28 @@ class ChatResponse(BaseModel):
             "Empty when the guardrail abstains."
         ),
     )
-    confidence: Literal["high", "moderate", "low"] = Field(
+    confidence: ConfidenceScore = Field(
         ...,
-        description=(
-            '"high" (re-ranker score >= 0.80), '
-            '"moderate" (>= 0.65), '
-            '"low" (below threshold -- guardrail fires).'
-        ),
+        description="Structured confidence assessment with score, label, and reason.",
+    )
+    follow_up_questions: list[str] = Field(
+        default_factory=list,
+        description="Relevant follow-up questions the user might want to ask.",
+    )
+    status: Literal["answered", "out_of_scope", "no_data", "error"] = Field(
+        default="answered",
+        description="Response status indicating the type of response.",
     )
     disclaimer: str = Field(
         default=_DISCLAIMER_TEXT,
         description="Fixed legal disclaimer injected server-side.",
+    )
+    conversation_id: str | None = Field(
+        default=None,
+        description=(
+            "The conversation this turn was persisted to. Echoes the request "
+            "conversation_id, or a freshly created id when the request omitted one."
+        ),
     )
 
     model_config = {

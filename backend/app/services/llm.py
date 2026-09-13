@@ -4,7 +4,7 @@ backend/app/services/llm.py
 Secure interface to Google Gemini for IP-SAKTI Sahayak.
 
 SDK: google-genai (new, replaces deprecated google-generativeai)
-Model: configured with GEMINI_MODEL; defaults to gemini-2.5-flash
+Model: configured with GEMINI_MODEL; defaults to gemini-3.6-flash
 
 Responsibilities
 ----------------
@@ -17,7 +17,7 @@ Environment
 backend/.env must contain:
     GEMINI_API_KEY=<your-key>
 Optional:
-    GEMINI_MODEL=gemini-2.5-flash
+    GEMINI_MODEL=gemini-3.6-flash
 
 Dependencies
 ------------
@@ -30,6 +30,7 @@ import logging
 import os
 import sys
 from pathlib import Path
+from typing import Iterator
 
 # ---------------------------------------------------------------------------
 # Third-party imports
@@ -65,24 +66,30 @@ if not _API_KEY:
 # ---------------------------------------------------------------------------
 # Model configuration
 # ---------------------------------------------------------------------------
-_MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-2.5-flash").strip()
+_MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-3.6-flash").strip()
 if not _MODEL_NAME:
-    _MODEL_NAME = "gemini-2.5-flash"
+    _MODEL_NAME = "gemini-3.6-flash"
 
 _SYSTEM_PROMPT = (
-    "You are IP-SAKTI Sahayak, an authoritative legal guide for Ayurvedic "
+    "You are Ragvyn AI, an authoritative legal guide for Ayurvedic "
     "Intellectual Property. "
     "You must answer the user question using ONLY the retrieved source passages provided below.\n\n"
     "Rules you MUST follow at all times:\n"
-    "- If the retrieved context contains the answer, explain it in simple, direct language "
-    "and mention the exact legal acts, schedules, or treaties retrieved.\n"
+    "- PROVIDE COMPLETE, DETAILED ANSWERS. Do not give one-line summaries. Include:\n"
+    "  * Full explanation of the concept/procedure\n"
+    "  * Relevant legal sections, acts, and rules with their implications\n"
+    "  * Practical steps or requirements where applicable\n"
+    "  * Any important exceptions, deadlines, or fees mentioned in the passages\n"
+    "- If the retrieved context contains the answer, explain it thoroughly in simple, direct language "
+    "and cite the exact legal acts, schedules, or treaties retrieved.\n"
+    "- Structure your answer with clear paragraphs. Use bullet points for lists of requirements/steps.\n"
     "- If the retrieved context is missing information, does not match, or does not provide "
     "enough evidence to answer reliably, state clearly and humbly: "
     "'I cannot find an authoritative source in our legal registers to safely answer this.'\n"
     "- Do NOT make up statutory sections, acts, rules, or case references. Never hallucinate.\n"
     "- Keep your tone professional, calm, and trustworthy.\n"
     "- Do NOT speculate beyond the provided passages.\n"
-    "- If a concept appears in multiple passages, synthesise them coherently."
+    "- If a concept appears in multiple passages, synthesise them coherently into ONE comprehensive answer."
 )
 
 # ---------------------------------------------------------------------------
@@ -151,7 +158,7 @@ def generate_grounded_answer(question: str, context_chunks: list[str]) -> str:
                 system_instruction=_SYSTEM_PROMPT,
                 temperature=0.1,
                 top_p=0.95,
-                max_output_tokens=1024,
+                max_output_tokens=1024,  # Enough for detailed answers with structure
             ),
         )
         answer_text: str = response.text.strip()
@@ -165,3 +172,91 @@ def generate_grounded_answer(question: str, context_chunks: list[str]) -> str:
 
 # Backward-compatible alias
 generate_answer = generate_grounded_answer
+
+
+def stream_grounded_answer(question: str, context_chunks: list[str]) -> Iterator[str]:
+    """
+    Stream a grounded Gemini answer token-by-token.
+
+    Yields incremental text chunks as Gemini produces them. If the SDK does not
+    support native streaming (or streaming fails mid-flight), the caller can
+    fall back to a chunked full response.
+
+    Parameters
+    ----------
+    question:
+        The user's original legal question.
+    context_chunks:
+        Ordered list of top-ranked passages from ChromaDB.
+
+    Yields
+    ------
+    str
+        Incremental text fragments of the answer.
+
+    Raises
+    ------
+    RuntimeError
+        If the Gemini streaming call cannot be started.
+    """
+    if not context_chunks:
+        yield (
+            "I cannot find an authoritative source in our verified legal registers "
+            "to answer this safely."
+        )
+        return
+
+    passages_block = "\n\n".join(
+        f"[Passage {i + 1}]\n{chunk.strip()}"
+        for i, chunk in enumerate(context_chunks)
+    )
+
+    user_prompt = (
+        "--- RETRIEVED LEGAL PASSAGES ---\n"
+        f"{passages_block}\n"
+        "--- END OF PASSAGES ---\n\n"
+        f"User Question: {question}\n\n"
+        "Please answer the question based ONLY on the passages above."
+    )
+
+    log.debug(
+        "Streaming prompt to Gemini (%d chars, %d passages).",
+        len(user_prompt),
+        len(context_chunks),
+    )
+
+    config = genai_types.GenerateContentConfig(
+        system_instruction=_SYSTEM_PROMPT,
+        temperature=0.1,
+        top_p=0.95,
+        max_output_tokens=1024,
+    )
+
+    try:
+        stream = _CLIENT.models.generate_content_stream(
+            model=_MODEL_NAME,
+            contents=user_prompt,
+            config=config,
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.error("Gemini streaming call failed to start: %s", exc, exc_info=True)
+        raise RuntimeError(
+            f"Failed to start a streaming response from the Gemini API: {exc}"
+        ) from exc
+
+    emitted_any = False
+    try:
+        for chunk in stream:
+            text = getattr(chunk, "text", None)
+            if text:
+                emitted_any = True
+                yield text
+    except Exception as exc:  # noqa: BLE001
+        # Streaming broke mid-flight. If we already emitted something the caller
+        # keeps what arrived; otherwise surface as RuntimeError so the router
+        # can fall back to the non-streaming path.
+        log.error("Gemini stream interrupted: %s", exc, exc_info=True)
+        if not emitted_any:
+            raise RuntimeError(
+                f"Gemini streaming interrupted before any output: {exc}"
+            ) from exc

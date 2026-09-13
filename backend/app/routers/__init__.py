@@ -1,3 +1,7 @@
-﻿# backend/app/routers/__init__.py
+# backend/app/routers/__init__.py
 # Routers package for IP-SAKTI Sahayak.
-# Exposes: chat (POST /api/chat RAG pipeline), classify (POST /api/classify wizard)
+# Exposes all routers
+
+from app.routers import chat, classify, conversations, auth, uploads, documents, matters, drafts, checklists, experts, analytics, subscription
+
+__all__ = ["chat", "classify", "conversations", "auth", "uploads", "documents", "matters", "drafts", "checklists", "experts", "analytics", "subscription"]
