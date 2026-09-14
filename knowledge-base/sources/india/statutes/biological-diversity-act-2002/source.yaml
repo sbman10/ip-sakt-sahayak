@@ -1,0 +1,24 @@
+# Source Package: The Biological Diversity Act, 2002
+source_id: "biological-diversity-act-2002"
+title: "The Biological Diversity Act, 2002"
+short_title: "Biodiversity Act"
+source_type: "statute"
+jurisdiction: "india"
+issuing_authority: "Parliament of India"
+country: "IN"
+language: "en"
+publication_date: "2003-02-05"
+effective_date: "2003-10-01"
+official_url: "https://www.indiacode.nic.in/bitstream/123456789/2046/1/200318.pdf"
+access_date: "2026-09-13"
+checksum_sha256: "94a05491783111779b1c367805838a26d73bc19eb3054bf624a72fbdd5af514a"
+status: "current"
+supersedes: null
+superseded_by: null
+verification_status: "pending-review"
+verified_by: null
+verification_date: null
+citation_format: "The Biological Diversity Act, 2002 (Act No. 18 of 2003), § {section}"
+notes: >
+  Migrated from corpus/data/raw/india/biological_diversity_act_2002.pdf.
+  Governs access to biological resources, benefit sharing, and NBA approval processes.

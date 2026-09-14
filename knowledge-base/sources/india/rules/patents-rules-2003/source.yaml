@@ -1,0 +1,24 @@
+# Source Package: The Patents Rules, 2003
+source_id: "patents-rules-2003"
+title: "The Patents Rules, 2003"
+short_title: "Patents Rules"
+source_type: "rule"
+jurisdiction: "india"
+issuing_authority: "Ministry of Commerce and Industry, Government of India"
+country: "IN"
+language: "en"
+publication_date: "2003-05-02"
+effective_date: "2003-05-20"
+official_url: "https://ipindia.gov.in/writereaddata/Portal/ev/rules/patent-rules-2003.pdf"
+access_date: "2026-09-13"
+checksum_sha256: "42ffa9be3ea6b1b1f7031ceb9456fb60569b3f7ae6cde7ae3136a07f04ffeb3b"
+status: "amended"
+supersedes: null
+superseded_by: null
+verification_status: "pending-review"
+verified_by: null
+verification_date: null
+citation_format: "The Patents Rules, 2003, Rule {rule}"
+notes: >
+  Procedural rules under the Patents Act 1970. Multiple amendments since 2003.
+  Migrated from corpus/data/raw/india/patents_rules_2003.pdf.

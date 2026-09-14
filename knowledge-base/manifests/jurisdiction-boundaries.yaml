@@ -1,0 +1,42 @@
+# Jurisdiction Boundaries & Collection Mapping Policy Manifest
+
+manifest_version: 1.0.0
+jurisdictions:
+  india:
+    display_name: Republic of India
+    root_path: sources/india
+    chroma_collection: india_statutes
+    allowed_classes:
+    - statutes
+    - rules
+    - treaties
+    - pharmacopoeial-standards
+    - registry-records
+    - case-law
+    statutory_hierarchy:
+    - Constitution of India
+    - Parliamentary Statutes / Acts
+    - Subordinate Legislation / Rules & Regulations
+    - Official Guidelines & Notifications
+    - Tribunal & High Court Precedents
+    - Supreme Court Precedents
+    cross_contamination_rule: 'STRICT_ISOLATION: No international materials may be
+      indexed under India collections.'
+  international:
+    display_name: International Treaties & Conventions
+    root_path: sources/international
+    chroma_collection: international_treaties
+    allowed_classes:
+    - treaties
+    - statutes
+    - rules
+    - pharmacopoeial-standards
+    - registry-records
+    - case-law
+    organizations:
+    - WIPO
+    - WTO
+    - CBD / UNEP
+    - WHO
+    cross_contamination_rule: 'STRICT_ISOLATION: No domestic Indian statutes may be
+      indexed under International collections.'

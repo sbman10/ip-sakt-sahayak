@@ -1,0 +1,16 @@
+# Version metadata for drugs-and-cosmetics-act-1940 / 1940-original
+source_id: "drugs-and-cosmetics-act-1940"
+version_label: "1940-original"
+version_type: "original"
+publication_date: "1940-04-10"
+effective_date: "1940-04-10"
+gazette_reference: null
+amendment_act: null
+changes_summary: null
+original_filename: "drugs-and-cosmetics-act-1940.pdf"
+checksum_sha256: "c821be1fba80713c11671fafa7dbfa43ef48cf26c8e9c62b37e9dc2f77c76b7f"
+page_count: null  # Requires human verification
+ocr_required: false
+extraction_method: "pymupdf-text"
+extracted_filename: null  # Text extraction is a derived step
+notes: "Regulates manufacture, sale, and distribution of drugs including ASU drugs. Rules 158-B governs AYUSH licensing."

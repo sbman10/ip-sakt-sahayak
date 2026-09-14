@@ -1,0 +1,18 @@
+# Version metadata for patents-act-1970 / 1970-original
+source_id: "patents-act-1970"
+version_label: "1970-original"
+version_type: "original"
+publication_date: "1970-09-19"
+effective_date: "1972-04-20"
+gazette_reference: "Act No. 39 of 1970, Gazette of India Extraordinary"
+amendment_act: null
+changes_summary: "Original enactment of The Patents Act, 1970."
+original_filename: "patents-act-1970.pdf"
+checksum_sha256: "d57084888c69d70b16ed6a52a612363a526994203effa58880a26faaaa6e0678"
+page_count: null  # Requires human verification
+ocr_required: false
+extraction_method: "pymupdf-text"
+extracted_filename: null  # Text extraction is a derived step
+notes: >
+  PDF may represent a consolidated version with amendments.
+  Human verification needed to confirm exact version.
