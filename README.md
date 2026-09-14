@@ -148,7 +148,7 @@ Every call to `POST /api/chat` runs this exact 8-stage pipeline:
 └──────────────────────────────────────────────────────────┘
                             ▲
 ┌───────────────────────────┴──────────────────────────────┐
-│              OFFLINE INGESTION (corpus/)                 │
+│          OFFLINE INGESTION (knowledge-base/)             │
 │   Raw PDFs → parser.py (chunk) → ingest.py (embed+store) │
 └──────────────────────────────────────────────────────────┘
 ```
@@ -214,14 +214,13 @@ uvicorn app.main:app --reload --port 8000
 - 📗 ReDoc → [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
 - ❤️ Health → [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health)
 
-### 2️⃣ Corpus Ingestion (one-time — required for `/api/chat`)
+### 2️⃣ Knowledge Base Ingestion (one-time — required for `/api/chat`)
 
 ```bash
-cd corpus
 pip install pymupdf                # PDF parser (installs as 'fitz')
-python parser.py                   # PDFs → chunked JSONL
-python ingest.py                   # JSONL → ChromaDB collections
-python search_test.py              # sanity-check retrieval
+python knowledge-base/parser.py    # PDFs → chunked JSONL
+python knowledge-base/ingest.py    # JSONL → ChromaDB collections & BM25
+python knowledge-base/scripts/search_diagnostic.py # sanity-check retrieval
 ```
 
 > ⚠️ Until the corpus is ingested, `POST /api/chat` returns **HTTP 503** — the knowledge base is not yet initialised. The classification wizard (`/api/classify`) works without any corpus.
@@ -286,7 +285,7 @@ Liveness probe.
 | Status | Meaning |
 |:------:|---------|
 | `200` | Answer returned (or safe abstention with empty `citations`) |
-| `503` | Corpus not ingested — run `python corpus/ingest.py` |
+| `503` | Knowledge base not ingested — run `python knowledge-base/ingest.py` |
 | `500` | Gemini service error |
 
 ---
@@ -339,25 +338,30 @@ ip-sakt-sahayak/
 │   ├── app/
 │   │   ├── main.py                # App entry, CORS, /health, router mounts
 │   │   ├── routers/
-│   │   │   ├── chat.py            # POST /api/chat — full 8-stage RAG pipeline
-│   │   │   └── classify.py        # POST /api/classify — deterministic wizard
+│   │   │   ├── chat.py            # POST /api/chat — full grounded RAG pipeline
+│   │   │   ├── classify.py        # POST /api/classify — deterministic wizard
+│   │   │   └── documents.py       # POST /api/documents/upload — user document ingestion
 │   │   ├── schemas/
 │   │   │   └── chat.py            # Pydantic v2 request/response models
 │   │   └── services/
 │   │       ├── llm.py             # Gemini grounded-answer generation
+│   │       ├── retrieval_service.py # Hybrid RRF search (ChromaDB + BM25)
 │   │       ├── pii_scrubber.py    # DPDP PII redaction gateway
 │   │       └── audit.py           # Async SQLite transaction logging
 │   ├── requirements.txt
 │   └── .env.example
 │
-├── corpus/                        # Offline knowledge-ingestion pipeline
-│   ├── parser.py                  # PDF → 500-word chunks (50 overlap) + page citations
-│   ├── ingest.py                  # Chunks → ChromaDB (india_statutes / international_treaties)
-│   ├── search_test.py             # Retrieval sanity-check CLI
-│   ├── data/
-│   │   ├── raw/                   # Source PDFs (per jurisdiction)
-│   │   └── processed/             # Chunked JSONL
-│   └── chroma_db/                 # Persisted vector store
+├── knowledge-base/                # Unified sovereign knowledge base & ingestion pipeline
+│   ├── schemas/                   # YAML validation schemas
+│   ├── manifests/                 # Source catalogs, boundaries, verification status
+│   ├── sources/                   # Authoritative statutes & treaties (PDFs + metadata YAML)
+│   ├── curated/                   # Domain knowledge JSONL records (AYUSH, ABS, IP practice)
+│   ├── derived/                   # Chunked JSONL & extracted text (isolated by jurisdiction)
+│   ├── uploads/                   # User-uploaded document runtime storage
+│   ├── parser.py                  # Sliding window PDF parser (500 words / 50 overlap)
+│   ├── ingest.py                  # Chunk embedder → ChromaDB collections & BM25 index
+│   ├── scripts/                   # Verification, metadata & diagnostic utilities
+│   └── tests/                     # Automated pytest integrity & schema test suite
 │
 ├── frontend/                      # React 19 + Vite 8 app
 │   ├── src/
@@ -434,7 +438,7 @@ See [`docs/Phases.md`](docs/Phases.md) for the detailed timeline.
 3. Fill in the [pull-request template](.github/pull_request_template.md); respect [`CODEOWNERS`](.github/CODEOWNERS).
 4. Run `npm run lint` (frontend) and verify both servers boot before opening a PR.
 
-> **Do not commit** `backend/.env`, `backend/audit.db*`, or `corpus/chroma_db/` — these are local runtime artefacts.
+> **Do not commit** `backend/.env`, `backend/audit.db*`, or `backend/chroma_db/` — these are local runtime artefacts.
 
 ---
 

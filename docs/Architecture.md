@@ -102,8 +102,17 @@ ip-sakti-sahayak/                    # Workspace root
 │   ├── app/routers/chat.py          # Transparent development chat route
 │   └── app/schemas/chat.py          # Validated request/response models
 │
-├── corpus/                          # Ingestion & offline scrapers (Not started)
-│   └── (To be built in Phase 2)
+├── knowledge-base/                  # Unified sovereign knowledge base, schemas & ingestion
+│   ├── schemas/                     # YAML validation schemas
+│   ├── manifests/                   # Source catalogs, boundaries, verification status
+│   ├── sources/                     # Authoritative statutes & treaties (PDFs + metadata YAML)
+│   ├── curated/                     # Domain knowledge JSONL records (AYUSH, ABS, IP practice)
+│   ├── derived/                     # Chunked JSONL & extracted text (isolated by jurisdiction)
+│   ├── uploads/                     # User-uploaded document runtime storage
+│   ├── parser.py                    # Sliding window PDF parser (500 words / 50 overlap)
+│   ├── ingest.py                    # Chunk embedder → ChromaDB collections & BM25 index
+│   ├── scripts/                     # Verification, metadata & diagnostic utilities
+│   └── tests/                       # Automated pytest integrity & schema test suite
 │
 ├── .agents/                         # Workspace AI automation rules & actions
 │   ├── rules/

@@ -27,7 +27,7 @@ def run_ingest(dry_run=False):
     root_dir = Path(__file__).resolve().parent.parent
     manifests_dir = root_dir / "manifests"
     derived_dir = root_dir / "derived" / "chunks"
-    db_path = root_dir.parent / "corpus" / "chroma_db"
+    db_path = root_dir.parent / "backend" / "chroma_db"
 
     catalog_path = manifests_dir / "source-catalog.yaml"
     boundaries_path = manifests_dir / "jurisdiction-boundaries.yaml"

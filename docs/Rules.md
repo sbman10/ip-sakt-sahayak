@@ -54,7 +54,7 @@ def check_traditional_formula(ingredients: list[str]) -> bool:
 
 ## 4. Workspaces & Git Guidelines
 
-* **Working Directory:** All code must live under `ip-sakti/` (frontend), `backend/` (API) or `corpus/` (ingestion/data) directories. No loose operational scripts at the root level.
+* **Working Directory:** All code must live under `frontend/` (frontend UI), `backend/` (API) or `knowledge-base/` (ingestion/data/schemas) directories. No loose operational scripts at the root level.
 - **Branching Policy:**
   - **`main`:** Stable, review-approved codebase. Direct pushes to main are deactivated.
   - **`feature/*`:** Branching for new components or pages.

@@ -1,13 +1,13 @@
 """
-corpus/ingest.py
-----------------
+knowledge-base/ingest.py
+------------------------
 Unified offline ingestion script for IP-SAKTI Sahayak.
 Parses raw PDF legal statutes and treaties from the knowledge base,
 generates dense vector embeddings with SentenceTransformers, populates ChromaDB
 collections (isolated by jurisdiction), and builds + serializes a persisted BM25 index.
 
 Usage:
-    python corpus/ingest.py
+    python knowledge-base/ingest.py
 """
 
 from __future__ import annotations
@@ -40,9 +40,8 @@ logging.basicConfig(
 logger = logging.getLogger("UnifiedIngestor")
 
 # Directory configurations
-CORPUS_DIR = WORKSPACE_ROOT / "corpus"
-RAW_DATA_DIR = CORPUS_DIR / "data" / "raw"
-KB_SOURCES_DIR = WORKSPACE_ROOT / "knowledge-base" / "sources"
+KB_DIR = WORKSPACE_ROOT / "knowledge-base"
+KB_SOURCES_DIR = KB_DIR / "sources"
 
 # Target Storage Destinations
 BACKEND_CHROMA_PATH = BACKEND_DIR / "chroma_db"
@@ -76,18 +75,15 @@ def determine_jurisdiction(file_path: Path) -> Tuple[str, str]:
 
 
 def scan_all_pdfs() -> List[Path]:
-    """Finds all raw PDF legal documents in corpus and knowledge base directories."""
+    """Finds all raw PDF legal documents in knowledge base sources directory."""
     pdf_paths: List[Path] = []
-    search_dirs = [RAW_DATA_DIR, KB_SOURCES_DIR]
-
-    for search_dir in search_dirs:
-        if search_dir.exists():
-            for root, _, files in os.walk(search_dir):
-                for f in files:
-                    if f.lower().endswith(".pdf"):
-                        pdf_path = Path(root) / f
-                        if pdf_path not in pdf_paths:
-                            pdf_paths.append(pdf_path)
+    if KB_SOURCES_DIR.exists():
+        for root, _, files in os.walk(KB_SOURCES_DIR):
+            for f in files:
+                if f.lower().endswith(".pdf"):
+                    pdf_path = Path(root) / f
+                    if pdf_path not in pdf_paths:
+                        pdf_paths.append(pdf_path)
 
     return sorted(pdf_paths)
 
@@ -106,7 +102,7 @@ def run_ingestion(
 
     pdf_files = scan_all_pdfs()
     if not pdf_files:
-        logger.error("No PDF files discovered in %s or %s", RAW_DATA_DIR, KB_SOURCES_DIR)
+        logger.error("No PDF files discovered in %s", KB_SOURCES_DIR)
         return
 
     logger.info("Discovered %d PDF document(s) for ingestion.", len(pdf_files))
@@ -213,13 +209,6 @@ def run_ingestion(
 
     bm25_engine = PersistedBM25Index()
     bm25_engine.build_and_save(all_indexed_chunks, str(BACKEND_BM25_PATH))
-
-    # Also mirror BM25 index to corpus/ if needed
-    corpus_bm25 = CORPUS_DIR / "bm25_index.pkl"
-    try:
-        bm25_engine.build_and_save(all_indexed_chunks, str(corpus_bm25))
-    except Exception as e:
-        logger.warning("Could not mirror BM25 to corpus/: %s", e)
 
     logger.info("=== Ingestion Summary ===")
     logger.info("Total PDFs Processed:       %d", len(pdf_files))

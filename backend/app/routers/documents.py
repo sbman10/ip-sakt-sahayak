@@ -40,6 +40,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.models.database import UploadedDocument, User, get_db
 from app.routers.auth import require_auth
 
@@ -70,16 +71,16 @@ router = APIRouter()
 #   __file__      = backend/app/routers/documents.py
 #   .parents[3]   = project root (backend/app/routers -> app -> backend -> root)
 _PROJECT_ROOT = Path(__file__).resolve().parents[3]
-_CORPUS_ROOT = _PROJECT_ROOT / "corpus"
-UPLOAD_DIR = _CORPUS_ROOT / "data" / "uploads"
-CHROMA_DB_PATH = str(_CORPUS_ROOT / "chroma_db")
+_KB_ROOT = _PROJECT_ROOT / "knowledge-base"
+UPLOAD_DIR = _KB_ROOT / "uploads"
+CHROMA_DB_PATH = settings.CHROMA_DB_DIR
 
 EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
 USER_UPLOADS_COLLECTION = "user_uploads"
 
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
-CHUNK_WINDOW = 500                 # words per chunk (matches corpus/parser.py)
-CHUNK_OVERLAP = 50                 # word overlap (matches corpus/parser.py)
+CHUNK_WINDOW = 500                 # words per chunk (matches knowledge-base/parser.py)
+CHUNK_OVERLAP = 50                 # word overlap (matches knowledge-base/parser.py)
 
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -268,7 +269,7 @@ async def upload_and_ingest_document(
 
     document_id = str(uuid.uuid4())
 
-    # Persist to corpus/data/uploads/ with a collision-proof, user-scoped name
+    # Persist to knowledge-base/uploads/ with a collision-proof, user-scoped name
     stored_filename = f"{user.id}_{document_id}.pdf"
     storage_path = UPLOAD_DIR / stored_filename
     try:

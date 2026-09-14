@@ -12,7 +12,7 @@ from sentence_transformers import SentenceTransformer
 
 # Base directory paths
 BASE_DIR = Path(__file__).resolve().parent
-CHROMA_DB_PATH = BASE_DIR / "chroma_db"
+CHROMA_DB_PATH = BASE_DIR.parent.parent / "backend" / "chroma_db"
 
 COLLECTIONS = {
     "1": ("india_statutes", "India Statutes (Patents, Biodiversity, Drugs & Cosmetics Acts)"),
@@ -31,7 +31,7 @@ def main():
 
     if not CHROMA_DB_PATH.exists():
         print(f"\n[ERROR] ChromaDB database not found at '{CHROMA_DB_PATH}'.")
-        print("Please run 'corpus/parser.py' followed by 'corpus/ingest.py' first.\n")
+        print("Please run 'knowledge-base/parser.py' followed by 'knowledge-base/ingest.py' first.\n")
         sys.exit(1)
 
     print(f"Connecting to ChromaDB at: {CHROMA_DB_PATH}")

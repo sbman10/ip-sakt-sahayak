@@ -1,9 +1,10 @@
-"""Quick diagnostic to check ChromaDB embeddings."""
+from pathlib import Path
 import chromadb
 from sentence_transformers import SentenceTransformer
 
 # Connect to ChromaDB
-client = chromadb.PersistentClient(path="chroma_db")
+CHROMA_PATH = Path(__file__).resolve().parent.parent.parent / "backend" / "chroma_db"
+client = chromadb.PersistentClient(path=str(CHROMA_PATH))
 col = client.get_collection("india_statutes")
 
 print(f"Collection count: {col.count()}")

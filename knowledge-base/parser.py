@@ -23,8 +23,8 @@ logger = logging.getLogger("PDFParser")
 
 # Base directory paths
 BASE_DIR = Path(__file__).resolve().parent
-RAW_DATA_DIR = BASE_DIR / "data" / "raw"
-PROCESSED_DATA_DIR = BASE_DIR / "data" / "processed"
+RAW_DATA_DIR = BASE_DIR / "sources"
+PROCESSED_DATA_DIR = BASE_DIR / "derived" / "chunks"
 
 
 def clean_source_title(file_stem: str) -> str:
@@ -35,13 +35,9 @@ def clean_source_title(file_stem: str) -> str:
              '28012025-CCRAS-Patent-Granted' -> '28012025 CCRAS Patent Granted'
     """
     name = file_stem.replace("_", " ").replace("-", " ")
-    # Replace multiple spaces with a single space
     name = re.sub(r"\s+", " ", name).strip()
-
-    # Format year with a comma if ending with 4-digit year (e.g., 'Act 1970' -> 'Act, 1970')
     name = re.sub(r"(?<=\b[A-Za-z])\s+(\d{4})\b", r", \1", name)
 
-    # Title-case each word while preserving standard acronyms
     words = name.split()
     capitalized_words = []
     for w in words:
@@ -94,7 +90,6 @@ def chunk_text(
     word_tokens: List[Tuple[str, int]] = []
     for p in pages_data:
         p_num = p["page"]
-        # Split page text into discrete whitespace-separated tokens
         tokens = p["text"].split()
         for token in tokens:
             word_tokens.append((token, p_num))
@@ -130,7 +125,6 @@ def chunk_text(
             "text": chunk_text_str,
         })
 
-        # If reached end of document tokens, stop sliding
         if end_idx >= total_words:
             break
 
@@ -148,9 +142,7 @@ def process_all_pdfs() -> None:
 
     PROCESSED_DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Recursively find all PDF files
     pdf_files = sorted(list(RAW_DATA_DIR.rglob("*.pdf")) + list(RAW_DATA_DIR.rglob("*.PDF")))
-    # Deduplicate paths
     pdf_files = list(dict.fromkeys(pdf_files))
 
     if not pdf_files:
