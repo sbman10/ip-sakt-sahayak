@@ -1,14 +1,15 @@
 """
 backend/app/routers/chat.py
 ----------------------------
-FastAPI router powering the POST /api/chat and POST /api/chat/stream endpoints.
-Integrates Hybrid RRF Retrieval, Conditional Reranking, Context Compression,
-Google Gemini Grounded Generation, Claim Entailment, and Composite Confidence Scoring.
+Complete RAG Orchestration Router for IP-SAKTI Sahayak.
+Assembles the full 12-stage grounded reasoning pipeline:
+  PII Scrub -> Hybrid RRF -> Retrieval Gate -> Conditional Rerank ->
+  Context Compress -> Gemini Generation -> Claim Verification ->
+  Confidence Calculation -> Claim Guardrails -> Audit Log -> Response
 """
 
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
 import time
@@ -28,15 +29,22 @@ from app.schemas.chat import (
     CitationScore,
     ConfidenceScore,
 )
-from app.services.audit import log_transaction
-from app.services.confidence_scorer import confidence_scorer
+
+# Pipeline services
+from app.services.pii_scrubber import pii_scrubber, scrub_pii
+from app.services.retrieval_service import hybrid_rrf_search
+from app.services.retrieval_gate import evaluate_retrieval_quality, get_abstention_response
+from app.services.reranker_service import conditional_rerank
 from app.services.context_compressor import context_compressor
-from app.services.entailment_service import entailment_service
+from app.services.llm_service import generate_grounded_answer
+from app.services.claim_verifier import claim_verifier
+from app.services.confidence_calculator import compute_composite_confidence
+from app.services.claim_guardrails import enforce_claim_guardrails
+from app.services.audit_service import async_log_audit_transaction
+
+# Legacy services kept for streaming endpoint compatibility
 from app.services.guardrails import guardrail_service
-from app.services.hybrid_retriever import hybrid_retriever
-from app.services.llm import async_generate_grounded_answer, stream_grounded_answer
-from app.services.pii_scrubber import scrub_pii
-from app.services.reranker import conditional_reranker
+from app.services.llm import stream_grounded_answer
 
 log = logging.getLogger("app.routers.chat")
 
@@ -47,67 +55,58 @@ router = APIRouter()
     "/chat",
     response_model=ChatResponse,
     summary="Statutory RAG Legal Q&A",
-    description="Processes legal question with DPDP PII scrubbing, hybrid search, reranking, and citation-backed Gemini generation.",
+    description=(
+        "Processes legal question through the complete 12-stage grounded reasoning pipeline: "
+        "DPDP PII scrubbing, hybrid RRF search, retrieval gate, conditional CrossEncoder reranking, "
+        "context compression, Gemini generation, claim verification, composite confidence scoring, "
+        "claim guardrails, and audit logging."
+    ),
 )
 async def chat_endpoint(
     request: ChatRequest,
     db: Session = Depends(get_db),
 ) -> ChatResponse:
     """
-    Main dialogue turn endpoint executing the 5-stage grounded reasoning pipeline.
+    Main dialogue turn endpoint executing the complete RAG pipeline.
     """
+    # ── Stage (a): Start latency timer ──────────────────────────
     start_time = time.perf_counter()
     raw_query = request.question.strip()
     jurisdiction = request.jurisdiction or "India"
     language = request.language or "EN"
     answer_mode = request.answer_mode or "standard"
 
-    # Stage 1: PII Scrubbing (DPDP Compliance)
-    scrubbed_query = scrub_pii(raw_query)
+    # ── Stage (b): PII Scrubbing (DPDP Compliance) ──────────────
+    scrubbed_query = pii_scrubber.scrub_query(raw_query)
 
-    # Stage 2: Fast Pre-Generation Guardrail Relevance Check
-    is_safe, refusal_msg = guardrail_service.check_input_relevance(scrubbed_query)
-    if not is_safe:
+    # ── Stage (c): Hybrid RRF Retrieval (ChromaDB + BM25) ──────
+    try:
+        candidates = hybrid_rrf_search(
+            query=scrubbed_query,
+            jurisdiction=jurisdiction,
+            top_k=8,
+        )
+    except Exception as e:
+        log.error("Hybrid retrieval failed: %s", e, exc_info=True)
+        candidates = []
+
+    # ── Stage (d): Retrieval Gate — Abstention if insufficient ──
+    gate_result = evaluate_retrieval_quality(
+        candidates=candidates,
+        similarity_threshold=settings.SIMILARITY_THRESHOLD,
+    )
+
+    if not gate_result["is_sufficient"]:
         elapsed_ms = (time.perf_counter() - start_time) * 1000
+        abstention = get_abstention_response()
         confidence = ConfidenceScore(
-            score=95,
-            label="High",
-            reason="Conversational greeting or domain boundary response.",
+            score=abstention["confidence"]["score"],
+            label=abstention["confidence"]["label"],
+            reason=abstention["confidence"]["reason"],
             citation_scores=[],
         )
         return ChatResponse(
-            answer=refusal_msg or "Hello! How may I assist you with Indian IP law today?",
-            citations=[],
-            confidence=confidence,
-            latency_ms=round(elapsed_ms, 2),
-            status="out_of_scope",
-            conversation_id=request.conversation_id,
-        )
-
-    # Stage 3: Parallel Hybrid Retrieval (ChromaDB + BM25 with RRF Fusion)
-    candidates = await hybrid_retriever.hybrid_retrieve(
-        query=scrubbed_query,
-        jurisdiction=jurisdiction,
-        top_k=8,
-    )
-
-    top_sim = candidates[0].get("vector_similarity", 0.0) if candidates else 0.0
-
-    # Stage 4: Grounding Guardrail Check
-    is_grounded, abstention_msg = guardrail_service.check_retrieval_grounding(
-        top_similarity=top_sim,
-        candidate_count=len(candidates),
-    )
-    if not is_grounded:
-        elapsed_ms = (time.perf_counter() - start_time) * 1000
-        confidence = confidence_scorer.calculate_confidence(
-            retrieval_similarity=top_sim,
-            rerank_score=0.0,
-            citation_scores=[],
-            is_abstention=True,
-        )
-        return ChatResponse(
-            answer=abstention_msg or "I cannot find an authoritative source to safely answer this query.",
+            answer=abstention["answer"],
             citations=[],
             confidence=confidence,
             latency_ms=round(elapsed_ms, 2),
@@ -115,52 +114,86 @@ async def chat_endpoint(
             conversation_id=request.conversation_id,
         )
 
-    # Stage 5: Conditional CrossEncoder Reranking
-    reranked_passages = await conditional_reranker.rerank(
+    # ── Stage (e): Conditional CrossEncoder Reranking ───────────
+    best_distance = gate_result.get("best_distance", 1.0)
+    reranked_passages, reranker_skipped = await conditional_rerank(
         query=scrubbed_query,
         candidates=candidates,
-        top_k=4,
-    )
-    top_rerank_score = reranked_passages[0].get("rerank_score", 0.5) if reranked_passages else 0.5
-
-    # Stage 6: Context Compression & Citation Model Generation
-    context_text, citations = context_compressor.compress_and_format(
-        ranked_passages=reranked_passages,
-        max_passages=3,
+        skip_threshold=settings.RERANK_SKIP_THRESHOLD,
+        final_k=4,
     )
 
-    # Stage 7: Grounded LLM Generation via Google Gemini
-    try:
-        answer = await async_generate_grounded_answer(
-            question=scrubbed_query,
-            context=context_text,
-            jurisdiction=jurisdiction,
-            language=language,
-            answer_mode=answer_mode,
+    top_rerank_score = (
+        reranked_passages[0].get("reranker_score", 1.0)
+        if reranked_passages
+        else 0.5
+    )
+    # If reranker was skipped, treat reranker relevance as 1.0
+    effective_rerank_score = 1.0 if reranker_skipped else top_rerank_score
+
+    # ── Stage (f): Context Compression & Citation Formatting ────
+    context_text, cleaned_chunks = context_compressor.build_prompt_context(
+        chunks=reranked_passages,
+        max_tokens=1500,
+    )
+
+    # Build CitationItem list from cleaned chunks
+    citations: list[CitationItem] = []
+    for chunk in cleaned_chunks:
+        citations.append(
+            CitationItem(
+                source=chunk.get("source", "Legal Statute"),
+                section=chunk.get("section", "General"),
+                text=chunk.get("text", ""),
+                relevance=f"Grounded in {chunk.get('source', 'source')} ({chunk.get('section', 'section')}).",
+            )
         )
-    except Exception as e:
-        log.error("LLM Generation failure: %s", e, exc_info=True)
-        answer = (
-            "An error occurred while connecting to the statutory reasoning engine. "
-            "Please verify that your Gemini API key is valid."
+
+    # ── Stage (g): Grounded LLM Generation via Gemini ───────────
+    answer = await generate_grounded_answer(
+        query=scrubbed_query,
+        context_str=context_text,
+        answer_mode=answer_mode,
+    )
+
+    # ── Stage (h): Claim Extraction & Citation Entailment ───────
+    citation_dicts = [{"source": c.source, "text": c.text} for c in citations]
+    citation_entailment, citation_coverage, citation_scores_list = (
+        await claim_verifier.evaluate_citations(
+            answer_text=answer,
+            citations=citation_dicts,
         )
-
-    # Stage 8: Claim Verification & Semantic Entailment Scoring
-    citation_scores = await entailment_service.verify_citations(
-        answer=answer,
-        citations=citations,
     )
 
-    # Stage 9: Composite Confidence Calculation
-    confidence = confidence_scorer.calculate_confidence(
-        retrieval_similarity=top_sim,
-        rerank_score=top_rerank_score,
-        citation_scores=citation_scores,
+    # ── Stage (i): Composite Confidence Calculation ─────────────
+    confidence = compute_composite_confidence(
+        best_vector_distance=best_distance,
+        reranker_score=effective_rerank_score,
+        citation_entailment=citation_entailment,
+        citation_coverage=citation_coverage,
+        citation_scores=citation_scores_list,
     )
 
+    # ── Stage (j): Post-Generation Claim Guardrails ─────────────
+    answer, confidence = enforce_claim_guardrails(answer, confidence)
+
+    # ── Stage (k): Audit Logging (Background) ──────────────────
     elapsed_ms = (time.perf_counter() - start_time) * 1000
 
-    # Stage 10: Asynchronous DB Persistence and Audit Logging
+    try:
+        await async_log_audit_transaction(
+            db_session=db,
+            raw_query=raw_query,
+            scrubbed_query=scrubbed_query,
+            jurisdiction=jurisdiction,
+            language=language,
+            confidence_score=confidence.score,
+            latency_ms=elapsed_ms,
+        )
+    except Exception as audit_err:
+        log.warning("Audit log error: %s", audit_err)
+
+    # Persist conversation turn to DB
     conv_id = request.conversation_id
     try:
         if not conv_id:
@@ -173,48 +206,22 @@ async def chat_endpoint(
             db.commit()
             conv_id = conv.id
 
-        # Persist message turn
         msg = Message(
-            id=str(uuid.uuid4()) if hasattr(Message.id.type, 'python_type') and Message.id.type.python_type == str else None,
+            id=str(uuid.uuid4()),
             conversation_id=conv_id,
-            role="assistant" if hasattr(Message, "role") else "bot",
-            content=answer if hasattr(Message, "content") else None,
-            confidence=confidence.label if hasattr(Message, "confidence") else None,
-            citations_json=json.dumps([c.model_dump() for c in citations]) if hasattr(Message, "citations_json") else None,
-            latency_ms=elapsed_ms if hasattr(Message, "latency_ms") else None,
+            sender="bot",
+            raw_query=raw_query,
+            scrubbed_query=scrubbed_query,
+            answer=answer,
+            confidence_score=confidence.score,
+            confidence_label=confidence.label,
         )
-        # Handle db model variation gracefully
-        if hasattr(msg, "raw_query"):
-            msg.raw_query = raw_query
-        if hasattr(msg, "scrubbed_query"):
-            msg.scrubbed_query = scrub_pii(raw_query)
-        if hasattr(msg, "confidence_score"):
-            msg.confidence_score = confidence.score
-        if hasattr(msg, "confidence_label"):
-            msg.confidence_label = confidence.label
-        if hasattr(msg, "sender"):
-            msg.sender = "bot"
-        if hasattr(msg, "answer"):
-            msg.answer = answer
-
         db.add(msg)
         db.commit()
     except Exception as db_err:
         log.warning("Could not persist conversation turn to DB: %s", db_err)
 
-    # Background audit log
-    try:
-        log_transaction(
-            query_raw=raw_query,
-            query_scrubbed=scrubbed_query,
-            jurisdiction=jurisdiction,
-            language=language,
-            confidence_score=confidence.label,
-            latency_ms=elapsed_ms,
-        )
-    except Exception as audit_err:
-        log.warning("Audit log error: %s", audit_err)
-
+    # ── Stage (l): Return ChatResponse ──────────────────────────
     return ChatResponse(
         answer=answer,
         citations=citations,
@@ -235,6 +242,7 @@ async def chat_stream_endpoint(
 ):
     """
     Streaming SSE endpoint for real-time typewriter output.
+    Uses the legacy synchronous streaming path for token-by-token delivery.
     """
     raw_query = request.question.strip()
     jurisdiction = request.jurisdiction or "India"
@@ -243,7 +251,7 @@ async def chat_stream_endpoint(
 
     scrubbed_query = scrub_pii(raw_query)
 
-    # Fast check
+    # Fast guardrail check
     is_safe, refusal_msg = guardrail_service.check_input_relevance(scrubbed_query)
     if not is_safe:
         async def _stream_refusal():
@@ -252,19 +260,32 @@ async def chat_stream_endpoint(
         return StreamingResponse(_stream_refusal(), media_type="text/event-stream")
 
     # Hybrid retrieve
-    candidates = await hybrid_retriever.hybrid_retrieve(
-        query=scrubbed_query,
-        jurisdiction=jurisdiction,
-        top_k=5,
-    )
+    try:
+        candidates = hybrid_rrf_search(
+            query=scrubbed_query,
+            jurisdiction=jurisdiction,
+            top_k=5,
+        )
+    except Exception:
+        candidates = []
 
-    reranked = await conditional_reranker.rerank(
+    reranked, _ = await conditional_rerank(
         query=scrubbed_query,
         candidates=candidates,
         top_k=3,
     )
 
-    context_text, citations = context_compressor.compress_and_format(reranked, max_passages=3)
+    context_text, cleaned_chunks = context_compressor.build_prompt_context(reranked, max_tokens=1500)
+
+    # Build citation items
+    citations = []
+    for chunk in cleaned_chunks:
+        citations.append(CitationItem(
+            source=chunk.get("source", "Legal Statute"),
+            section=chunk.get("section", "General"),
+            text=chunk.get("text", ""),
+            relevance=f"Grounded in {chunk.get('source', 'source')}.",
+        ))
 
     def _generate_stream():
         # First send citation metadata payload

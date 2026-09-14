@@ -1,7 +1,7 @@
 """
 backend/app/services/pii_scrubber.py
 --------------------------------------
-DPDP Act Privacy Gateway — pre-processes user queries before they are sent
+DPDP Act Privacy Gateway -- pre-processes user queries before they are sent
 to any external API (Google Gemini).
 
 Compliance context
@@ -12,24 +12,27 @@ person. Before routing user input to an external LLM endpoint we must ensure
 that Personally Identifiable Information (PII) is masked at the application
 layer.
 
-This module provides a single public function ``scrub_pii`` that applies a
-cascading set of regex substitutions to detect and replace:
+This module provides:
+  - ``PIIScrubber`` class with individual scrubbing methods
+  - ``scrub_pii`` convenience function (backward-compatible public API)
 
+PII categories handled:
   - Indian mobile numbers (E.164 +91 prefix or 0-prefixed 10-digit local)
   - Generic 10-digit numeric sequences that resemble phone numbers
   - E-mail addresses (RFC-5321 simplified pattern)
   - First-person name disclosures ("My name is X", "I am Dr. Y", etc.)
   - Aadhaar-like 12-digit numeric sequences
 
-The scrubbed text is safe to transmit to Gemini; the original unscrubbed
-text is retained in memory only for the local SQLite audit log.
-
 Usage
 -----
-    from app.services.pii_scrubber import scrub_pii
+    from app.services.pii_scrubber import scrub_pii, pii_scrubber
 
     clean = scrub_pii("My name is Rajan and my number is +91 98765 43210")
     # -> "[REDACTED NAME] and my number is [REDACTED PHONE]"
+
+    # Or via class instance:
+    clean = pii_scrubber.scrub_query("Email me at rajan@example.com")
+    # -> "Email me at [REDACTED EMAIL]"
 """
 
 from __future__ import annotations
@@ -100,20 +103,110 @@ _RE_NAME_DISCLOSURE = re.compile(
     \s*
     (?:[A-Z][a-z]+\s*){1,3}         # 1-3 capitalised name tokens
     """,
-    re.VERBOSE,
+    re.VERBOSE | re.IGNORECASE,
 )
 
 
 # ---------------------------------------------------------------------------
-# Public API
+# PIIScrubber Class (Prompt 19 specification)
 # ---------------------------------------------------------------------------
+
+class PIIScrubber:
+    """
+    DPDP-compliant PII scrubbing engine with individual, composable
+    scrubbing methods for phone numbers, emails, identities, and Aadhaar.
+
+    Each scrubbing method can be called individually for targeted redaction,
+    or use ``scrub_query()`` for full cascading sanitization.
+    """
+
+    def scrub_phone_numbers(self, text: str) -> str:
+        """
+        Detects and replaces Indian phone formats (+91, 0-prefix 10-digit
+        numbers, and bare 10-digit sequences) with [REDACTED PHONE].
+
+        >>> PIIScrubber().scrub_phone_numbers("Call +91 98765 43210")
+        'Call [REDACTED PHONE]'
+
+        >>> PIIScrubber().scrub_phone_numbers("Dial 09876543210 now")
+        'Dial [REDACTED PHONE] now'
+        """
+        if not text:
+            return text
+        result = _RE_PHONE_IN_E164.sub("[REDACTED PHONE]", text)
+        result = _RE_PHONE_IN_LOCAL.sub("[REDACTED PHONE]", result)
+        result = _RE_PHONE_BARE_10.sub("[REDACTED PHONE]", result)
+        return result
+
+    def scrub_emails(self, text: str) -> str:
+        """
+        Replaces email addresses with [REDACTED EMAIL].
+
+        >>> PIIScrubber().scrub_emails("Write to rajan@ayush.gov.in")
+        'Write to [REDACTED EMAIL]'
+        """
+        if not text:
+            return text
+        return _RE_EMAIL.sub("[REDACTED EMAIL]", text)
+
+    def scrub_identities(self, text: str) -> str:
+        """
+        Detects common personal identity disclosures (e.g. "My name is ...",
+        "I am Dr. ...") and replaces them with [REDACTED NAME].
+
+        >>> PIIScrubber().scrub_identities("My name is Priya Sharma")
+        '[REDACTED NAME]'
+        """
+        if not text:
+            return text
+        return _RE_NAME_DISCLOSURE.sub("[REDACTED NAME]", text)
+
+    def scrub_aadhaar(self, text: str) -> str:
+        """
+        Detects Aadhaar-style 12-digit numbers (4-4-4 format) and replaces
+        them with [REDACTED AADHAAR].
+
+        >>> PIIScrubber().scrub_aadhaar("Aadhaar: 1234 5678 9012")
+        'Aadhaar: [REDACTED AADHAAR]'
+        """
+        if not text:
+            return text
+        return _RE_AADHAAR.sub("[REDACTED AADHAAR]", text)
+
+    def scrub_query(self, text: str) -> str:
+        """
+        Executes all scrubbing rules sequentially and returns the sanitized
+        text string. Order matters: more specific patterns are applied first.
+
+        >>> PIIScrubber().scrub_query("My name is Rajan, email rajan@test.com, phone +91 98765 43210")
+        '[REDACTED NAME], email [REDACTED EMAIL], phone [REDACTED PHONE]'
+        """
+        if not text or not text.strip():
+            return text
+
+        try:
+            result = text
+            result = self.scrub_aadhaar(result)
+            result = self.scrub_phone_numbers(result)
+            result = self.scrub_emails(result)
+            result = self.scrub_identities(result)
+            return result
+        except Exception:  # noqa: BLE001 — never block the pipeline on scrubber errors
+            return text
+
+
+# ---------------------------------------------------------------------------
+# Global singleton and backward-compatible public API
+# ---------------------------------------------------------------------------
+pii_scrubber = PIIScrubber()
+
 
 def scrub_pii(text: str) -> str:
     """
     Detect and redact Personally Identifiable Information from *text*.
 
-    Applies patterns in order of specificity (most specific first) so that
-    overlapping patterns do not interfere with each other.
+    This is the backward-compatible convenience function wrapping
+    ``PIIScrubber.scrub_query()``.
 
     Parameters
     ----------
@@ -126,40 +219,5 @@ def scrub_pii(text: str) -> str:
         A copy of *text* with all detected PII replaced by fixed placeholder
         tokens.  The function never raises; if an internal error occurs the
         original text is returned unchanged so the pipeline is not blocked.
-
-    Notes
-    -----
-    The replacement tokens are intentionally readable strings rather than
-    blank space so that the LLM context retains grammatical coherence.
     """
-    if not text or not text.strip():
-        return text
-
-    try:
-        result = text
-
-        # Order matters: more specific patterns first.
-
-        # 1. Aadhaar (12-digit grouped) — before bare-10 pattern
-        result = _RE_AADHAAR.sub("[REDACTED AADHAAR]", result)
-
-        # 2. Indian mobile E.164 (+91 prefix)
-        result = _RE_PHONE_IN_E164.sub("[REDACTED PHONE]", result)
-
-        # 3. Indian local 0-prefix format
-        result = _RE_PHONE_IN_LOCAL.sub("[REDACTED PHONE]", result)
-
-        # 4. Bare 10-digit sequences
-        result = _RE_PHONE_BARE_10.sub("[REDACTED PHONE]", result)
-
-        # 5. E-mail addresses
-        result = _RE_EMAIL.sub("[REDACTED EMAIL]", result)
-
-        # 6. First-person name disclosures (applied last to avoid disrupting
-        #    phone/email patterns embedded inside name sentences)
-        result = _RE_NAME_DISCLOSURE.sub("[REDACTED NAME]", result)
-
-        return result
-
-    except Exception:  # noqa: BLE001 — never block the pipeline on scrubber errors
-        return text
+    return pii_scrubber.scrub_query(text)
