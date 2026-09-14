@@ -1,172 +1,234 @@
 """
-Local ChromaDB Vector Ingestor for IP-SAKTI Sahayak.
-Reads processed JSONL chunks, computes dense vector embeddings using local
-SentenceTransformer ('all-MiniLM-L6-v2'), and persists isolated collections to disk.
+corpus/ingest.py
+----------------
+Unified offline ingestion script for IP-SAKTI Sahayak.
+Parses raw PDF legal statutes and treaties from the knowledge base,
+generates dense vector embeddings with SentenceTransformers, populates ChromaDB
+collections (isolated by jurisdiction), and builds + serializes a persisted BM25 index.
+
+Usage:
+    python corpus/ingest.py
 """
 
-import json
+from __future__ import annotations
+
 import logging
 import os
-import re
+import sys
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Dict, List, Tuple
+
+# Ensure backend modules can be imported
+WORKSPACE_ROOT = Path(__file__).resolve().parent.parent
+BACKEND_DIR = WORKSPACE_ROOT / "backend"
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
 
 import chromadb
-from chromadb.config import Settings
+from chromadb.config import Settings as ChromaSettings
 from sentence_transformers import SentenceTransformer
+
+from app.services.bm25_service import PersistedBM25Index
+from app.services.document_processor import DocumentProcessor
 
 # Setup structured logging
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
+    format="%(asctime)s [%(levelname)s] %(name)s - %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
 )
-logger = logging.getLogger("VectorIngestor")
+logger = logging.getLogger("UnifiedIngestor")
 
 # Directory configurations
-BASE_DIR = Path(__file__).resolve().parent
-CHROMA_DB_PATH = BASE_DIR / "chroma_db"
-PROCESSED_DATA_DIR = BASE_DIR / "data" / "processed"
-CURATED_DATA_DIR = BASE_DIR / "data" / "curated"
+CORPUS_DIR = WORKSPACE_ROOT / "corpus"
+RAW_DATA_DIR = CORPUS_DIR / "data" / "raw"
+KB_SOURCES_DIR = WORKSPACE_ROOT / "knowledge-base" / "sources"
 
-# Collection Constants
+# Target Storage Destinations
+BACKEND_CHROMA_PATH = BACKEND_DIR / "chroma_db"
+BACKEND_BM25_PATH = BACKEND_DIR / "bm25_index.pkl"
+
+# Collection Names
 COLLECTION_INDIA = "india_statutes"
 COLLECTION_INTERNATIONAL = "international_treaties"
 
-# Keyword Router Rules
-INDIA_KEYWORDS = ["patent", "biodiversity", "drugs", "cosmetics"]
-INTERNATIONAL_KEYWORDS = ["nagoya", "wipo", "trips", "treaty"]
+# Router Keywords
+INDIA_KEYWORDS = ["patent", "biodiversity", "drugs", "cosmetics", "tkdl", "nba", "ccras", "india"]
+INTERNATIONAL_KEYWORDS = ["nagoya", "wipo", "trips", "treaty", "international", "pct"]
 
 
-def get_target_collection_name(file_stem: str) -> str:
+def determine_jurisdiction(file_path: Path) -> Tuple[str, str]:
     """
-    Routes JSONL file chunks to the appropriate collection based on file stem keywords.
+    Determines jurisdiction and target Chroma collection based on filepath and filename keywords.
+    Returns: (collection_name, jurisdiction_label)
     """
-    stem_lower = file_stem.lower()
+    path_str = str(file_path).lower()
+    filename = file_path.name.lower()
 
-    for kw in INDIA_KEYWORDS:
-        if kw in stem_lower:
-            return COLLECTION_INDIA
+    if "international" in path_str or any(kw in filename for kw in INTERNATIONAL_KEYWORDS):
+        return COLLECTION_INTERNATIONAL, "International"
 
-    for kw in INTERNATIONAL_KEYWORDS:
-        if kw in stem_lower:
-            return COLLECTION_INTERNATIONAL
+    if "india" in path_str or any(kw in filename for kw in INDIA_KEYWORDS):
+        return COLLECTION_INDIA, "India"
 
-    # Default fallback to india_statutes if unspecified
-    return COLLECTION_INDIA
+    # Default fallback
+    return COLLECTION_INDIA, "India"
 
 
-def run_ingestion() -> None:
+def scan_all_pdfs() -> List[Path]:
+    """Finds all raw PDF legal documents in corpus and knowledge base directories."""
+    pdf_paths: List[Path] = []
+    search_dirs = [RAW_DATA_DIR, KB_SOURCES_DIR]
+
+    for search_dir in search_dirs:
+        if search_dir.exists():
+            for root, _, files in os.walk(search_dir):
+                for f in files:
+                    if f.lower().endswith(".pdf"):
+                        pdf_path = Path(root) / f
+                        if pdf_path not in pdf_paths:
+                            pdf_paths.append(pdf_path)
+
+    return sorted(pdf_paths)
+
+
+def run_ingestion(
+    batch_size: int = 32,
+    embedding_model_name: str = "all-MiniLM-L6-v2",
+) -> None:
     """
-    Executes complete embedding and vector store ingestion pipeline.
+    Orchestrates end-to-end PDF extraction, vector indexing, and BM25 index compilation.
     """
-    if not PROCESSED_DATA_DIR.exists():
-        logger.error(f"Processed data directory does not exist: {PROCESSED_DATA_DIR}")
+    logger.info("=== Starting IP-SAKTI Sahayak Unified Ingestion Pipeline ===")
+    logger.info("Workspace Root: %s", WORKSPACE_ROOT)
+    logger.info("Target ChromaDB: %s", BACKEND_CHROMA_PATH)
+    logger.info("Target BM25 Index: %s", BACKEND_BM25_PATH)
+
+    pdf_files = scan_all_pdfs()
+    if not pdf_files:
+        logger.error("No PDF files discovered in %s or %s", RAW_DATA_DIR, KB_SOURCES_DIR)
         return
 
-    jsonl_files = sorted(list(PROCESSED_DATA_DIR.glob("*_chunks.jsonl")))
-    
-    # Also include curated JSONL files (hand-crafted knowledge chunks)
-    curated_files = []
-    if CURATED_DATA_DIR.exists():
-        curated_files = sorted(list(CURATED_DATA_DIR.glob("*.jsonl")))
-        logger.info(f"Found {len(curated_files)} curated knowledge files in {CURATED_DATA_DIR}")
-    
-    all_jsonl_files = jsonl_files + curated_files
-    
-    if not all_jsonl_files:
-        logger.warning(
-            f"No processed JSONL chunk files found in {PROCESSED_DATA_DIR} or {CURATED_DATA_DIR}. "
-            f"Please run 'parser.py' first or add curated files."
-        )
-        return
+    logger.info("Discovered %d PDF document(s) for ingestion.", len(pdf_files))
 
-    logger.info(f"Initializing persistent ChromaDB client at: {CHROMA_DB_PATH}")
-    client = chromadb.PersistentClient(
-        path=str(CHROMA_DB_PATH),
-        settings=Settings(anonymized_telemetry=False),
+    # 1. Initialize Document Processor & Model
+    doc_processor = DocumentProcessor()
+    logger.info("Loading SentenceTransformer embedding model: %s...", embedding_model_name)
+    embedder = SentenceTransformer(embedding_model_name)
+
+    # 2. Initialize ChromaDB client & collections
+    BACKEND_CHROMA_PATH.mkdir(parents=True, exist_ok=True)
+    chroma_client = chromadb.PersistentClient(path=str(BACKEND_CHROMA_PATH))
+
+    collection_india = chroma_client.get_or_create_collection(
+        name=COLLECTION_INDIA,
+        metadata={"hnsw:space": "cosine", "description": "Indian IP statutes, AYUSH & TKDL rules"},
+    )
+    collection_intl = chroma_client.get_or_create_collection(
+        name=COLLECTION_INTERNATIONAL,
+        metadata={"hnsw:space": "cosine", "description": "International IP treaties & agreements"},
     )
 
-    # Initialize / retrieve isolated collections
-    collections: Dict[str, chromadb.Collection] = {
-        COLLECTION_INDIA: client.get_or_create_collection(
-            name=COLLECTION_INDIA,
-            metadata={"hnsw:space": "cosine"},
-        ),
-        COLLECTION_INTERNATIONAL: client.get_or_create_collection(
-            name=COLLECTION_INTERNATIONAL,
-            metadata={"hnsw:space": "cosine"},
-        ),
-    }
+    all_indexed_chunks: List[Dict[str, Any]] = []
+    india_chunk_count = 0
+    intl_chunk_count = 0
 
-    logger.info("Loading local SentenceTransformer model ('all-MiniLM-L6-v2')...")
-    # The model is pre-cached locally. Avoid a network call at startup, which
-    # also makes ingestion reliable on networks with restrictive SSL proxies.
-    embedding_model = SentenceTransformer("all-MiniLM-L6-v2", local_files_only=True)
-    logger.info("SentenceTransformer model loaded successfully on local CPU.")
+    # 3. Process each PDF
+    for idx, pdf_path in enumerate(pdf_files, 1):
+        target_collection_name, jurisdiction_label = determine_jurisdiction(pdf_path)
+        logger.info(
+            "[%d/%d] Processing '%s' -> %s (%s)",
+            idx,
+            len(pdf_files),
+            pdf_path.name,
+            target_collection_name,
+            jurisdiction_label,
+        )
 
-    collection_counts: Dict[str, int] = {
-        COLLECTION_INDIA: 0,
-        COLLECTION_INTERNATIONAL: 0,
-    }
+        try:
+            chunks = doc_processor.chunk_pdf(str(pdf_path), chunk_size=500, chunk_overlap=50)
+            if not chunks:
+                logger.warning("No text chunks generated for %s, skipping.", pdf_path.name)
+                continue
 
-    for jsonl_path in all_jsonl_files:
-        stem = jsonl_path.stem.replace("_chunks", "")
-        target_collection_name = get_target_collection_name(stem)
-        target_collection = collections[target_collection_name]
+            # Attach jurisdiction to metadata
+            for chunk in chunks:
+                chunk["jurisdiction"] = jurisdiction_label
+                chunk["collection_name"] = target_collection_name
+                chunk["file_path"] = str(pdf_path)
 
-        logger.info(f"Reading chunks from: {jsonl_path.name} -> Target Collection: [{target_collection_name}]")
-
-        chunks: List[Dict[str, str]] = []
-        with open(jsonl_path, "r", encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if line:
-                    try:
-                        chunks.append(json.loads(line))
-                    except json.JSONDecodeError as err:
-                        logger.warning(f"Skipping malformed line in {jsonl_path.name}: {err}")
-
-        if not chunks:
-            logger.warning(f"No valid chunks parsed from {jsonl_path.name}. Skipping.")
-            continue
-
-        texts = [chunk["text"] for chunk in chunks]
-        metadatas = [
-            {
-                "source": chunk.get("source_title") or chunk.get("source", stem),
-                "section": chunk.get("section", "General"),
-            }
-            for chunk in chunks
-        ]
-        ids = [f"{stem}_{i}" for i in range(len(chunks))]
-
-        logger.info(f"Generating dense vector embeddings for {len(texts)} chunks...")
-        embeddings = embedding_model.encode(
-            texts,
-            batch_size=32,
-            show_progress_bar=True,
-        ).tolist()
-
-        # Batch upsert into ChromaDB
-        batch_size = 100
-        for i in range(0, len(ids), batch_size):
-            end_i = min(i + batch_size, len(ids))
-            target_collection.upsert(
-                ids=ids[i:end_i],
-                documents=texts[i:end_i],
-                metadatas=metadatas[i:end_i],
-                embeddings=embeddings[i:end_i],
+            target_collection = (
+                collection_india if target_collection_name == COLLECTION_INDIA else collection_intl
             )
 
-        collection_counts[target_collection_name] += len(chunks)
-        print(f"Successfully ingested {len(chunks)} chunks into the [{target_collection_name}] collection!")
+            # 4. Embed in batches and upsert to ChromaDB
+            total_chunks = len(chunks)
+            for b_start in range(0, total_chunks, batch_size):
+                b_end = min(b_start + batch_size, total_chunks)
+                batch_chunks = chunks[b_start:b_end]
 
-    print("\n" + "=" * 60)
-    print("INGESTION SUMMARY:")
-    for coll_name, count in collection_counts.items():
-        print(f" - [{coll_name}]: {count} total chunks ingested in this session.")
-    print("=" * 60 + "\n")
+                batch_texts = [c["text"] for c in batch_chunks]
+                batch_ids = [c["chunk_id"] for c in batch_chunks]
+                batch_metadatas = [
+                    {
+                        "source": c["source"],
+                        "section": c["section"],
+                        "page_number": c["page_number"],
+                        "jurisdiction": c["jurisdiction"],
+                    }
+                    for c in batch_chunks
+                ]
+
+                # Compute dense vector embeddings
+                batch_embeddings = embedder.encode(
+                    batch_texts,
+                    batch_size=batch_size,
+                    show_progress_bar=False,
+                    convert_to_numpy=True,
+                    normalize_embeddings=True,
+                ).tolist()
+
+                # Upsert into ChromaDB
+                target_collection.upsert(
+                    ids=batch_ids,
+                    documents=batch_texts,
+                    embeddings=batch_embeddings,
+                    metadatas=batch_metadatas,
+                )
+
+            if target_collection_name == COLLECTION_INDIA:
+                india_chunk_count += total_chunks
+            else:
+                intl_chunk_count += total_chunks
+
+            all_indexed_chunks.extend(chunks)
+            logger.info("Upserted %d chunks from %s into ChromaDB.", total_chunks, pdf_path.name)
+
+        except Exception as e:
+            logger.error("Error processing %s: %s", pdf_path.name, e, exc_info=True)
+
+    # 5. Build and save global PersistedBM25Index
+    logger.info("=== Building Persisted BM25 Index ===")
+    logger.info("Total chunks across all collections: %d", len(all_indexed_chunks))
+
+    bm25_engine = PersistedBM25Index()
+    bm25_engine.build_and_save(all_indexed_chunks, str(BACKEND_BM25_PATH))
+
+    # Also mirror BM25 index to corpus/ if needed
+    corpus_bm25 = CORPUS_DIR / "bm25_index.pkl"
+    try:
+        bm25_engine.build_and_save(all_indexed_chunks, str(corpus_bm25))
+    except Exception as e:
+        logger.warning("Could not mirror BM25 to corpus/: %s", e)
+
+    logger.info("=== Ingestion Summary ===")
+    logger.info("Total PDFs Processed:       %d", len(pdf_files))
+    logger.info("India Statutes Chunks:      %d", india_chunk_count)
+    logger.info("International Treaties Chunks: %d", intl_chunk_count)
+    logger.info("Total Ingested Chunks:      %d", len(all_indexed_chunks))
+    logger.info("ChromaDB Persisted Path:    %s", BACKEND_CHROMA_PATH)
+    logger.info("BM25 Index Persisted Path:  %s", BACKEND_BM25_PATH)
+    logger.info("=== Ingestion Completed Successfully ===")
 
 
 if __name__ == "__main__":

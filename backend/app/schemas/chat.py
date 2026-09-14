@@ -5,26 +5,24 @@ Pydantic v2 data-transfer objects for all API endpoints of IP-SAKTI Sahayak.
 
 Schemas
 -------
+  CitationScore    - Per-source claim entailment & support metric
+  ConfidenceScore  - Composite confidence assessment (score, label, reason, citation_scores)
   ChatRequest      - POST /api/chat request payload
-  CitationItem     - Individual retrieved source passage (sub-model)
+  CitationItem     - Individual retrieved source passage
+  AnswerSection    - Structured answer section
   ChatResponse     - POST /api/chat response payload
   WizardRequest    - POST /api/classify request payload
   WizardResponse   - POST /api/classify response payload
-
-All field validations are enforced at the FastAPI boundary so downstream
-business logic receives clean, typed data with no further input-sanitisation
-needed in the service layer.
 """
 
 from __future__ import annotations
 
-from typing import Literal
-
+from typing import Literal, Optional
 from pydantic import BaseModel, Field, field_validator
 
 
 # ---------------------------------------------------------------------------
-# Fixed legal disclaimer — injected server-side, never overrideable by client
+# Fixed legal disclaimer — injected server-side, never overridable by client
 # ---------------------------------------------------------------------------
 
 _DISCLAIMER_TEXT: str = (
@@ -34,67 +32,56 @@ _DISCLAIMER_TEXT: str = (
 
 
 # ===========================================================================
-# Chat Schemas  (POST /api/chat)
+# Citation & Confidence Models
 # ===========================================================================
 
 
-class ChatRequest(BaseModel):
-    """Payload that the React frontend sends to POST /api/chat."""
+class CitationScore(BaseModel):
+    """Claim-level support metrics for a cited source."""
 
-    question: str = Field(
+    source: str = Field(
         ...,
-        min_length=1,
-        max_length=2000,
-        description="The natural-language legal question from the user.",
-        examples=["Can a formulation based on Ashwagandha be patented in India?"],
+        description="Source identifier or statutory name (e.g. 'Patents Act, 1970 - Section 3(p)').",
     )
-    jurisdiction: Literal["India", "International"] = Field(
+    support_score: float = Field(
         ...,
-        description=(
-            'Jurisdiction toggle. Must be exactly "India" or "International". '
-            "Controls which ChromaDB collection is queried."
-        ),
+        ge=0.0,
+        le=1.0,
+        description="NLI / entailment support score between 0.0 and 1.0.",
     )
-    language: str = Field(
-        default="EN",
-        description=(
-            "ISO 639-1 language code for the response language. "
-            'Defaults to "EN" (English). Future values: "HI", "SA", etc.'
-        ),
-        examples=["EN", "HI"],
+    supported_claims: int = Field(
+        default=0,
+        ge=0,
+        description="Number of discrete claims verified against this source.",
     )
-    conversation_id: str | None = Field(
-        default=None,
-        description=(
-            "Optional existing conversation id to append this turn to. "
-            "When omitted, the backend creates a new conversation and returns "
-            "its id in the response so the client can persist follow-up turns."
-        ),
+    total_claims: int = Field(
+        default=0,
+        ge=0,
+        description="Total number of claims attributed to this source.",
     )
 
-    @field_validator("question")
-    @classmethod
-    def question_must_not_be_blank(cls, v: str) -> str:
-        """Reject whitespace-only questions."""
-        if not v.strip():
-            raise ValueError("question must not be blank or whitespace-only.")
-        return v.strip()
 
-    @field_validator("language")
-    @classmethod
-    def language_to_upper(cls, v: str) -> str:
-        """Normalise language codes to uppercase (e.g. 'en' -> 'EN')."""
-        return v.strip().upper()
+class ConfidenceScore(BaseModel):
+    """Structured confidence score with composite metrics and breakdown."""
 
-    model_config = {
-        "json_schema_extra": {
-            "example": {
-                "question": "Is Ashwagandha extract patentable under Indian law?",
-                "jurisdiction": "India",
-                "language": "EN",
-            }
-        }
-    }
+    score: int = Field(
+        ...,
+        ge=0,
+        le=100,
+        description="Overall numeric confidence score from 0 to 100.",
+    )
+    label: str = Field(
+        ...,
+        description="Confidence category label ('High', 'Moderate', 'Low').",
+    )
+    reason: str = Field(
+        ...,
+        description="Human-readable explanation of why this confidence level was assigned.",
+    )
+    citation_scores: list[CitationScore] = Field(
+        default_factory=list,
+        description="Individual citation entailment and support scores.",
+    )
 
 
 class CitationItem(BaseModel):
@@ -119,8 +106,8 @@ class CitationItem(BaseModel):
 
 
 class AnswerSection(BaseModel):
-    """Optional structured section within the answer."""
-    
+    """Structured section within the generated answer."""
+
     title: str = Field(
         ...,
         description="Section heading.",
@@ -131,23 +118,79 @@ class AnswerSection(BaseModel):
     )
 
 
-class ConfidenceScore(BaseModel):
-    """Structured confidence assessment."""
-    
-    score: int = Field(
+# ===========================================================================
+# Chat Request & Response Schemas (POST /api/chat)
+# ===========================================================================
+
+
+class ChatRequest(BaseModel):
+    """Payload that the client sends to POST /api/chat."""
+
+    question: str = Field(
         ...,
-        ge=0,
-        le=100,
-        description="Numeric confidence score from 0 to 100.",
+        min_length=2,
+        max_length=2000,
+        description="The natural-language legal question from the user.",
+        examples=["Can a formulation based on Ashwagandha be patented in India?"],
     )
-    label: Literal["High", "Medium", "Low"] = Field(
-        ...,
-        description="Human-readable confidence label.",
+    jurisdiction: str = Field(
+        default="India",
+        description='Jurisdiction toggle ("India" or "International").',
     )
-    reason: str = Field(
-        ...,
-        description="Short explanation of the confidence level.",
+    language: str = Field(
+        default="EN",
+        description='ISO 639-1 language code for response (default "EN").',
+        examples=["EN", "HI"],
     )
+    answer_mode: Literal["brief", "standard", "detailed"] = Field(
+        default="standard",
+        description="Desired answer length and depth.",
+    )
+    conversation_id: Optional[str] = Field(
+        default=None,
+        description="Optional existing conversation ID to append this turn to.",
+    )
+
+    @field_validator("jurisdiction", mode="before")
+    @classmethod
+    def normalise_jurisdiction(cls, v: str) -> str:
+        """Allow case-insensitive jurisdiction ('india' -> 'India', 'international' -> 'International')."""
+        if not v:
+            return "India"
+        val = str(v).strip().capitalize()
+        if val in ("India", "International"):
+            return val
+        if "intl" in str(v).lower() or "international" in str(v).lower():
+            return "International"
+        return "India"
+
+    @field_validator("question")
+    @classmethod
+    def question_must_not_be_blank(cls, v: str) -> str:
+        """Reject whitespace-only questions."""
+        cleaned = v.strip()
+        if len(cleaned) < 2:
+            raise ValueError("question must have at least 2 non-whitespace characters.")
+        return cleaned
+
+    @field_validator("language")
+    @classmethod
+    def language_to_upper(cls, v: str) -> str:
+        """Normalise language codes to uppercase (e.g. 'en' -> 'EN')."""
+        if not v:
+            return "EN"
+        return v.strip().upper()
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "question": "Is Ashwagandha extract patentable under Indian law?",
+                "jurisdiction": "India",
+                "language": "EN",
+                "answer_mode": "standard",
+            }
+        }
+    }
 
 
 class ChatResponse(BaseModel):
@@ -157,20 +200,25 @@ class ChatResponse(BaseModel):
         ...,
         description="The LLM-generated (or guardrail) answer to the user's question.",
     )
-    sections: list[AnswerSection] = Field(
-        default_factory=list,
-        description="Optional structured sections within the answer.",
-    )
     citations: list[CitationItem] = Field(
         default_factory=list,
-        description=(
-            "Ordered list of source passages that grounded the answer. "
-            "Empty when the guardrail abstains."
-        ),
+        description="Ordered list of source passages that grounded the answer.",
     )
     confidence: ConfidenceScore = Field(
         ...,
-        description="Structured confidence assessment with score, label, and reason.",
+        description="Structured confidence assessment with score, label, reason, and citation scores.",
+    )
+    disclaimer: str = Field(
+        default=_DISCLAIMER_TEXT,
+        description="Fixed legal disclaimer injected server-side.",
+    )
+    latency_ms: float = Field(
+        default=0.0,
+        description="End-to-end request processing latency in milliseconds.",
+    )
+    sections: list[AnswerSection] = Field(
+        default_factory=list,
+        description="Optional structured sections within the answer.",
     )
     follow_up_questions: list[str] = Field(
         default_factory=list,
@@ -180,16 +228,9 @@ class ChatResponse(BaseModel):
         default="answered",
         description="Response status indicating the type of response.",
     )
-    disclaimer: str = Field(
-        default=_DISCLAIMER_TEXT,
-        description="Fixed legal disclaimer injected server-side.",
-    )
-    conversation_id: str | None = Field(
+    conversation_id: Optional[str] = Field(
         default=None,
-        description=(
-            "The conversation this turn was persisted to. Echoes the request "
-            "conversation_id, or a freshly created id when the request omitted one."
-        ),
+        description="The conversation ID this turn was persisted to.",
     )
 
     model_config = {
@@ -199,12 +240,26 @@ class ChatResponse(BaseModel):
                 "citations": [
                     {
                         "source": "Patents_Act_1970",
-                        "section": "Page 12",
+                        "section": "Section 3(p)",
                         "text": "An invention which is, in effect, traditional knowledge ...",
+                        "relevance": "Direct statutory bar for traditional knowledge.",
                     }
                 ],
-                "confidence": "high",
+                "confidence": {
+                    "score": 92,
+                    "label": "High",
+                    "reason": "Direct statutory match in Section 3(p) with strong entailment.",
+                    "citation_scores": [
+                        {
+                            "source": "Patents_Act_1970",
+                            "support_score": 0.95,
+                            "supported_claims": 2,
+                            "total_claims": 2,
+                        }
+                    ],
+                },
                 "disclaimer": _DISCLAIMER_TEXT,
+                "latency_ms": 345.2,
             }
         }
     }
@@ -216,44 +271,19 @@ class ChatResponse(BaseModel):
 
 
 class WizardRequest(BaseModel):
-    """
-    Input payload for the deterministic Formulation Classification Wizard.
-
-    Fields
-    ------
-    is_classical:
-        True if the formulation is drawn verbatim from a classical Ayurvedic
-        text (Shastriya Yoga).  False for modified / proprietary preparations.
-    has_preservatives:
-        True if the formulation contains any added synthetic preservative,
-        excipient, or modified-release technology not present in the original
-        classical text.
-    target:
-        End-use category. "ASU" for Ayurvedic / Siddha / Unani medicine;
-        "Food" for nutraceuticals or Ayurveda-Aahar functional food supplements.
-    """
+    """Input payload for the deterministic Formulation Classification Wizard."""
 
     is_classical: bool = Field(
         ...,
-        description=(
-            "True -> classical Shastriya formulation drawn verbatim from first-schedule texts. "
-            "False -> modified, patent-and-proprietary, or novel formulation."
-        ),
+        description="True -> classical Shastriya formulation. False -> modified/proprietary.",
     )
     has_preservatives: bool = Field(
         ...,
-        description=(
-            "True -> formulation contains synthetic preservatives, novel excipients, "
-            "or delivery-system modifications not found in classical texts."
-        ),
+        description="True -> formulation contains synthetic preservatives or novel excipients.",
     )
     target: Literal["ASU", "Food"] = Field(
         ...,
-        description=(
-            '"ASU" -> Ayurvedic/Siddha/Unani medicinal product regulated under '
-            'Drugs & Cosmetics Act. "Food" -> nutraceutical or Ayurveda-Aahar '
-            "regulated under FSSAI."
-        ),
+        description='"ASU" -> Drugs & Cosmetics Act. "Food" -> FSSAI / Ayurveda-Aahar.',
     )
 
     model_config = {
@@ -268,17 +298,11 @@ class WizardRequest(BaseModel):
 
 
 class WizardResponse(BaseModel):
-    """
-    Output payload from the deterministic Formulation Classification Wizard.
-
-    All fields are fully populated strings -- no nullable fields -- so the
-    frontend can render results without null-guards.
-    """
+    """Output payload from the deterministic Formulation Classification Wizard."""
 
     classification: str = Field(
         ...,
         description="Human-readable classification of the formulation type.",
-        examples=["Classical (Shastriya)", "Patent & Proprietary (Anubhavasiddha / Modified)"],
     )
     pathway: str = Field(
         ...,
@@ -290,24 +314,15 @@ class WizardResponse(BaseModel):
     )
     required_license: str = Field(
         ...,
-        description=(
-            "The specific license or registration the manufacturer must obtain "
-            "before commercialising this formulation."
-        ),
+        description="The specific license or registration required before commercialisation.",
     )
 
     model_config = {
         "json_schema_extra": {
             "example": {
                 "classification": "Classical (Shastriya)",
-                "pathway": (
-                    "Formulas extracted directly from First-Schedule texts of the "
-                    "Drugs and Cosmetics Act."
-                ),
-                "patentability": (
-                    "Barred from patenting under Patents Act Section 3(p) as traditional "
-                    "knowledge. Protected by TKDL."
-                ),
+                "pathway": "Formulas extracted directly from First-Schedule texts of DCA.",
+                "patentability": "Barred from patenting under Patents Act Section 3(p). Protected by TKDL.",
                 "required_license": "AYUSH Manufacturing License under Rule 158-B(1).",
             }
         }

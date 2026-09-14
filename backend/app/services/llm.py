@@ -1,262 +1,134 @@
 """
 backend/app/services/llm.py
 ----------------------------
-Secure interface to Google Gemini for IP-SAKTI Sahayak.
-
-SDK: google-genai (new, replaces deprecated google-generativeai)
-Model: configured with GEMINI_MODEL; defaults to gemini-3.6-flash
-
-Responsibilities
-----------------
-- Load the GEMINI_API_KEY from backend/.env via python-dotenv.
-- Hold a singleton google.genai Client (thread-safe, stateless per call).
-- Expose generate_grounded_answer() (primary) and generate_answer() (alias).
-
-Environment
------------
-backend/.env must contain:
-    GEMINI_API_KEY=<your-key>
-Optional:
-    GEMINI_MODEL=gemini-3.6-flash
-
-Dependencies
-------------
-    pip install google-genai python-dotenv
+High-reliability Google Gemini LLM service for IP-SAKTI Sahayak.
+Integrates Key Pool rotation, retry backoff with tenacity, prompt builder,
+and non-blocking execution via asyncio.to_thread.
 """
 
 from __future__ import annotations
 
+import asyncio
 import logging
-import os
-import sys
-from pathlib import Path
-from typing import Iterator
+from typing import AsyncIterator, Iterator, Optional
 
-# ---------------------------------------------------------------------------
-# Third-party imports
-# ---------------------------------------------------------------------------
-try:
-    from dotenv import load_dotenv
-except ImportError:
-    sys.exit("ERROR: python-dotenv not installed. Run: pip install python-dotenv")
+from google import genai
+from google.genai import types as genai_types
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
-try:
-    from google import genai
-    from google.genai import types as genai_types
-except ImportError:
-    sys.exit(
-        "ERROR: google-genai not installed. Run: pip install google-genai"
-    )
+from app.core.config import settings
+from app.services.key_manager import key_manager
+from app.services.prompt_builder import prompt_builder
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("app.services.llm")
 
-# ---------------------------------------------------------------------------
-# Load environment variables
-# ---------------------------------------------------------------------------
-#   __file__  = backend/app/services/llm.py  ->  backend/ is 3 levels up
-_ENV_PATH = Path(__file__).parent.parent.parent / ".env"
-load_dotenv(dotenv_path=_ENV_PATH, override=False)
 
-_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
-if not _API_KEY:
-    raise EnvironmentError(
-        f"GEMINI_API_KEY is not set. Add it to {_ENV_PATH} or your shell environment."
-    )
+def _get_client_and_key() -> tuple[genai.Client, str]:
+    """Retrieves an active client configured with a rotated key."""
+    active_key = key_manager.get_active_key()
+    client = genai.Client(api_key=active_key)
+    return client, active_key
 
-# ---------------------------------------------------------------------------
-# Model configuration
-# ---------------------------------------------------------------------------
-_MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-3.6-flash").strip()
-if not _MODEL_NAME:
-    _MODEL_NAME = "gemini-3.6-flash"
 
-_SYSTEM_PROMPT = (
-    "You are Ragvyn AI, an authoritative legal guide for Ayurvedic "
-    "Intellectual Property. "
-    "You must answer the user question using ONLY the retrieved source passages provided below.\n\n"
-    "Rules you MUST follow at all times:\n"
-    "- PROVIDE COMPLETE, DETAILED ANSWERS. Do not give one-line summaries. Include:\n"
-    "  * Full explanation of the concept/procedure\n"
-    "  * Relevant legal sections, acts, and rules with their implications\n"
-    "  * Practical steps or requirements where applicable\n"
-    "  * Any important exceptions, deadlines, or fees mentioned in the passages\n"
-    "- If the retrieved context contains the answer, explain it thoroughly in simple, direct language "
-    "and cite the exact legal acts, schedules, or treaties retrieved.\n"
-    "- Structure your answer with clear paragraphs. Use bullet points for lists of requirements/steps.\n"
-    "- If the retrieved context is missing information, does not match, or does not provide "
-    "enough evidence to answer reliably, state clearly and humbly: "
-    "'I cannot find an authoritative source in our legal registers to safely answer this.'\n"
-    "- Do NOT make up statutory sections, acts, rules, or case references. Never hallucinate.\n"
-    "- Keep your tone professional, calm, and trustworthy.\n"
-    "- Do NOT speculate beyond the provided passages.\n"
-    "- If a concept appears in multiple passages, synthesise them coherently into ONE comprehensive answer."
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=1, max=6),
+    reraise=True,
 )
-
-# ---------------------------------------------------------------------------
-# Singleton client (initialised once at module load)
-# ---------------------------------------------------------------------------
-def _init_client() -> genai.Client:
-    client = genai.Client(api_key=_API_KEY)
-    log.info("google-genai Client initialised. Model: %s", _MODEL_NAME)
-    return client
-
-_CLIENT: genai.Client = _init_client()
-
-
-# ---------------------------------------------------------------------------
-# Public interface
-# ---------------------------------------------------------------------------
-
-def generate_grounded_answer(question: str, context_chunks: list[str]) -> str:
+def generate_grounded_answer(
+    question: str,
+    context: str,
+    jurisdiction: str = "India",
+    language: str = "EN",
+    answer_mode: str = "standard",
+) -> str:
     """
-    Query Gemini with a grounded prompt and return the answer text.
-
-    Parameters
-    ----------
-    question:
-        The user original legal question (already validated by the schema).
-    context_chunks:
-        Ordered list of top-ranked text passages from ChromaDB (top 3).
-
-    Returns
-    -------
-    str
-        Clean text response from Gemini.
-
-    Raises
-    ------
-    RuntimeError
-        If the Gemini API call fails. The caller catches this and returns 500.
+    Synchronous call to Google Gemini with automatic key rotation and retry logic.
     """
-    if not context_chunks:
-        log.warning("generate_grounded_answer called with no context chunks.")
-        return (
-            "I cannot find an authoritative source in our verified legal registers "
-            "to answer this safely."
-        )
-
-    passages_block = "\n\n".join(
-        f"[Passage {i + 1}]\n{chunk.strip()}"
-        for i, chunk in enumerate(context_chunks)
+    client, active_key = _get_client_and_key()
+    user_prompt = prompt_builder.build_user_prompt(
+        question=question,
+        context=context,
+        jurisdiction=jurisdiction,
+        language=language,
+        answer_mode=answer_mode,
     )
-
-    user_prompt = (
-        "--- RETRIEVED LEGAL PASSAGES ---\n"
-        f"{passages_block}\n"
-        "--- END OF PASSAGES ---\n\n"
-        f"User Question: {question}\n\n"
-        "Please answer the question based ONLY on the passages above."
-    )
-
-    log.debug("Sending prompt to Gemini (%d chars, %d passages).", len(user_prompt), len(context_chunks))
 
     try:
-        response = _CLIENT.models.generate_content(
-            model=_MODEL_NAME,
+        response = client.models.generate_content(
+            model=settings.PRIMARY_MODEL,
             contents=user_prompt,
             config=genai_types.GenerateContentConfig(
-                system_instruction=_SYSTEM_PROMPT,
-                temperature=0.1,
-                top_p=0.95,
-                max_output_tokens=1024,  # Enough for detailed answers with structure
+                system_instruction=prompt_builder.SYSTEM_PROMPT,
+                temperature=0.2,  # Low temperature for factual precision
+                top_p=0.9,
+                max_output_tokens=1500,
             ),
         )
-        answer_text: str = response.text.strip()
-        log.info("Gemini responded (%d chars).", len(answer_text))
-        return answer_text
+        return response.text or "No response generated by model."
 
-    except Exception as exc:  # noqa: BLE001
-        log.error("Gemini API call failed: %s", exc, exc_info=True)
-        raise RuntimeError(f"Failed to get a response from the Gemini API: {exc}") from exc
-
-
-# Backward-compatible alias
-generate_answer = generate_grounded_answer
+    except Exception as e:
+        err_msg = str(e).lower()
+        if "429" in err_msg or "resource_exhausted" in err_msg or "quota" in err_msg:
+            log.warning("Rate limit hit on key ...%s. Rotating key and retrying...", active_key[-6:])
+            key_manager.mark_rate_limited(active_key)
+        log.error("Gemini generation error: %s", e)
+        raise
 
 
-def stream_grounded_answer(question: str, context_chunks: list[str]) -> Iterator[str]:
+async def async_generate_grounded_answer(
+    question: str,
+    context: str,
+    jurisdiction: str = "India",
+    language: str = "EN",
+    answer_mode: str = "standard",
+) -> str:
     """
-    Stream a grounded Gemini answer token-by-token.
-
-    Yields incremental text chunks as Gemini produces them. If the SDK does not
-    support native streaming (or streaming fails mid-flight), the caller can
-    fall back to a chunked full response.
-
-    Parameters
-    ----------
-    question:
-        The user's original legal question.
-    context_chunks:
-        Ordered list of top-ranked passages from ChromaDB.
-
-    Yields
-    ------
-    str
-        Incremental text fragments of the answer.
-
-    Raises
-    ------
-    RuntimeError
-        If the Gemini streaming call cannot be started.
+    Asynchronous non-blocking wrapper running Gemini generation in worker thread.
     """
-    if not context_chunks:
-        yield (
-            "I cannot find an authoritative source in our verified legal registers "
-            "to answer this safely."
-        )
-        return
-
-    passages_block = "\n\n".join(
-        f"[Passage {i + 1}]\n{chunk.strip()}"
-        for i, chunk in enumerate(context_chunks)
+    return await asyncio.to_thread(
+        generate_grounded_answer,
+        question=question,
+        context=context,
+        jurisdiction=jurisdiction,
+        language=language,
+        answer_mode=answer_mode,
     )
 
-    user_prompt = (
-        "--- RETRIEVED LEGAL PASSAGES ---\n"
-        f"{passages_block}\n"
-        "--- END OF PASSAGES ---\n\n"
-        f"User Question: {question}\n\n"
-        "Please answer the question based ONLY on the passages above."
-    )
 
-    log.debug(
-        "Streaming prompt to Gemini (%d chars, %d passages).",
-        len(user_prompt),
-        len(context_chunks),
-    )
-
-    config = genai_types.GenerateContentConfig(
-        system_instruction=_SYSTEM_PROMPT,
-        temperature=0.1,
-        top_p=0.95,
-        max_output_tokens=1024,
+def stream_grounded_answer(
+    question: str,
+    context: str,
+    jurisdiction: str = "India",
+    language: str = "EN",
+    answer_mode: str = "standard",
+) -> Iterator[str]:
+    """
+    Streams response tokens from Google Gemini.
+    """
+    client, active_key = _get_client_and_key()
+    user_prompt = prompt_builder.build_user_prompt(
+        question=question,
+        context=context,
+        jurisdiction=jurisdiction,
+        language=language,
+        answer_mode=answer_mode,
     )
 
     try:
-        stream = _CLIENT.models.generate_content_stream(
-            model=_MODEL_NAME,
+        response_stream = client.models.generate_content_stream(
+            model=settings.PRIMARY_MODEL,
             contents=user_prompt,
-            config=config,
+            config=genai_types.GenerateContentConfig(
+                system_instruction=prompt_builder.SYSTEM_PROMPT,
+                temperature=0.2,
+                top_p=0.9,
+                max_output_tokens=1500,
+            ),
         )
-    except Exception as exc:  # noqa: BLE001
-        log.error("Gemini streaming call failed to start: %s", exc, exc_info=True)
-        raise RuntimeError(
-            f"Failed to start a streaming response from the Gemini API: {exc}"
-        ) from exc
-
-    emitted_any = False
-    try:
-        for chunk in stream:
-            text = getattr(chunk, "text", None)
-            if text:
-                emitted_any = True
-                yield text
-    except Exception as exc:  # noqa: BLE001
-        # Streaming broke mid-flight. If we already emitted something the caller
-        # keeps what arrived; otherwise surface as RuntimeError so the router
-        # can fall back to the non-streaming path.
-        log.error("Gemini stream interrupted: %s", exc, exc_info=True)
-        if not emitted_any:
-            raise RuntimeError(
-                f"Gemini streaming interrupted before any output: {exc}"
-            ) from exc
+        for chunk in response_stream:
+            if chunk.text:
+                yield chunk.text
+    except Exception as e:
+        log.error("Gemini streaming error: %s", e)
+        yield f"\n[Generation error: {e}]"
