@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+import ToolIntro from './ToolIntro'
+import { TOOL_INTRO_CONFIGS } from '../data/toolIntroConfigs'
 
 // Icons
 const IconCheck = ({ size = 16 }) => (
@@ -44,6 +46,7 @@ const IconRupee = ({ size = 16 }) => (
 const API_BASE = 'http://127.0.0.1:8000'
 
 export default function IPChecklist() {
+  const [showIntro, setShowIntro] = useState(true)
   const [checklists, setChecklists] = useState([])
   const [selectedChecklist, setSelectedChecklist] = useState(null)
   const [checklistDetails, setChecklistDetails] = useState(null)
@@ -150,17 +153,42 @@ export default function IPChecklist() {
     )
   }
 
+  if (showIntro) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--bg-primary, #0a0a0a)', padding: '2rem 1rem' }}>
+        <ToolIntro
+          config={TOOL_INTRO_CONFIGS['checklists']}
+          icon={<IconFile size={28} />}
+          onStart={() => setShowIntro(false)}
+          backTo="/"
+          backLabel="Back to Portal"
+        />
+      </div>
+    )
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-primary, #0a0a0a)', padding: '2rem' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         {/* Header */}
-        <div style={{ marginBottom: '2rem' }}>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: '700', color: '#10b981', marginBottom: '0.5rem' }}>
-            📋 IP Filing Checklists
-          </h1>
-          <p style={{ color: 'rgba(255,255,255,0.6)' }}>
-            Step-by-step checklists for patent, trademark, GI, and ABS compliance
-          </p>
+        <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <h1 style={{ fontSize: '1.75rem', fontWeight: '700', color: '#10b981', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <IconFile size={24} /> IP Filing Checklists
+            </h1>
+            <p style={{ color: 'rgba(255,255,255,0.6)', margin: 0 }}>
+              Step-by-step checklists for patent, trademark, GI, and ABS compliance
+            </p>
+          </div>
+          <button
+            type="button"
+            className="tool-guide-return-btn"
+            onClick={() => setShowIntro(true)}
+            title="View checklist overview & instructions"
+          >
+            <IconInfo size={14} />
+            <span>Checklist Overview & Guide</span>
+          </button>
         </div>
 
         {!selectedChecklist ? (
