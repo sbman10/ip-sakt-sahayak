@@ -51,6 +51,20 @@ log = logging.getLogger("app.routers.chat")
 router = APIRouter()
 
 
+def _resolve_source_filters(jurisdiction: str) -> list[str]:
+    """Map a jurisdiction value to the ChromaDB collections that will be queried.
+
+    Used for response observability so clients can see exactly which corpora a
+    turn was grounded in. 'Both' fans out across both collections.
+    """
+    jur = (jurisdiction or "India").strip().lower()
+    if jur == "both":
+        return ["india_statutes", "international_treaties"]
+    if "international" in jur:
+        return ["international_treaties"]
+    return ["india_statutes"]
+
+
 @router.post(
     "/chat",
     response_model=ChatResponse,
@@ -75,6 +89,7 @@ async def chat_endpoint(
     jurisdiction = request.jurisdiction or "India"
     language = request.language or "EN"
     answer_mode = request.answer_mode or "standard"
+    source_filters = _resolve_source_filters(jurisdiction)
 
     # ── Stage (b): PII Scrubbing (DPDP Compliance) ──────────────
     scrubbed_query = pii_scrubber.scrub_query(raw_query)
@@ -112,6 +127,8 @@ async def chat_endpoint(
             latency_ms=round(elapsed_ms, 2),
             status="no_data",
             conversation_id=request.conversation_id,
+            jurisdiction=jurisdiction,
+            source_filters=source_filters,
         )
 
     # ── Stage (e): Conditional CrossEncoder Reranking ───────────
@@ -124,12 +141,19 @@ async def chat_endpoint(
     )
 
     top_rerank_score = (
-        reranked_passages[0].get("reranker_score", 1.0)
+        reranked_passages[0].get("reranker_score", 0.5)
         if reranked_passages
         else 0.5
     )
-    # If reranker was skipped, treat reranker relevance as 1.0
-    effective_rerank_score = 1.0 if reranker_skipped else top_rerank_score
+    # If reranker was skipped, do NOT inflate reranker relevance to 1.0 (that
+    # falsely boosts composite confidence). A skip only means the vector
+    # distance was already strong enough to bypass reranking — it is not
+    # positive evidence of top-1 relevance. Derive a justified proxy from the
+    # actual vector distance instead: relevance = 1 - best_distance, clamped.
+    if reranker_skipped:
+        effective_rerank_score = max(0.0, min(1.0, 1.0 - best_distance))
+    else:
+        effective_rerank_score = top_rerank_score
 
     # ── Stage (f): Context Compression & Citation Formatting ────
     context_text, cleaned_chunks = context_compressor.build_prompt_context(
@@ -150,11 +174,61 @@ async def chat_endpoint(
         )
 
     # ── Stage (g): Grounded LLM Generation via Gemini ───────────
-    answer = await generate_grounded_answer(
-        query=scrubbed_query,
-        context_str=context_text,
-        answer_mode=answer_mode,
-    )
+    try:
+        answer = await generate_grounded_answer(
+            query=scrubbed_query,
+            context_str=context_text,
+            answer_mode=answer_mode,
+            jurisdiction=jurisdiction,
+        )
+    except Exception as gen_err:
+        # Model / API failure — return a calm, honest fallback instead of
+        # crashing or fabricating. We have valid citations, so expose them.
+        log.error("LLM generation failed: %s", gen_err, exc_info=True)
+        elapsed_ms = (time.perf_counter() - start_time) * 1000
+        return ChatResponse(
+            answer=(
+                "I found relevant sources in the knowledge base, but the "
+                "answer service is temporarily unavailable and I could not "
+                "generate a grounded response right now. Please try again in a "
+                "moment. The cited sources below are still relevant to your query."
+            ),
+            citations=citations,
+            confidence=ConfidenceScore(
+                score=0,
+                label="Low",
+                reason="Answer generation service was temporarily unavailable.",
+                citation_scores=[],
+            ),
+            latency_ms=round(elapsed_ms, 2),
+            status="error",
+            conversation_id=request.conversation_id,
+            jurisdiction=jurisdiction,
+            source_filters=source_filters,
+        )
+
+    if not answer or not answer.strip():
+        # Empty generation — never return a blank answer; degrade gracefully.
+        elapsed_ms = (time.perf_counter() - start_time) * 1000
+        return ChatResponse(
+            answer=(
+                "I could not compose a confident answer from the current "
+                "knowledge base for this query. You may rephrase the question "
+                "or consult a qualified IP professional for authoritative guidance."
+            ),
+            citations=citations,
+            confidence=ConfidenceScore(
+                score=15,
+                label="Low",
+                reason="Generation returned no usable content.",
+                citation_scores=[],
+            ),
+            latency_ms=round(elapsed_ms, 2),
+            status="no_data",
+            conversation_id=request.conversation_id,
+            jurisdiction=jurisdiction,
+            source_filters=source_filters,
+        )
 
     # ── Stage (h): Claim Extraction & Citation Entailment ───────
     citation_dicts = [{"source": c.source, "text": c.text} for c in citations]
@@ -229,6 +303,8 @@ async def chat_endpoint(
         latency_ms=round(elapsed_ms, 2),
         status="answered",
         conversation_id=conv_id,
+        jurisdiction=jurisdiction,
+        source_filters=source_filters,
     )
 
 
@@ -248,6 +324,7 @@ async def chat_stream_endpoint(
     jurisdiction = request.jurisdiction or "India"
     language = request.language or "EN"
     answer_mode = request.answer_mode or "standard"
+    source_filters = _resolve_source_filters(jurisdiction)
 
     scrubbed_query = scrub_pii(raw_query)
 
@@ -269,6 +346,22 @@ async def chat_stream_endpoint(
     except Exception:
         candidates = []
 
+    # ── Retrieval Gate parity with /chat: abstain instead of streaming an
+    #    ungrounded / fabricated answer when evidence is insufficient. ──
+    gate_result = evaluate_retrieval_quality(
+        candidates=candidates,
+        similarity_threshold=settings.SIMILARITY_THRESHOLD,
+    )
+    if not gate_result["is_sufficient"]:
+        abstention = get_abstention_response()
+
+        def _stream_abstention():
+            yield f"data: {json.dumps({'type': 'citations', 'citations': []})}\n\n"
+            yield f"data: {json.dumps({'chunk': abstention['answer']})}\n\n"
+            yield "data: [DONE]\n\n"
+
+        return StreamingResponse(_stream_abstention(), media_type="text/event-stream")
+
     reranked, _ = await conditional_rerank(
         query=scrubbed_query,
         candidates=candidates,
@@ -289,18 +382,28 @@ async def chat_stream_endpoint(
         ))
 
     def _generate_stream():
-        # First send citation metadata payload
+        # Emit jurisdiction/source-filter metadata first (observability)
+        yield f"data: {json.dumps({'type': 'meta', 'jurisdiction': jurisdiction, 'source_filters': source_filters})}\n\n"
+        # Then send citation metadata payload
         citation_data = [c.model_dump() for c in citations]
         yield f"data: {json.dumps({'type': 'citations', 'citations': citation_data})}\n\n"
 
-        for token in stream_grounded_answer(
-            question=scrubbed_query,
-            context=context_text,
-            jurisdiction=jurisdiction,
-            language=language,
-            answer_mode=answer_mode,
-        ):
-            yield f"data: {json.dumps({'chunk': token})}\n\n"
+        try:
+            for token in stream_grounded_answer(
+                question=scrubbed_query,
+                context=context_text,
+                jurisdiction=jurisdiction,
+                language=language,
+                answer_mode=answer_mode,
+            ):
+                yield f"data: {json.dumps({'chunk': token})}\n\n"
+        except Exception as stream_err:
+            log.error("Streaming generation failed: %s", stream_err, exc_info=True)
+            fallback = (
+                " [The answer service was interrupted. The cited sources above "
+                "remain relevant; please try again in a moment.]"
+            )
+            yield f"data: {json.dumps({'chunk': fallback})}\n\n"
 
         yield "data: [DONE]\n\n"
 

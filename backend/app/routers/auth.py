@@ -39,10 +39,16 @@ from app.services.auth import (
 # ---------------------------------------------------------------------------
 # Google OAuth Configuration
 # ---------------------------------------------------------------------------
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
-GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
-GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/api/auth/google/callback")
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+# NOTE: pydantic-settings loads .env into the `settings` object but does NOT
+# populate os.environ, so bare os.getenv() returned "" here and produced
+# "Google OAuth is not configured". Read from settings (with os.getenv as a
+# fallback) so the .env values are actually picked up.
+from app.core.config import settings as _settings
+
+GOOGLE_CLIENT_ID = _settings.GOOGLE_CLIENT_ID or os.getenv("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET = _settings.GOOGLE_CLIENT_SECRET or os.getenv("GOOGLE_CLIENT_SECRET", "")
+GOOGLE_REDIRECT_URI = _settings.GOOGLE_REDIRECT_URI or os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/api/auth/google/callback")
+FRONTEND_URL = getattr(_settings, "FRONTEND_URL", None) or os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"

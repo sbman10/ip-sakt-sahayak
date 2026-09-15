@@ -311,6 +311,8 @@ const UI_TRANSLATIONS = {
     jurisdiction: 'Jurisdiction',
     jurisdictionIndia: 'India',
     jurisdictionInternational: 'International',
+    jurisdictionBoth: 'Both',
+    chooseJurisdiction: 'Choose Jurisdiction',
     newConsultation: 'New Consultation',
     pastConversations: 'Past Conversations',
     newChat: 'New Chat',
@@ -757,6 +759,8 @@ const UI_TRANSLATIONS = {
     jurisdiction: 'अधिकार क्षेत्र',
     jurisdictionIndia: 'भारत',
     jurisdictionInternational: 'अंतर्राष्ट्रीय',
+    jurisdictionBoth: 'दोनों',
+    chooseJurisdiction: 'अधिकार क्षेत्र चुनें',
     newConsultation: 'नया परामर्श',
     pastConversations: 'पिछली बातचीत',
     newChat: 'नई चैट',
@@ -5109,8 +5113,6 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
         </div>
 
         <div className="topbar-right">
-          <JurisdictionToggle value={jurisdiction} onChange={setJurisdiction} />
-
           <select
             className="lang-select"
             value={lang}
@@ -5239,6 +5241,31 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
                 <span>कम सटीकता / Low accuracy ({(voiceConfidence * 100).toFixed(0)}%) - कृपया स्पष्ट बोलें / Please speak clearly</span>
               </div>
             )}
+
+            {/* Jurisdiction selector — lives beside the chat composer */}
+            <div className="chat-jurisdiction-row">
+              <label htmlFor="chat-jurisdiction-select" className="chat-jurisdiction-label">
+                {t('chooseJurisdiction') || 'Choose Jurisdiction'}
+              </label>
+              <select
+                id="chat-jurisdiction-select"
+                className="chat-jurisdiction-select"
+                value={jurisdiction}
+                onChange={e => setJurisdiction(e.target.value)}
+                aria-label={t('chooseJurisdiction') || 'Choose Jurisdiction'}
+              >
+                <option value="india">{t('jurisdictionIndia') || 'India'}</option>
+                <option value="international">{t('jurisdictionInternational') || 'International'}</option>
+                <option value="both">{t('jurisdictionBoth') || 'Both'}</option>
+              </select>
+              <span className="chat-jurisdiction-current">
+                {jurisdiction === 'both'
+                  ? (t('jurisdictionBoth') || 'Both')
+                  : jurisdiction === 'international'
+                    ? (t('jurisdictionInternational') || 'International')
+                    : (t('jurisdictionIndia') || 'India')}
+              </span>
+            </div>
 
             <div className="input-row">
               <div className="chat-input-wrap">

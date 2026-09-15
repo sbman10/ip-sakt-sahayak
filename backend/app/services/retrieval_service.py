@@ -105,50 +105,66 @@ def hybrid_rrf_search(
     if not query or not query.strip():
         return []
 
-    # 1. Route to correct ChromaDB collection based on jurisdiction
+    # 1. Route to the correct ChromaDB collection(s) based on jurisdiction.
+    #    'India' -> india_statutes, 'International' -> international_treaties,
+    #    'Both' -> query BOTH collections and fuse the combined candidate pool.
     jur_clean = jurisdiction.strip().lower()
-    collection_name = (
-        "international_treaties"
-        if "international" in jur_clean
-        else "india_statutes"
-    )
+    if jur_clean == "both":
+        collection_specs = [
+            ("india_statutes", "India"),
+            ("international_treaties", "International"),
+        ]
+    elif "international" in jur_clean:
+        collection_specs = [("international_treaties", "International")]
+    else:
+        collection_specs = [("india_statutes", "India")]
+
+    collection_names = [c[0] for c in collection_specs]
 
     log.info(
-        "Executing hybrid RRF search for query '%s' under jurisdiction '%s' (collection: %s)",
+        "Executing hybrid RRF search for query '%s' under jurisdiction '%s' (collections: %s)",
         query[:50],
         jurisdiction,
-        collection_name,
+        collection_names,
     )
 
-    # 2. Query ChromaDB vector store for candidates and record (doc, distance)
-    vector_candidates: list[tuple[Any, float, int]] = []
-    try:
-        vectorstore = get_chroma_vectorstore(collection_name)
-        # similarity_search_with_score returns list of (Document, score/distance)
-        raw_vector_results = vectorstore.similarity_search_with_score(
-            query=query,
-            k=top_k * 2,
-        )
-        for rank, (doc, distance) in enumerate(raw_vector_results, start=1):
-            vector_candidates.append((doc, float(distance), rank))
-    except Exception as e:
-        log.error("Vector search query error in ChromaDB: %s", e, exc_info=True)
+    # 2. Query each routed ChromaDB vector store for candidates and record
+    #    (doc, distance, rank, collection_jurisdiction).
+    vector_candidates: list[tuple[Any, float, int, str]] = []
+    for collection_name, col_jur in collection_specs:
+        try:
+            vectorstore = get_chroma_vectorstore(collection_name)
+            raw_vector_results = vectorstore.similarity_search_with_score(
+                query=query,
+                k=top_k * 2,
+            )
+            for rank, (doc, distance) in enumerate(raw_vector_results, start=1):
+                vector_candidates.append((doc, float(distance), rank, col_jur))
+        except Exception as e:
+            log.error(
+                "Vector search query error in ChromaDB collection '%s': %s",
+                collection_name, e, exc_info=True,
+            )
 
-    # 3. Query PersistedBM25Index for candidates and record (doc, bm25_score)
+    # 3. Query PersistedBM25Index for candidates and record (doc, bm25_score).
+    #    For 'Both', run BM25 once per jurisdiction so lexical matches from each
+    #    corpus are represented; otherwise a single filtered pass.
     bm25_candidates: list[tuple[dict, float, int]] = []
     try:
         bm25_idx = get_bm25_index()
         if not bm25_idx.is_loaded:
             bm25_idx.load_from_disk(settings.BM25_INDEX_PATH)
 
-        bm25_results = bm25_idx.search(
-            query=query,
-            top_k=top_k * 2,
-            jurisdiction=jurisdiction,
-        )
-        for rank, b_doc in enumerate(bm25_results, start=1):
-            score = float(b_doc.get("bm25_score", 0.0))
-            bm25_candidates.append((b_doc, score, rank))
+        bm25_jurs = [c[1] for c in collection_specs]
+        for bm_jur in bm25_jurs:
+            bm25_results = bm25_idx.search(
+                query=query,
+                top_k=top_k * 2,
+                jurisdiction=bm_jur,
+            )
+            for rank, b_doc in enumerate(bm25_results, start=1):
+                score = float(b_doc.get("bm25_score", 0.0))
+                bm25_candidates.append((b_doc, score, rank))
     except Exception as e:
         log.error("BM25 search query error: %s", e, exc_info=True)
 
@@ -157,7 +173,7 @@ def hybrid_rrf_search(
     fused_docs: dict[str, dict] = {}
 
     # Ingest vector rankings
-    for doc, dist, v_rank in vector_candidates:
+    for doc, dist, v_rank, col_jur in vector_candidates:
         doc_text = doc.page_content if hasattr(doc, "page_content") else str(doc)
         metadata = doc.metadata if hasattr(doc, "metadata") and doc.metadata else {}
         doc_id = str(metadata.get("id") or metadata.get("chunk_id") or doc_text.strip())
@@ -172,7 +188,7 @@ def hybrid_rrf_search(
                 "text": doc_text,
                 "source": metadata.get("source", "Legal Statute"),
                 "section": metadata.get("section", "General"),
-                "jurisdiction": metadata.get("jurisdiction", jurisdiction),
+                "jurisdiction": metadata.get("jurisdiction", col_jur),
                 "distance": dist,
                 "vector_distance": dist,
                 "vector_similarity": vector_sim,
