@@ -207,14 +207,12 @@ async def chat_endpoint(
             conv_id = conv.id
 
         msg = Message(
-            id=str(uuid.uuid4()),
             conversation_id=conv_id,
-            sender="bot",
-            raw_query=raw_query,
-            scrubbed_query=scrubbed_query,
-            answer=answer,
-            confidence_score=confidence.score,
-            confidence_label=confidence.label,
+            role="assistant",
+            content=answer,
+            confidence=confidence.label.lower() if confidence else "low",
+            citations_json=json.dumps([c.model_dump() for c in citations]),
+            latency_ms=elapsed_ms,
         )
         db.add(msg)
         db.commit()
