@@ -188,15 +188,15 @@ async def upload_document(
     )
 
 
-@router.get("/documents", response_model=list[DocumentOut], tags=["Documents"])
-def list_documents(
+@router.get("/uploads", response_model=list[DocumentOut], tags=["Document Uploads"], operation_id="list_user_uploads")
+def list_user_uploads(
     conversation_id: Optional[str] = None,
     matter_id: Optional[str] = None,
     user: User = Depends(require_auth),
     db: Session = Depends(get_db)
 ) -> list[DocumentOut]:
     """
-    List uploaded documents for the current user.
+    List uploaded raw documents for the current user.
     Optionally filter by conversation or matter.
     """
     query = db.query(UploadedDocument).filter(UploadedDocument.user_id == user.id)
@@ -211,13 +211,13 @@ def list_documents(
     return [DocumentOut.model_validate(d) for d in docs]
 
 
-@router.get("/documents/{document_id}", response_model=DocumentOut, tags=["Documents"])
-def get_document(
+@router.get("/uploads/{document_id}", response_model=DocumentOut, tags=["Document Uploads"], operation_id="get_user_upload")
+def get_user_upload(
     document_id: str,
     user: User = Depends(require_auth),
     db: Session = Depends(get_db)
 ) -> DocumentOut:
-    """Get a specific document's info."""
+    """Get a specific uploaded document's info."""
     doc = db.query(UploadedDocument).filter(
         UploadedDocument.id == document_id,
         UploadedDocument.user_id == user.id
@@ -232,8 +232,8 @@ def get_document(
     return DocumentOut.model_validate(doc)
 
 
-@router.delete("/documents/{document_id}", tags=["Documents"])
-def delete_document(
+@router.delete("/uploads/{document_id}", tags=["Document Uploads"], operation_id="delete_user_upload")
+def delete_user_upload(
     document_id: str,
     user: User = Depends(require_auth),
     db: Session = Depends(get_db)

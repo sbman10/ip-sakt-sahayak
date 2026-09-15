@@ -377,7 +377,7 @@ async def upload_and_ingest_document(
     )
 
 
-@router.get("", response_model=list[UploadedDocumentOut], tags=["Documents"])
+@router.get("", response_model=list[UploadedDocumentOut], tags=["Documents"], operation_id="list_rag_documents")
 def list_documents(
     user: User = Depends(require_auth),
     db: Session = Depends(get_db),
@@ -395,7 +395,7 @@ def list_documents(
     return [UploadedDocumentOut.model_validate(d) for d in docs]
 
 
-@router.delete("/{document_id}", tags=["Documents"])
+@router.delete("/{document_id}", tags=["Documents"], operation_id="delete_rag_document")
 def delete_document(
     document_id: str,
     user: User = Depends(require_auth),

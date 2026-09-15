@@ -2342,11 +2342,15 @@ function ConfidenceBadge({ level }) {
     reason = level.reason || ''
     const levelLabel = (level.label || 'Medium').toLowerCase()
     
-    if (levelLabel === 'high' || score >= 70) {
+    if (levelLabel === 'error') {
+      label = `Connection Error`
+      cls = 'low'
+      icon = <IconAlertTriangle size={14} />
+    } else if (levelLabel === 'high' || score >= 80) {
       label = `High Confidence (${score}%)`
       cls = 'high'
       icon = <IconShieldCheck size={14} />
-    } else if (levelLabel === 'medium' || score >= 40) {
+    } else if (levelLabel === 'moderate' || levelLabel === 'medium' || score >= 60) {
       label = `Moderate Confidence (${score}%)`
       cls = 'medium'
       icon = <IconInfo size={14} />
@@ -4988,28 +4992,14 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
           refreshSessions()
         }
       } catch (error) {
-        let aiText = `Under Section 3(p) of the Indian Patents Act 1970, traditional Ayurvedic formulations are excluded from patentability as prior art. However, novel, non-obvious synergistic combinations or extraction processes may be patentable subject matter.`
-        let citations = [
-          { source: 'patents_act_1970', section: '§3(p)', text: 'Traditional Ayurvedic formulations are excluded from patentability as prior art under Section 3(p) of the Patents Act 1970.', relevance: 'Primary statutory reference' },
-          { source: 'tkdl_database', section: 'Overview', text: 'The Traditional Knowledge Digital Library contains over 3.6 lakh formulations from Ayurveda, Unani, Siddha and Yoga documented to prevent misappropriation.', relevance: 'Prior art database' },
-        ]
-
-        if (jurisdiction === 'international') {
-          aiText = `Under WIPO GRATK Treaty (2024) and Nagoya Protocol, international patent applications utilizing genetic resources or traditional knowledge must disclose the origin of biological material and evidence of Prior Informed Consent (PIC).`
-          citations = [
-            { source: 'wipo_gratk_treaty_2024', section: 'Mandatory Disclosure', text: 'Patent applicants must disclose the country of origin of genetic resources and associated traditional knowledge used in the invention.', relevance: 'Treaty requirement' },
-            { source: 'nagoya_protocol', section: 'ABS Articles 6 & 7', text: 'Access to genetic resources requires Prior Informed Consent (PIC) and benefit-sharing on Mutually Agreed Terms (MAT).', relevance: 'Protocol compliance' },
-          ]
-        }
-
         setMessages(prev => [...prev, {
           id: Date.now() + 1,
           role: 'ai',
-          text: `Development Mode Fallback:\n\nBackend connection note: ${error.message}\n\n${aiText}`,
+          text: `Unable to connect to the statutory reasoning engine. Please check that the backend server is running and try again.\n\nError: ${error.message}`,
           sections: [],
-          citations,
-          confidence: { score: 70, label: 'Medium', reason: 'Fallback response used due to backend connection issue.' },
-          followUpQuestions: ['What are the patent filing fees?', 'How does TKDL prevent biopiracy?', 'What is the NBA approval process?'],
+          citations: [],
+          confidence: { score: 0, label: 'Error', reason: 'Backend connection failed. No statutory retrieval was performed.' },
+          followUpQuestions: [],
           status: 'error',
           showDisclaimer: true,
           timestamp: Date.now(),

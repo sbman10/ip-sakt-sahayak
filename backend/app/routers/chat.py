@@ -272,7 +272,8 @@ async def chat_stream_endpoint(
     reranked, _ = await conditional_rerank(
         query=scrubbed_query,
         candidates=candidates,
-        top_k=3,
+        skip_threshold=settings.RERANK_SKIP_THRESHOLD,
+        final_k=3,
     )
 
     context_text, cleaned_chunks = context_compressor.build_prompt_context(reranked, max_tokens=1500)

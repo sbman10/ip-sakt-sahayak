@@ -12,13 +12,14 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+from pathlib import Path
 import traceback
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
 from fastapi import FastAPI, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from app.core.config import settings
 from app.core.models import model_registry
@@ -212,8 +213,19 @@ async def validation_error_handler(request: Request, exc: Exception) -> JSONResp
 
 
 # ---------------------------------------------------------------------------
-# Health & Readiness Probes
+# Static Assets & Health & Readiness Probes
 # ---------------------------------------------------------------------------
+_FAVICON_PATH = Path(__file__).resolve().parents[2] / "frontend" / "public" / "favicon.svg"
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon() -> Response:
+    """Serve the application favicon or return 204 to prevent browser 404 logs."""
+    if _FAVICON_PATH.exists():
+        return FileResponse(_FAVICON_PATH, media_type="image/svg+xml")
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
 @app.get(
     "/health",
     tags=["Health"],
