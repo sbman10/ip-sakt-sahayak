@@ -31,7 +31,8 @@ class Settings(BaseSettings):
 
     PROJECT_NAME: str = "IP-SAKTI Sahayak"
     ENVIRONMENT: str = "development"
-    CHROMA_DB_DIR: str = str(_BASE_DIR / "chroma_db")
+    EMBEDDING_MODEL_NAME: str = "BAAI/bge-m3"
+    CHROMA_DB_DIR: str = str(_BASE_DIR / "chroma_db_bge_m3")
     BM25_INDEX_PATH: str = str(_BASE_DIR / "bm25_index.pkl")
 
     # API Keys & LLM settings

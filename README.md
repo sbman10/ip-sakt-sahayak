@@ -97,7 +97,7 @@ Every call to `POST /api/chat` runs this exact 8-stage pipeline:
                                ▼
   1. ⏱️  Start latency timer
   2. 🔒  Scrub PII            (DPDP Act — mask phone / Aadhaar / email / name)
-  3. 🧬  Embed question        (all-MiniLM-L6-v2 → 384-dim vector, local CPU)
+  3. 🧬  Embed question        (BAAI/bge-m3 → 1024-dim multilingual vector, local CPU)
   4. 🔎  Vector search         (ChromaDB → top-5 candidates, cosine distance)
   5. 🚦  Guardrail check       (best distance ≥ 0.35 → ABSTAIN, no LLM call)
   6. 🎯  Re-rank               (cross-encoder ms-marco-MiniLM-L-6-v2 → top-3)
@@ -137,7 +137,7 @@ Every call to `POST /api/chat` runs this exact 8-stage pipeline:
           ▼
 ┌──────────────────────────────────────────────────────────┐
 │                     RAG PIPELINE                         │
-│  Embedder (all-MiniLM-L6-v2) → ChromaDB query →          │
+│  Embedder (BAAI/bge-m3) → ChromaDB query →               │
 │  Cross-encoder re-rank → Guardrail → Gemini 2.5 Flash    │
 └───────────────────────────┬──────────────────────────────┘
                             ▼
@@ -164,7 +164,7 @@ See [`docs/Architecture.md`](docs/Architecture.md) for the full design and infor
 |-----------|--------|-----|
 | Framework | **FastAPI** (async, Pydantic v2) | Auto OpenAPI docs, native typing, high throughput |
 | Vector DB | **ChromaDB** (local, persistent) | Zero-config, filesystem-based, fast for local dev |
-| Embedder | **all-MiniLM-L6-v2** (Sentence-Transformers) | 384-dim, runs on CPU, no token cost |
+| Embedder | **BAAI/bge-m3** (Sentence-Transformers) | 1024-dim multilingual embeddings, runs on CPU, no token cost |
 | Re-ranker | **cross-encoder/ms-marco-MiniLM-L-6-v2** | Deep query↔chunk comparison for precision top-3 |
 | LLM | **Google Gemini 2.5 Flash** | Low latency, large context, free-tier friendly |
 | Audit | **SQLite** (WAL mode, async writes) | Local, immutable transaction trail |

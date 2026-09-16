@@ -1,9 +1,23 @@
+import os
+import sys
 from pathlib import Path
 import chromadb
 from sentence_transformers import SentenceTransformer
 
-# Connect to ChromaDB
-CHROMA_PATH = Path(__file__).resolve().parent.parent.parent / "backend" / "chroma_db"
+# Connect to ChromaDB (bge-m3 directory)
+BACKEND_DIR = Path(__file__).resolve().parent.parent.parent / "backend"
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
+
+try:
+    from app.core.config import settings
+    CHROMA_PATH = Path(settings.CHROMA_DB_DIR)
+    EMBEDDING_MODEL_NAME = settings.EMBEDDING_MODEL_NAME
+except ImportError:
+    CHROMA_PATH = BACKEND_DIR / os.getenv("CHROMA_DB_DIR", "chroma_db_bge_m3")
+    EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL_NAME", "BAAI/bge-m3")
+
+print(f"Connecting to ChromaDB at: {CHROMA_PATH}")
 client = chromadb.PersistentClient(path=str(CHROMA_PATH))
 col = client.get_collection("india_statutes")
 
@@ -23,14 +37,14 @@ else:
 
 # Now test a query
 print("\n" + "="*60)
-print("Testing query similarity...")
+print(f"Testing query similarity using {EMBEDDING_MODEL_NAME}...")
 
-model = SentenceTransformer("all-MiniLM-L6-v2", local_files_only=True)
+model = SentenceTransformer(EMBEDDING_MODEL_NAME)
 query = "What are patent fees in India?"
-query_emb = model.encode(query).tolist()
+query_emb = model.encode([query], normalize_embeddings=True).tolist()
 
 results = col.query(
-    query_embeddings=[query_emb],
+    query_embeddings=query_emb,
     n_results=3,
     include=["documents", "distances", "metadatas"]
 )

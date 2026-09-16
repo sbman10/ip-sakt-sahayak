@@ -17,6 +17,8 @@ from typing import Optional
 
 from sentence_transformers import CrossEncoder, SentenceTransformer
 
+from app.core.config import settings
+
 log = logging.getLogger("app.core.models")
 
 
@@ -47,13 +49,14 @@ class ModelRegistry:
 
     def load_models(
         self,
-        embedding_model_name: str = "all-MiniLM-L6-v2",
+        embedding_model_name: str | None = None,
         reranker_model_name: str = "cross-encoder/ms-marco-MiniLM-L-6-v2",
     ) -> None:
         """
         Load and warmup the embedding and reranker models.
         Thread-safe and idempotent.
         """
+        embedding_model_name = embedding_model_name or settings.EMBEDDING_MODEL_NAME
         with self._load_lock:
             if self._is_ready and self._embedding_model is not None and self._reranker_model is not None:
                 log.info("[PID %s] Models already initialized and ready.", os.getpid())

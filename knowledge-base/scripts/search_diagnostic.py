@@ -12,7 +12,18 @@ from sentence_transformers import SentenceTransformer
 
 # Base directory paths
 BASE_DIR = Path(__file__).resolve().parent
-CHROMA_DB_PATH = BASE_DIR.parent.parent / "backend" / "chroma_db"
+WORKSPACE_ROOT = BASE_DIR.parent.parent
+BACKEND_DIR = WORKSPACE_ROOT / "backend"
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
+
+try:
+    from app.core.config import settings
+    CHROMA_DB_PATH = Path(settings.CHROMA_DB_DIR)
+    EMBEDDING_MODEL_NAME = settings.EMBEDDING_MODEL_NAME
+except ImportError:
+    CHROMA_DB_PATH = BACKEND_DIR / "chroma_db_bge_m3"
+    EMBEDDING_MODEL_NAME = "BAAI/bge-m3"
 
 COLLECTIONS = {
     "1": ("india_statutes", "India Statutes (Patents, Biodiversity, Drugs & Cosmetics Acts)"),
@@ -22,7 +33,7 @@ COLLECTIONS = {
 
 def print_banner():
     print("=" * 70)
-    print("    IP-SAKTI Sahayak - Local Retrieval Vector Validator")
+    print(f"    IP-SAKTI Sahayak - Local Retrieval Vector Validator ({EMBEDDING_MODEL_NAME})")
     print("=" * 70)
 
 
@@ -31,14 +42,14 @@ def main():
 
     if not CHROMA_DB_PATH.exists():
         print(f"\n[ERROR] ChromaDB database not found at '{CHROMA_DB_PATH}'.")
-        print("Please run 'knowledge-base/parser.py' followed by 'knowledge-base/ingest.py' first.\n")
+        print("Please run 'knowledge-base/ingest.py' first.\n")
         sys.exit(1)
 
     print(f"Connecting to ChromaDB at: {CHROMA_DB_PATH}")
     client = chromadb.PersistentClient(path=str(CHROMA_DB_PATH))
 
-    print("Loading local SentenceTransformer ('all-MiniLM-L6-v2') on CPU...")
-    model = SentenceTransformer("all-MiniLM-L6-v2", local_files_only=True)
+    print(f"Loading SentenceTransformer ('{EMBEDDING_MODEL_NAME}') on CPU...")
+    model = SentenceTransformer(EMBEDDING_MODEL_NAME)
     print("Model initialized successfully.\n")
 
     while True:
@@ -79,7 +90,7 @@ def main():
             continue
 
         print(f"\nEncoding query and searching top 3 most relevant passages...")
-        query_embedding = model.encode([query]).tolist()
+        query_embedding = model.encode([query], normalize_embeddings=True).tolist()
 
         results = collection.query(
             query_embeddings=query_embedding,

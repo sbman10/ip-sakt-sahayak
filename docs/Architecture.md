@@ -22,10 +22,10 @@ The system is designed to separate the user-facing web app from the offline inge
 │    └──────┬──────┘  └──────┬──────┘  └──────┬──────┘   │
 └───────────┼────────────────┼────────────────┼──────────┘
             │                │                │
-┌───────────▼────────────────▼────────────────▼──────────┐
+┌───────────────────────────▼────────────────▼──────────┐
 │                     RAG PIPELINE                       │
 │  [Proposed]                                            │
-│  1. Query Embedder (all-MiniLM-L6-v2)                  │
+│  1. Query Embedder (BAAI/bge-m3)                       │
 │  2. Vector Index Query (ChromaDB)                      │
 │  3. Re-ranker (cross-encoder/ms-marco-MiniLM-L-6-v2)  │
 │  4. RAG Prompt Composer                                │
@@ -64,7 +64,7 @@ The system is designed to separate the user-facing web app from the offline inge
 * **Vector Database:** local ChromaDB (persisted folder). Zero-config setup, queries run inside local Docker or filesystem, very fast for student testing.
 
 ### Artificial Intelligence & ML Models (Planned)
-* **Embedding Model:** `all-MiniLM-L6-v2` (HuggingFace, local). Maps text phrases into 384-dimensional dense vectors. Runs locally on CPU/GPU without token costs.
+* **Embedding Model:** `BAAI/bge-m3` (HuggingFace, local). Maps text phrases into 1024-dimensional multilingual dense vectors. Runs locally on CPU/GPU without token costs.
 * **LLM Engine:** Google Gemini 1.5 Flash (via free API key). Low latency, high output-quality, large context window suitable for ingestion snippets.
 * **Re-ranker:** `cross-encoder/ms-marco-MiniLM-L-6-v2` (HuggingFace, local). Compares candidate chunks with the query on a deep comparison level to select the top 3 items to forward to Gemini.
 
@@ -139,7 +139,7 @@ An interactive conversation flow goes through these steps:
 2. **Preprocessing:** The user's active toggle state is recorded (Jurisdiction = `India`). Language selection is processed.
 3. **API Routing:** The request is sent to the FastAPI backend `/api/chat` with metadata.
 4. **Vector Retrieval:**
-   - The query string is sent to `all-MiniLM-L6-v2` to get a 384-dimensional query vector.
+   - The query string is sent to `BAAI/bge-m3` to get a 1024-dimensional query vector.
    - ChromaDB queries the `india_statutes` collection (because Jurisdiction = India). It retrieves top-5 most similar text sections based on cosine distance.
 5. **Re-ranking:** The 5 chunks and user question are comparison-scored using the Cross-Encoder. The top 3 ranked chunks are kept.
 6. **Prompt Assembly:** The backend inserts the 3 pieces of text, user question, and grounding safety rules into a prompt template:
