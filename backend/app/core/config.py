@@ -44,6 +44,12 @@ class Settings(BaseSettings):
     SIMILARITY_THRESHOLD: float = 0.65
     RERANK_SKIP_THRESHOLD: float = 0.25
 
+    # Intent Classification & Early Routing
+    INTENT_CLASSIFICATION_ENABLED: bool = True
+    INTENT_CLASSIFIER_MODEL: str = "gemini-2.5-flash"
+    INTENT_CLASSIFIER_TIMEOUT_SECONDS: float = 3.0
+    INTENT_CONFIDENCE_THRESHOLD: float = 0.60
+
     # Auth & Security
     JWT_SECRET_KEY: str = "ip-sakti-sahayak-super-secret-key-change-in-production-2024"
     ALGORITHM: str = "HS256"

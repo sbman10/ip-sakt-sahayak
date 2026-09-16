@@ -17,7 +17,7 @@ Schemas
 
 from __future__ import annotations
 
-from typing import Literal, Optional
+from typing import Any, Literal, Optional, Union
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -87,6 +87,10 @@ class ConfidenceScore(BaseModel):
 class CitationItem(BaseModel):
     """A single retrieved source passage that grounded the LLM answer."""
 
+    source_id: Optional[str] = Field(
+        default=None,
+        description="Unique source identifier (e.g. 'SRC-001') matching inline prompt citations.",
+    )
     source: str = Field(
         ...,
         description="Name of the source document or statute (e.g. 'Patents_Act_1970').",
@@ -102,6 +106,52 @@ class CitationItem(BaseModel):
     relevance: str = Field(
         default="",
         description="Short explanation of why this source supports the answer.",
+    )
+
+
+class ExtractedEntities(BaseModel):
+    """Structured legal and statutory entities identified during intent classification."""
+
+    jurisdiction: str = Field(default="", description="Identified jurisdiction (India, International, US, etc.)")
+    legal_topic: str = Field(default="", description="Domain/topic (e.g. patent, trademark, GI, ABS)")
+    act_or_law: str = Field(default="", description="Specific Act or treaty referenced")
+    section: str = Field(default="", description="Specific section, article, or rule referenced")
+
+
+class IntentClassification(BaseModel):
+    """Structured machine-readable intent classification output."""
+
+    intent: Literal[
+        "KNOWLEDGE_SEEK",
+        "CHITCHAT",
+        "CLARIFICATION_NEEDED",
+        "OUT_OF_SCOPE",
+        "UNSAFE_OR_DISALLOWED",
+    ] = Field(
+        default="KNOWLEDGE_SEEK",
+        description="Identified user query intent category.",
+    )
+    confidence: float = Field(
+        default=1.0,
+        ge=0.0,
+        le=1.0,
+        description="Classifier confidence score between 0.0 and 1.0.",
+    )
+    reason: str = Field(
+        default="",
+        description="Short explanation for the classification decision.",
+    )
+    rewritten_query: str = Field(
+        default="",
+        description="Context-resolved standalone query suitable for retrieval, or empty string.",
+    )
+    clarification_question: str = Field(
+        default="",
+        description="Follow-up question to clarify ambiguous intent, or empty string.",
+    )
+    entities: ExtractedEntities = Field(
+        default_factory=ExtractedEntities,
+        description="Structured entities parsed from the query.",
     )
 
 
@@ -150,6 +200,35 @@ class ChatRequest(BaseModel):
         default=None,
         description="Optional existing conversation ID to append this turn to.",
     )
+
+    # ── Optional Context Profile & Formulation Data ──
+    user_type: Optional[str] = Field(default=None, description="User category (e.g. 'MSME', 'Ayurvedic Practitioner', 'Researcher').")
+    user_expertise: Optional[str] = Field(default=None, description="Expertise level (e.g. 'Beginner', 'Intermediate', 'IP Specialist').")
+    organization_type: Optional[str] = Field(default=None, description="Entity type (e.g. 'Startup', 'Individual', 'University').")
+    user_country: Optional[str] = Field(default="India", description="Country of origin / operation.")
+    user_region: Optional[str] = Field(default=None, description="State or geographical region.")
+    nationality_or_residency: Optional[str] = Field(default=None, description="Nationality / residency status.")
+    user_role: Optional[str] = Field(default=None, description="Professional role.")
+
+    product_name: Optional[str] = Field(default=None, description="Invention or product name.")
+    product_description: Optional[str] = Field(default=None, description="Brief description of product or process.")
+    formulation_type: Optional[str] = Field(default=None, description="Formulation type (e.g. 'Ayurvedic herbal formulation', 'Nutraceutical').")
+    ingredients: Optional[Union[list[str], str]] = Field(default=None, description="Ingredients or biological resources.")
+    species: Optional[str] = Field(default=None, description="Botanical or biological species.")
+    scientific_names: Optional[str] = Field(default=None, description="Scientific or Latin binomial names.")
+    traditional_use: Optional[str] = Field(default=None, description="Documented traditional usage.")
+    resource_origin: Optional[str] = Field(default=None, description="Geographical origin of biological material.")
+    knowledge_holder: Optional[str] = Field(default=None, description="Traditional knowledge holder / community.")
+    knowledge_source: Optional[str] = Field(default=None, description="Classical text or source of traditional knowledge.")
+    existing_formulation: Optional[str] = Field(default=None, description="Classical Shastriya formulation or prior art reference.")
+    novel_modification: Optional[str] = Field(default=None, description="Novel technical modification or synergy claimed.")
+    intended_use: Optional[str] = Field(default=None, description="Intended therapeutic or commercial use.")
+    commercial_status: Optional[str] = Field(default=None, description="Commercial utilization vs non-commercial research.")
+    development_stage: Optional[str] = Field(default=None, description="Development stage (e.g. 'Concept', 'Prototype', 'Marketed').")
+
+    user_intent: Optional[str] = Field(default=None, description="Stated intent (e.g. 'Patentability and TKDL prior-art analysis').")
+    requested_information: Optional[Union[list[str], str]] = Field(default=None, description="Categories of information requested.")
+    context: Optional[dict] = Field(default=None, description="Arbitrary pre-structured context dictionary.")
 
     @field_validator("jurisdiction", mode="before")
     @classmethod
@@ -229,7 +308,7 @@ class ChatResponse(BaseModel):
         default_factory=list,
         description="Relevant follow-up questions the user might want to ask.",
     )
-    status: Literal["answered", "out_of_scope", "no_data", "error"] = Field(
+    status: Literal["answered", "out_of_scope", "no_data", "error", "chitchat", "clarification_needed"] = Field(
         default="answered",
         description="Response status indicating the type of response.",
     )
@@ -244,6 +323,18 @@ class ChatResponse(BaseModel):
     source_filters: list[str] = Field(
         default_factory=list,
         description="ChromaDB collections/source filters applied during retrieval (observability).",
+    )
+    intent: Optional[str] = Field(
+        default=None,
+        description="Identified user query intent category.",
+    )
+    intent_confidence: Optional[float] = Field(
+        default=None,
+        description="Confidence score of the intent classifier between 0.0 and 1.0.",
+    )
+    rewritten_query_used: Optional[str] = Field(
+        default=None,
+        description="Context-resolved standalone query passed to retrieval, if applicable.",
     )
 
     model_config = {

@@ -134,26 +134,44 @@ class ContextCompressor:
         cleaned_chunks: list[dict] = []
         current_chars = 0
 
-        for chunk in unique_chunks:
+        for idx, chunk in enumerate(unique_chunks, start=1):
+            source_id = chunk.get("source_id") or f"SRC-{idx:03d}"
             source = chunk.get("source", "Legal Statute")
             section = chunk.get("section", "General")
+            jurisdiction = chunk.get("jurisdiction", "India")
+            doc_type = chunk.get("type") or chunk.get("doc_type") or "Statute / Regulatory Record"
             raw_text = chunk.get("text", "")
 
             compressed_text = self.compress_passage(raw_text)
             if not compressed_text:
                 continue
 
-            block = f"[Source: {source} | Section: {section}]\n{compressed_text}"
+            block = (
+                f"SOURCE_ID: {source_id}\n"
+                f"Document title: {source}\n"
+                f"Document type: {doc_type}\n"
+                f"Jurisdiction: {jurisdiction}\n"
+                f"Section / Rule: {section}\n"
+                f"Content:\n{compressed_text}"
+            )
             block_len = len(block) + 2  # including newline separator
 
             if current_chars + block_len > max_chars:
                 # If even the first block exceeds max_chars, truncate it
                 if not context_blocks:
-                    truncated_text = compressed_text[: max_chars - 100] + "..."
-                    block = f"[Source: {source} | Section: {section}]\n{truncated_text}"
+                    truncated_text = compressed_text[: max_chars - 120] + "..."
+                    block = (
+                        f"SOURCE_ID: {source_id}\n"
+                        f"Document title: {source}\n"
+                        f"Document type: {doc_type}\n"
+                        f"Jurisdiction: {jurisdiction}\n"
+                        f"Section / Rule: {section}\n"
+                        f"Content:\n{truncated_text}"
+                    )
                     context_blocks.append(block)
                     chunk_copy = dict(chunk)
                     chunk_copy["text"] = truncated_text
+                    chunk_copy["source_id"] = source_id
                     cleaned_chunks.append(chunk_copy)
                 break
 
@@ -162,6 +180,7 @@ class ContextCompressor:
 
             chunk_copy = dict(chunk)
             chunk_copy["text"] = compressed_text
+            chunk_copy["source_id"] = source_id
             cleaned_chunks.append(chunk_copy)
 
         formatted_context = "\n\n".join(context_blocks).strip()
@@ -187,15 +206,17 @@ class ContextCompressor:
         context_str, cleaned = self.build_prompt_context(ranked_passages[:max_passages], max_tokens=1500)
 
         citations: list[CitationItem] = []
-        for c in cleaned:
+        for idx, c in enumerate(cleaned, start=1):
             source = c.get("source", "Legal Statute")
             section = c.get("section", "Section Reference")
+            source_id = c.get("source_id") or f"SRC-{idx:03d}"
             citations.append(
                 CitationItem(
+                    source_id=source_id,
                     source=source,
                     section=section,
                     text=c.get("text", ""),
-                    relevance=f"Grounded in {source} ({section}).",
+                    relevance=f"[{source_id}] Grounded in {source} ({section}).",
                 )
             )
 

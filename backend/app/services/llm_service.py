@@ -22,25 +22,15 @@ from app.core.gemini_pool import (
     execute_with_retry_and_fallback,
 )
 
+from app.services.prompt_builder import prompt_builder
+
 log = logging.getLogger("app.services.llm_service")
 
-# ---------------------------------------------------------------------------
-# System Prompt (exact specification from Prompt 20)
-# ---------------------------------------------------------------------------
-_SYSTEM_PROMPT = (
-    "You are IP-SAKTI Sahayak, an authoritative legal guide for Ayurvedic Intellectual Property.\n"
-    "You MUST answer the user's question using ONLY the retrieved source passages provided below.\n"
-    "- If the retrieved context contains the answer, explain it simply and mention the exact legal acts/schedules.\n"
-    "- If context is missing or insufficient, state clearly: 'I cannot find an authoritative source "
-    "in our legal registers to safely answer this.'\n"
-    "- Never invent statutory sections or rules. Keep tone calm, objective, and professional."
-)
-
-# Token limits per answer mode
+# Token limits per answer mode (expanded for comprehensive multi-section legal analysis)
 _TOKEN_LIMITS = {
-    "brief": 400,
-    "standard": 800,
-    "detailed": 1400,
+    "brief": 800,
+    "standard": 2048,
+    "detailed": 3500,
 }
 
 
@@ -49,13 +39,18 @@ def _build_llm_call(
     context_str: str,
     answer_mode: str = "standard",
     jurisdiction: str = "India",
+    language: str = "EN",
+    user_context: Optional[dict] = None,
+    product_context: Optional[dict] = None,
+    user_intent: Optional[str] = None,
+    requested_information: Optional[Union[list[str], str]] = None,
     api_key: str = "",
 ) -> str:
     """
     Synchronous LLM call using LangChain ChatGoogleGenerativeAI.
     Intended to be executed via asyncio.to_thread or execute_with_retry_and_fallback.
     """
-    max_tokens = _TOKEN_LIMITS.get(answer_mode.lower(), 800)
+    max_tokens = _TOKEN_LIMITS.get(answer_mode.lower(), 2048)
 
     llm = ChatGoogleGenerativeAI(
         model=settings.PRIMARY_MODEL,
@@ -65,36 +60,21 @@ def _build_llm_call(
         max_output_tokens=max_tokens,
     )
 
-    jur_norm = (jurisdiction or "India").strip().lower()
-    selected_jurisdiction = (
-        "both" if jur_norm == "both"
-        else "international" if "international" in jur_norm
-        else "india"
-    )
-    jurisdiction_instruction = (
-        f"selected_jurisdiction: {selected_jurisdiction}\n"
-        "You are answering a jurisdiction-aware question. Ground every material claim in the "
-        "retrieved sources relevant to the selected jurisdiction. Do not generalize rules from one "
-        "jurisdiction to another. If the retrieved evidence is insufficient, explicitly state that the "
-        "available sources do not support a reliable answer. For every factual or legal claim, provide "
-        "an inline citation to the supporting source. When the selected jurisdiction is 'both', separate "
-        "India-specific and international conclusions clearly and explain any conflict or difference "
-        "between them.\n"
+    user_prompt = prompt_builder.build_user_prompt(
+        question=query,
+        context=context_str,
+        jurisdiction=jurisdiction,
+        language=language,
+        answer_mode=answer_mode,
+        user_context=user_context,
+        product_context=product_context,
+        user_intent=user_intent,
+        requested_information=requested_information,
     )
 
     messages = [
-        SystemMessage(content=_SYSTEM_PROMPT),
-        HumanMessage(
-            content=(
-                f"{jurisdiction_instruction}\n"
-                f"--- RETRIEVED LEGAL CONTEXT ---\n"
-                f"{context_str if context_str.strip() else '[No relevant statutory passages retrieved]'}\n"
-                f"--- END CONTEXT ---\n\n"
-                f"USER QUESTION:\n{query}\n\n"
-                f"Answer mode: {answer_mode.upper()}. "
-                f"Provide your citation-grounded statutory answer:"
-            )
-        ),
+        SystemMessage(content=prompt_builder.SYSTEM_PROMPT),
+        HumanMessage(content=user_prompt),
     ]
 
     try:
@@ -122,19 +102,28 @@ async def generate_grounded_answer(
     context_str: str,
     answer_mode: str = "standard",
     jurisdiction: str = "India",
+    language: str = "EN",
+    user_context: Optional[dict] = None,
+    product_context: Optional[dict] = None,
+    user_intent: Optional[str] = None,
+    requested_information: Optional[Union[list[str], str]] = None,
 ) -> str:
     """
     Generates a grounded legal answer using Google Gemini via LangChain
-    with automatic key rotation and retry on transient errors.
+    with automatic key rotation, master prompt architecture, and retry on transient errors.
 
     Parameters
     ----------
     query : str
         The user's legal question (PII-scrubbed).
     context_str : str
-        Formatted context string from retrieved and compressed passages.
+        Formatted context string from retrieved and compressed passages with SOURCE_IDs.
     answer_mode : str
-        Output depth: "brief" (400 tokens), "standard" (800), "detailed" (1400).
+        Output depth: "brief" (800 tokens), "standard" (2048), "detailed" (3500).
+    jurisdiction : str
+        Active jurisdiction ("India", "International", or "Both").
+    language : str
+        Response language code ("EN", "HI", etc.).
 
     Returns
     -------
@@ -148,6 +137,11 @@ async def generate_grounded_answer(
             context_str=context_str,
             answer_mode=answer_mode,
             jurisdiction=jurisdiction,
+            language=language,
+            user_context=user_context,
+            product_context=product_context,
+            user_intent=user_intent,
+            requested_information=requested_information,
         )
         return answer
 
