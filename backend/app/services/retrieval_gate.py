@@ -105,15 +105,17 @@ def get_abstention_response() -> dict:
     """
     return {
         "answer": (
-            "I cannot find an authoritative source in our verified legal registers "
-            "to safely answer this query. To protect your IP interests, you may escalate "
-            "this query to a qualified human legal facilitator."
+            "I could not find this in the current verified knowledge base, so "
+            "I won't guess an answer. This may be outside the topics I currently "
+            "cover, or phrased differently from my sources — try rewording it "
+            "(for example, name the specific Act, section, or scheme). "
+            "If it is important, a qualified IP professional can give authoritative guidance."
         ),
         "citations": [],
         "confidence": {
             "score": 15,
             "label": "Low",
-            "reason": "No relevant legal statutes found.",
+            "reason": "No matching source found in the verified knowledge base.",
         },
         "disclaimer": "This is an informational prototype, not formal legal advice.",
         "status": "no_data",

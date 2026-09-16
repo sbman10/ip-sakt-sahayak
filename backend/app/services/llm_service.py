@@ -48,6 +48,7 @@ def _build_llm_call(
     query: str,
     context_str: str,
     answer_mode: str = "standard",
+    jurisdiction: str = "India",
     api_key: str = "",
 ) -> str:
     """
@@ -64,10 +65,28 @@ def _build_llm_call(
         max_output_tokens=max_tokens,
     )
 
+    jur_norm = (jurisdiction or "India").strip().lower()
+    selected_jurisdiction = (
+        "both" if jur_norm == "both"
+        else "international" if "international" in jur_norm
+        else "india"
+    )
+    jurisdiction_instruction = (
+        f"selected_jurisdiction: {selected_jurisdiction}\n"
+        "You are answering a jurisdiction-aware question. Ground every material claim in the "
+        "retrieved sources relevant to the selected jurisdiction. Do not generalize rules from one "
+        "jurisdiction to another. If the retrieved evidence is insufficient, explicitly state that the "
+        "available sources do not support a reliable answer. For every factual or legal claim, provide "
+        "an inline citation to the supporting source. When the selected jurisdiction is 'both', separate "
+        "India-specific and international conclusions clearly and explain any conflict or difference "
+        "between them.\n"
+    )
+
     messages = [
         SystemMessage(content=_SYSTEM_PROMPT),
         HumanMessage(
             content=(
+                f"{jurisdiction_instruction}\n"
                 f"--- RETRIEVED LEGAL CONTEXT ---\n"
                 f"{context_str if context_str.strip() else '[No relevant statutory passages retrieved]'}\n"
                 f"--- END CONTEXT ---\n\n"
@@ -102,6 +121,7 @@ async def generate_grounded_answer(
     query: str,
     context_str: str,
     answer_mode: str = "standard",
+    jurisdiction: str = "India",
 ) -> str:
     """
     Generates a grounded legal answer using Google Gemini via LangChain
@@ -127,6 +147,7 @@ async def generate_grounded_answer(
             query=query,
             context_str=context_str,
             answer_mode=answer_mode,
+            jurisdiction=jurisdiction,
         )
         return answer
 

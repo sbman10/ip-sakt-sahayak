@@ -57,8 +57,27 @@ class PromptBuilder:
             f"Respond in {language.upper()} language." if language.upper() != "EN" else "Respond in English."
         )
 
+        # Jurisdiction-aware instruction block (structured variable + rules).
+        jur_norm = (jurisdiction or "India").strip().lower()
+        selected_jurisdiction = (
+            "both" if jur_norm == "both"
+            else "international" if "international" in jur_norm
+            else "india"
+        )
+        jurisdiction_instruction = (
+            f"selected_jurisdiction: {selected_jurisdiction}\n"
+            "You are answering a jurisdiction-aware question. Ground every material claim in the "
+            "retrieved sources relevant to the selected jurisdiction. Do not generalize rules from one "
+            "jurisdiction to another. If the retrieved evidence is insufficient, explicitly state that the "
+            "available sources do not support a reliable answer. For every factual or legal claim, provide "
+            "an inline citation to the supporting source. When the selected jurisdiction is 'both', separate "
+            "India-specific and international conclusions clearly and explain any conflict or difference "
+            "between them."
+        )
+
         prompt = (
             f"JURISDICTION: {jurisdiction}\n"
+            f"{jurisdiction_instruction}\n\n"
             f"ANSWER DEPTH: {answer_mode.upper()} ({depth_instruction})\n"
             f"LANGUAGE: {language_instruction}\n\n"
             f"--- RETRIEVED LEGAL CONTEXT ---\n"

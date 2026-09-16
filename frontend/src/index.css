@@ -2226,6 +2226,53 @@ h6 {
   color: var(--text-primary);
 }
 
+/* Chat Composer Jurisdiction Selector */
+.chat-jurisdiction-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.35rem 0.25rem 0.5rem;
+}
+.chat-jurisdiction-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary, #556);
+}
+.chat-jurisdiction-select {
+  font-size: 0.8rem;
+  padding: 0.3rem 0.55rem;
+  border: 1px solid var(--border, #cdd3da);
+  border-radius: 8px;
+  background: var(--surface, #fff);
+  color: var(--text, #1a2530);
+  cursor: pointer;
+  min-width: 120px;
+}
+.chat-jurisdiction-select:focus {
+  outline: 2px solid var(--primary, #1a7f5a);
+  outline-offset: 1px;
+}
+.chat-jurisdiction-current {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: var(--primary-soft, rgba(26, 127, 90, 0.12));
+  color: var(--primary, #1a7f5a);
+  white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .chat-jurisdiction-row {
+    gap: 0.4rem;
+    padding: 0.3rem 0.15rem 0.45rem;
+  }
+  .chat-jurisdiction-label { font-size: 0.66rem; width: 100%; }
+  .chat-jurisdiction-select { flex: 1 1 auto; min-width: 0; }
+}
+
 /* Jurisdiction Toggle */
 .jurisdiction-toggle {
   display: flex;

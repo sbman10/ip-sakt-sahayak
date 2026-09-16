@@ -22,11 +22,30 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.models.database import Conversation, Feedback, Message, Source, get_db
+from app.models.database import Conversation, Feedback, Message, Source, User, get_db
+from app.routers.auth import get_current_user
 
 log = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+def _assert_owner(conv: Conversation, current_user: Optional[User]) -> None:
+    """
+    Enforce per-user conversation isolation.
+
+    A conversation may be read/deleted only by its owner. Anonymous
+    conversations (user_id IS NULL) remain accessible for backward
+    compatibility, but a conversation owned by user A can never be
+    accessed by user B (or by an anonymous caller). We return 404 rather
+    than 403 so we do not leak the existence of another user's data.
+    """
+    owner_id = getattr(conv, "user_id", None)
+    if owner_id is None:
+        return  # legacy / anonymous conversation — open
+    caller_id = current_user.id if current_user else None
+    if caller_id != owner_id:
+        raise HTTPException(status_code=404, detail="Conversation not found")
 
 
 # ---------------------------------------------------------------------------
@@ -103,13 +122,15 @@ class StatsOut(BaseModel):
 @router.post("/conversations", response_model=ConversationOut, tags=["Conversations"])
 def create_conversation(
     payload: ConversationCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user),
 ) -> ConversationOut:
-    """Create a new conversation session."""
+    """Create a new conversation session (owned by the caller if logged in)."""
     conv = Conversation(
         title=payload.title,
         jurisdiction=payload.jurisdiction,
         language=payload.language,
+        user_id=current_user.id if current_user else None,
     )
     db.add(conv)
     db.commit()
@@ -131,11 +152,23 @@ def create_conversation(
 def list_conversations(
     skip: int = 0,
     limit: int = 20,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user),
 ) -> List[ConversationOut]:
-    """List all conversations with pagination."""
+    """List conversations belonging to the caller (plus legacy anonymous)."""
+    query = db.query(Conversation)
+    if current_user:
+        # Logged-in: own conversations + legacy anonymous ones
+        query = query.filter(
+            (Conversation.user_id == current_user.id)
+            | (Conversation.user_id.is_(None))
+        )
+    else:
+        # Anonymous caller: only unowned conversations
+        query = query.filter(Conversation.user_id.is_(None))
+
     conversations = (
-        db.query(Conversation)
+        query
         .order_by(Conversation.updated_at.desc())
         .offset(skip)
         .limit(limit)
@@ -161,12 +194,14 @@ def list_conversations(
 @router.get("/conversations/{conversation_id}", response_model=ConversationDetail, tags=["Conversations"])
 def get_conversation(
     conversation_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user),
 ) -> ConversationDetail:
-    """Get a conversation with all its messages."""
+    """Get a conversation with all its messages (owner-scoped)."""
     conv = db.query(Conversation).filter(Conversation.id == conversation_id).first()
     if not conv:
         raise HTTPException(status_code=404, detail="Conversation not found")
+    _assert_owner(conv, current_user)
     
     messages = (
         db.query(Message)
@@ -210,12 +245,14 @@ def get_conversation(
 def update_conversation(
     conversation_id: str,
     payload: ConversationUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user),
 ) -> ConversationOut:
-    """Rename a conversation and/or toggle its pinned state."""
+    """Rename a conversation and/or toggle its pinned state (owner-scoped)."""
     conv = db.query(Conversation).filter(Conversation.id == conversation_id).first()
     if not conv:
         raise HTTPException(status_code=404, detail="Conversation not found")
+    _assert_owner(conv, current_user)
 
     if payload.title is not None:
         conv.title = payload.title.strip()[:255] or conv.title
@@ -241,12 +278,14 @@ def update_conversation(
 @router.delete("/conversations/{conversation_id}", tags=["Conversations"])
 def delete_conversation(
     conversation_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user),
 ) -> dict:
-    """Delete a conversation and all its messages."""
+    """Delete a conversation and all its messages (owner-scoped)."""
     conv = db.query(Conversation).filter(Conversation.id == conversation_id).first()
     if not conv:
         raise HTTPException(status_code=404, detail="Conversation not found")
+    _assert_owner(conv, current_user)
     
     db.delete(conv)
     db.commit()

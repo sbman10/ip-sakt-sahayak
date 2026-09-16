@@ -135,7 +135,7 @@ class ChatRequest(BaseModel):
     )
     jurisdiction: str = Field(
         default="India",
-        description='Jurisdiction toggle ("India" or "International").',
+        description='Jurisdiction context ("India", "International", or "Both").',
     )
     language: str = Field(
         default="EN",
@@ -154,14 +154,19 @@ class ChatRequest(BaseModel):
     @field_validator("jurisdiction", mode="before")
     @classmethod
     def normalise_jurisdiction(cls, v: str) -> str:
-        """Allow case-insensitive jurisdiction ('india' -> 'India', 'international' -> 'International')."""
+        """Allow case-insensitive jurisdiction: 'india'->'India', 'international'->'International', 'both'->'Both'."""
         if not v:
             return "India"
-        val = str(v).strip().capitalize()
-        if val in ("India", "International"):
-            return val
-        if "intl" in str(v).lower() or "international" in str(v).lower():
+        raw = str(v).strip().lower()
+        if raw == "both":
+            return "Both"
+        if "intl" in raw or "international" in raw:
             return "International"
+        if raw in ("india", "in"):
+            return "India"
+        val = str(v).strip().capitalize()
+        if val in ("India", "International", "Both"):
+            return val
         return "India"
 
     @field_validator("question")
@@ -231,6 +236,14 @@ class ChatResponse(BaseModel):
     conversation_id: Optional[str] = Field(
         default=None,
         description="The conversation ID this turn was persisted to.",
+    )
+    jurisdiction: str = Field(
+        default="India",
+        description='The jurisdiction applied to this turn ("India", "International", or "Both").',
+    )
+    source_filters: list[str] = Field(
+        default_factory=list,
+        description="ChromaDB collections/source filters applied during retrieval (observability).",
     )
 
     model_config = {

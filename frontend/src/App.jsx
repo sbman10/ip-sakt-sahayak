@@ -6,6 +6,8 @@ import DocumentUpload from './components/DocumentUpload'
 import IPChecklist from './components/IPChecklist'
 import ExpertConnect from './components/ExpertConnect'
 import PricingPage from './components/PricingPage'
+import ToolIntro from './components/ToolIntro'
+import { TOOL_INTRO_CONFIGS } from './data/toolIntroConfigs'
 import {
   IconHome,
   IconFlask,
@@ -311,6 +313,8 @@ const UI_TRANSLATIONS = {
     jurisdiction: 'Jurisdiction',
     jurisdictionIndia: 'India',
     jurisdictionInternational: 'International',
+    jurisdictionBoth: 'Both',
+    chooseJurisdiction: 'Choose Jurisdiction',
     newConsultation: 'New Consultation',
     pastConversations: 'Past Conversations',
     newChat: 'New Chat',
@@ -757,6 +761,8 @@ const UI_TRANSLATIONS = {
     jurisdiction: 'अधिकार क्षेत्र',
     jurisdictionIndia: 'भारत',
     jurisdictionInternational: 'अंतर्राष्ट्रीय',
+    jurisdictionBoth: 'दोनों',
+    chooseJurisdiction: 'अधिकार क्षेत्र चुनें',
     newConsultation: 'नया परामर्श',
     pastConversations: 'पिछली बातचीत',
     newChat: 'नई चैट',
@@ -1684,6 +1690,7 @@ function AboutModal({ isOpen, onClose }) {
    ============================================================ */
 function FormulationWizardModal({ isOpen, onClose, onAskChat }) {
   const { t } = useLanguage()
+  const [showIntro, setShowIntro] = useState(true)
   const [step, setStep] = useState(1)
   const [answers, setAnswers] = useState({ q1: null, q2: null, q3: null })
 
@@ -1692,6 +1699,7 @@ function FormulationWizardModal({ isOpen, onClose, onAskChat }) {
   const resetWizard = () => {
     setStep(1)
     setAnswers({ q1: null, q2: null, q3: null })
+    setShowIntro(true)
   }
 
   const handleClose = () => {
@@ -1764,13 +1772,36 @@ function FormulationWizardModal({ isOpen, onClose, onAskChat }) {
               </span>
             </div>
           </div>
+          {!showIntro && (
+            <button
+              type="button"
+              className="tool-guide-return-btn"
+              onClick={() => setShowIntro(true)}
+              title="View wizard overview"
+              style={{ marginLeft: 'auto', marginRight: '0.5rem' }}
+            >
+              <IconInfo size={14} />
+              <span>Overview</span>
+            </button>
+          )}
           <button className="modal-close-btn" onClick={handleClose} aria-label={t('closeModal')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <IconX size={18} />
           </button>
         </div>
 
-        <div className="modal-body">
-          {/* Progress Bar */}
+        {showIntro ? (
+          <div className="modal-body" style={{ maxHeight: '78vh', overflowY: 'auto', padding: '0.5rem 1rem 1.5rem' }}>
+            <ToolIntro
+              config={TOOL_INTRO_CONFIGS['formulation-wizard']}
+              icon={<IconFlask size={28} />}
+              onStart={() => setShowIntro(false)}
+              onBack={handleClose}
+              backLabel="Close"
+            />
+          </div>
+        ) : (
+          <div className="modal-body">
+            {/* Progress Bar */}
           <div className="wizard-progress">
             {[1, 2, 3, 4].map(s => (
               <div
@@ -1986,6 +2017,7 @@ function FormulationWizardModal({ isOpen, onClose, onAskChat }) {
             </div>
           )}
         </div>
+        )}
       </div>
     </div>
   )
@@ -5109,8 +5141,6 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
         </div>
 
         <div className="topbar-right">
-          <JurisdictionToggle value={jurisdiction} onChange={setJurisdiction} />
-
           <select
             className="lang-select"
             value={lang}
@@ -5239,6 +5269,31 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
                 <span>कम सटीकता / Low accuracy ({(voiceConfidence * 100).toFixed(0)}%) - कृपया स्पष्ट बोलें / Please speak clearly</span>
               </div>
             )}
+
+            {/* Jurisdiction selector — lives beside the chat composer */}
+            <div className="chat-jurisdiction-row">
+              <label htmlFor="chat-jurisdiction-select" className="chat-jurisdiction-label">
+                {t('chooseJurisdiction') || 'Choose Jurisdiction'}
+              </label>
+              <select
+                id="chat-jurisdiction-select"
+                className="chat-jurisdiction-select"
+                value={jurisdiction}
+                onChange={e => setJurisdiction(e.target.value)}
+                aria-label={t('chooseJurisdiction') || 'Choose Jurisdiction'}
+              >
+                <option value="india">{t('jurisdictionIndia') || 'India'}</option>
+                <option value="international">{t('jurisdictionInternational') || 'International'}</option>
+                <option value="both">{t('jurisdictionBoth') || 'Both'}</option>
+              </select>
+              <span className="chat-jurisdiction-current">
+                {jurisdiction === 'both'
+                  ? (t('jurisdictionBoth') || 'Both')
+                  : jurisdiction === 'international'
+                    ? (t('jurisdictionInternational') || 'International')
+                    : (t('jurisdictionIndia') || 'India')}
+              </span>
+            </div>
 
             <div className="input-row">
               <div className="chat-input-wrap">
@@ -5369,6 +5424,7 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
    ============================================================ */
 function ABSCheckerPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize }) {
   const { t } = useLanguage()
+  const [showIntro, setShowIntro] = useState(true)
   const [applicantType, setApplicantType] = useState('indian_individual')
   const [resourceSource, setResourceSource] = useState('india')
   const [activityIntent, setActivityIntent] = useState('commercial')
@@ -5390,13 +5446,34 @@ function ABSCheckerPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSiz
         setFontSize={setFontSize}
       />
 
-      <header className="page-header">
-        <span className="chip" style={{ background: 'rgba(6, 95, 70, 0.2)', color: 'var(--secondary-light)', marginBottom: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-          <IconLeaf size={14} /> {t('absChipLabel')}
-        </span>
-        <h1 className="page-title">{t('absPageTitle')}</h1>
-        <p className="page-subtitle">{t('absPageSubtitle')}</p>
-      </header>
+      {showIntro ? (
+        <ToolIntro
+          config={TOOL_INTRO_CONFIGS['abs-checker']}
+          icon={<IconLeaf size={28} />}
+          onStart={() => setShowIntro(false)}
+          backTo="/"
+          backLabel="Back to Portal"
+        />
+      ) : (
+        <>
+          <header className="page-header" style={{ position: 'relative' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '0.75rem' }}>
+              <span className="chip" style={{ background: 'rgba(6, 95, 70, 0.2)', color: 'var(--secondary-light)', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <IconLeaf size={14} /> {t('absChipLabel')}
+              </span>
+              <button
+                type="button"
+                className="tool-guide-return-btn"
+                onClick={() => setShowIntro(true)}
+                title="View tool overview & instructions"
+              >
+                <IconInfo size={14} />
+                <span>Tool Overview & Guide</span>
+              </button>
+            </div>
+            <h1 className="page-title">{t('absPageTitle')}</h1>
+            <p className="page-subtitle">{t('absPageSubtitle')}</p>
+          </header>
 
       <main className="abs-form-card">
         <form onSubmit={handleEvaluate} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -5476,6 +5553,8 @@ function ABSCheckerPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSiz
           </div>
         )}
       </main>
+        </>
+      )}
     </div>
   )
 }
@@ -5753,6 +5832,8 @@ function DocumentsPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize
 }
 
 function DraftsPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize }) {
+  const [showIntro, setShowIntro] = useState(true)
+
   return (
     <div className="page-container calc-page">
       <Navbar
@@ -5764,34 +5845,57 @@ function DraftsPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, s
         setFontSize={setFontSize}
       />
 
-      <header className="page-header">
-        <span
-          className="chip"
-          style={{
-            background: 'var(--color-primary-light, #eaf2ed)',
-            color: 'var(--color-primary, #143D30)',
-            marginBottom: '0.75rem',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-          }}
-        >
-          <IconFileText size={14} /> Draft Generation
-        </span>
-        <h1 className="page-title">IP Document Draft Generator</h1>
-        <p className="page-subtitle">
-          Auto-generate a structured draft of a Patent Form-1, an NBA application, or a
-          Section 3(p) opposition petition. Review with a registered patent agent before filing.
-        </p>
-      </header>
+      {showIntro ? (
+        <ToolIntro
+          config={TOOL_INTRO_CONFIGS['draft-generator']}
+          icon={<IconFileText size={28} />}
+          onStart={() => setShowIntro(false)}
+          backTo="/"
+          backLabel="Back to Portal"
+        />
+      ) : (
+        <>
+          <header className="page-header" style={{ position: 'relative' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '0.75rem' }}>
+              <span
+                className="chip"
+                style={{
+                  background: 'var(--color-primary-light, #eaf2ed)',
+                  color: 'var(--color-primary, #143D30)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                <IconFileText size={14} /> Draft Generation
+              </span>
+              <button
+                type="button"
+                className="tool-guide-return-btn"
+                onClick={() => setShowIntro(true)}
+                title="View tool overview & instructions"
+              >
+                <IconInfo size={14} />
+                <span>Tool Overview & Guide</span>
+              </button>
+            </div>
+            <h1 className="page-title">IP Document Draft Generator</h1>
+            <p className="page-subtitle">
+              Auto-generate a structured draft of a Patent Form-1, an NBA application, or a
+              Section 3(p) opposition petition. Review with a registered patent agent before filing.
+            </p>
+          </header>
 
-      <DraftGenerator />
+          <DraftGenerator />
+        </>
+      )}
     </div>
   )
 }
 
 function DeadlineCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize }) {
   const { t, lang } = useLanguage()
+  const [showIntro, setShowIntro] = useState(true)
 
   const [filingDate, setFilingDate] = useState('')
   const [priorityDate, setPriorityDate] = useState('')
@@ -5969,13 +6073,34 @@ function DeadlineCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme,
         setFontSize={setFontSize}
       />
 
-      <header className="page-header">
-        <span className="chip" style={{ background: 'var(--color-primary-light, #eaf2ed)', color: 'var(--color-primary, #143D30)', marginBottom: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-          <IconCalendar size={14} /> {t('deadlineChip')}
-        </span>
-        <h1 className="page-title">{t('deadlineTitle')}</h1>
-        <p className="page-subtitle">{t('deadlineSubtitle')}</p>
-      </header>
+      {showIntro ? (
+        <ToolIntro
+          config={TOOL_INTRO_CONFIGS['deadline-calculator']}
+          icon={<IconCalendar size={28} />}
+          onStart={() => setShowIntro(false)}
+          backTo="/"
+          backLabel="Back to Portal"
+        />
+      ) : (
+        <>
+          <header className="page-header" style={{ position: 'relative' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '0.75rem' }}>
+              <span className="chip" style={{ background: 'var(--color-primary-light, #eaf2ed)', color: 'var(--color-primary, #143D30)', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <IconCalendar size={14} /> {t('deadlineChip')}
+              </span>
+              <button
+                type="button"
+                className="tool-guide-return-btn"
+                onClick={() => setShowIntro(true)}
+                title="View tool overview & instructions"
+              >
+                <IconInfo size={14} />
+                <span>Tool Overview & Guide</span>
+              </button>
+            </div>
+            <h1 className="page-title">{t('deadlineTitle')}</h1>
+            <p className="page-subtitle">{t('deadlineSubtitle')}</p>
+          </header>
 
       <main className="calc-main" style={{ display: 'grid', gap: '1.5rem' }}>
         {/* Input card */}
@@ -6095,12 +6220,16 @@ function DeadlineCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme,
           </div>
         )}
       </main>
+        </>
+      )}
     </div>
   )
 }
 
 function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize }) {
   useLanguage() // For future translations
+
+  const [showIntro, setShowIntro] = useState(true)
 
   // Wizard state
   const [currentStep, setCurrentStep] = useState(1)
@@ -6885,15 +7014,36 @@ function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, f
         setFontSize={setFontSize}
       />
 
-      <header className="page-header">
-        <span className="chip" style={{ background: 'var(--color-primary-light, #eaf2ed)', color: 'var(--color-primary, #143D30)', marginBottom: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-          <IconCalculator size={14} /> IP Cost Calculator
-        </span>
-        <h1 className="page-title">IP Filing Cost Estimator</h1>
-        <p className="page-subtitle">
-          Get transparent cost estimates for Patents, Trademarks, Copyrights, Industrial Designs & GI Tags
-        </p>
-      </header>
+      {showIntro ? (
+        <ToolIntro
+          config={TOOL_INTRO_CONFIGS['ip-calculator']}
+          icon={<IconCalculator size={28} />}
+          onStart={() => setShowIntro(false)}
+          backTo="/"
+          backLabel="Back to Portal"
+        />
+      ) : (
+        <>
+          <header className="page-header" style={{ position: 'relative' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '0.75rem' }}>
+              <span className="chip" style={{ background: 'var(--color-primary-light, #eaf2ed)', color: 'var(--color-primary, #143D30)', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <IconCalculator size={14} /> IP Cost Calculator
+              </span>
+              <button
+                type="button"
+                className="tool-guide-return-btn"
+                onClick={() => setShowIntro(true)}
+                title="View tool overview & instructions"
+              >
+                <IconInfo size={14} />
+                <span>Tool Overview & Guide</span>
+              </button>
+            </div>
+            <h1 className="page-title">IP Filing Cost Estimator</h1>
+            <p className="page-subtitle">
+              Get transparent cost estimates for Patents, Trademarks, Copyrights, Industrial Designs & GI Tags
+            </p>
+          </header>
 
       <main className="calc-main">
         {/* Tools: Quick Patent Fee Calculator (Patents Rules 2003, First Schedule) */}
@@ -6975,6 +7125,8 @@ function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, f
           renderResults()
         )}
       </main>
+        </>
+      )}
     </div>
   )
 }
