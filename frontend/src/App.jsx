@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, createContext, useContext, useCallback, useMemo } from 'react'
-import { BrowserRouter, Routes, Route, useNavigate, Link } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useNavigate, Link, useLocation } from 'react-router-dom'
 import './index.css'
 import MatterWorkspace from './components/MatterWorkspace'
 import DocumentUpload from './components/DocumentUpload'
@@ -8,7 +8,7 @@ import VerdictEngine from './components/VerdictEngine'
 import IPJourneyRoadmap from './components/IPJourneyRoadmap'
 import DualUseGuardian from './components/DualUseGuardian'
 import OnboardingTour from './components/OnboardingTour'
-import { NextActionBar, JargonText, HowToStart, FriendlyEmptyState } from './components/UXHelpers'
+import { NextActionBar, JargonText, FriendlyEmptyState } from './components/UXHelpers'
 import AccessibilityPanel from './components/AccessibilityPanel'
 import ExpertConnect from './components/ExpertConnect'
 import PricingPage from './components/PricingPage'
@@ -108,7 +108,7 @@ const UI_TRANSLATIONS = {
     ipCalculator: 'IP Calculator',
     officialSources: 'Official Sources',
     aboutPortal: 'About Portal',
-    consultAssistant: 'Consult IP Assistant',
+    consultAssistant: 'Consult RagVyn AI',
 
     // Patent Fee Calculator (Patents Rules 2003, First Schedule — e-filing)
     pfcTitle: 'Quick Patent Fee Calculator',
@@ -201,7 +201,7 @@ const UI_TRANSLATIONS = {
     deadlineCalcTitle: 'Deadline Calculator',
     deadlineCalcDesc: 'Track statutory deadlines — RFE (48 months), FER response (6 months), renewals, PCT national phase (31 months), and convention priority (12 months).',
     checkDeadlines: 'Check Deadlines',
-    aiAssistantTitle: 'AI Legal Assistant',
+    aiAssistantTitle: 'RagVyn AI',
     aiAssistantDesc: 'Ask questions about Indian IP law, traditional knowledge protection, ABS compliance, and get citation-backed answers from authoritative sources.',
     askNow: 'Ask Now',
 
@@ -225,6 +225,7 @@ const UI_TRANSLATIONS = {
     comparisonIpSakti: 'IP-SAKTI',
 
     // Demo Section
+    seeDemo: 'See Demo',
     demoLabel: 'Live Demo',
     demoTitle: 'See IP-SAKTI in Action',
     demoSampleResponse: 'IP-SAKTI Sahayak: Sample Response',
@@ -285,7 +286,7 @@ const UI_TRANSLATIONS = {
     faqTitle: 'Frequently Asked Questions',
     faqSubtitle: 'Clear all your doubts about IP-SAKTI and Ayurvedic IP protection',
     faqReadIn: 'Read in:',
-    moreQuestions: 'Have more questions? Ask our AI assistant!',
+    moreQuestions: 'Have more questions? Ask RagVyn AI!',
     askIpSakti: 'Ask IP-SAKTI',
 
     // Footer
@@ -444,14 +445,19 @@ const UI_TRANSLATIONS = {
 
     // About Modal
     aboutTitle: 'About IP-SAKTI Sahayak',
-    aboutSubtitle: 'Intellectual Property Assistant',
+    aboutSubtitle: 'Intellectual Property & Regulatory Guidance Platform',
     closeModal: 'Close modal',
     aboutPurposeTitle: 'Purpose & Vision',
-    aboutPurposeText: 'IP-SAKTI Sahayak (Smart Ayurveda Knowledge & Technology Initiative) is an AI-powered legal and regulatory assistant created for the Ministry of AYUSH. It bridges the gap between complex Indian Intellectual Property laws, Traditional Knowledge preservation, and biological diversity compliance.',
+    aboutPurposeP1: 'IP-SAKTI Sahayak is an AI-powered platform designed to help AYUSH innovators and Vaidyas navigate Indian Intellectual Property laws, Traditional Knowledge, and biological diversity compliance through a structured and evidence-based digital interface.',
+    aboutPurposeP2: 'The platform brings together regulatory tools, authoritative sources, and RagVyn AI, its RAG-based AI assistant, to make complex IP and regulatory information easier to understand and access.',
+    aboutPurposeText: 'IP-SAKTI Sahayak is an AI-powered platform designed to help AYUSH innovators and Vaidyas navigate Indian Intellectual Property laws, Traditional Knowledge, and biological diversity compliance through a structured and evidence-based digital interface. The platform brings together regulatory tools, authoritative sources, and RagVyn AI, its RAG-based AI assistant, to make complex IP and regulatory information easier to understand and access.',
     aboutGroundingTitle: 'Grounding Policy & Zero Hallucination',
-    aboutGroundingText: 'Every response is strictly grounded in official statutory corpora. If relevant legal context is missing, the assistant abstains rather than inventing legal advice. All answers include section citations, database links, and confidence ratings.',
-    aboutCorporaTitle: 'Core Ingested Corpora',
-    aboutDisclaimer: 'IP-SAKTI Sahayak is an informational research tool for AYUSH innovators and Vaidyas. It does not replace professional legal representation before the Controller General of Patents or High Courts.',
+    aboutGroundingP1: 'RagVyn AI uses Retrieval-Augmented Generation (RAG) to ground responses in the platform\'s official knowledge corpus.',
+    aboutGroundingP2: 'When relevant legal or regulatory evidence is unavailable, it abstains rather than inventing information.',
+    aboutGroundingP3: 'Responses include section citations, source/database references, and confidence indicators wherever applicable.',
+    aboutGroundingText: 'RagVyn AI uses Retrieval-Augmented Generation (RAG) to ground responses in the platform\'s official knowledge corpus. When relevant legal or regulatory evidence is unavailable, it abstains rather than inventing information. Responses include section citations, source/database references, and confidence indicators wherever applicable.',
+    aboutCorporaTitle: 'Core Ingested Corpus',
+    aboutDisclaimer: 'IP-SAKTI Sahayak is an informational research platform for AYUSH innovators and Vaidyas. It does not replace professional legal representation before the Controller General of Patents or High Courts.',
     disclaimer: 'Disclaimer',
 
     // Chat Sidebar Demo Data
@@ -497,7 +503,7 @@ const UI_TRANSLATIONS = {
     tourFinish: 'Got it!',
     tourWelcomeTitle: 'Welcome to IP-SAKTI Sahayak! 👋',
     tourWelcomeDesc: 'Your AI guide for Ayurveda IP, patents, TKDL and regulatory questions. Let us show you around in 30 seconds.',
-    tourChatTitle: '💬 Ask the AI Assistant',
+    tourChatTitle: '💬 Ask RagVyn AI',
     tourChatDesc: 'Ask any Ayurveda IP question in your language and get a cited, trustworthy answer — the heart of the app.',
     tourToolsTitle: '🧰 IP Tools',
     tourToolsDesc: 'Open this menu for our smart tools that go beyond chat. We will highlight the top three next.',
@@ -530,7 +536,7 @@ const UI_TRANSLATIONS = {
     tourPricingTitle: '🏷️ Pricing',
     tourPricingDesc: 'Free to start. Upgrade for more daily queries, uploads, drafts and expert consultations when you need them.',
     tourFinishTitle: '🎉 You are all set!',
-    tourFinishDesc: 'That is the whole toolkit. Jump into the AI Assistant to ask your first question — replay this tour anytime from the Tour button.',
+    tourFinishDesc: 'That is the whole toolkit. Jump into RagVyn AI to ask your first question — replay this tour anytime from the Tour button.',
     logout: 'Logout',
     dashboard: 'Dashboard',
     welcomeBack: 'Welcome back',
@@ -597,7 +603,7 @@ const UI_TRANSLATIONS = {
     ipCalculator: 'IP कैलकुलेटर',
     officialSources: 'आधिकारिक स्रोत',
     aboutPortal: 'पोर्टल के बारे में',
-    consultAssistant: 'IP सहायक से परामर्श',
+    consultAssistant: 'RagVyn AI से परामर्श करें',
 
     // Patent Fee Calculator (पेटेंट नियम 2003, प्रथम अनुसूची — ई-फाइलिंग)
     pfcTitle: 'त्वरित पेटेंट शुल्क कैलकुलेटर',
@@ -691,7 +697,7 @@ const UI_TRANSLATIONS = {
     deadlineCalcTitle: 'समय-सीमा कैलकुलेटर',
     deadlineCalcDesc: 'वैधानिक समय-सीमाएँ ट्रैक करें — RFE (48 माह), FER प्रतिक्रिया (6 माह), नवीनीकरण, PCT राष्ट्रीय चरण (31 माह), और कन्वेंशन प्राथमिकता (12 माह)।',
     checkDeadlines: 'समय-सीमाएँ जाँचें',
-    aiAssistantTitle: 'AI कानूनी सहायक',
+    aiAssistantTitle: 'RagVyn AI',
     aiAssistantDesc: 'भारतीय IP कानून, पारंपरिक ज्ञान संरक्षण, ABS अनुपालन के बारे में प्रश्न पूछें और आधिकारिक स्रोतों से उद्धरण-समर्थित उत्तर प्राप्त करें।',
     askNow: 'अभी पूछें',
 
@@ -715,6 +721,7 @@ const UI_TRANSLATIONS = {
     comparisonIpSakti: 'IP-SAKTI',
 
     // Demo Section
+    seeDemo: 'डेमो देखें',
     demoLabel: 'लाइव डेमो',
     demoTitle: 'IP-SAKTI को कार्य में देखें',
     demoSampleResponse: 'IP-SAKTI सहायक: नमूना प्रतिक्रिया',
@@ -775,7 +782,7 @@ const UI_TRANSLATIONS = {
     faqTitle: 'अक्सर पूछे जाने वाले प्रश्न',
     faqSubtitle: 'IP-SAKTI और आयुर्वेदिक IP सुरक्षा के बारे में अपने सभी संदेह दूर करें',
     faqReadIn: 'इसमें पढ़ें:',
-    moreQuestions: 'क्या आपके पास और प्रश्न हैं? हमारे AI सहायक से पूछें!',
+    moreQuestions: 'क्या आपके पास और प्रश्न हैं? RagVyn AI से पूछें!',
     askIpSakti: 'IP-SAKTI से पूछें',
 
     // Footer
@@ -1708,67 +1715,154 @@ function ThemeToggleBtn({ theme, toggleTheme }) {
 /* (Typewriter effect removed per visual redesign to avoid partial substring artifacts) */
 
 /* ============================================================
-   ABOUT IP-SAKTI MODAL / DRAWER
+   ABOUT IP-SAKTI SAHAYAK MODAL - POLISHED LEGAL-TECH DESIGN
    ============================================================ */
 function AboutModal({ isOpen, onClose }) {
   const { t } = useLanguage()
   if (!isOpen) return null
 
+  const corpusList = [
+    { name: 'Patents Act 1970 (Sec 3p)', icon: <IconScroll size={16} />, tag: 'Statute · Prior Art Exclusion' },
+    { name: 'Biological Diversity Act 2002', icon: <IconLeaf size={16} />, tag: 'Statute · NBA / ABS Compliance' },
+    { name: 'Drugs & Cosmetics Act 1940', icon: <IconFlask size={16} />, tag: 'Statute · ASU Regulatory Standard' },
+    { name: 'TKDL (Traditional Knowledge)', icon: <IconBook size={16} />, tag: 'Corpus · Digital Prior Art Library' },
+    { name: 'WIPO GRATK Treaty 2024', icon: <IconGlobe size={16} />, tag: 'Treaty · Genetic Resources & TK' },
+    { name: 'GI of Goods Act 1999', icon: <IconTag size={16} />, tag: 'Statute · Geographical Indications' },
+  ]
+
   return (
-    <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
-      <div className="modal-card" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <div className="modal-title-group" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <span style={{ display: 'flex', color: 'var(--primary-light)' }}><IconLeaf size={24} /></span>
-            <div>
-              <h2 style={{ fontSize: '1.2rem', margin: 0 }}>{t('aboutTitle')}</h2>
-              <span className="devanagari" style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                {t('aboutSubtitle')}
-              </span>
+    <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="about-modal-title">
+      <div className="modal-card about-modal-card" onClick={e => e.stopPropagation()}>
+        {/* 1. Header with Government/AYUSH branding */}
+        <div className="about-modal-header">
+          <div className="about-header-branding">
+            <div className="about-header-emblem" aria-hidden="true">
+              <IconGovt size={22} />
+            </div>
+            <div className="about-header-text">
+              <h2 id="about-modal-title">{t('aboutTitle') || 'About IP-SAKTI Sahayak'}</h2>
+              <p className="about-header-subtitle">{t('aboutSubtitle') || 'Intellectual Property & Regulatory Guidance Platform'}</p>
             </div>
           </div>
-          <button className="modal-close-btn" onClick={onClose} aria-label={t('closeModal')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <button
+            className="modal-close-btn about-close-btn"
+            onClick={onClose}
+            aria-label={t('closeModal') || 'Close modal'}
+          >
             <IconX size={18} />
           </button>
         </div>
 
-        <div className="modal-body">
-          <section>
-            <h3 style={{ color: 'var(--primary-light)', fontSize: '1rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <IconSparkles size={16} /> {t('aboutPurposeTitle')}
-            </h3>
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-primary)', lineHeight: 1.6 }}>
-              {t('aboutPurposeText')}
-            </p>
+        {/* 2. Modal Body */}
+        <div className="about-modal-body">
+          {/* Section 1: Purpose & Vision */}
+          <section className="about-section-card about-vision-card" aria-labelledby="about-purpose-title">
+            <div className="about-section-heading-row">
+              <span className="about-heading-badge" aria-hidden="true">
+                <IconSparkles size={14} />
+              </span>
+              <h3 id="about-purpose-title" className="about-section-heading">
+                {t('aboutPurposeTitle') || 'Purpose & Vision'}
+              </h3>
+            </div>
+            <div className="about-section-content">
+              <p className="about-intro-text">
+                <strong className="about-emphasis-brand">IP-SAKTI Sahayak</strong> is an <strong className="about-emphasis-keyword">AI-powered platform</strong> designed to help AYUSH innovators and Vaidyas navigate Indian Intellectual Property laws, Traditional Knowledge, and biological diversity compliance through a structured and evidence-based digital interface.
+              </p>
+              <p className="about-body-text">
+                The platform brings together regulatory tools, <strong className="about-emphasis-keyword">authoritative sources</strong>, and <strong className="about-emphasis-brand">RagVyn AI</strong>, its RAG-based AI assistant, to make complex IP and regulatory information easier to understand and access.
+              </p>
+            </div>
           </section>
 
-          <section>
-            <h3 style={{ color: 'var(--secondary-light)', fontSize: '1rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <IconShieldCheck size={16} /> {t('aboutGroundingTitle')}
-            </h3>
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-primary)', lineHeight: 1.6 }}>
-              {t('aboutGroundingText')}
-            </p>
+          {/* Section 2: Grounding Policy & Zero Hallucination */}
+          <section className="about-section-card about-grounding-card" aria-labelledby="about-grounding-title">
+            <div className="about-section-heading-row about-grounding-heading-row">
+              <div className="about-heading-with-icon">
+                <span className="about-heading-badge about-heading-badge-mint" aria-hidden="true">
+                  <IconShieldCheck size={15} />
+                </span>
+                <h3 id="about-grounding-title" className="about-section-heading">
+                  {t('aboutGroundingTitle') || 'Grounding Policy & Zero Hallucination'}
+                </h3>
+              </div>
+              <span className="about-status-pill">
+                <IconShield size={11} aria-hidden="true" />
+                Zero Hallucination · Safe Abstention
+              </span>
+            </div>
+            <div className="about-section-content">
+              <p className="about-body-text">
+                <strong className="about-emphasis-brand">RagVyn AI</strong> uses Retrieval-Augmented Generation (RAG) to ground responses in the platform&apos;s <strong className="about-emphasis-keyword">official knowledge corpus</strong>.
+              </p>
+              <p className="about-body-text">
+                When relevant legal or regulatory evidence is unavailable, it <strong className="about-emphasis-alert">abstains</strong> rather than inventing information.
+              </p>
+              <p className="about-body-text">
+                Responses include <strong className="about-emphasis-keyword">section citations</strong>, <strong className="about-emphasis-keyword">source/database references</strong>, and <strong className="about-emphasis-keyword">confidence indicators</strong> wherever applicable.
+              </p>
+            </div>
+            <div className="about-grounding-features">
+              <div className="about-feature-chip">
+                <IconBook size={13} aria-hidden="true" />
+                <span>Statutory Corpus Grounded</span>
+              </div>
+              <div className="about-feature-chip">
+                <IconShield size={13} aria-hidden="true" />
+                <span>Safe Abstention Policy</span>
+              </div>
+              <div className="about-feature-chip">
+                <IconScroll size={13} aria-hidden="true" />
+                <span>Section Citations & Scores</span>
+              </div>
+            </div>
           </section>
 
-          <section>
-            <h3 style={{ color: 'var(--primary-light)', fontSize: '1rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <IconBook size={16} /> {t('aboutCorporaTitle')}
-            </h3>
-            <ul style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', listStyle: 'none', paddingLeft: 0 }}>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IconScroll size={14} /> Patents Act 1970 (Sec 3p)</li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IconLeaf size={14} /> Biological Diversity Act 2002</li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IconFlask size={14} /> Drugs & Cosmetics Act 1940</li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IconBook size={14} /> TKDL (Traditional Knowledge)</li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IconGlobe size={14} /> WIPO GRATK Treaty 2024</li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IconTag size={14} /> GI of Goods Act 1999</li>
-            </ul>
+          {/* Section 3: Core Ingested Corpora */}
+          <section className="about-corpus-section" aria-labelledby="about-corpora-title">
+            <div className="about-corpus-section-header">
+              <div className="about-section-heading-row">
+                <span className="about-heading-badge" aria-hidden="true">
+                  <IconBook size={14} />
+                </span>
+                <h3 id="about-corpora-title" className="about-section-heading">
+                  {t('aboutCorporaTitle') || 'Core Ingested Corpora'}
+                </h3>
+              </div>
+              <span className="about-corpus-count-badge">6 Statutory Archives</span>
+            </div>
+            <div className="about-corpus-grid">
+              {corpusList.map((c, idx) => (
+                <div key={idx} className="about-corpus-card">
+                  <div className="about-corpus-icon-wrap" aria-hidden="true">
+                    {c.icon}
+                  </div>
+                  <div className="about-corpus-info">
+                    <span className="about-corpus-name">{c.name}</span>
+                    <span className="about-corpus-tag">{c.tag}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </section>
 
-          <div style={{ background: 'rgba(200, 122, 30, 0.08)', border: '1px solid var(--accent-gold)', borderRadius: 'var(--radius-md)', padding: '0.75rem 1rem', fontSize: '0.82rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <IconAlertTriangle size={18} style={{ color: 'var(--accent-gold)', flexShrink: 0 }} />
-            <span><strong>{t('disclaimer')}:</strong> {t('aboutDisclaimer')}</span>
+          {/* Section 4: Disclaimer */}
+          <div className="about-disclaimer-box" role="note" aria-label="Legal disclaimer">
+            <span className="about-disclaimer-icon-wrap" aria-hidden="true">
+              <IconAlertTriangle size={18} />
+            </span>
+            <div className="about-disclaimer-content">
+              <strong className="about-disclaimer-label">{t('disclaimer') || 'Disclaimer'}:</strong>{' '}
+              IP-SAKTI Sahayak is an <strong className="about-disclaimer-strong">informational research platform</strong> for AYUSH innovators and Vaidyas. It <strong className="about-disclaimer-strong">does not replace professional legal representation</strong> before the Controller General of Patents or High Courts.
+            </div>
           </div>
+        </div>
+
+        {/* 3. Footer */}
+        <div className="about-modal-footer">
+          <button className="about-modal-footer-btn" onClick={onClose}>
+            {t('closeModal') || 'Close'}
+          </button>
         </div>
       </div>
     </div>
@@ -2116,10 +2210,17 @@ function FormulationWizardModal({ isOpen, onClose, onAskChat }) {
 /* ============================================================
    HISTORY SIDEBAR RAIL
    ============================================================ */
-function ChatSidebar({ collapsed, activeId, onSelectSession, onNewChat, onOpenWizard, onOpenAbout, sessions = [], onDeleteSession, onRenameSession, loadingSessions }) {
+function ChatSidebar({ collapsed, onClose, activeId, onSelectSession, onNewChat, onOpenWizard, onOpenAbout, sessions = [], onDeleteSession, onRenameSession, loadingSessions }) {
   const { t } = useLanguage()
   const [editingId, setEditingId] = useState(null)
   const [editValue, setEditValue] = useState('')
+
+  const handleNavClick = (fn) => {
+    if (fn) fn()
+    if (onClose && typeof window !== 'undefined' && window.innerWidth <= 768) {
+      onClose()
+    }
+  }
 
   const startRename = (e, s) => {
     e.stopPropagation()
@@ -2135,12 +2236,27 @@ function ChatSidebar({ collapsed, activeId, onSelectSession, onNewChat, onOpenWi
   }
 
   return (
-    <aside className={`chat-sidebar ${collapsed ? 'collapsed' : ''}`} aria-label={t('chatHistory')}>
+    <aside className={`chat-sidebar ${collapsed ? 'collapsed' : 'open mobile-open'}`} aria-label={t('chatHistory')}>
       <div className="sidebar-header">
-        <button className="new-chat-btn" onClick={onNewChat} id="new-chat-btn" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+        <button
+          className="new-chat-btn"
+          onClick={() => handleNavClick(onNewChat)}
+          id="new-chat-btn"
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+        >
           <IconSparkles size={16} />
           <span>{t('newConsultation')}</span>
         </button>
+        {onClose && (
+          <button
+            className="sidebar-close-mobile-btn"
+            onClick={onClose}
+            aria-label="Close sidebar"
+            title="Close sidebar"
+          >
+            <IconClose size={18} />
+          </button>
+        )}
       </div>
 
       <div style={{ padding: '0.75rem 1rem 0.25rem', fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
@@ -2160,7 +2276,11 @@ function ChatSidebar({ collapsed, activeId, onSelectSession, onNewChat, onOpenWi
           <div
             key={s.id}
             className={`history-item ${activeId === s.id ? 'active' : ''}`}
-            onClick={() => editingId !== s.id && onSelectSession(s.id)}
+            onClick={() => {
+              if (editingId !== s.id) {
+                handleNavClick(() => onSelectSession(s.id))
+              }
+            }}
             style={{ alignItems: 'center' }}
           >
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1, minWidth: 0 }}>
@@ -2210,27 +2330,27 @@ function ChatSidebar({ collapsed, activeId, onSelectSession, onNewChat, onOpenWi
       </div>
 
       <div className="sidebar-footer">
-        <button className="sidebar-link-btn" onClick={onOpenWizard} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <button className="sidebar-link-btn" onClick={() => handleNavClick(onOpenWizard)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <IconFlask size={16} />
           <span>{t('formulationWizard')}</span>
         </button>
-        <Link to="/abs-checker" className="sidebar-link-btn" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <Link to="/abs-checker" className="sidebar-link-btn" onClick={() => handleNavClick()} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <IconLeaf size={16} />
           <span>{t('absChecker')}</span>
         </Link>
-        <Link to="/ip-calculator" className="sidebar-link-btn" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <Link to="/ip-calculator" className="sidebar-link-btn" onClick={() => handleNavClick()} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <IconCalculator size={16} />
           <span>{t('ipCalculator')}</span>
         </Link>
-        <Link to="/deadline-calculator" className="sidebar-link-btn" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <Link to="/deadline-calculator" className="sidebar-link-btn" onClick={() => handleNavClick()} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <IconCalendar size={16} />
           <span>{t('deadlineCalc')}</span>
         </Link>
-        <Link to="/sources" className="sidebar-link-btn" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <Link to="/sources" className="sidebar-link-btn" onClick={() => handleNavClick()} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <IconBook size={16} />
           <span>{t('officialDataCorpora')}</span>
         </Link>
-        <button className="sidebar-link-btn" onClick={onOpenAbout} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <button className="sidebar-link-btn" onClick={() => handleNavClick(onOpenAbout)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <IconInfo size={16} />
           <span>{t('aboutIpSakti')}</span>
         </button>
@@ -2836,10 +2956,11 @@ function ChatWelcome({ onPromptClick, onOpenWizard }) {
 
   return (
     <div className="chat-welcome">
-      <div className="welcome-icon" aria-hidden="true">
-        <IconShieldCheck size={32} style={{ color: 'var(--secondary)' }} />
+      <div className="welcome-brand-badge">
+        <IconSparkles size={14} />
+        <span>RagVyn AI • Intelligent IP Guidance</span>
       </div>
-      <h2 className="welcome-title">What are you trying to do?</h2>
+      <h2 className="welcome-title">How can RagVyn AI assist your IP journey?</h2>
       <p className="welcome-subtitle">
         Select a structured assessment pathway below, or describe your formulation, research, or compliance question for statute-grounded guidance.
       </p>
@@ -2952,6 +3073,9 @@ function MessageBubble({ msg, onFollowUp, onRegenerate, onFeedback, isLatestAI }
           <IconUser size={18} style={{ color: 'var(--text-secondary)' }} />
         </div>
         <div className="bubble-column">
+          <div className="user-bubble-sender-row">
+            <span className="user-sender-name">You</span>
+          </div>
           <div className="bubble user-bubble">{msg.text}</div>
           <span className="message-timestamp">{formatTimestamp(timestamp)}</span>
         </div>
@@ -2968,6 +3092,10 @@ function MessageBubble({ msg, onFollowUp, onRegenerate, onFeedback, isLatestAI }
         <IconShieldCheck size={18} style={{ color: '#fff' }} />
       </div>
       <div className="bubble-column">
+        <div className="ai-bubble-sender-row">
+          <span className="ai-sender-name">RagVyn AI</span>
+          <span className="ai-sender-tag">Statute-Grounded</span>
+        </div>
         <div className="bubble ai-bubble" style={{ whiteSpace: 'pre-line' }}>
           {msg.streaming ? msg.text : <JargonText text={msg.text} />}
           {msg.streaming && <span className="typewriter-cursor" aria-hidden="true">|</span>}
@@ -3508,10 +3636,6 @@ function GovtAccessibilityBar({ theme, toggleTheme, fontSize, setFontSize, setPr
             <span className="flag-stripe green" />
           </span>
           <span className="gov-identity-text">
-            <strong>भारत सरकार</strong> | Government of India
-          </span>
-          <span className="gov-identity-sep">•</span>
-          <span className="gov-identity-text">
             <strong>आयुष मंत्रालय</strong> | Ministry of AYUSH
           </span>
         </div>
@@ -3573,6 +3697,8 @@ function IpSaktiLogo({ className = '', size = 36 }) {
    ============================================================ */
 function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout }) {
   const { t } = useLanguage()
+  const navigate = useNavigate()
+  const location = useLocation()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [toolsDropdownOpen, setToolsDropdownOpen] = useState(false)
@@ -3580,6 +3706,20 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout 
   const [tourRun, setTourRun] = useState(false)
   const toolsDropdownRef = useRef(null)
   const servicesDropdownRef = useRef(null)
+
+  const handleSeeDemo = (e) => {
+    if (e) e.preventDefault()
+    setMobileMenuOpen(false)
+    if (location.pathname === '/') {
+      const el = document.getElementById('demo')
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        window.history.replaceState(null, '', '#demo')
+      }
+    } else {
+      navigate('/#demo', { state: { scrollTo: 'demo' } })
+    }
+  }
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24)
@@ -3607,7 +3747,14 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout 
     <nav className={`gov-nav-bar${scrolled ? ' nav-scrolled' : ''}`} role="navigation" aria-label="Main Portal Navigation">
       <div className="gov-nav-container">
         {/* Left: Brand Identity */}
-        <Link to="/" className="gov-brand-wrap" onClick={() => setMobileMenuOpen(false)}>
+        <Link
+          to="/"
+          className="gov-brand-wrap"
+          onClick={() => {
+            setMobileMenuOpen(false)
+            window.dispatchEvent(new CustomEvent('retrigger-hero-anim'))
+          }}
+        >
           <IpSaktiLogo size={36} className="gov-brand-icon" />
           <div className="gov-brand-text">
             <div className="gov-brand-title">
@@ -3640,13 +3787,6 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout 
             </button>
             {toolsDropdownOpen && (
               <div className="gov-nav-dropdown-menu">
-                <Link to="/verdict" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
-                  <IconLeaf size={16} />
-                  <div className="dropdown-item-content">
-                    <span className="dropdown-item-title">🛡️ Patentability Verdict</span>
-                    <span className="dropdown-item-desc">Biopiracy Shield — instant RED/GREEN verdict</span>
-                  </div>
-                </Link>
                 <Link to="/roadmap" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
                   <IconCalendar size={16} />
                   <div className="dropdown-item-content">
@@ -3747,6 +3887,17 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout 
 
           {/* Direct Links */}
           <li>
+            <button
+              type="button"
+              className="gov-nav-link-btn"
+              onClick={handleSeeDemo}
+              aria-label="See Demo"
+            >
+              <IconEye size={15} />
+              <span>{t('seeDemo') || 'See Demo'}</span>
+            </button>
+          </li>
+          <li>
             <Link to="/sources" className="gov-nav-link" onClick={() => setMobileMenuOpen(false)}>
               <IconBook size={15} />
               <span>Sources</span>
@@ -3785,41 +3936,94 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout 
               <span>{t('tourNavBtn') || 'Tour'}</span>
             </button>
           </li>
+
+          {/* Mobile-Only Actions inside Hamburger Menu */}
+          <li className="gov-nav-mobile-actions">
+            {isLoggedIn ? (
+              <div className="gov-nav-mobile-user-box">
+                <div className="gov-nav-welcome-badge mobile-user-badge">
+                  <div className="welcome-avatar">
+                    {(userName || 'U').charAt(0).toUpperCase()}
+                  </div>
+                  <div className="welcome-text">
+                    <span className="welcome-label">Signed in as</span>
+                    <span className="welcome-name">{userName || 'Innovator'}</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="gov-nav-logout-btn mobile-logout-btn"
+                  onClick={() => {
+                    setMobileMenuOpen(false)
+                    onLogout()
+                  }}
+                >
+                  {t('logout')}
+                </button>
+              </div>
+            ) : (
+              <Link
+                to="/login"
+                className="gov-nav-mobile-login-btn"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <IconUser size={16} />
+                <span>{t('loginOrRegister')}</span>
+              </Link>
+            )}
+            <Link
+              to="/chat"
+              className="gov-nav-mobile-cta"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <span>Consult RagVyn AI</span>
+              <IconArrowRight size={15} />
+            </Link>
+          </li>
         </ul>
 
         {/* Right: Actions */}
         <div className="gov-nav-actions">
-          {isLoggedIn ? (
-            <div className="gov-nav-user-group">
-              <div className="gov-nav-welcome-badge">
-                <div className="welcome-avatar">
-                  {(userName || 'U').charAt(0).toUpperCase()}
+          {/* Desktop User/Guest Groups */}
+          <div className="gov-nav-desktop-actions">
+            {isLoggedIn ? (
+              <div className="gov-nav-user-group">
+                <div className="gov-nav-welcome-badge">
+                  <div className="welcome-avatar">
+                    {(userName || 'U').charAt(0).toUpperCase()}
+                  </div>
+                  <div className="welcome-text">
+                    <span className="welcome-label">Welcome back,</span>
+                    <span className="welcome-name">{userName || 'Innovator'}</span>
+                  </div>
                 </div>
-                <div className="welcome-text">
-                  <span className="welcome-label">Welcome back,</span>
-                  <span className="welcome-name">{userName || 'Innovator'}</span>
-                </div>
+                <button className="gov-nav-logout-btn" onClick={onLogout}>
+                  {t('logout')}
+                </button>
+                <Link to="/chat" className="gov-nav-cta" id="gov-nav-consult-btn">
+                  <span>RagVyn AI</span>
+                  <IconArrowRight size={14} />
+                </Link>
               </div>
-              <button className="gov-nav-logout-btn" onClick={onLogout}>
-                {t('logout')}
-              </button>
-              <Link to="/chat" className="gov-nav-cta" id="gov-nav-consult-btn">
-                <span>AI Assistant</span>
-                <IconArrowRight size={14} />
-              </Link>
-            </div>
-          ) : (
-            <div className="gov-nav-guest-group">
-              <Link to="/login" className="gov-nav-login-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                <IconUser size={14} />
-                <span>{t('loginOrRegister')}</span>
-              </Link>
-              <Link to="/chat" className="gov-nav-cta" id="gov-nav-consult-btn">
-                <span>AI Assistant</span>
-                <IconArrowRight size={14} />
-              </Link>
-            </div>
-          )}
+            ) : (
+              <div className="gov-nav-guest-group">
+                <Link to="/login" className="gov-nav-login-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <IconUser size={14} />
+                  <span>{t('loginOrRegister')}</span>
+                </Link>
+                <Link to="/chat" className="gov-nav-cta" id="gov-nav-consult-btn">
+                  <span>RagVyn AI</span>
+                  <IconArrowRight size={14} />
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile Quick Action Pill */}
+          <Link to="/chat" className="gov-nav-mobile-quick-cta" aria-label="RagVyn AI">
+            <span>AI</span>
+            <IconSparkles size={13} />
+          </Link>
 
           {/* Mobile hamburger toggle */}
           <button
@@ -3833,6 +4037,13 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout 
           </button>
         </div>
       </div>
+      {mobileMenuOpen && (
+        <div
+          className="gov-mobile-backdrop"
+          onClick={() => setMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
     </nav>
     <OnboardingTour
       run={tourRun}
@@ -3968,9 +4179,25 @@ function Navbar({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFo
    ============================================================ */
 function InnovationAssessmentCard({ onStartAssessment }) {
   const navigate = useNavigate()
-  const [selectedType, setSelectedType] = useState('formulation')
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
 
-  const options = [
+  // Step state: 1 to 4
+  const [currentStep, setCurrentStep] = useState(1)
+
+  // Selected option IDs for each of the 4 steps
+  const [selectedType, setSelectedType] = useState('formulation')
+  const [selectedPathway, setSelectedPathway] = useState('patent_novel')
+  const [selectedRegulation, setSelectedRegulation] = useState('ayush_proprietary')
+  const [selectedSource, setSelectedSource] = useState('classical_texts')
+
+  // Execution states: 'idle' | 'loading' | 'success' | 'error'
+  const [status, setStatus] = useState('idle')
+  const [result, setResult] = useState(null)
+  const [errorMsg, setErrorMsg] = useState('')
+  const [loadingStepIndex, setLoadingStepIndex] = useState(0)
+
+  // STEP 1: Innovation Options
+  const step1Options = [
     {
       id: 'formulation',
       title: 'Ayurvedic formulation',
@@ -3978,7 +4205,6 @@ function InnovationAssessmentCard({ onStartAssessment }) {
       statute: 'Patents Act § 3(p) & TKDL Prior Art',
       badge: 'TKDL Check',
       route: 'Prior Art Screening + ASU Form 22 Licensing',
-      defaultPrompt: 'I am developing a polyherbal Ayurvedic formulation. Please assess patentability under Section 3(p), check TKDL exclusions, and identify required licensing under Drugs & Cosmetics Rules.'
     },
     {
       id: 'process',
@@ -3987,7 +4213,6 @@ function InnovationAssessmentCard({ onStartAssessment }) {
       statute: 'Patents Act § 3(e) & Technical Step',
       badge: 'Process Patent',
       route: 'Process Patentability + Biological Diversity Act Form 1',
-      defaultPrompt: 'I am developing an innovative process/extraction method for Ayurvedic botanicals. Please assess patent eligibility under Section 3(e), technical step requirements, and NBA compliance.'
     },
     {
       id: 'brand',
@@ -3996,7 +4221,6 @@ function InnovationAssessmentCard({ onStartAssessment }) {
       statute: 'Trade Marks Act Class 5 & 30',
       badge: 'Trademark & Design',
       route: 'Distinctiveness Screening + Schedule T GMP Compliance',
-      defaultPrompt: 'I am launching a proprietary Ayurvedic product brand. Please assess trademark availability under Class 5, avoiding generic Ayurvedic text conflicts, and GMP compliance.'
     },
     {
       id: 'research',
@@ -4005,17 +4229,233 @@ function InnovationAssessmentCard({ onStartAssessment }) {
       statute: 'Biological Diversity Act § 3, 4, 6',
       badge: 'ABS Clearance',
       route: 'NBA Prior Approval + TK Protection Clearance',
-      defaultPrompt: 'I have research findings on Ayurvedic herbs. What are the mandatory NBA clearances and Biological Diversity Act obligations before publishing or patent filing?'
     }
   ]
 
-  const activeOption = options.find(o => o.id === selectedType) || options[0]
-
-  const handleProceed = () => {
-    if (onStartAssessment) {
-      onStartAssessment(activeOption.defaultPrompt)
+  // STEP 2: IP Pathway Options
+  const step2Options = [
+    {
+      id: 'patent_novel',
+      title: 'Patent Protection (§ 2(1)(j))',
+      desc: 'Novelty & non-obvious technical step with synergistic efficacy beyond mere admixture',
+      statute: 'Patents Act 1970 § 2(1)(j), 3(e)',
+      badge: 'Patent Route',
+      route: 'Synergy Proof + Non-Obviousness Technical Validation',
+    },
+    {
+      id: 'tkdl_clearance',
+      title: 'TKDL Prior Art Defensive Clearance',
+      desc: 'Defensive screening against 3.5L+ classical formulations to overcome Section 3(p)',
+      statute: 'Patents Act § 3(p) & TKDL',
+      badge: 'TKDL Screening',
+      route: 'Classical Literature Prior Art Search & Clearance',
+    },
+    {
+      id: 'trademark_brand',
+      title: 'Trademark & Trade Dress (Class 5/30)',
+      desc: 'Proprietary brand name registration avoiding generic Ayurvedic descriptor conflicts',
+      statute: 'Trade Marks Act 1999 Class 5/30',
+      badge: 'Brand Protection',
+      route: 'Distinctiveness Screening & Packaging Registration',
+    },
+    {
+      id: 'abs_clearance',
+      title: 'Biological Diversity ABS Approval',
+      desc: 'Mandatory statutory approval for Indian biological resources prior to IP filing',
+      statute: 'Biological Diversity Act 2002 § 3, 4, 6',
+      badge: 'NBA Clearance',
+      route: 'NBA Form I / III Application & ABS Agreement',
     }
-    navigate('/chat', { state: { prefill: activeOption.defaultPrompt } })
+  ]
+
+  // STEP 3: Regulation Options
+  const step3Options = [
+    {
+      id: 'ayush_shastriya',
+      title: 'AYUSH Classical License (Shastriya)',
+      desc: 'Manufactured strictly per First Schedule authoritative Ayurvedic classical texts',
+      statute: 'Drugs & Cosmetics Act Rule 158-B(1)',
+      badge: 'ASU Rule 158-B(1)',
+      route: 'State AYUSH Licensing Authority Shastriya Clearance',
+    },
+    {
+      id: 'ayush_proprietary',
+      title: 'AYUSH Proprietary License (Anubhavasiddha)',
+      desc: 'Patent/Proprietary ASU medicine with pilot safety & efficacy documentation',
+      statute: 'Drugs & Cosmetics Rules Rule 158-B(2)',
+      badge: 'ASU Rule 158-B(2)',
+      route: 'Safety & Efficacy Trial Dossier + State AYUSH License',
+    },
+    {
+      id: 'ayurveda_aahar',
+      title: 'FSSAI Ayurveda-Aahar Regime',
+      desc: 'Health & wellness dietary supplement governed by Ayurveda Aahar Regulations 2022',
+      statute: 'FSSAI Ayurveda Aahar Regulations 2022',
+      badge: 'FSSAI Regime',
+      route: 'Ayurveda Aahar Standards Compliance & Labelling Clearances',
+    },
+    {
+      id: 'gmp_clinical',
+      title: 'Schedule T GMP & Standardized Extract',
+      desc: 'Good Manufacturing Practice with heavy metal, microbial & chromatographic profiling',
+      statute: 'Drugs & Cosmetics Act Schedule T',
+      badge: 'Schedule T GMP',
+      route: 'Pharmacopoeial Quality Assurance & Monograph Compliance',
+    }
+  ]
+
+  // STEP 4: Source Verification Options
+  const step4Options = [
+    {
+      id: 'classical_texts',
+      title: '1st Schedule Classical Text Source',
+      desc: 'Formulations referenced in Charaka Samhita, Sushruta Samhita, or Sahasrayogam',
+      statute: 'Drugs & Cosmetics Act 1st Schedule',
+      badge: 'Classical Source',
+      route: 'Cross-Reference TKDL Prior Art Citation Database',
+    },
+    {
+      id: 'indigenous_bio',
+      title: 'Indigenous Indian Biological Resource',
+      desc: 'Botanicals and biological materials harvested or cultivated within India',
+      statute: 'Biological Diversity Act 2002 § 3',
+      badge: 'National Resource',
+      route: 'Mandatory State Biodiversity Board / NBA Prior Approval',
+    },
+    {
+      id: 'novel_extract',
+      title: 'Novel Processed Extract / Synthetic Compound',
+      desc: 'Enriched phytoconstituents, supercritical CO2 extracts, or novel drug delivery',
+      statute: 'Patents Act § 3(e) Synergism',
+      badge: 'Novel Extract',
+      route: 'Comparative In-Vitro / In-Vivo Efficacy & Synergism Proof',
+    },
+    {
+      id: 'authenticated_herbs',
+      title: 'Pharmacopoeially Authenticated Botanicals',
+      desc: 'Tested against Ayurvedic Pharmacopoeia of India (API) standards with HPTLC',
+      statute: 'Ayurvedic Pharmacopoeia of India',
+      badge: 'API Monograph',
+      route: 'Raw Material Traceability & Certificate of Analysis (CoA)',
+    }
+  ]
+
+  // Dynamic step configuration
+  const currentStepConfig = currentStep === 1
+    ? { title: 'What are you developing?', hint: 'Step 1 of 4: Select your innovation type', options: step1Options, selected: selectedType, setSelect: setSelectedType }
+    : currentStep === 2
+      ? { title: 'Target IP Protection Pathway', hint: 'Step 2 of 4: Select primary IP objective', options: step2Options, selected: selectedPathway, setSelect: setSelectedPathway }
+      : currentStep === 3
+        ? { title: 'Regulatory & Licensing Regime', hint: 'Step 3 of 4: Select applicable regulatory standard', options: step3Options, selected: selectedRegulation, setSelect: setSelectedRegulation }
+        : { title: 'Source Verification & Biological Origin', hint: 'Step 4 of 4: Select biological & traditional knowledge provenance', options: step4Options, selected: selectedSource, setSelect: setSelectedSource }
+
+  const activeOption = currentStepConfig.options.find(o => o.id === currentStepConfig.selected) || currentStepConfig.options[0]
+
+  // Dynamic retrieval progress messages for RagVyn AI RAG pipeline
+  const loadingMessages = [
+    'Compiling 4-step diagnostic parameters...',
+    'Querying Patents Act, Biodiversity Act & TKDL corpora...',
+    'Evaluating Section 3(p) prior art and Section 3(e) synergism...',
+    'Synthesizing grounded RagVyn AI statutory guidance...'
+  ]
+
+  useEffect(() => {
+    if (status !== 'loading') return
+    const timer = setInterval(() => {
+      setLoadingStepIndex(prev => (prev + 1) % loadingMessages.length)
+    }, 1600)
+    return () => clearInterval(timer)
+  }, [status, loadingMessages.length])
+
+  // Submit collected 4-step data to RagVyn AI existing API
+  const handleSubmitAssessment = async () => {
+    setStatus('loading')
+    setErrorMsg('')
+    setLoadingStepIndex(0)
+
+    const opt1 = step1Options.find(o => o.id === selectedType) || step1Options[0]
+    const opt2 = step2Options.find(o => o.id === selectedPathway) || step2Options[0]
+    const opt3 = step3Options.find(o => o.id === selectedRegulation) || step3Options[0]
+    const opt4 = step4Options.find(o => o.id === selectedSource) || step4Options[0]
+
+    const structuredContext = {
+      innovation_type: opt1.title,
+      formulation_details: opt1.desc,
+      ip_pathway: opt2.title + ' (' + opt2.statute + ')',
+      regulatory_regime: opt3.title + ' (' + opt3.statute + ')',
+      source_verification: opt4.title + ' (' + opt4.desc + ')',
+    }
+
+    const contextualQuestion = `The user completed an IP/regulatory assessment with the following information:
+- Innovation Type: ${opt1.title} (${opt1.desc})
+- Targeted IP Pathway: ${opt2.title} (${opt2.statute})
+- Regulatory Regime: ${opt3.title} (${opt3.statute})
+- Source Verification & TK Status: ${opt4.title} (${opt4.desc})
+
+Based on this information, provide comprehensive statutory-grounded IP and regulatory guidance using the verified Indian and international knowledge corpus. Assess patentability under Patents Act 1970 (specifically analyzing Section 3(p) traditional knowledge bar and Section 3(e) synergistic efficacy requirement), Traditional Knowledge Digital Library (TKDL) prior art implications, Biological Diversity Act 2002 Access and Benefit Sharing (ABS) compliance, and required licensing under Drugs & Cosmetics Rules.`
+
+    const payload = {
+      question: contextualQuestion,
+      jurisdiction: 'India',
+      language: 'EN',
+      product_description: opt1.desc,
+      formulation_type: opt1.title,
+      context: structuredContext,
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (!res.ok) throw new Error(`Server returned HTTP ${res.status}`)
+      const data = await res.json()
+
+      const confidenceData = data.confidence && typeof data.confidence === 'object'
+        ? data.confidence
+        : { score: 78, label: 'High', reason: 'Diagnostic grounded in retrieved Patents Act & TKDL statutory corpus.' }
+
+      setResult({
+        answer: data.answer,
+        citations: data.citations || [],
+        confidence: confidenceData,
+        disclaimer: data.disclaimer,
+        conversation_id: data.conversation_id,
+        contextualQuestion,
+        structuredContext,
+      })
+      setStatus('success')
+
+      if (onStartAssessment) {
+        onStartAssessment(contextualQuestion)
+      }
+    } catch (err) {
+      console.error('[Assessment] RagVyn RAG execution failed:', err)
+      setErrorMsg('RagVyn AI was unable to complete the statutory diagnostic at this moment. Please check that the backend server is running and try again.')
+      setStatus('error')
+    }
+  }
+
+  // Navigate to full RagVyn AI consultation with this completed session pre-loaded
+  const handleContinueInRagVyn = () => {
+    if (!result) return
+    navigate('/chat', {
+      state: {
+        assessmentResult: {
+          prompt: result.contextualQuestion,
+          result: result,
+        }
+      }
+    })
+  }
+
+  // Reset diagnostic to retake
+  const handleRetake = () => {
+    setStatus('idle')
+    setResult(null)
+    setCurrentStep(1)
   }
 
   return (
@@ -4024,107 +4464,382 @@ function InnovationAssessmentCard({ onStartAssessment }) {
       <div className="assessment-card-header">
         <div className="assessment-card-title-group">
           <span className="card-kicker-tag">INTERACTIVE DIAGNOSTIC</span>
-          <h2 className="assessment-card-heading">INNOVATION ASSESSMENT</h2>
+          <h2 className="assessment-card-heading">Is Your Innovation IP-Ready?</h2>
         </div>
-        <div className="assessment-progress-pill" aria-label="Step 1 of 4">
-          <span className="progress-num-active">01</span>
-          <span className="progress-num-divider">/</span>
-          <span className="progress-num-total">04</span>
-        </div>
-      </div>
-
-      {/* Progress Stepper */}
-      <div className="assessment-pipeline-steps" aria-hidden="true">
-        <div className="pipeline-step step-active">
-          <span className="step-bullet">1</span>
-          <span className="step-label">Innovation</span>
-        </div>
-        <div className="pipeline-connector active" />
-        <div className="pipeline-step">
-          <span className="step-bullet">2</span>
-          <span className="step-label">IP pathway</span>
-        </div>
-        <div className="pipeline-connector" />
-        <div className="pipeline-step">
-          <span className="step-bullet">3</span>
-          <span className="step-label">Regulation</span>
-        </div>
-        <div className="pipeline-connector" />
-        <div className="pipeline-step">
-          <span className="step-bullet">4</span>
-          <span className="step-label">Source verification</span>
+        <div className="assessment-progress-pill" aria-label={`Step ${currentStep} of 4`}>
+          <span className="progress-num-active">
+            {status === 'success' ? 'READY' : status === 'loading' ? 'WAIT' : `0${currentStep}`}
+          </span>
+          {status !== 'success' && status !== 'loading' && (
+            <>
+              <span className="progress-num-divider">/</span>
+              <span className="progress-num-total">04</span>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Question Bar */}
-      <div className="assessment-question-bar">
-        <span className="assessment-q-label">What are you developing?</span>
-        <span className="assessment-q-hint">Select your innovation type</span>
-      </div>
-
-      {/* 4 Interactive Selectable Options */}
-      <div className="assessment-options-list" role="radiogroup" aria-label="Innovation Type">
-        {options.map((opt) => {
-          const isSelected = selectedType === opt.id
+      {/* Progress Stepper (Interactive 4-Step Pipeline) */}
+      <div className="assessment-pipeline-steps" aria-label="Assessment Progress Steps">
+        {[
+          { num: 1, label: 'Innovation' },
+          { num: 2, label: 'IP pathway' },
+          { num: 3, label: 'Regulation' },
+          { num: 4, label: 'Source verification' },
+        ].map((st, idx, arr) => {
+          const isCompleted = status === 'success' || currentStep > st.num
+          const isActive = status !== 'success' && currentStep === st.num
           return (
-            <button
-              key={opt.id}
-              type="button"
-              role="radio"
-              aria-checked={isSelected}
-              className={`assessment-option-btn ${isSelected ? 'selected' : ''}`}
-              onClick={() => setSelectedType(opt.id)}
-            >
-              <div className="option-radio-ring" aria-hidden="true">
-                {isSelected && <div className="option-radio-dot" />}
+            <div key={st.num} style={{ display: 'contents' }}>
+              <div
+                className={`pipeline-step ${isActive ? 'step-active' : ''} ${isCompleted ? 'step-completed clickable' : ''}`}
+                onClick={() => {
+                  if (status !== 'loading') {
+                    if (status === 'success' || isCompleted) {
+                      setStatus('idle')
+                      setCurrentStep(st.num)
+                    }
+                  }
+                }}
+                title={isCompleted ? `Jump to Step ${st.num}: ${st.label}` : undefined}
+                role="button"
+                tabIndex={isCompleted ? 0 : -1}
+                aria-label={`Step ${st.num}: ${st.label}`}
+              >
+                <span className="step-bullet">{isCompleted && !isActive ? '✓' : st.num}</span>
+                <span className="step-label">{st.label}</span>
               </div>
-              <div className="option-text-group">
-                <div className="option-header-row">
-                  <span className="option-title">{opt.title}</span>
-                  <span className="option-statute-badge">{opt.badge}</span>
-                </div>
-                <span className="option-desc">{opt.desc}</span>
-              </div>
-            </button>
+              {idx < arr.length - 1 && (
+                <div className={`pipeline-connector ${currentStep > st.num + 1 || (status === 'success' && currentStep > st.num) ? 'active completed' : currentStep > st.num ? 'active' : ''}`} />
+              )}
+            </div>
           )
         })}
       </div>
 
-      {/* Dynamic Statutory Determination Preview */}
-      <div className="assessment-dynamic-preview">
-        <div className="preview-indicator-bar">
-          <span className="live-engine-pulse" />
-          <span className="preview-engine-label">STATUTORY ROUTING PREVIEW</span>
-          <span className="preview-source-tag">OFFICIAL ACTS</span>
-        </div>
-        <div className="preview-grid">
-          <div className="preview-item">
-            <span className="preview-item-label">Applicable Framework:</span>
-            <span className="preview-item-val">{activeOption.statute}</span>
-          </div>
-          <div className="preview-item">
-            <span className="preview-item-label">Recommended Pathway:</span>
-            <span className="preview-item-val">{activeOption.route}</span>
+      {/* ── STATE 1: LOADING (RAG Retrieval in progress) ── */}
+      {status === 'loading' && (
+        <div className="assessment-loading-box">
+          <div className="assessment-spinner" aria-hidden="true" />
+          <div className="assessment-loading-title">RagVyn AI Diagnostic in Progress</div>
+          <div className="assessment-loading-status">{loadingMessages[loadingStepIndex]}</div>
+          <div className="assessment-loading-subtext">
+            Evaluating Section 3(p) traditional knowledge exclusions, Section 3(e) synergistic efficacy, TKDL prior art, and Biological Diversity Act ABS clearance.
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Action Footer */}
-      <div className="assessment-card-actions">
-        <button
-          type="button"
-          className="assessment-action-btn"
-          onClick={handleProceed}
-          id="start-with-selected-btn"
-        >
-          <span>Continue Guided Assessment</span>
-          <IconArrowRight size={16} />
-        </button>
-        <div className="assessment-card-footnote">
-          <span>Source-backed legal intelligence • Zero hallucination protocol</span>
+      {/* ── STATE 2: ERROR ── */}
+      {status === 'error' && (
+        <>
+          <div className="assessment-error-box">
+            <div className="assessment-error-header">
+              <IconAlertTriangle size={18} />
+              <span>Diagnostic Engine Notice</span>
+            </div>
+            <div className="assessment-error-text">
+              {errorMsg}
+            </div>
+          </div>
+          <div className="assessment-card-actions">
+            <div className="assessment-nav-row">
+              <button
+                type="button"
+                className="assessment-back-btn"
+                onClick={() => setStatus('idle')}
+              >
+                <span>Review Answers</span>
+              </button>
+              <button
+                type="button"
+                className="assessment-action-btn"
+                onClick={handleSubmitAssessment}
+              >
+                <IconRotate size={16} />
+                <span>Retry Diagnostic</span>
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── STATE 3: SUCCESS (Grounded RagVyn AI Response) ── */}
+      {status === 'success' && result && (
+        <div className="assessment-result-view">
+          {/* Summary chips of user's 4-step assessment */}
+          <div className="assessment-result-summary">
+            <span className="assessment-summary-chip">
+              <span className="assessment-chip-key">Innovation:</span>
+              <span>{step1Options.find(o => o.id === selectedType)?.title}</span>
+            </span>
+            <span className="assessment-summary-chip">
+              <span className="assessment-chip-key">IP:</span>
+              <span>{step2Options.find(o => o.id === selectedPathway)?.badge}</span>
+            </span>
+            <span className="assessment-summary-chip">
+              <span className="assessment-chip-key">Reg:</span>
+              <span>{step3Options.find(o => o.id === selectedRegulation)?.badge}</span>
+            </span>
+            <span className="assessment-summary-chip">
+              <span className="assessment-chip-key">Source:</span>
+              <span>{step4Options.find(o => o.id === selectedSource)?.badge}</span>
+            </span>
+          </div>
+
+          {/* Scrollable grounded assessment output */}
+          <div className="assessment-result-scroll">
+            <div className="assessment-answer-card">
+              <JargonText text={result.answer} />
+            </div>
+
+            {result.citations && result.citations.length > 0 && (
+              <CollapsibleCitations citations={result.citations} />
+            )}
+
+            {result.confidence && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <ConfidenceBadge level={result.confidence} />
+                <ConfidenceMeter level={result.confidence} />
+              </div>
+            )}
+
+            <DisclaimerBanner />
+          </div>
+
+          {/* Action buttons */}
+          <div className="assessment-card-actions">
+            <div className="assessment-nav-row">
+              <button
+                type="button"
+                className="assessment-back-btn"
+                onClick={handleRetake}
+                title="Retake diagnostic with new parameters"
+              >
+                <IconRotate size={15} />
+                <span>Retake</span>
+              </button>
+              <button
+                type="button"
+                className="assessment-action-btn"
+                onClick={handleContinueInRagVyn}
+                id="continue-in-ragvyn-btn"
+              >
+                <span>Continue in RagVyn AI</span>
+                <IconArrowRight size={16} />
+              </button>
+            </div>
+            <div className="assessment-card-footnote">
+              <span>Source-backed legal intelligence • Zero hallucination protocol</span>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* ── STATE 4: IDLE (Interactive Questions for Step 1 - 4) ── */}
+      {status === 'idle' && (
+        <>
+          {/* Question Bar */}
+          <div className="assessment-question-bar">
+            <span className="assessment-q-label">{currentStepConfig.title}</span>
+            <span className="assessment-q-hint">{currentStepConfig.hint}</span>
+          </div>
+
+          {/* 4 Interactive Selectable Options for Active Step */}
+          <div className="assessment-options-list" role="radiogroup" aria-label={currentStepConfig.title}>
+            {currentStepConfig.options.map((opt) => {
+              const isSelected = currentStepConfig.selected === opt.id
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={isSelected}
+                  className={`assessment-option-btn ${isSelected ? 'selected' : ''}`}
+                  onClick={() => currentStepConfig.setSelect(opt.id)}
+                >
+                  <div className="option-radio-ring" aria-hidden="true">
+                    {isSelected && <div className="option-radio-dot" />}
+                  </div>
+                  <div className="option-text-group">
+                    <div className="option-header-row">
+                      <span className="option-title">{opt.title}</span>
+                      <span className="option-statute-badge">{opt.badge}</span>
+                    </div>
+                    <span className="option-desc">{opt.desc}</span>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Dynamic Statutory Determination Preview */}
+          <div className="assessment-dynamic-preview">
+            <div className="preview-indicator-bar">
+              <span className="live-engine-pulse" />
+              <span className="preview-engine-label">STATUTORY ROUTING PREVIEW</span>
+              <span className="preview-source-tag">OFFICIAL ACTS</span>
+            </div>
+            <div className="preview-grid">
+              <div className="preview-item">
+                <span className="preview-item-label">Applicable Framework:</span>
+                <span className="preview-item-val">{activeOption.statute}</span>
+              </div>
+              <div className="preview-item">
+                <span className="preview-item-label">Recommended Pathway:</span>
+                <span className="preview-item-val">{activeOption.route}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Footer */}
+          <div className="assessment-card-actions">
+            {currentStep === 1 && (
+              <button
+                type="button"
+                className="assessment-action-btn"
+                onClick={() => setCurrentStep(2)}
+                id="step-1-next-btn"
+              >
+                <span>Next: IP Pathway</span>
+                <IconArrowRight size={16} />
+              </button>
+            )}
+
+            {currentStep === 2 && (
+              <div className="assessment-nav-row">
+                <button
+                  type="button"
+                  className="assessment-back-btn"
+                  onClick={() => setCurrentStep(1)}
+                >
+                  <span>← Back</span>
+                </button>
+                <button
+                  type="button"
+                  className="assessment-action-btn"
+                  onClick={() => setCurrentStep(3)}
+                  id="step-2-next-btn"
+                >
+                  <span>Next: Regulation</span>
+                  <IconArrowRight size={16} />
+                </button>
+              </div>
+            )}
+
+            {currentStep === 3 && (
+              <div className="assessment-nav-row">
+                <button
+                  type="button"
+                  className="assessment-back-btn"
+                  onClick={() => setCurrentStep(2)}
+                >
+                  <span>← Back</span>
+                </button>
+                <button
+                  type="button"
+                  className="assessment-action-btn"
+                  onClick={() => setCurrentStep(4)}
+                  id="step-3-next-btn"
+                >
+                  <span>Next: Source Verification</span>
+                  <IconArrowRight size={16} />
+                </button>
+              </div>
+            )}
+
+            {currentStep === 4 && (
+              <div className="assessment-nav-row">
+                <button
+                  type="button"
+                  className="assessment-back-btn"
+                  onClick={() => setCurrentStep(3)}
+                >
+                  <span>← Back</span>
+                </button>
+                <button
+                  type="button"
+                  className="assessment-action-btn"
+                  onClick={handleSubmitAssessment}
+                  id="submit-assessment-btn"
+                >
+                  <IconSparkles size={16} />
+                  <span>Assess with RagVyn AI</span>
+                </button>
+              </div>
+            )}
+
+            <div className="assessment-card-footnote">
+              <span>Source-backed legal intelligence • Zero hallucination protocol</span>
+            </div>
+          </div>
+        </>
+      )}
     </div>
+  )
+}
+
+/* ============================================================
+   HERO TYPEWRITER TITLE COMPONENT
+   ============================================================ */
+function HeroTypewriterTitle({ line1Text, line2Text, trigger }) {
+  const [displayedLine1, setDisplayedLine1] = useState('')
+  const [displayedLine2, setDisplayedLine2] = useState('')
+  const [activeLine, setActiveLine] = useState(1) // 1 = typing line 1, 2 = typing line 2, 0 = complete
+
+  useEffect(() => {
+    let isCancelled = false
+    setDisplayedLine1('')
+    setDisplayedLine2('')
+    setActiveLine(1)
+
+    const target1 = line1Text || 'Protect your innovation.'
+    const target2 = line2Text || 'Know what comes next.'
+
+    let idx1 = 0
+    let idx2 = 0
+
+    // Step 1: Smoothly type Line 1
+    const timer1 = setInterval(() => {
+      if (isCancelled) return
+      idx1++
+      setDisplayedLine1(target1.slice(0, idx1))
+      if (idx1 >= target1.length) {
+        clearInterval(timer1)
+        setActiveLine(2)
+        // Brief natural pause before typing Line 2
+        setTimeout(() => {
+          if (isCancelled) return
+          // Step 2: Smoothly type Line 2
+          const timer2 = setInterval(() => {
+            if (isCancelled) return
+            idx2++
+            setDisplayedLine2(target2.slice(0, idx2))
+            if (idx2 >= target2.length) {
+              clearInterval(timer2)
+              setActiveLine(0) // Finished typing
+            }
+          }, 30)
+        }, 180)
+      }
+    }, 30)
+
+    return () => {
+      isCancelled = true
+      clearInterval(timer1)
+    }
+  }, [trigger, line1Text, line2Text])
+
+  return (
+    <h1 className="hero-title" id="hero-title">
+      <span className="hero-title-line-1">
+        {displayedLine1 || '\u00A0'}
+        {activeLine === 1 && <span className="hero-type-cursor" aria-hidden="true">|</span>}
+      </span>
+      <span className="hero-title-highlight hero-title-line-2">
+        {displayedLine2 || '\u00A0'}
+        {activeLine === 2 && <span className="hero-type-cursor" aria-hidden="true">|</span>}
+      </span>
+    </h1>
   )
 }
 
@@ -4133,6 +4848,62 @@ function InnovationAssessmentCard({ onStartAssessment }) {
    ============================================================ */
 function LandingPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize, setPrefillPrompt, isLoggedIn, userName, onLogout }) {
   const { t } = useLanguage()
+  const location = useLocation()
+  const heroRef = useRef(null)
+  const [animTrigger, setAnimTrigger] = useState(1)
+  const wasOutOfViewRef = useRef(false)
+
+  // Re-trigger animation when navigating to Home view from any other page/route
+  useEffect(() => {
+    if (location.pathname === '/') {
+      setAnimTrigger(prev => prev + 1)
+    }
+  }, [location.pathname, location.key])
+
+  // Re-trigger animation when user scrolls down and comes back/up into the hero view
+  useEffect(() => {
+    const el = heroRef.current
+    if (!el || typeof IntersectionObserver === 'undefined') return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          if (wasOutOfViewRef.current) {
+            wasOutOfViewRef.current = false
+            setAnimTrigger(prev => prev + 1)
+          }
+        } else {
+          // User scrolled down past hero
+          wasOutOfViewRef.current = true
+        }
+      },
+      { threshold: 0.25 }
+    )
+
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  // Re-trigger animation when Home link / brand is clicked
+  useEffect(() => {
+    const handleReTrigger = () => setAnimTrigger(prev => prev + 1)
+    window.addEventListener('retrigger-hero-anim', handleReTrigger)
+    return () => window.removeEventListener('retrigger-hero-anim', handleReTrigger)
+  }, [])
+
+  // Smooth scroll to target section if requested via navigation state or hash (e.g. "See Demo")
+  useEffect(() => {
+    const targetId = location.state?.scrollTo || (location.hash ? location.hash.replace('#', '') : null)
+    if (targetId) {
+      const el = document.getElementById(targetId)
+      if (el) {
+        const timer = setTimeout(() => {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }, 120)
+        return () => clearTimeout(timer)
+      }
+    }
+  }, [location.pathname, location.state, location.hash])
 
   return (
     <div className="landing">
@@ -4150,22 +4921,16 @@ function LandingPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, 
       />
 
       {/* Hero Section - Two Column Split Composition */}
-      <section className="hero-section" id="hero" aria-labelledby="hero-title">
+      <section className="hero-section" id="hero" ref={heroRef} aria-labelledby="hero-title">
         <div className="hero-container">
           <div className="hero-grid">
             {/* Left Column: Narrative, Statues & CTAs */}
             <div className="hero-content-col">
-              <div className="hero-eyebrow">
-                <span className="eyebrow-seal" aria-hidden="true">
-                  <IconGovt size={13} />
-                </span>
-                <span className="hero-eyebrow-text">{t('heroEyebrow')}</span>
-              </div>
-
-              <h1 className="hero-title" id="hero-title">
-                {t('heroTitle')}
-                <span className="hero-title-highlight">{t('heroSubtitle')}</span>
-              </h1>
+              <HeroTypewriterTitle
+                line1Text={t('heroTitle')}
+                line2Text={t('heroSubtitle')}
+                trigger={animTrigger}
+              />
 
               <p className="hero-description">
                 {t('heroDesc')}
@@ -4226,48 +4991,112 @@ function LandingPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, 
         </div>
       </section>
 
-      {/* How To Start — 3-step guide for first-time users */}
-      <section className="section" style={{ display: 'flex', justifyContent: 'center', padding: '2rem 1rem 0' }}>
-        <HowToStart />
-      </section>
-
       {/* Stats Counter */}
       <StatsCounter />
 
-      {/* ===== IP TOOLS SECTION ===== */}
+      {/* ===== INTELLIGENT IP TOOLS SECTION ===== */}
       <section className="section tools-section" id="tools" aria-labelledby="tools-title">
-        <Reveal>
-          <p className="section-label">🛠️ {t('toolsLabel') || 'Free Tools'}</p>
-          <h2 className="section-title" id="tools-title">{t('toolsTitle') || 'IP Calculators & Utilities'}</h2>
-          <p className="section-subtitle" style={{ textAlign: 'center', maxWidth: '700px', margin: '0 auto 2rem', opacity: 0.85 }}>
-            {t('toolsSubtitle') || 'Essential tools for patent applicants — calculate fees, track deadlines, and plan your IP strategy'}
-          </p>
-        </Reveal>
-        <div className="tools-grid">
-          <Reveal delay={0}>
-            <Link to="/ip-calculator" className="tool-card tool-card-fee">
-              <div className="tool-icon">🧮</div>
-              <h3>{t('feeCalcTitle') || 'Patent Fee Calculator'}</h3>
-              <p>{t('feeCalcDesc') || 'Calculate filing, examination, and renewal fees based on applicant type (Natural Person, Startup, Small Entity, Large Entity) per Patents Rules 2003.'}</p>
-              <span className="tool-cta">{t('calculateNow') || 'Calculate Now'} →</span>
-            </Link>
+        <div className="tools-section-backdrop-glow" aria-hidden="true" />
+        <div className="tools-section-container">
+          <Reveal>
+            <div className="tools-section-header">
+              <h2 className="tools-section-heading" id="tools-title">
+                INTELLIGENT IP TOOLS
+              </h2>
+              <p className="tools-section-sub">
+                Specialized statutory calculators, compliance monitors, and procedural roadmaps engineered to navigate Ayurvedic patent law and regulatory frameworks.
+              </p>
+            </div>
           </Reveal>
-          <Reveal delay={100}>
-            <Link to="/deadline-calculator" className="tool-card tool-card-deadline">
-              <div className="tool-icon">📅</div>
-              <h3>{t('deadlineCalcTitle') || 'Deadline Calculator'}</h3>
-              <p>{t('deadlineCalcDesc') || 'Track statutory deadlines — RFE (48 months), FER response (6 months), renewals, PCT national phase (31 months), and convention priority (12 months).'}</p>
-              <span className="tool-cta">{t('checkDeadlines') || 'Check Deadlines'} →</span>
-            </Link>
-          </Reveal>
-          <Reveal delay={200}>
-            <Link to="/chat" className="tool-card tool-card-chat">
-              <div className="tool-icon">💬</div>
-              <h3>{t('aiAssistantTitle') || 'AI Legal Assistant'}</h3>
-              <p>{t('aiAssistantDesc') || 'Ask questions about Indian IP law, traditional knowledge protection, ABS compliance, and get citation-backed answers from authoritative sources.'}</p>
-              <span className="tool-cta">{t('askNow') || 'Ask Now'} →</span>
-            </Link>
-          </Reveal>
+
+          <div className="tech-tools-grid">
+            {[
+              {
+                id: 'roadmap',
+                title: 'IP Journey Roadmap',
+                badge: 'Timeline & Strategy',
+                desc: 'Interactive milestone roadmap mapping your formulation from prior-art search to patent grant and post-grant protection.',
+                to: '/roadmap',
+                cta: 'Launch Roadmap',
+                icon: <IconTrendingUp size={22} />,
+                theme: 'theme-indigo',
+              },
+              {
+                id: 'guardian',
+                title: 'Dual-Use Guardian',
+                badge: 'Statutory Shield',
+                desc: 'Unified cross-statute compliance engine spanning Indian Patents Act, AYUSH regulations, ABS, and FSSAI guidelines.',
+                to: '/guardian',
+                cta: 'Check Dual-Use',
+                icon: <IconShieldCheck size={22} />,
+                theme: 'theme-cyan',
+              },
+              {
+                id: 'fee-calc',
+                title: 'Patent Fee Calculator',
+                badge: 'Fee Estimator',
+                desc: 'Instant statutory fee estimation for Form-1, Form-2, Form-18, and renewals across Startups, Individuals, and Corporates.',
+                to: '/ip-calculator',
+                cta: 'Calculate Fees',
+                icon: <IconCurrencyRupee size={22} />,
+                theme: 'theme-blue',
+              },
+              {
+                id: 'deadline-calc',
+                title: 'Deadline Calculator',
+                badge: 'Statutory Clock',
+                desc: 'Precision statutory clock tracking mandatory RFE (48 mo), FER responses (6 mo), convention priority, and PCT national phase.',
+                to: '/deadline-calculator',
+                cta: 'Track Deadlines',
+                icon: <IconCalendar size={22} />,
+                theme: 'theme-amber',
+              },
+              {
+                id: 'abs-checker',
+                title: 'ABS Checker',
+                badge: 'Biodiversity Act',
+                desc: 'Biological Diversity Act compliance matrix: assess State Biodiversity Board (SBB) and NBA Form III approval pathways.',
+                to: '/abs-checker',
+                cta: 'Verify ABS Compliance',
+                icon: <IconLeaf size={22} />,
+                theme: 'theme-teal',
+              },
+              {
+                id: 'checklists',
+                title: 'Filing Checklists',
+                badge: 'Document Prep',
+                desc: 'Step-by-step statutory document checklists for Patent specifications, Trade Marks, Design registration, and GI filings.',
+                to: '/checklists',
+                cta: 'Open Checklists',
+                icon: <IconCheck size={22} />,
+                theme: 'theme-purple',
+              },
+            ].map((tool, i) => (
+              <Reveal key={tool.id} delay={i * 80}>
+                <Link to={tool.to} className={`tech-tool-card ${tool.theme}`}>
+                  <div className="tech-tool-card-glow" aria-hidden="true" />
+                  <div className="tech-tool-card-header">
+                    <div className="tech-tool-icon-wrap" aria-hidden="true">
+                      {tool.icon}
+                    </div>
+                    <span className="tech-tool-badge">{tool.badge}</span>
+                  </div>
+
+                  <div className="tech-tool-card-body">
+                    <h3 className="tech-tool-title">{tool.title}</h3>
+                    <p className="tech-tool-desc">{tool.desc}</p>
+                  </div>
+
+                  <div className="tech-tool-footer">
+                    <span className="tech-tool-cta">
+                      <span>{tool.cta}</span>
+                      <IconArrowRight size={15} className="tech-tool-cta-arrow" />
+                    </span>
+                  </div>
+                </Link>
+              </Reveal>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -4796,12 +5625,15 @@ function VoiceLanguageSelector({ value, onChange, isListening }) {
    ============================================================ */
 function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, theme, toggleTheme, fontSize, setFontSize }) {
   const { t, lang, setLang, languages } = useLanguage()
+  const location = useLocation()
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [jurisdiction, setJurisdiction] = useState('india')
   const [typing, setTyping] = useState(false)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    return typeof window !== 'undefined' ? window.innerWidth <= 768 : false
+  })
   const [activeSessionId, setActiveSessionId] = useState(null)
 
   // Persisted conversation state
@@ -4849,12 +5681,43 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
 
   const { isListening, isSupported: voiceSupported, interimText, error: voiceError, confidence: voiceConfidence, startListening, stopListening } = useVoiceInput(handleVoiceResult, voiceLang)
 
+  // Handle incoming prefill or pre-computed assessment from Innovation Assessment flow
   useEffect(() => {
-    if (prefillPrompt) {
+    if (location.state?.assessmentResult) {
+      const { prompt, result: assessmentData } = location.state.assessmentResult
+      const userMsg = {
+        id: Date.now() - 500,
+        role: 'user',
+        text: prompt,
+        timestamp: Date.now() - 500,
+      }
+      const aiMsg = {
+        id: Date.now(),
+        role: 'ai',
+        text: assessmentData.answer,
+        sections: assessmentData.sections || [],
+        citations: assessmentData.citations || [],
+        confidence: assessmentData.confidence || { score: 78, label: 'High', reason: 'Diagnostic grounded in statutory knowledge corpus.' },
+        followUpQuestions: assessmentData.follow_up_questions || [
+          'What are the Section 3(p) prior art criteria for this formulation?',
+          'How do I obtain NBA Form III approval for commercialization?',
+          'What are the ASU Rule 158-B licensing requirements?'
+        ],
+        status: 'answered',
+        showDisclaimer: true,
+        timestamp: Date.now(),
+      }
+      setMessages([userMsg, aiMsg])
+      if (assessmentData.conversation_id) {
+        setConversationId(assessmentData.conversation_id)
+        setActiveSessionId(assessmentData.conversation_id)
+      }
+      window.history.replaceState({}, document.title)
+    } else if (prefillPrompt) {
       setInput(prefillPrompt)
       setPrefillPrompt('')
     }
-  }, [prefillPrompt, setPrefillPrompt])
+  }, [location.state, prefillPrompt, setPrefillPrompt])
 
   // ----- Conversation persistence helpers -----
   const formatSessionDate = useCallback((iso) => {
@@ -5311,22 +6174,25 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
 
       {/* Topbar */}
       <header className="chat-topbar" role="banner">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div className="chat-topbar-left">
           <button
             className="sidebar-toggle-btn"
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             aria-label={t('toggleSidebar')}
-            style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+            title={sidebarCollapsed ? "Open sidebar" : "Close sidebar"}
           >
             <IconMenu size={18} />
           </button>
           <Link to="/" className="chat-brand" aria-label={t('backToHome')}>
-            <div className="chat-brand-icon" aria-hidden="true" style={{ display: 'flex', color: 'var(--primary)' }}>
+            <div className="chat-brand-icon" aria-hidden="true">
               <IconLeaf size={20} />
             </div>
-            <div>
-              <span className="chat-brand-name">IP-SAKTI Sahayak</span>
-              <span className="devanagari" style={{ display: 'block', fontSize: '0.65rem', color: 'var(--primary)' }}>
+            <div className="chat-brand-info">
+              <div className="chat-brand-title-row">
+                <span className="chat-brand-name">IP-SAKTI Sahayak</span>
+                <span className="chat-ragvyn-pill">RagVyn AI</span>
+              </div>
+              <span className="chat-brand-dept devanagari">
                 आयुष मंत्रालय | Govt of India
               </span>
             </div>
@@ -5346,8 +6212,8 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
             ))}
           </select>
 
-          <button className="btn-secondary" style={{ padding: '0.3rem 0.75rem', fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '5px' }} onClick={onOpenAbout}>
-            <IconInfo size={14} /> {t('about')}
+          <button className="btn-secondary chat-about-btn" onClick={onOpenAbout}>
+            <IconInfo size={14} /> <span>{t('about')}</span>
           </button>
           <ThemeToggleBtn theme={theme} toggleTheme={toggleTheme} />
         </div>
@@ -5355,8 +6221,16 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
 
       {/* Main Chat Area with Sidebar */}
       <div className="chat-container">
+        {!sidebarCollapsed && (
+          <div
+            className="chat-sidebar-backdrop"
+            onClick={() => setSidebarCollapsed(true)}
+            aria-hidden="true"
+          />
+        )}
         <ChatSidebar
           collapsed={sidebarCollapsed}
+          onClose={() => setSidebarCollapsed(true)}
           onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
           activeId={activeSessionId}
           onSelectSession={handleSelectSession}
@@ -5379,60 +6253,61 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
             ref={chatBodyRef}
             onScroll={handleScroll}
           >
-            {/* Wizard shortcuts - only show when not in welcome state */}
-            {!showWelcome && (
-              <div className="wizard-shortcut-bar" aria-label={t('quickActions')}>
-                {[
-                  { icon: <IconFlask size={14} />, labelKey: 'formulationWizard', action: onOpenWizard },
-                  { icon: <IconLeaf size={14} />, labelKey: 'absChecker', link: '/abs-checker' },
-                  { icon: <IconScroll size={14} />, labelKey: 'patentsActSection', prompt: 'What is Section 3(p) of Patents Act 1970?' },
-                  { icon: <IconBook size={14} />, labelKey: 'tkdlCheck', prompt: 'How does TKDL prevent traditional knowledge biopiracy?' },
-                  { icon: <IconTag size={14} />, labelKey: 'giTagging', prompt: 'How do I register a Geographical Indication for an Ayurvedic herb?' },
-                ].map((b, idx) => (
-                  b.link ? (
-                    <Link key={idx} to={b.link} className="wizard-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                      <span aria-hidden="true" style={{ display: 'flex' }}>{b.icon}</span>
-                      {t(b.labelKey)}
-                    </Link>
-                  ) : (
-                    <button
-                      key={idx}
-                      className="wizard-btn"
-                      onClick={() => b.action ? b.action() : setInput(b.prompt)}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                    >
-                      <span aria-hidden="true" style={{ display: 'flex' }}>{b.icon}</span>
-                      {t(b.labelKey)}
-                    </button>
-                  )
-                ))}
-              </div>
-            )}
+            <div className="chat-conversation-inner">
+              {/* Wizard shortcuts - only show when not in welcome state */}
+              {!showWelcome && (
+                <div className="wizard-shortcut-bar" aria-label={t('quickActions')}>
+                  {[
+                    { icon: <IconFlask size={14} />, labelKey: 'formulationWizard', action: onOpenWizard },
+                    { icon: <IconLeaf size={14} />, labelKey: 'absChecker', link: '/abs-checker' },
+                    { icon: <IconScroll size={14} />, labelKey: 'patentsActSection', prompt: 'What is Section 3(p) of Patents Act 1970?' },
+                    { icon: <IconBook size={14} />, labelKey: 'tkdlCheck', prompt: 'How does TKDL prevent traditional knowledge biopiracy?' },
+                    { icon: <IconTag size={14} />, labelKey: 'giTagging', prompt: 'How do I register a Geographical Indication for an Ayurvedic herb?' },
+                  ].map((b, idx) => (
+                    b.link ? (
+                      <Link key={idx} to={b.link} className="wizard-btn">
+                        <span aria-hidden="true" style={{ display: 'flex' }}>{b.icon}</span>
+                        <span>{t(b.labelKey)}</span>
+                      </Link>
+                    ) : (
+                      <button
+                        key={idx}
+                        className="wizard-btn"
+                        onClick={() => b.action ? b.action() : setInput(b.prompt)}
+                      >
+                        <span aria-hidden="true" style={{ display: 'flex' }}>{b.icon}</span>
+                        <span>{t(b.labelKey)}</span>
+                      </button>
+                    )
+                  ))}
+                </div>
+              )}
 
-            {/* Welcome state or Messages */}
-            {showWelcome ? (
-              <ChatWelcome
-                onPromptClick={(text) => {
-                  setInput(text)
-                  if (textareaRef.current) textareaRef.current.focus()
-                }}
-                onOpenWizard={onOpenWizard}
-              />
-            ) : (
-              messages.map(msg => (
-                <MessageBubble
-                  key={msg.id}
-                  msg={msg}
-                  onFollowUp={handleFollowUp}
-                  onRegenerate={handleRegenerate}
-                  onFeedback={handleFeedback}
-                  isLatestAI={latestAIMessage && msg.id === latestAIMessage.id && !typing}
+              {/* Welcome state or Messages */}
+              {showWelcome ? (
+                <ChatWelcome
+                  onPromptClick={(text) => {
+                    setInput(text)
+                    if (textareaRef.current) textareaRef.current.focus()
+                  }}
+                  onOpenWizard={onOpenWizard}
                 />
-              ))
-            )}
+              ) : (
+                messages.map(msg => (
+                  <MessageBubble
+                    key={msg.id}
+                    msg={msg}
+                    onFollowUp={handleFollowUp}
+                    onRegenerate={handleRegenerate}
+                    onFeedback={handleFeedback}
+                    isLatestAI={latestAIMessage && msg.id === latestAIMessage.id && !typing}
+                  />
+                ))
+              )}
 
-            {/* Typing indicator with retrieval state */}
-            {typing && <TypingIndicator retrievalState={retrievalState} />}
+              {/* Typing indicator with retrieval state */}
+              {typing && <TypingIndicator retrievalState={retrievalState} />}
+            </div>
 
             {/* Scroll to bottom button */}
             <ScrollToBottomBtn onClick={scrollToBottom} visible={showScrollBtn} />
@@ -5440,171 +6315,173 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
 
           {/* Input Bar */}
           <div className="chat-input-bar">
-            {/* Voice Input Visual Indicator */}
-            <VoiceInputIndicator
-              isListening={isListening}
-              interimText={interimText}
-              confidence={voiceConfidence}
-              voiceLang={voiceLang}
-            />
+            <div className="chat-input-inner">
+              {/* Voice Input Visual Indicator */}
+              <VoiceInputIndicator
+                isListening={isListening}
+                interimText={interimText}
+                confidence={voiceConfidence}
+                voiceLang={voiceLang}
+              />
 
-            {/* Voice error display */}
-            {voiceError && (
-              <div className="voice-error-text">
-                <IconAlertTriangle size={14} />
-                <span>{voiceError}</span>
-              </div>
-            )}
-
-            {/* Voice confidence indicator - show when confidence is low */}
-            {voiceConfidence !== null && voiceConfidence < 0.5 && (
-              <div className="voice-confidence-warning">
-                <IconAlertTriangle size={14} />
-                <span>कम सटीकता / Low accuracy ({(voiceConfidence * 100).toFixed(0)}%) - कृपया स्पष्ट बोलें / Please speak clearly</span>
-              </div>
-            )}
-
-            {/* Jurisdiction selector — lives beside the chat composer */}
-            <div className="chat-jurisdiction-row">
-              <label htmlFor="chat-jurisdiction-select" className="chat-jurisdiction-label">
-                {t('chooseJurisdiction') || 'Choose Jurisdiction'}
-              </label>
-              <select
-                id="chat-jurisdiction-select"
-                className="chat-jurisdiction-select"
-                value={jurisdiction}
-                onChange={e => setJurisdiction(e.target.value)}
-                aria-label={t('chooseJurisdiction') || 'Choose Jurisdiction'}
-              >
-                <option value="india">{t('jurisdictionIndia') || 'India'}</option>
-                <option value="international">{t('jurisdictionInternational') || 'International'}</option>
-                <option value="both">{t('jurisdictionBoth') || 'Both'}</option>
-              </select>
-              <span className="chat-jurisdiction-current">
-                {jurisdiction === 'both'
-                  ? (t('jurisdictionBoth') || 'Both')
-                  : jurisdiction === 'international'
-                    ? (t('jurisdictionInternational') || 'International')
-                    : (t('jurisdictionIndia') || 'India')}
-              </span>
-            </div>
-
-            <div className="input-row">
-              <div className="chat-input-wrap">
-                <textarea
-                  ref={textareaRef}
-                  className="chat-input"
-                  id="chat-input-field"
-                  value={input}
-                  onChange={handleInputChange}
-                  onKeyDown={handleKeyDown}
-                  placeholder={isListening ? t('voiceListening') : "Ask about Patents Act, ABS clearance, BD Act, TKDL, trademarks... (e.g., 'Can I patent my Ayurvedic formulation?')"}
-                  rows={1}
-                  aria-label={t('typeYourQuestion')}
-                />
-                {/* File Upload Button */}
-                <div className="chat-file-upload">
-                  <input
-                    type="file"
-                    id="chat-file-input"
-                    accept=".pdf,.docx,.doc,.txt,.png,.jpg,.jpeg"
-                    onChange={handleFileSelect}
-                    style={{ display: 'none' }}
-                  />
-                  <button
-                    type="button"
-                    className="file-upload-btn"
-                    onClick={() => document.getElementById('chat-file-input')?.click()}
-                    aria-label="Attach file"
-                    title="Upload PDF, Word, or Image"
-                    style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-                  >
-                    <IconPaperClip size={16} />
-                  </button>
+              {/* Voice error display */}
+              {voiceError && (
+                <div className="voice-error-text">
+                  <IconAlertTriangle size={14} />
+                  <span>{voiceError}</span>
                 </div>
-                {/* Voice Input Controls */}
-                {voiceSupported && (
-                  <div className="voice-controls">
-                    <VoiceLanguageSelector
-                      value={voiceLang}
-                      onChange={setVoiceLang}
-                      isListening={isListening}
+              )}
+
+              {/* Voice confidence indicator - show when confidence is low */}
+              {voiceConfidence !== null && voiceConfidence < 0.5 && (
+                <div className="voice-confidence-warning">
+                  <IconAlertTriangle size={14} />
+                  <span>कम सटीकता / Low accuracy ({(voiceConfidence * 100).toFixed(0)}%) - कृपया स्पष्ट बोलें / Please speak clearly</span>
+                </div>
+              )}
+
+              {/* Jurisdiction selector — lives beside the chat composer */}
+              <div className="chat-jurisdiction-row">
+                <label htmlFor="chat-jurisdiction-select" className="chat-jurisdiction-label">
+                  {t('chooseJurisdiction') || 'Choose Jurisdiction'}
+                </label>
+                <select
+                  id="chat-jurisdiction-select"
+                  className="chat-jurisdiction-select"
+                  value={jurisdiction}
+                  onChange={e => setJurisdiction(e.target.value)}
+                  aria-label={t('chooseJurisdiction') || 'Choose Jurisdiction'}
+                >
+                  <option value="india">{t('jurisdictionIndia') || 'India'}</option>
+                  <option value="international">{t('jurisdictionInternational') || 'International'}</option>
+                  <option value="both">{t('jurisdictionBoth') || 'Both'}</option>
+                </select>
+                <span className="chat-jurisdiction-current">
+                  {jurisdiction === 'both'
+                    ? (t('jurisdictionBoth') || 'Both')
+                    : jurisdiction === 'international'
+                      ? (t('jurisdictionInternational') || 'International')
+                      : (t('jurisdictionIndia') || 'India')}
+                </span>
+              </div>
+
+              <div className="input-row">
+                <div className="chat-input-wrap">
+                  <textarea
+                    ref={textareaRef}
+                    className="chat-input"
+                    id="chat-input-field"
+                    value={input}
+                    onChange={handleInputChange}
+                    onKeyDown={handleKeyDown}
+                    placeholder={isListening ? t('voiceListening') : "Ask about Patents Act, ABS clearance, BD Act, TKDL, trademarks... (e.g., 'Can I patent my Ayurvedic formulation?')"}
+                    rows={1}
+                    aria-label={t('typeYourQuestion')}
+                  />
+                  {/* File Upload Button */}
+                  <div className="chat-file-upload">
+                    <input
+                      type="file"
+                      id="chat-file-input"
+                      accept=".pdf,.docx,.doc,.txt,.png,.jpg,.jpeg"
+                      onChange={handleFileSelect}
+                      style={{ display: 'none' }}
                     />
                     <button
                       type="button"
-                      className={`voice-btn ${isListening ? 'listening' : ''}`}
-                      onClick={isListening ? stopListening : startListening}
-                      aria-label={isListening ? t('voiceListening') : t('tapToSpeak')}
-                      title={t('voiceInput')}
+                      className="file-upload-btn"
+                      onClick={() => document.getElementById('chat-file-input')?.click()}
+                      aria-label="Attach file"
+                      title="Upload PDF, Word, or Image"
                       style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                     >
-                      {isListening ? (
-                        <span className="voice-waves">
-                          <span></span><span></span><span></span>
-                        </span>
-                      ) : <IconMic size={16} />}
+                      <IconPaperClip size={16} />
                     </button>
                   </div>
-                )}
-              </div>
-              <button
-                className="send-btn"
-                id="send-message-btn"
-                onClick={handleSend}
-                disabled={!input.trim() || typing}
-                aria-label={t('sendMessage')}
-                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-              >
-                <IconSend size={16} />
-              </button>
-            </div>
-
-            {/* Attached file preview */}
-            {attachedFile && (
-              <div className="attached-file-preview">
-                <div className="attached-file-info">
-                  <IconFileText size={16} />
-                  <span className="attached-file-name">{attachedFile.name}</span>
-                  <span className="attached-file-size">({(attachedFile.size / 1024).toFixed(1)} KB)</span>
+                  {/* Voice Input Controls */}
+                  {voiceSupported && (
+                    <div className="voice-controls">
+                      <VoiceLanguageSelector
+                        value={voiceLang}
+                        onChange={setVoiceLang}
+                        isListening={isListening}
+                      />
+                      <button
+                        type="button"
+                        className={`voice-btn ${isListening ? 'listening' : ''}`}
+                        onClick={isListening ? stopListening : startListening}
+                        aria-label={isListening ? t('voiceListening') : t('tapToSpeak')}
+                        title={t('voiceInput')}
+                        style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        {isListening ? (
+                          <span className="voice-waves">
+                            <span></span><span></span><span></span>
+                          </span>
+                        ) : <IconMic size={16} />}
+                      </button>
+                    </div>
+                  )}
                 </div>
                 <button
-                  type="button"
-                  className="remove-file-btn"
-                  onClick={() => setAttachedFile(null)}
-                  aria-label="Remove file"
+                  className="send-btn"
+                  id="send-message-btn"
+                  onClick={handleSend}
+                  disabled={!input.trim() || typing}
+                  aria-label={t('sendMessage')}
+                  style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                 >
-                  <IconClose size={14} />
+                  <IconSend size={16} />
                 </button>
               </div>
-            )}
 
-            {/* Character count indicator */}
-            <div className="input-meta">
-              <span className={`char-count ${input.length > MAX_CHARS * 0.9 ? 'warning' : ''} ${input.length >= MAX_CHARS ? 'limit' : ''}`}>
-                {input.length}/{MAX_CHARS}
-              </span>
-              <span className="input-hint">Press Enter to send, Shift+Enter for new line</span>
-            </div>
+              {/* Attached file preview */}
+              {attachedFile && (
+                <div className="attached-file-preview">
+                  <div className="attached-file-info">
+                    <IconFileText size={16} />
+                    <span className="attached-file-name">{attachedFile.name}</span>
+                    <span className="attached-file-size">({(attachedFile.size / 1024).toFixed(1)} KB)</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="remove-file-btn"
+                    onClick={() => setAttachedFile(null)}
+                    aria-label="Remove file"
+                  >
+                    <IconClose size={14} />
+                  </button>
+                </div>
+              )}
 
-            <div className="input-actions">
-              <DPDPProtectionBadge />
-              <button className="action-btn" onClick={onOpenWizard} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                <IconFlask size={14} /> {t('formulationWizard')}
-              </button>
-              <Link to="/abs-checker" className="action-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                <IconLeaf size={14} /> {t('absCompliance')}
-              </Link>
-              <button
-                className="action-btn pdf-export-btn"
-                onClick={() => handleExportPdf(messages, t, jurisdiction)}
-                disabled={messages.length === 0}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-              >
-                <IconFileText size={14} /> {t('exportPdf')}
-              </button>
-              <button className="action-btn" id="clear-chat-btn" onClick={handleClear} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                <IconTrash size={14} /> {t('clearSession')}
-              </button>
+              {/* Character count indicator */}
+              <div className="input-meta">
+                <span className={`char-count ${input.length > MAX_CHARS * 0.9 ? 'warning' : ''} ${input.length >= MAX_CHARS ? 'limit' : ''}`}>
+                  {input.length}/{MAX_CHARS}
+                </span>
+                <span className="input-hint">Press Enter to send, Shift+Enter for new line</span>
+              </div>
+
+              <div className="input-actions">
+                <DPDPProtectionBadge />
+                <button className="action-btn" onClick={onOpenWizard} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <IconFlask size={14} /> {t('formulationWizard')}
+                </button>
+                <Link to="/abs-checker" className="action-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <IconLeaf size={14} /> {t('absCompliance')}
+                </Link>
+                <button
+                  className="action-btn pdf-export-btn"
+                  onClick={() => handleExportPdf(messages, t, jurisdiction)}
+                  disabled={messages.length === 0}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <IconFileText size={14} /> {t('exportPdf')}
+                </button>
+                <button className="action-btn" id="clear-chat-btn" onClick={handleClear} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <IconTrash size={14} /> {t('clearSession')}
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -31,7 +31,7 @@ const TOUR_FALLBACK = {
   tourFinish: 'Got it!',
   tourWelcomeTitle: 'Welcome to IP-SAKTI Sahayak! 👋',
   tourWelcomeDesc: 'Your AI guide for Ayurveda IP, patents, TKDL and regulatory questions. Let us show you around in 30 seconds.',
-  tourChatTitle: '💬 Ask the AI Assistant',
+  tourChatTitle: '💬 Ask RagVyn AI',
   tourChatDesc: 'Ask any Ayurveda IP question in your language and get a cited, trustworthy answer — the heart of the app.',
   tourToolsTitle: '🧰 IP Tools',
   tourToolsDesc: 'Open this menu for our smart tools that go beyond chat. Let us highlight the top three next.',
@@ -64,7 +64,7 @@ const TOUR_FALLBACK = {
   tourPricingTitle: '🏷️ Pricing',
   tourPricingDesc: 'Free to start. Upgrade for more daily queries, uploads, drafts and expert consultations when you need them.',
   tourFinishTitle: '🎉 You are all set!',
-  tourFinishDesc: 'That is the whole toolkit. Jump into the AI Assistant to ask your first question — replay this tour anytime from the Tour button.',
+  tourFinishDesc: 'That is the whole toolkit. Jump into RagVyn AI to ask your first question — replay this tour anytime from the Tour button.',
 }
 
 // Data-driven step list. `selector` is resolved live from the DOM.
