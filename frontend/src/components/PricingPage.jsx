@@ -460,8 +460,9 @@ export default function PricingPage() {
           <div style={{
             background: '#1a1a1a',
             borderRadius: '16px',
-            padding: '2rem',
-            maxWidth: '400px',
+            padding: '2rem 1.5rem',
+            width: 'min(calc(100% - 2rem), 400px)',
+            boxSizing: 'border-box',
             textAlign: 'center',
             border: '1px solid rgba(16, 185, 129, 0.3)'
           }}>

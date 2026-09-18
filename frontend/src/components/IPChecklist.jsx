@@ -193,7 +193,7 @@ export default function IPChecklist() {
 
         {!selectedChecklist ? (
           /* Checklist Selection Grid */
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: '1.5rem' }}>
             {checklists.map(cl => {
               const colors = categoryColors[cl.category] || categoryColors.patent
               return (

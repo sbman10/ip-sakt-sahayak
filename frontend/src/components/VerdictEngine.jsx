@@ -216,7 +216,7 @@ export default function VerdictEngine() {
             <div style={styles.actionRow}>
               <Link to="/checklists" style={styles.actionBtn}>✅ Filing Checklist</Link>
               <Link to="/ip-calculator" style={styles.actionBtn}>💰 Fee Calculator</Link>
-              <Link to="/chat" style={styles.actionBtn}>💬 Ask the Assistant</Link>
+              <Link to="/chat" style={styles.actionBtn}>💬 Ask RagVyn AI</Link>
             </div>
 
             <div style={styles.disclaimer}>{result.disclaimer}</div>

@@ -270,7 +270,7 @@ export default function ExpertConnect() {
             </div>
 
             {/* Expert Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: '1.5rem' }}>
               {filteredExperts.map(expert => (
                 <div
                   key={expert.id}
