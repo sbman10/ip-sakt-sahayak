@@ -4,6 +4,12 @@ import './index.css'
 import MatterWorkspace from './components/MatterWorkspace'
 import DocumentUpload from './components/DocumentUpload'
 import IPChecklist from './components/IPChecklist'
+import VerdictEngine from './components/VerdictEngine'
+import IPJourneyRoadmap from './components/IPJourneyRoadmap'
+import DualUseGuardian from './components/DualUseGuardian'
+import OnboardingTour from './components/OnboardingTour'
+import { NextActionBar, JargonText, HowToStart, FriendlyEmptyState } from './components/UXHelpers'
+import AccessibilityPanel from './components/AccessibilityPanel'
 import ExpertConnect from './components/ExpertConnect'
 import PricingPage from './components/PricingPage'
 import ToolIntro from './components/ToolIntro'
@@ -483,6 +489,48 @@ const UI_TRANSLATIONS = {
     magicLinkSent: 'Magic link sent! Check your email.',
     magicLinkError: 'Failed to send magic link. Try again.',
     loginOrRegister: 'Login / Register',
+    tourNavBtn: 'Tour',
+    tourStep: 'Step',
+    tourSkip: 'Skip',
+    tourPrev: 'Back',
+    tourNext: 'Next',
+    tourFinish: 'Got it!',
+    tourWelcomeTitle: 'Welcome to IP-SAKTI Sahayak! 👋',
+    tourWelcomeDesc: 'Your AI guide for Ayurveda IP, patents, TKDL and regulatory questions. Let us show you around in 30 seconds.',
+    tourChatTitle: '💬 Ask the AI Assistant',
+    tourChatDesc: 'Ask any Ayurveda IP question in your language and get a cited, trustworthy answer — the heart of the app.',
+    tourToolsTitle: '🧰 IP Tools',
+    tourToolsDesc: 'Open this menu for our smart tools that go beyond chat. We will highlight the top three next.',
+    tourVerdictTitle: '🛡️ Patentability Verdict',
+    tourVerdictDesc: 'Type a formula and get an instant RED / YELLOW / GREEN verdict on whether it can be patented — our Biopiracy Shield.',
+    tourRoadmapTitle: '🗺️ IP Journey Roadmap',
+    tourRoadmapDesc: 'See your full patent journey — filing to grant to renewals — as a personalized, grounded timeline.',
+    tourGuardianTitle: '🧭 Dual-Use Guardian',
+    tourGuardianDesc: 'One view for ALL the compliance you need — patent + AYUSH licence + Biodiversity (ABS) + FSSAI.',
+    tourFeeTitle: '💰 Fee Calculator',
+    tourFeeDesc: 'Estimate your exact patent filing fees (Natural Person / Startup / Others) with all the extra-claim and page charges.',
+    tourDeadlineTitle: '📅 Deadline Calculator',
+    tourDeadlineDesc: 'Never miss a date — track RFE, FER, publication, renewals and PCT deadlines from your filing date.',
+    tourAbsTitle: '🌿 ABS Checker',
+    tourAbsDesc: 'Check if your biological resource needs NBA / ABS approval under the Biodiversity Act before you commercialise.',
+    tourChecklistTitle: '✅ Filing Checklists',
+    tourChecklistDesc: 'Step-by-step interactive checklists for Patent, Trademark, GI and ABS filings with docs, time and fees.',
+    tourServicesTitle: '💼 Services',
+    tourServicesDesc: 'Open this menu for hands-on services — draft generation, your case workspace, document upload and expert help.',
+    tourDraftsTitle: '📝 Draft Generator',
+    tourDraftsDesc: 'Auto-fill official templates — patent Form-1, NBA Form III, and a Section 3(p) opposition petition.',
+    tourWorkspaceTitle: '🗂️ Matter Workspace',
+    tourWorkspaceDesc: 'Track all your IP cases in one place — statuses, notes and documents per matter (login required).',
+    tourDocumentsTitle: '📎 Document Upload',
+    tourDocumentsDesc: 'Upload your own PDFs and search them privately — kept separate from the public corpus (login required).',
+    tourExpertsTitle: '👥 Expert Connect',
+    tourExpertsDesc: 'Find verified IP experts by language and rating, request a consultation, and browse common IP FAQs.',
+    tourSourcesTitle: '📚 Sources',
+    tourSourcesDesc: 'See exactly which laws, acts and treaties power our answers — full transparency you can trust.',
+    tourPricingTitle: '🏷️ Pricing',
+    tourPricingDesc: 'Free to start. Upgrade for more daily queries, uploads, drafts and expert consultations when you need them.',
+    tourFinishTitle: '🎉 You are all set!',
+    tourFinishDesc: 'That is the whole toolkit. Jump into the AI Assistant to ask your first question — replay this tour anytime from the Tour button.',
     logout: 'Logout',
     dashboard: 'Dashboard',
     welcomeBack: 'Welcome back',
@@ -931,6 +979,48 @@ const UI_TRANSLATIONS = {
     magicLinkSent: 'मैजिक लिंक भेजा गया! अपना ईमेल जांचें।',
     magicLinkError: 'मैजिक लिंक भेजने में विफल। पुनः प्रयास करें।',
     loginOrRegister: 'लॉगिन / रजिस्टर',
+    tourNavBtn: 'टूर',
+    tourStep: 'चरण',
+    tourSkip: 'छोड़ें',
+    tourPrev: 'पीछे',
+    tourNext: 'आगे',
+    tourFinish: 'समझ गया!',
+    tourWelcomeTitle: 'IP-SAKTI सहायक में आपका स्वागत है! 👋',
+    tourWelcomeDesc: 'आयुर्वेद IP, पेटेंट, TKDL और नियामक सवालों के लिए आपका AI गाइड। 30 सेकंड में पूरा टूर देखिए।',
+    tourChatTitle: '💬 AI असिस्टेंट से पूछें',
+    tourChatDesc: 'अपनी भाषा में कोई भी आयुर्वेद IP सवाल पूछें और स्रोत-सहित भरोसेमंद जवाब पाएं — यही ऐप का दिल है।',
+    tourToolsTitle: '🧰 IP टूल्स',
+    tourToolsDesc: 'चैट से आगे के स्मार्ट टूल्स के लिए यह मेन्यू खोलें। अब हम टॉप तीन हाइलाइट करेंगे।',
+    tourVerdictTitle: '🛡️ पेटेंट योग्यता फैसला',
+    tourVerdictDesc: 'कोई फॉर्मूला लिखें और तुरंत RED / YELLOW / GREEN फैसला पाएं कि पेटेंट मिल सकता है या नहीं — हमारा Biopiracy Shield।',
+    tourRoadmapTitle: '🗺️ IP जर्नी रोडमैप',
+    tourRoadmapDesc: 'फाइलिंग से ग्रांट और रिन्यूअल तक — अपना पूरा पेटेंट सफर एक पर्सनलाइज़्ड टाइमलाइन में देखें।',
+    tourGuardianTitle: '🧭 ड्यूल-यूज़ गार्डियन',
+    tourGuardianDesc: 'सारी ज़रूरी कम्प्लायंस एक जगह — पेटेंट + AYUSH लाइसेंस + बायोडायवर्सिटी (ABS) + FSSAI।',
+    tourFeeTitle: '💰 फीस कैलकुलेटर',
+    tourFeeDesc: 'अपनी सटीक पेटेंट फाइलिंग फीस निकालें (Natural Person / Startup / Others) — अतिरिक्त क्लेम और पेज चार्ज सहित।',
+    tourDeadlineTitle: '📅 डेडलाइन कैलकुलेटर',
+    tourDeadlineDesc: 'कोई तारीख न छूटे — फाइलिंग डेट से RFE, FER, पब्लिकेशन, रिन्यूअल और PCT डेडलाइन ट्रैक करें।',
+    tourAbsTitle: '🌿 ABS चेकर',
+    tourAbsDesc: 'कमर्शियलाइज़ करने से पहले जांचें कि आपके बायोलॉजिकल रिसोर्स को बायोडायवर्सिटी एक्ट के तहत NBA / ABS अप्रूवल चाहिए या नहीं।',
+    tourChecklistTitle: '✅ फाइलिंग चेकलिस्ट',
+    tourChecklistDesc: 'पेटेंट, ट्रेडमार्क, GI और ABS फाइलिंग के लिए स्टेप-बाय-स्टेप इंटरैक्टिव चेकलिस्ट — डॉक्युमेंट, समय और फीस सहित।',
+    tourServicesTitle: '💼 सर्विसेज़',
+    tourServicesDesc: 'हैंड्स-ऑन सर्विसेज़ के लिए यह मेन्यू खोलें — ड्राफ्ट जनरेशन, केस वर्कस्पेस, डॉक्युमेंट अपलोड और एक्सपर्ट मदद।',
+    tourDraftsTitle: '📝 ड्राफ्ट जनरेटर',
+    tourDraftsDesc: 'आधिकारिक टेम्पलेट अपने-आप भरें — पेटेंट Form-1, NBA Form III, और Section 3(p) विरोध याचिका।',
+    tourWorkspaceTitle: '🗂️ मैटर वर्कस्पेस',
+    tourWorkspaceDesc: 'अपने सभी IP केस एक जगह ट्रैक करें — हर मैटर का स्टेटस, नोट्स और डॉक्युमेंट (लॉगिन ज़रूरी)।',
+    tourDocumentsTitle: '📎 डॉक्युमेंट अपलोड',
+    tourDocumentsDesc: 'अपनी PDF अपलोड करें और निजी तौर पर सर्च करें — पब्लिक कॉर्पस से अलग रखी जाती हैं (लॉगिन ज़रूरी)।',
+    tourExpertsTitle: '👥 एक्सपर्ट कनेक्ट',
+    tourExpertsDesc: 'भाषा और रेटिंग से वेरिफाइड IP एक्सपर्ट ढूंढें, कंसल्टेशन रिक्वेस्ट करें, और आम IP FAQ पढ़ें।',
+    tourSourcesTitle: '📚 स्रोत',
+    tourSourcesDesc: 'देखें कि कौन-से कानून, एक्ट और संधियां हमारे जवाबों को शक्ति देती हैं — पूरी पारदर्शिता जिस पर आप भरोसा कर सकें।',
+    tourPricingTitle: '🏷️ प्राइसिंग',
+    tourPricingDesc: 'शुरुआत मुफ़्त। ज़्यादा डेली क्वेरी, अपलोड, ड्राफ्ट और एक्सपर्ट कंसल्टेशन के लिए ज़रूरत पड़ने पर अपग्रेड करें।',
+    tourFinishTitle: '🎉 आप तैयार हैं!',
+    tourFinishDesc: 'यही है पूरा टूलकिट। अपना पहला सवाल पूछने के लिए AI असिस्टेंट में जाएं — यह टूर कभी भी Tour बटन से दोबारा देख सकते हैं।',
     logout: 'लॉगआउट',
     dashboard: 'डैशबोर्ड',
     welcomeBack: 'वापसी पर स्वागत है',
@@ -2721,7 +2811,22 @@ function MessageActions({ msg, onRegenerate, onFeedback }) {
 }
 
 // Welcome/Empty state component (Guided Assessment)
-function ChatWelcome({ onPromptClick }) {
+function ChatWelcome({ onPromptClick, onOpenWizard }) {
+  const navigate = useNavigate()
+  // Discovery shortcuts to EXISTING tools — reuse existing routes / wizard handler only.
+  const ipTools = [
+    { icon: '🧪', label: 'Formulation Wizard', desc: 'Guided IP pathway assessment', onClick: () => { if (onOpenWizard) onOpenWizard() } },
+    { icon: '⚖️', label: 'Patentability Verdict', desc: 'Traffic-light patent screening', onClick: () => navigate('/verdict') },
+    { icon: '🗺️', label: 'IP Journey Roadmap', desc: 'Personalized filing timeline', onClick: () => navigate('/roadmap') },
+    { icon: '🛡️', label: 'Dual-Use Guardian', desc: 'IP + AYUSH + ABS compliance', onClick: () => navigate('/guardian') },
+    { icon: '🌿', label: 'ABS Checker', desc: 'Biodiversity access & benefit-sharing', onClick: () => navigate('/abs-checker') },
+    { icon: '🧮', label: 'IP Calculator', desc: 'Patent fees by applicant type', onClick: () => navigate('/ip-calculator') },
+    { icon: '📅', label: 'Deadline Calculator', desc: 'RFE, FER, renewals & PCT dates', onClick: () => navigate('/deadline-calculator') },
+    { icon: '✅', label: 'Filing Checklists', desc: 'Step-by-step IP filing guides', onClick: () => navigate('/checklists') },
+    { icon: '📝', label: 'Draft Generator', desc: 'Forms & opposition drafts', onClick: () => navigate('/drafts') },
+    { icon: '📚', label: 'Official Data Corpora', desc: 'Browse the cited source library', onClick: () => navigate('/sources') },
+  ]
+
   const exampleQuestions = [
     { icon: <IconScroll size={18} />, text: 'Can I patent my Ayurvedic formulation with novel extraction?', category: 'Patent / IP' },
     { icon: <IconLeaf size={18} />, text: 'What are the ABS compliance requirements under Biological Diversity Act?', category: 'Biodiversity / ABS' },
@@ -2766,6 +2871,55 @@ function ChatWelcome({ onPromptClick }) {
               <span className="example-icon" aria-hidden="true">{q.icon}</span>
               <span className="example-text">{q.text}</span>
               <span className="example-category">{q.category}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ width: '100%', maxWidth: 860, margin: '2.5rem auto 0.5rem', textAlign: 'center' }}>
+        <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--secondary, #1E8449)', margin: '0 0 4px' }}>
+          Explore IP Tools
+        </h3>
+        <p style={{ fontSize: '0.9rem', opacity: 0.75, margin: '0 0 1.25rem' }}>
+          Quick access to tools for formulation, compliance, IP calculations and regulatory research.
+        </p>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+          gap: 14,
+        }}>
+          {ipTools.map((tool, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={tool.onClick}
+              style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6,
+                padding: '16px 16px', borderRadius: 16, cursor: 'pointer', textAlign: 'left',
+                background: 'var(--surface, #ffffff)',
+                border: '1px solid rgba(20,61,48,0.12)',
+                boxShadow: '0 1px 3px rgba(20,61,48,0.06)',
+                transition: 'transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-3px)'
+                e.currentTarget.style.boxShadow = '0 8px 20px rgba(20,61,48,0.14)'
+                e.currentTarget.style.borderColor = 'rgba(30,132,73,0.5)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = '0 1px 3px rgba(20,61,48,0.06)'
+                e.currentTarget.style.borderColor = 'rgba(20,61,48,0.12)'
+              }}
+            >
+              <span style={{
+                fontSize: 22, lineHeight: 1,
+                width: 40, height: 40, borderRadius: 10,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'linear-gradient(135deg, rgba(30,132,73,0.12), rgba(212,175,55,0.12))',
+              }} aria-hidden="true">{tool.icon}</span>
+              <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary, #143D30)' }}>{tool.label}</span>
+              <span style={{ fontSize: '0.8rem', opacity: 0.7, lineHeight: 1.3 }}>{tool.desc}</span>
             </button>
           ))}
         </div>
@@ -2815,7 +2969,7 @@ function MessageBubble({ msg, onFollowUp, onRegenerate, onFeedback, isLatestAI }
       </div>
       <div className="bubble-column">
         <div className="bubble ai-bubble" style={{ whiteSpace: 'pre-line' }}>
-          {msg.text}
+          {msg.streaming ? msg.text : <JargonText text={msg.text} />}
           {msg.streaming && <span className="typewriter-cursor" aria-hidden="true">|</span>}
         </div>
 
@@ -2836,6 +2990,9 @@ function MessageBubble({ msg, onFollowUp, onRegenerate, onFeedback, isLatestAI }
         />
 
         <span className="message-timestamp">{formatTimestamp(timestamp)}</span>
+
+        {/* Smart next-action buttons derived from the answer text */}
+        {isLatestAI && !msg.streaming && <NextActionBar text={msg.text} />}
 
         {/* Follow-up questions from response */}
         {isLatestAI && followUps.length > 0 && onFollowUp && (
@@ -3374,37 +3531,21 @@ function GovtAccessibilityBar({ theme, toggleTheme, fontSize, setFontSize, setPr
             </button>
           </form>
 
-          <div className="font-size-controls" aria-label="Font scale accessibility controls">
-            <button
-              className={`font-size-btn ${fontSize === 'sm' ? 'active' : ''}`}
-              onClick={() => setFontSize('sm')}
-              title="Decrease Font Size (A-)"
-            >
-              A-
-            </button>
-            <button
-              className={`font-size-btn ${fontSize === 'md' ? 'active' : ''}`}
-              onClick={() => setFontSize('md')}
-              title="Standard Font Size (A)"
-            >
-              A
-            </button>
-            <button
-              className={`font-size-btn ${fontSize === 'lg' ? 'active' : ''}`}
-              onClick={() => setFontSize('lg')}
-              title="Increase Font Size (A+)"
-            >
-              A+
-            </button>
-          </div>
-
           <GlobalLanguageSelector />
 
           <ThemeToggleBtn theme={theme} toggleTheme={toggleTheme} />
 
-          <a href="#hero-title" className="gov-skip-link" title="Skip to content" aria-label="Skip to main content" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-            <IconAccessibility size={15} />
-          </a>
+          <button
+            type="button"
+            className="gov-skip-link"
+            title="Accessibility options"
+            aria-label="Open accessibility options"
+            onClick={() => { if (window.__openAccessibility) window.__openAccessibility() }}
+            style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '5px', background: 'rgba(212,175,55,0.18)', border: '1.5px solid rgba(212,175,55,0.7)', borderRadius: '18px', cursor: 'pointer', padding: '5px 12px', color: 'inherit', fontWeight: 700 }}
+          >
+            <IconAccessibility size={20} />
+            <span style={{ fontSize: '0.78rem' }}>Accessibility</span>
+          </button>
         </div>
       </div>
     </div>
@@ -3436,6 +3577,7 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout 
   const [scrolled, setScrolled] = useState(false)
   const [toolsDropdownOpen, setToolsDropdownOpen] = useState(false)
   const [servicesDropdownOpen, setServicesDropdownOpen] = useState(false)
+  const [tourRun, setTourRun] = useState(false)
   const toolsDropdownRef = useRef(null)
   const servicesDropdownRef = useRef(null)
 
@@ -3461,6 +3603,7 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout 
   }, [])
 
   return (
+    <>
     <nav className={`gov-nav-bar${scrolled ? ' nav-scrolled' : ''}`} role="navigation" aria-label="Main Portal Navigation">
       <div className="gov-nav-container">
         {/* Left: Brand Identity */}
@@ -3484,6 +3627,7 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout 
             <button
               type="button"
               className="gov-nav-link-btn gov-nav-dropdown-trigger"
+              data-tour="ip-tools"
               onClick={() => {
                 setToolsDropdownOpen(!toolsDropdownOpen)
                 setServicesDropdownOpen(false)
@@ -3496,6 +3640,27 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout 
             </button>
             {toolsDropdownOpen && (
               <div className="gov-nav-dropdown-menu">
+                <Link to="/verdict" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
+                  <IconLeaf size={16} />
+                  <div className="dropdown-item-content">
+                    <span className="dropdown-item-title">🛡️ Patentability Verdict</span>
+                    <span className="dropdown-item-desc">Biopiracy Shield — instant RED/GREEN verdict</span>
+                  </div>
+                </Link>
+                <Link to="/roadmap" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
+                  <IconCalendar size={16} />
+                  <div className="dropdown-item-content">
+                    <span className="dropdown-item-title">🗺️ IP Journey Roadmap</span>
+                    <span className="dropdown-item-desc">Personalized filing-to-grant timeline</span>
+                  </div>
+                </Link>
+                <Link to="/guardian" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
+                  <IconLeaf size={16} />
+                  <div className="dropdown-item-content">
+                    <span className="dropdown-item-title">🧭 Dual-Use Guardian</span>
+                    <span className="dropdown-item-desc">IP + AYUSH + ABS + FSSAI in one view</span>
+                  </div>
+                </Link>
                 <Link to="/ip-calculator" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
                   <IconCurrencyRupee size={16} />
                   <div className="dropdown-item-content">
@@ -3533,6 +3698,7 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout 
             <button
               type="button"
               className="gov-nav-link-btn gov-nav-dropdown-trigger"
+              data-tour="services"
               onClick={() => {
                 setServicesDropdownOpen(!servicesDropdownOpen)
                 setToolsDropdownOpen(false)
@@ -3605,6 +3771,20 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout 
               <span>About</span>
             </button>
           </li>
+          <li>
+            <button
+              type="button"
+              className="gov-nav-link-btn"
+              onClick={() => {
+                setMobileMenuOpen(false)
+                setTourRun(true)
+              }}
+              title="Take a guided tour"
+            >
+              <IconInfo size={15} />
+              <span>{t('tourNavBtn') || 'Tour'}</span>
+            </button>
+          </li>
         </ul>
 
         {/* Right: Actions */}
@@ -3654,6 +3834,14 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout 
         </div>
       </div>
     </nav>
+    <OnboardingTour
+      run={tourRun}
+      onClose={() => setTourRun(false)}
+      onOpenTools={(open) => setToolsDropdownOpen(open)}
+      onOpenServices={(open) => setServicesDropdownOpen(open)}
+      t={t}
+    />
+    </>
   )
 }
 
@@ -4036,6 +4224,11 @@ function LandingPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, 
             </div>
           </div>
         </div>
+      </section>
+
+      {/* How To Start — 3-step guide for first-time users */}
+      <section className="section" style={{ display: 'flex', justifyContent: 'center', padding: '2rem 1rem 0' }}>
+        <HowToStart />
       </section>
 
       {/* Stats Counter */}
@@ -5223,6 +5416,7 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
                   setInput(text)
                   if (textareaRef.current) textareaRef.current.focus()
                 }}
+                onOpenWizard={onOpenWizard}
               />
             ) : (
               messages.map(msg => (
@@ -7972,6 +8166,7 @@ export default function App() {
     <LanguageProvider>
       <BrowserRouter>
         <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
+        <AccessibilityPanel hideFab={true} />
         <FormulationWizardModal
           isOpen={isWizardOpen}
           onClose={() => setIsWizardOpen(false)}
@@ -8132,6 +8327,24 @@ export default function App() {
             path="/auth/callback"
             element={
               <AuthCallbackPage onLogin={handleLogin} />
+            }
+          />
+          <Route
+            path="/verdict"
+            element={
+              <VerdictEngine />
+            }
+          />
+          <Route
+            path="/roadmap"
+            element={
+              <IPJourneyRoadmap />
+            }
+          />
+          <Route
+            path="/guardian"
+            element={
+              <DualUseGuardian />
             }
           />
           <Route
