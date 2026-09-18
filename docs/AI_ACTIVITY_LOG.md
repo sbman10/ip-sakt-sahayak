@@ -180,7 +180,7 @@ Build the modular, production-ready Python backend and PDF ingestion pipeline fo
 - Created an offline script to process legal PDF files:
   - Reads raw PDFs from `corpus/data/raw/` (with `india/` and `international/` subdirectories) using PyMuPDF.
   - Splits text into 500-word chunks with a 50-word overlap for context preservation.
-  - Uses `all-MiniLM-L6-v2` locally via SentenceTransformers to generate text embeddings on CPU.
+  - (Historical baseline): Used `all-MiniLM-L6-v2` locally via SentenceTransformers to generate text embeddings on CPU (migrated to `BAAI/bge-m3` 1024-dimensional embeddings).
   - Saves embeddings and page metadata into a persistent local ChromaDB database at `./corpus/chroma_db`.
   - Creates two isolated collections: `india_statutes` and `international_treaties`.
   - Uses deterministic MD5 chunk IDs so re-running the script safely updates data without creating duplicates.
@@ -211,8 +211,23 @@ Build the modular, production-ready Python backend and PDF ingestion pipeline fo
 
 1. Add your real `GEMINI_API_KEY` in `backend/.env`.
 2. Install python packages: `pip install -r backend/requirements.txt`.
-3. Drop legal PDF files into `corpus/data/raw/india/` or `corpus/data/raw/international/`.
-4. Run the ingestion script: `python corpus/ingest.py`.
+3. Drop legal PDF files into `knowledge-base/sources/`.
+4. Run the ingestion script: `python knowledge-base/ingest.py`.
 5. Start the FastAPI server: `cd backend && uvicorn app.main:app --reload --port 8000`.
+
+---
+
+## Migration: BAAI/bge-m3 (1024-dimensional Multilingual Embeddings)
+
+- **Date:** 2026-09-16
+- **Summary:** Upgraded vector search pipeline from `all-MiniLM-L6-v2` (384-dim) to `BAAI/bge-m3` (1024-dim multilingual embeddings).
+- **Key Changes:**
+  - Added `EMBEDDING_MODEL_NAME=BAAI/bge-m3` and switched ChromaDB path to `backend/chroma_db_bge_m3`.
+  - Updated `model_registry.py` to be configuration-driven and pass `settings.EMBEDDING_MODEL_NAME`.
+  - Updated `main.py` lifespan model preloading.
+  - Updated user upload document ingestion in `documents.py` to use `settings.EMBEDDING_MODEL_NAME`.
+  - Updated `knowledge-base/ingest.py` to index into `chroma_db_bge_m3` with `batch_size=8` for CPU execution.
+  - Updated diagnostics scripts (`check_embeddings.py`, `search_diagnostic.py`) to test 1024-dim BGE-M3 embeddings.
+
 
 

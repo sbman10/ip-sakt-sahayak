@@ -44,7 +44,15 @@ KB_DIR = WORKSPACE_ROOT / "knowledge-base"
 KB_SOURCES_DIR = KB_DIR / "sources"
 
 # Target Storage Destinations
-BACKEND_CHROMA_PATH = BACKEND_DIR / "chroma_db"
+try:
+    from app.core.config import settings
+    DEFAULT_CHROMA_DIR = Path(settings.CHROMA_DB_DIR)
+    DEFAULT_EMBEDDING_MODEL = settings.EMBEDDING_MODEL_NAME
+except ImportError:
+    DEFAULT_CHROMA_DIR = BACKEND_DIR / os.getenv("CHROMA_DB_DIR", "chroma_db_bge_m3")
+    DEFAULT_EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL_NAME", "BAAI/bge-m3")
+
+BACKEND_CHROMA_PATH = DEFAULT_CHROMA_DIR
 BACKEND_BM25_PATH = BACKEND_DIR / "bm25_index.pkl"
 
 # Collection Names
@@ -89,16 +97,18 @@ def scan_all_pdfs() -> List[Path]:
 
 
 def run_ingestion(
-    batch_size: int = 32,
-    embedding_model_name: str = "all-MiniLM-L6-v2",
+    batch_size: int = 8,
+    embedding_model_name: str | None = None,
 ) -> None:
     """
     Orchestrates end-to-end PDF extraction, vector indexing, and BM25 index compilation.
     """
+    embedding_model_name = embedding_model_name or os.getenv("EMBEDDING_MODEL_NAME", DEFAULT_EMBEDDING_MODEL)
     logger.info("=== Starting IP-SAKTI Sahayak Unified Ingestion Pipeline ===")
     logger.info("Workspace Root: %s", WORKSPACE_ROOT)
     logger.info("Target ChromaDB: %s", BACKEND_CHROMA_PATH)
     logger.info("Target BM25 Index: %s", BACKEND_BM25_PATH)
+    logger.info("Embedding Model: %s", embedding_model_name)
 
     pdf_files = scan_all_pdfs()
     if not pdf_files:

@@ -41,7 +41,7 @@ class SentenceTransformerEmbeddingsAdapter(Embeddings):
         model = model_registry.get_embedding_model()
         embs = model.encode(
             texts,
-            batch_size=32,
+            batch_size=8,
             show_progress_bar=False,
             convert_to_numpy=True,
             normalize_embeddings=True,

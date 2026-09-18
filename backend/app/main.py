@@ -97,7 +97,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # 3. Preload SentenceTransformer and CrossEncoder asynchronously
     try:
         log.info("[PID %s] Preloading ML models...", pid)
-        await asyncio.to_thread(model_registry.load_models)
+        await asyncio.to_thread(
+            model_registry.load_models,
+            settings.EMBEDDING_MODEL_NAME,
+        )
         log.info("[PID %s] ML models preloaded and warmed up.", pid)
     except Exception as e:
         log.error("[PID %s] Failed model preloading during startup: %s", pid, e, exc_info=True)

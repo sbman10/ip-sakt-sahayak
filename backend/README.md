@@ -18,6 +18,8 @@ Before starting the server, create `backend/.env` with:
 ```env
 GEMINI_API_KEY=your_gemini_api_key
 GEMINI_MODEL=gemini-2.5-flash
+EMBEDDING_MODEL_NAME=BAAI/bge-m3
+CHROMA_DB_DIR=./chroma_db_bge_m3
 ```
 
 Keep `.env` private. It is excluded by `backend/.gitignore`. The API key is loaded only by the backend; do not put it in the React frontend.

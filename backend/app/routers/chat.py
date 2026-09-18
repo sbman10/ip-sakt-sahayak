@@ -2,10 +2,11 @@
 backend/app/routers/chat.py
 ----------------------------
 Complete RAG Orchestration Router for IP-SAKTI Sahayak.
-Assembles the full 12-stage grounded reasoning pipeline:
-  PII Scrub -> Hybrid RRF -> Retrieval Gate -> Conditional Rerank ->
-  Context Compress -> Gemini Generation -> Claim Verification ->
-  Confidence Calculation -> Claim Guardrails -> Audit Log -> Response
+Assembles the full grounded reasoning pipeline:
+  PII Scrub -> Intent Classification & Routing ->
+  [Non-knowledge Direct Response OR Hybrid RRF -> Retrieval Gate ->
+   Conditional Rerank -> Context Compress -> Master Prompt Gemini Generation ->
+   Claim Verification -> Composite Confidence -> Guardrails -> Audit Log -> Persist]
 """
 
 from __future__ import annotations
@@ -32,6 +33,13 @@ from app.schemas.chat import (
 
 # Pipeline services
 from app.services.pii_scrubber import pii_scrubber, scrub_pii
+from app.services.intent_classifier import (
+    intent_classifier,
+    build_chitchat_response,
+    build_clarification_response,
+    build_out_of_scope_response,
+    build_unsafe_response,
+)
 from app.services.retrieval_service import hybrid_rrf_search
 from app.services.retrieval_gate import evaluate_retrieval_quality, get_abstention_response
 from app.services.reranker_service import conditional_rerank
@@ -42,7 +50,7 @@ from app.services.confidence_calculator import compute_composite_confidence
 from app.services.claim_guardrails import enforce_claim_guardrails
 from app.services.audit_service import async_log_audit_transaction
 
-# Legacy services kept for streaming endpoint compatibility
+# Legacy streaming service
 from app.services.guardrails import guardrail_service
 from app.services.llm import stream_grounded_answer
 
@@ -68,12 +76,12 @@ def _resolve_source_filters(jurisdiction: str) -> list[str]:
 @router.post(
     "/chat",
     response_model=ChatResponse,
-    summary="Statutory RAG Legal Q&A",
+    summary="Statutory RAG Legal Q&A with Intent Routing",
     description=(
-        "Processes legal question through the complete 12-stage grounded reasoning pipeline: "
-        "DPDP PII scrubbing, hybrid RRF search, retrieval gate, conditional CrossEncoder reranking, "
-        "context compression, Gemini generation, claim verification, composite confidence scoring, "
-        "claim guardrails, and audit logging."
+        "Processes query through DPDP PII scrubbing, intent classification, "
+        "and either direct response (chitchat/clarification/out_of_scope) or "
+        "hybrid RRF search, retrieval gate, reranking, master prompt Gemini generation, "
+        "claim verification, composite confidence, and audit logging."
     ),
 )
 async def chat_endpoint(
@@ -81,7 +89,7 @@ async def chat_endpoint(
     db: Session = Depends(get_db),
 ) -> ChatResponse:
     """
-    Main dialogue turn endpoint executing the complete RAG pipeline.
+    Main dialogue turn endpoint executing intent-routed RAG pipeline.
     """
     # ── Stage (a): Start latency timer ──────────────────────────
     start_time = time.perf_counter()
@@ -94,10 +102,117 @@ async def chat_endpoint(
     # ── Stage (b): PII Scrubbing (DPDP Compliance) ──────────────
     scrubbed_query = pii_scrubber.scrub_query(raw_query)
 
+    # ── Context Profile & Formulation Extraction ────────────────
+    ctx_dict = request.context if isinstance(request.context, dict) else {}
+    user_context = {
+        "user_type": request.user_type or ctx_dict.get("user_type"),
+        "user_expertise": request.user_expertise or ctx_dict.get("user_expertise"),
+        "organization_type": request.organization_type or ctx_dict.get("organization_type"),
+        "user_country": request.user_country or ctx_dict.get("user_country", "India"),
+        "user_region": request.user_region or ctx_dict.get("user_region"),
+        "nationality_or_residency": request.nationality_or_residency or ctx_dict.get("nationality_or_residency"),
+        "user_role": request.user_role or ctx_dict.get("user_role"),
+    }
+    product_context = {
+        "product_name": request.product_name or ctx_dict.get("product_name"),
+        "product_description": request.product_description or ctx_dict.get("product_description"),
+        "formulation_type": request.formulation_type or ctx_dict.get("formulation_type"),
+        "ingredients": request.ingredients or ctx_dict.get("ingredients"),
+        "species": request.species or ctx_dict.get("species"),
+        "scientific_names": request.scientific_names or ctx_dict.get("scientific_names"),
+        "traditional_use": request.traditional_use or ctx_dict.get("traditional_use"),
+        "resource_origin": request.resource_origin or ctx_dict.get("resource_origin"),
+        "knowledge_holder": request.knowledge_holder or ctx_dict.get("knowledge_holder"),
+        "knowledge_source": request.knowledge_source or ctx_dict.get("knowledge_source"),
+        "existing_formulation": request.existing_formulation or ctx_dict.get("existing_formulation"),
+        "novel_modification": request.novel_modification or ctx_dict.get("novel_modification"),
+        "intended_use": request.intended_use or ctx_dict.get("intended_use"),
+        "commercial_status": request.commercial_status or ctx_dict.get("commercial_status"),
+        "development_stage": request.development_stage or ctx_dict.get("development_stage"),
+    }
+    user_intent = request.user_intent or ctx_dict.get("user_intent")
+    requested_information = request.requested_information or ctx_dict.get("requested_information")
+
+    # ── Fetch Recent Conversation History for Query Rewriting ──
+    conversation_context = ""
+    if request.conversation_id:
+        try:
+            recent_msgs = (
+                db.query(Message)
+                .filter(Message.conversation_id == request.conversation_id)
+                .order_by(Message.id.desc())
+                .limit(4)
+                .all()
+            )
+            if recent_msgs:
+                chrono = list(reversed(recent_msgs))
+                conversation_context = "\n".join(
+                    f"{m.role.capitalize()}: {m.content[:300]}" for m in chrono
+                )
+        except Exception as e:
+            log.debug("Could not fetch conversation history for context: %s", e)
+
+    # ── Stage (b.1): Intent Classification & Early Routing ──────
+    classification = await intent_classifier.classify_intent(
+        query=scrubbed_query,
+        conversation_context=conversation_context,
+        jurisdiction=jurisdiction,
+        language=language,
+    )
+    log.info(
+        "Intent routed: %s (confidence=%.2f, rewritten=%s)",
+        classification.intent,
+        classification.confidence,
+        bool(classification.rewritten_query),
+    )
+
+    if classification.intent == "CHITCHAT":
+        elapsed_ms = (time.perf_counter() - start_time) * 1000
+        return build_chitchat_response(
+            classification=classification,
+            conversation_id=request.conversation_id,
+            jurisdiction=jurisdiction,
+            source_filters=source_filters,
+            latency_ms=elapsed_ms,
+        )
+
+    if classification.intent == "CLARIFICATION_NEEDED":
+        elapsed_ms = (time.perf_counter() - start_time) * 1000
+        return build_clarification_response(
+            classification=classification,
+            conversation_id=request.conversation_id,
+            jurisdiction=jurisdiction,
+            source_filters=source_filters,
+            latency_ms=elapsed_ms,
+        )
+
+    if classification.intent == "OUT_OF_SCOPE":
+        elapsed_ms = (time.perf_counter() - start_time) * 1000
+        return build_out_of_scope_response(
+            classification=classification,
+            conversation_id=request.conversation_id,
+            jurisdiction=jurisdiction,
+            source_filters=source_filters,
+            latency_ms=elapsed_ms,
+        )
+
+    if classification.intent == "UNSAFE_OR_DISALLOWED":
+        elapsed_ms = (time.perf_counter() - start_time) * 1000
+        return build_unsafe_response(
+            classification=classification,
+            conversation_id=request.conversation_id,
+            jurisdiction=jurisdiction,
+            source_filters=source_filters,
+            latency_ms=elapsed_ms,
+        )
+
+    # For KNOWLEDGE_SEEK: use rewritten query for retrieval if available
+    retrieval_query = classification.rewritten_query.strip() or scrubbed_query
+
     # ── Stage (c): Hybrid RRF Retrieval (ChromaDB + BM25) ──────
     try:
         candidates = hybrid_rrf_search(
-            query=scrubbed_query,
+            query=retrieval_query,
             jurisdiction=jurisdiction,
             top_k=8,
         )
@@ -129,12 +244,15 @@ async def chat_endpoint(
             conversation_id=request.conversation_id,
             jurisdiction=jurisdiction,
             source_filters=source_filters,
+            intent=classification.intent,
+            intent_confidence=classification.confidence,
+            rewritten_query_used=classification.rewritten_query if classification.rewritten_query else None,
         )
 
     # ── Stage (e): Conditional CrossEncoder Reranking ───────────
     best_distance = gate_result.get("best_distance", 1.0)
     reranked_passages, reranker_skipped = await conditional_rerank(
-        query=scrubbed_query,
+        query=retrieval_query,
         candidates=candidates,
         skip_threshold=settings.RERANK_SKIP_THRESHOLD,
         final_k=4,
@@ -145,11 +263,6 @@ async def chat_endpoint(
         if reranked_passages
         else 0.5
     )
-    # If reranker was skipped, do NOT inflate reranker relevance to 1.0 (that
-    # falsely boosts composite confidence). A skip only means the vector
-    # distance was already strong enough to bypass reranking — it is not
-    # positive evidence of top-1 relevance. Derive a justified proxy from the
-    # actual vector distance instead: relevance = 1 - best_distance, clamped.
     if reranker_skipped:
         effective_rerank_score = max(0.0, min(1.0, 1.0 - best_distance))
     else:
@@ -158,18 +271,22 @@ async def chat_endpoint(
     # ── Stage (f): Context Compression & Citation Formatting ────
     context_text, cleaned_chunks = context_compressor.build_prompt_context(
         chunks=reranked_passages,
-        max_tokens=1500,
+        max_tokens=2000,
     )
 
-    # Build CitationItem list from cleaned chunks
+    # Build CitationItem list from cleaned chunks with SOURCE_ID traceability
     citations: list[CitationItem] = []
-    for chunk in cleaned_chunks:
+    for idx, chunk in enumerate(cleaned_chunks, start=1):
+        source_id = chunk.get("source_id") or f"SRC-{idx:03d}"
+        source_name = chunk.get("source", "Legal Statute")
+        section_name = chunk.get("section", "General")
         citations.append(
             CitationItem(
-                source=chunk.get("source", "Legal Statute"),
-                section=chunk.get("section", "General"),
+                source_id=source_id,
+                source=source_name,
+                section=section_name,
                 text=chunk.get("text", ""),
-                relevance=f"Grounded in {chunk.get('source', 'source')} ({chunk.get('section', 'section')}).",
+                relevance=f"[{source_id}] Grounded in {source_name} ({section_name}).",
             )
         )
 
@@ -180,10 +297,13 @@ async def chat_endpoint(
             context_str=context_text,
             answer_mode=answer_mode,
             jurisdiction=jurisdiction,
+            language=language,
+            user_context=user_context,
+            product_context=product_context,
+            user_intent=user_intent,
+            requested_information=requested_information,
         )
     except Exception as gen_err:
-        # Model / API failure — return a calm, honest fallback instead of
-        # crashing or fabricating. We have valid citations, so expose them.
         log.error("LLM generation failed: %s", gen_err, exc_info=True)
         elapsed_ms = (time.perf_counter() - start_time) * 1000
         return ChatResponse(
@@ -205,10 +325,12 @@ async def chat_endpoint(
             conversation_id=request.conversation_id,
             jurisdiction=jurisdiction,
             source_filters=source_filters,
+            intent=classification.intent,
+            intent_confidence=classification.confidence,
+            rewritten_query_used=classification.rewritten_query if classification.rewritten_query else None,
         )
 
     if not answer or not answer.strip():
-        # Empty generation — never return a blank answer; degrade gracefully.
         elapsed_ms = (time.perf_counter() - start_time) * 1000
         return ChatResponse(
             answer=(
@@ -228,6 +350,9 @@ async def chat_endpoint(
             conversation_id=request.conversation_id,
             jurisdiction=jurisdiction,
             source_filters=source_filters,
+            intent=classification.intent,
+            intent_confidence=classification.confidence,
+            rewritten_query_used=classification.rewritten_query if classification.rewritten_query else None,
         )
 
     # ── Stage (h): Claim Extraction & Citation Entailment ───────
@@ -303,20 +428,23 @@ async def chat_endpoint(
         conversation_id=conv_id,
         jurisdiction=jurisdiction,
         source_filters=source_filters,
+        intent=classification.intent,
+        intent_confidence=classification.confidence,
+        rewritten_query_used=classification.rewritten_query if classification.rewritten_query else None,
     )
 
 
 @router.post(
     "/chat/stream",
-    summary="Streaming Grounded Legal Q&A",
-    description="Streams real-time tokens from Gemini for low time-to-first-token UI rendering.",
+    summary="Streaming Grounded Legal Q&A with Intent Routing",
+    description="Streams real-time tokens from Gemini with intent-based early routing.",
 )
 async def chat_stream_endpoint(
     request: ChatRequest,
 ):
     """
-    Streaming SSE endpoint for real-time typewriter output.
-    Uses the legacy synchronous streaming path for token-by-token delivery.
+    Streaming SSE endpoint with full intent-routing parity.
+    Non-knowledge queries return their direct response without triggering retrieval.
     """
     raw_query = request.question.strip()
     jurisdiction = request.jurisdiction or "India"
@@ -326,26 +454,121 @@ async def chat_stream_endpoint(
 
     scrubbed_query = scrub_pii(raw_query)
 
-    # Fast guardrail check
-    is_safe, refusal_msg = guardrail_service.check_input_relevance(scrubbed_query)
-    if not is_safe:
-        async def _stream_refusal():
-            yield f"data: {json.dumps({'chunk': refusal_msg or ''})}\n\n"
+    # Context profile extraction
+    ctx_dict = request.context if isinstance(request.context, dict) else {}
+    user_context = {
+        "user_type": request.user_type or ctx_dict.get("user_type"),
+        "user_expertise": request.user_expertise or ctx_dict.get("user_expertise"),
+        "organization_type": request.organization_type or ctx_dict.get("organization_type"),
+        "user_country": request.user_country or ctx_dict.get("user_country", "India"),
+        "user_region": request.user_region or ctx_dict.get("user_region"),
+        "nationality_or_residency": request.nationality_or_residency or ctx_dict.get("nationality_or_residency"),
+        "user_role": request.user_role or ctx_dict.get("user_role"),
+    }
+    product_context = {
+        "product_name": request.product_name or ctx_dict.get("product_name"),
+        "product_description": request.product_description or ctx_dict.get("product_description"),
+        "formulation_type": request.formulation_type or ctx_dict.get("formulation_type"),
+        "ingredients": request.ingredients or ctx_dict.get("ingredients"),
+        "species": request.species or ctx_dict.get("species"),
+        "scientific_names": request.scientific_names or ctx_dict.get("scientific_names"),
+        "traditional_use": request.traditional_use or ctx_dict.get("traditional_use"),
+        "resource_origin": request.resource_origin or ctx_dict.get("resource_origin"),
+        "knowledge_holder": request.knowledge_holder or ctx_dict.get("knowledge_holder"),
+        "knowledge_source": request.knowledge_source or ctx_dict.get("knowledge_source"),
+        "existing_formulation": request.existing_formulation or ctx_dict.get("existing_formulation"),
+        "novel_modification": request.novel_modification or ctx_dict.get("novel_modification"),
+        "intended_use": request.intended_use or ctx_dict.get("intended_use"),
+        "commercial_status": request.commercial_status or ctx_dict.get("commercial_status"),
+        "development_stage": request.development_stage or ctx_dict.get("development_stage"),
+    }
+    user_intent = request.user_intent or ctx_dict.get("user_intent")
+    requested_information = request.requested_information or ctx_dict.get("requested_information")
+
+    # ── Intent Classification & Early Routing for Streaming ───────
+    classification = await intent_classifier.classify_intent(
+        query=scrubbed_query,
+        conversation_context="",
+        jurisdiction=jurisdiction,
+        language=language,
+    )
+
+    if classification.intent == "CHITCHAT":
+        resp = build_chitchat_response(
+            classification=classification,
+            conversation_id=request.conversation_id,
+            jurisdiction=jurisdiction,
+            source_filters=source_filters,
+        )
+
+        def _stream_chitchat():
+            yield f"data: {json.dumps({'type': 'meta', 'intent': 'CHITCHAT', 'jurisdiction': jurisdiction, 'source_filters': source_filters})}\n\n"
+            yield f"data: {json.dumps({'type': 'citations', 'citations': []})}\n\n"
+            yield f"data: {json.dumps({'chunk': resp.answer})}\n\n"
             yield "data: [DONE]\n\n"
-        return StreamingResponse(_stream_refusal(), media_type="text/event-stream")
+
+        return StreamingResponse(_stream_chitchat(), media_type="text/event-stream")
+
+    if classification.intent == "CLARIFICATION_NEEDED":
+        resp = build_clarification_response(
+            classification=classification,
+            conversation_id=request.conversation_id,
+            jurisdiction=jurisdiction,
+            source_filters=source_filters,
+        )
+
+        def _stream_clarification():
+            yield f"data: {json.dumps({'type': 'meta', 'intent': 'CLARIFICATION_NEEDED', 'jurisdiction': jurisdiction, 'source_filters': source_filters})}\n\n"
+            yield f"data: {json.dumps({'type': 'citations', 'citations': []})}\n\n"
+            yield f"data: {json.dumps({'chunk': resp.answer})}\n\n"
+            yield "data: [DONE]\n\n"
+
+        return StreamingResponse(_stream_clarification(), media_type="text/event-stream")
+
+    if classification.intent == "OUT_OF_SCOPE":
+        resp = build_out_of_scope_response(
+            classification=classification,
+            conversation_id=request.conversation_id,
+            jurisdiction=jurisdiction,
+            source_filters=source_filters,
+        )
+
+        def _stream_out_of_scope():
+            yield f"data: {json.dumps({'type': 'meta', 'intent': 'OUT_OF_SCOPE', 'jurisdiction': jurisdiction, 'source_filters': source_filters})}\n\n"
+            yield f"data: {json.dumps({'type': 'citations', 'citations': []})}\n\n"
+            yield f"data: {json.dumps({'chunk': resp.answer})}\n\n"
+            yield "data: [DONE]\n\n"
+
+        return StreamingResponse(_stream_out_of_scope(), media_type="text/event-stream")
+
+    if classification.intent == "UNSAFE_OR_DISALLOWED":
+        resp = build_unsafe_response(
+            classification=classification,
+            conversation_id=request.conversation_id,
+            jurisdiction=jurisdiction,
+            source_filters=source_filters,
+        )
+
+        def _stream_unsafe():
+            yield f"data: {json.dumps({'chunk': resp.answer})}\n\n"
+            yield "data: [DONE]\n\n"
+
+        return StreamingResponse(_stream_unsafe(), media_type="text/event-stream")
+
+    # KNOWLEDGE_SEEK: use rewritten query for retrieval if present
+    retrieval_query = classification.rewritten_query.strip() or scrubbed_query
 
     # Hybrid retrieve
     try:
         candidates = hybrid_rrf_search(
-            query=scrubbed_query,
+            query=retrieval_query,
             jurisdiction=jurisdiction,
             top_k=5,
         )
     except Exception:
         candidates = []
 
-    # ── Retrieval Gate parity with /chat: abstain instead of streaming an
-    #    ungrounded / fabricated answer when evidence is insufficient. ──
+    # Retrieval Gate
     gate_result = evaluate_retrieval_quality(
         candidates=candidates,
         similarity_threshold=settings.SIMILARITY_THRESHOLD,
@@ -354,6 +577,7 @@ async def chat_stream_endpoint(
         abstention = get_abstention_response()
 
         def _stream_abstention():
+            yield f"data: {json.dumps({'type': 'meta', 'intent': 'KNOWLEDGE_SEEK', 'jurisdiction': jurisdiction, 'source_filters': source_filters})}\n\n"
             yield f"data: {json.dumps({'type': 'citations', 'citations': []})}\n\n"
             yield f"data: {json.dumps({'chunk': abstention['answer']})}\n\n"
             yield "data: [DONE]\n\n"
@@ -361,7 +585,7 @@ async def chat_stream_endpoint(
         return StreamingResponse(_stream_abstention(), media_type="text/event-stream")
 
     reranked, _ = await conditional_rerank(
-        query=scrubbed_query,
+        query=retrieval_query,
         candidates=candidates,
         skip_threshold=settings.RERANK_SKIP_THRESHOLD,
         final_k=3,
@@ -369,19 +593,25 @@ async def chat_stream_endpoint(
 
     context_text, cleaned_chunks = context_compressor.build_prompt_context(reranked, max_tokens=1500)
 
-    # Build citation items
+    # Build citation items with SOURCE_IDs
     citations = []
-    for chunk in cleaned_chunks:
-        citations.append(CitationItem(
-            source=chunk.get("source", "Legal Statute"),
-            section=chunk.get("section", "General"),
-            text=chunk.get("text", ""),
-            relevance=f"Grounded in {chunk.get('source', 'source')}.",
-        ))
+    for idx, chunk in enumerate(cleaned_chunks, start=1):
+        source_id = chunk.get("source_id") or f"SRC-{idx:03d}"
+        source_name = chunk.get("source", "Legal Statute")
+        section_name = chunk.get("section", "General")
+        citations.append(
+            CitationItem(
+                source_id=source_id,
+                source=source_name,
+                section=section_name,
+                text=chunk.get("text", ""),
+                relevance=f"[{source_id}] Grounded in {source_name} ({section_name}).",
+            )
+        )
 
     def _generate_stream():
-        # Emit jurisdiction/source-filter metadata first (observability)
-        yield f"data: {json.dumps({'type': 'meta', 'jurisdiction': jurisdiction, 'source_filters': source_filters})}\n\n"
+        # Emit metadata first (observability + intent)
+        yield f"data: {json.dumps({'type': 'meta', 'intent': classification.intent, 'jurisdiction': jurisdiction, 'source_filters': source_filters, 'rewritten_query': classification.rewritten_query or None})}\n\n"
         # Then send citation metadata payload
         citation_data = [c.model_dump() for c in citations]
         yield f"data: {json.dumps({'type': 'citations', 'citations': citation_data})}\n\n"
@@ -393,6 +623,10 @@ async def chat_stream_endpoint(
                 jurisdiction=jurisdiction,
                 language=language,
                 answer_mode=answer_mode,
+                user_context=user_context,
+                product_context=product_context,
+                user_intent=user_intent,
+                requested_information=requested_information,
             ):
                 yield f"data: {json.dumps({'chunk': token})}\n\n"
         except Exception as stream_err:

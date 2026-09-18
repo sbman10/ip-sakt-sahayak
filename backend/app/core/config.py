@@ -31,7 +31,8 @@ class Settings(BaseSettings):
 
     PROJECT_NAME: str = "IP-SAKTI Sahayak"
     ENVIRONMENT: str = "development"
-    CHROMA_DB_DIR: str = str(_BASE_DIR / "chroma_db")
+    EMBEDDING_MODEL_NAME: str = "BAAI/bge-m3"
+    CHROMA_DB_DIR: str = str(_BASE_DIR / "chroma_db_bge_m3")
     BM25_INDEX_PATH: str = str(_BASE_DIR / "bm25_index.pkl")
 
     # API Keys & LLM settings
@@ -42,6 +43,12 @@ class Settings(BaseSettings):
     # Hybrid Search & Reranking Thresholds
     SIMILARITY_THRESHOLD: float = 0.65
     RERANK_SKIP_THRESHOLD: float = 0.25
+
+    # Intent Classification & Early Routing
+    INTENT_CLASSIFICATION_ENABLED: bool = True
+    INTENT_CLASSIFIER_MODEL: str = "gemini-2.5-flash"
+    INTENT_CLASSIFIER_TIMEOUT_SECONDS: float = 3.0
+    INTENT_CONFIDENCE_THRESHOLD: float = 0.60
 
     # Auth & Security
     JWT_SECRET_KEY: str = "ip-sakti-sahayak-super-secret-key-change-in-production-2024"

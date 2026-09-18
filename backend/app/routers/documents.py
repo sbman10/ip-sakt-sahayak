@@ -12,7 +12,7 @@ router turns a user-supplied PDF into a *searchable* knowledge source:
     3.  Extract page text with PyMuPDF (fitz).
     4.  Chunk with a 500-word sliding window / 50-word overlap — identical to
         ``corpus/parser.py`` so retrieval behaviour matches the base corpus.
-    5.  Embed each chunk with the local all-MiniLM-L6-v2 bi-encoder and upsert
+    5.  Embed each chunk with the local BAAI/bge-m3 bi-encoder and upsert
         into a dedicated ChromaDB ``user_uploads`` collection, scoped per user
         via chunk metadata + id prefix.
 
@@ -75,7 +75,7 @@ _KB_ROOT = _PROJECT_ROOT / "knowledge-base"
 UPLOAD_DIR = _KB_ROOT / "uploads"
 CHROMA_DB_PATH = settings.CHROMA_DB_DIR
 
-EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
+EMBEDDING_MODEL_NAME = settings.EMBEDDING_MODEL_NAME
 USER_UPLOADS_COLLECTION = "user_uploads"
 
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
@@ -103,7 +103,6 @@ def _get_embedding_model() -> "SentenceTransformer":
         log.info("Loading embedding model '%s' for user uploads...", EMBEDDING_MODEL_NAME)
         _embedding_model = SentenceTransformer(
             EMBEDDING_MODEL_NAME,
-            local_files_only=True,
         )
     return _embedding_model
 
@@ -320,7 +319,12 @@ async def upload_and_ingest_document(
         model = _get_embedding_model()
 
         texts = [c["text"] for c in chunks]
-        embeddings = model.encode(texts, batch_size=32, show_progress_bar=False).tolist()
+        embeddings = model.encode(
+            texts,
+            batch_size=8,
+            show_progress_bar=False,
+            normalize_embeddings=True,
+        ).tolist()
 
         ids = [f"{document_id}_{i}" for i in range(len(chunks))]
         metadatas = [
