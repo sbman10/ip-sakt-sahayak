@@ -31,7 +31,7 @@ from app.services.bm25_service import get_bm25_index
 log = logging.getLogger("app.services.patentability.vector_store")
 
 QDRANT_COLLECTION_NAME = "patentability_corpus"
-EMBEDDING_DIM = 384  # all-MiniLM-L6-v2 default dim (or 1024 for bge-m3)
+EMBEDDING_DIM = 1024  # BAAI/bge-m3 default dim (1,024 dimensions)
 
 
 class UnifiedVectorStore:

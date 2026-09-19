@@ -152,7 +152,7 @@ def run_ingestion(
         )
 
         try:
-            chunks = doc_processor.chunk_pdf(str(pdf_path), chunk_size=500, chunk_overlap=50)
+            chunks = doc_processor.chunk_pdf(str(pdf_path), jurisdiction=jurisdiction_label)
             if not chunks:
                 logger.warning("No text chunks generated for %s, skipping.", pdf_path.name)
                 continue
@@ -177,10 +177,12 @@ def run_ingestion(
                 batch_ids = [c["chunk_id"] for c in batch_chunks]
                 batch_metadatas = [
                     {
-                        "source": c["source"],
-                        "section": c["section"],
-                        "page_number": c["page_number"],
-                        "jurisdiction": c["jurisdiction"],
+                        "source": c.get("source", ""),
+                        "section": c.get("section", ""),
+                        "section_title": c.get("section_title", ""),
+                        "chapter": c.get("chapter", ""),
+                        "page_number": c.get("page_number", 1),
+                        "jurisdiction": c.get("jurisdiction", jurisdiction_label),
                     }
                     for c in batch_chunks
                 ]
