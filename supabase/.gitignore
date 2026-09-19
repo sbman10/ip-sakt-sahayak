@@ -1,0 +1,13 @@
+# Supabase local environment and secrets
+.env
+.env.local
+.env.*.local
+*.env
+*.key
+*.pem
+*.secret
+
+# Supabase CLI runtime & cache
+.temp/
+.branches/
+docker/volumes/

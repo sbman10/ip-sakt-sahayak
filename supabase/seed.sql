@@ -1,0 +1,15 @@
+-- ==============================================================================
+-- RAGVYN AI / IP-SAKTI Sahayak — Seed Data (Non-Sensitive / Demo Only)
+-- ==============================================================================
+-- IMPORTANT:
+-- No credentials, real customer data, or production secrets may be placed here.
+-- This file is intended for local verification and test harness population.
+-- ==============================================================================
+
+-- Sample system settings or non-sensitive demo record placeholder:
+-- (Uncomment during staging verification if needed)
+-- INSERT INTO sources (id, title, jurisdiction, source_type)
+-- VALUES
+--   ('src-in-pat-1970', 'The Patents Act, 1970', 'India', 'statute'),
+--   ('src-in-bda-2002', 'The Biological Diversity Act, 2002', 'India', 'statute')
+-- ON CONFLICT (id) DO NOTHING;
