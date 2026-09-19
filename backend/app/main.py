@@ -49,6 +49,7 @@ from app.routers import (
     verdict as verdict_router,
     roadmap as roadmap_router,
     guardian as guardian_router,
+    patentability as patentability_router,
 )
 
 # ---------------------------------------------------------------------------
@@ -278,6 +279,7 @@ async def readiness_check(response: Response) -> dict[str, str]:
 # Routers Registration
 # ---------------------------------------------------------------------------
 app.include_router(chat_router.router, prefix="/api", tags=["Chat - RAG Pipeline"])
+app.include_router(patentability_router.router, prefix="/api", tags=["Patentability & Prior-Art Assessment"])
 app.include_router(verdict_router.router, prefix="/api", tags=["Verdict Engine - Biopiracy Shield"])
 app.include_router(roadmap_router.router, prefix="/api", tags=["IP Journey Roadmap"])
 app.include_router(guardian_router.router, prefix="/api", tags=["Dual-Use Guardian"])

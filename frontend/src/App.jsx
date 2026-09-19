@@ -12,6 +12,7 @@ import { NextActionBar, JargonText, FriendlyEmptyState } from './components/UXHe
 import AccessibilityPanel from './components/AccessibilityPanel'
 import ExpertConnect from './components/ExpertConnect'
 import PricingPage from './components/PricingPage'
+import PatentabilityAssessment from './components/PatentabilityAssessment'
 import ToolIntro from './components/ToolIntro'
 import { TOOL_INTRO_CONFIGS } from './data/toolIntroConfigs'
 import {
@@ -3787,6 +3788,13 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout 
             </button>
             {toolsDropdownOpen && (
               <div className="gov-nav-dropdown-menu">
+                <Link to="/patentability" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
+                  <IconScales size={16} />
+                  <div className="dropdown-item-content">
+                    <span className="dropdown-item-title">⚖️ Patentability Assessment</span>
+                    <span className="dropdown-item-desc">Prior art & § 3(p)/3(d)/3(e) assessment</span>
+                  </div>
+                </Link>
                 <Link to="/roadmap" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
                   <IconCalendar size={16} />
                   <div className="dropdown-item-content">
@@ -9204,6 +9212,12 @@ export default function App() {
             path="/auth/callback"
             element={
               <AuthCallbackPage onLogin={handleLogin} />
+            }
+          />
+          <Route
+            path="/patentability"
+            element={
+              <PatentabilityAssessment />
             }
           />
           <Route

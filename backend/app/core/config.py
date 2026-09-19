@@ -31,14 +31,14 @@ class Settings(BaseSettings):
 
     PROJECT_NAME: str = "IP-SAKTI Sahayak"
     ENVIRONMENT: str = "development"
-    EMBEDDING_MODEL_NAME: str = "BAAI/bge-m3"
-    CHROMA_DB_DIR: str = str(_BASE_DIR / "chroma_db_bge_m3")
+    EMBEDDING_MODEL_NAME: str = "all-MiniLM-L6-v2"
+    CHROMA_DB_DIR: str = str(_BASE_DIR / "chroma_db")
     BM25_INDEX_PATH: str = str(_BASE_DIR / "bm25_index.pkl")
 
     # API Keys & LLM settings
     GEMINI_API_KEY: str = ""
     GEMINI_API_KEYS: Union[List[str], str] = []
-    PRIMARY_MODEL: str = "gemini-3.6-flash"
+    PRIMARY_MODEL: str = "gemini-3.5-flash"
 
     # Hybrid Search & Reranking Thresholds
     SIMILARITY_THRESHOLD: float = 0.65
@@ -46,7 +46,7 @@ class Settings(BaseSettings):
 
     # Intent Classification & Early Routing
     INTENT_CLASSIFICATION_ENABLED: bool = True
-    INTENT_CLASSIFIER_MODEL: str = "gemini-2.5-flash"
+    INTENT_CLASSIFIER_MODEL: str = "gemini-3.5-flash"
     INTENT_CLASSIFIER_TIMEOUT_SECONDS: float = 3.0
     INTENT_CONFIDENCE_THRESHOLD: float = 0.60
 
@@ -79,6 +79,14 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore",
     )
+
+    @field_validator("CHROMA_DB_DIR", "BM25_INDEX_PATH", mode="after")
+    @classmethod
+    def resolve_paths(cls, v: str) -> str:
+        p = Path(v)
+        if not p.is_absolute():
+            p = (_BASE_DIR / v).resolve()
+        return str(p)
 
     @field_validator("GEMINI_API_KEYS", mode="before")
     @classmethod

@@ -194,6 +194,27 @@ class UploadedDocument(Base):
     matter = relationship("Matter", back_populates="documents")
 
 
+class PatentabilityAssessmentRecord(Base):
+    """Persistent storage for patentability assessments."""
+    __tablename__ = "patentability_assessments"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=True)
+    matter_id = Column(String(36), ForeignKey("matters.id"), nullable=True)
+    title = Column(String(255), nullable=False)
+    jurisdiction = Column(String(50), default="India")
+    status = Column(String(50), default="completed")
+    result_category = Column(String(100), nullable=False)
+    request_json = Column(Text, nullable=False)
+    report_json = Column(Text, nullable=False)
+    markdown_report = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    user = relationship("User")
+    matter = relationship("Matter")
+
+
 # ---------------------------------------------------------------------------
 # Initialize database
 # ---------------------------------------------------------------------------

@@ -16,9 +16,9 @@ import math
 from typing import Any, Dict, List, Optional
 
 try:
-    from backend.app.schemas.chat import CitationScore, ConfidenceScore
-except ImportError:
     from app.schemas.chat import CitationScore, ConfidenceScore
+except ImportError:
+    from backend.app.schemas.chat import CitationScore, ConfidenceScore
 
 log = logging.getLogger("app.services.confidence_calculator")
 
