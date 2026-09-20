@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { getApiBase } from '../api/config'
 
 // Icons
 const IconStar = ({ size = 16, filled = false }) => (
@@ -53,7 +54,7 @@ const IconThumbsUp = ({ size = 16 }) => (
   </svg>
 )
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+const API_BASE = getApiBase()
 
 export default function ExpertConnect() {
   const [activeTab, setActiveTab] = useState('directory') // 'directory', 'request', 'faqs'

@@ -68,6 +68,7 @@ import {
   IconEdit,
 } from './components/Icons'
 import DraftGenerator from './components/DraftGenerator'
+import { getApiBase } from './api/config'
 
 // IconClose component (X icon)
 function IconClose({ size = 16 }) {
@@ -4187,7 +4188,7 @@ function Navbar({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFo
    ============================================================ */
 function InnovationAssessmentCard({ onStartAssessment }) {
   const navigate = useNavigate()
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+  const API_BASE = getApiBase()
 
   // Step state: 1 to 4
   const [currentStep, setCurrentStep] = useState(1)
@@ -5634,7 +5635,7 @@ function VoiceLanguageSelector({ value, onChange, isListening }) {
 function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, theme, toggleTheme, fontSize, setFontSize }) {
   const { t, lang, setLang, languages } = useLanguage()
   const location = useLocation()
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+  const API_BASE = getApiBase()
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [jurisdiction, setJurisdiction] = useState('india')
@@ -8445,7 +8446,7 @@ function AuthCallbackPage({ onLogin }) {
   const navigate = useNavigate()
   const [error, setError] = useState('')
   const [processing, setProcessing] = useState(true)
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+  const API_BASE = getApiBase()
 
   useEffect(() => {
     const handleOAuthCallback = async () => {
@@ -8664,7 +8665,7 @@ function LoginPage({ theme, toggleTheme, fontSize, setFontSize, onLogin }) {
     return { label: 'Very Strong', color: '#10b981' }
   }
 
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+  const API_BASE = getApiBase()
 
   const handleSubmit = async (e) => {
     e.preventDefault()

@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { getApiBase } from '../api/config'
 
 /**
  * VerdictEngine — "Biopiracy Shield" Patentability Verdict Engine.
@@ -13,7 +14,7 @@ import { Link } from 'react-router-dom'
  * is itself grounded in the retrieved TKDL / Patents Act corpus.
  */
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+const API_BASE = getApiBase()
 
 const VERDICT_THEME = {
   RED: { color: '#C0392B', bg: '#FDECEA', border: '#E74C3C', icon: '🔴', ring: 'rgba(231,76,60,0.35)' },

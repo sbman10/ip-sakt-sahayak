@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import ToolIntro from './ToolIntro'
 import { TOOL_INTRO_CONFIGS } from '../data/toolIntroConfigs'
+import { getApiBase } from '../api/config'
 
 // Icons
 const IconCheck = ({ size = 16 }) => (
@@ -43,7 +44,7 @@ const IconRupee = ({ size = 16 }) => (
   </svg>
 )
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+const API_BASE = getApiBase()
 
 export default function IPChecklist() {
   const [showIntro, setShowIntro] = useState(true)
