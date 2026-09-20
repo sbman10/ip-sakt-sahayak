@@ -92,6 +92,18 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite:///./ip_sakti.db"
     AUDIT_DB_PATH: str = str(_BASE_DIR / "audit.db")
 
+    # Supabase PostgreSQL & Storage
+    SUPABASE_URL: str = ""
+    SUPABASE_SERVICE_ROLE_KEY: str = ""
+    SUPABASE_STORAGE_BUCKET: str = "legal-documents"
+
+    # Qdrant Cloud Vector Database
+    QDRANT_URL: str = ""
+    QDRANT_API_KEY: str = ""
+    QDRANT_INDIA_COLLECTION: str = "india_statutes"
+    QDRANT_INTERNATIONAL_COLLECTION: str = "international_treaties"
+    QDRANT_USER_UPLOADS_COLLECTION: str = "user_uploads"
+
     # CORS
     ALLOWED_ORIGINS: List[str] = [
         "http://localhost:5173",

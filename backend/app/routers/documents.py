@@ -34,7 +34,7 @@ import sys
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Union
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from pydantic import BaseModel
@@ -43,7 +43,13 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.models.database import UploadedDocument, User, get_db
 from app.routers.auth import require_auth
+<<<<<<< HEAD
 from app.services.embedding_service import canonical_embedder
+=======
+from app.services.storage_service import build_storage_key, storage_service
+from app.services.qdrant_service import qdrant_service
+from app.services.bm25_service import get_bm25_index
+>>>>>>> 232bc4799ec2a5dca5f6a60f53d8961cd65c4b4b
 
 # ---------------------------------------------------------------------------
 # Third-party imports with clear startup guards
@@ -64,20 +70,27 @@ router = APIRouter()
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-#   __file__      = backend/app/routers/documents.py
-#   .parents[3]   = project root (backend/app/routers -> app -> backend -> root)
 _PROJECT_ROOT = Path(__file__).resolve().parents[3]
 _KB_ROOT = _PROJECT_ROOT / "knowledge-base"
 UPLOAD_DIR = _KB_ROOT / "uploads"
 CHROMA_DB_PATH = settings.CHROMA_DB_DIR
 
+<<<<<<< HEAD
 USER_UPLOADS_COLLECTION = "user_uploads"
+=======
+EMBEDDING_MODEL_NAME = settings.EMBEDDING_MODEL_NAME
+USER_UPLOADS_COLLECTION = settings.QDRANT_USER_UPLOADS_COLLECTION
+>>>>>>> 232bc4799ec2a5dca5f6a60f53d8961cd65c4b4b
 
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 CHUNK_WINDOW = 500                 # words per chunk (matches knowledge-base/parser.py)
 CHUNK_OVERLAP = 50                 # word overlap (matches knowledge-base/parser.py)
 
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+# Local development directory initialization
+try:
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+except Exception:
+    pass
 
 
 # ---------------------------------------------------------------------------
@@ -134,10 +147,13 @@ class UploadedDocumentOut(BaseModel):
 # PDF parsing / chunking — mirrors corpus/parser.py
 # ---------------------------------------------------------------------------
 
-def _extract_pages(pdf_path: Path) -> List[Dict[str, Any]]:
-    """Extract non-empty page text (1-indexed) from a PDF via PyMuPDF."""
+def _extract_pages(pdf_source: Union[Path, str, bytes, bytearray]) -> List[Dict[str, Any]]:
+    """Extract non-empty page text (1-indexed) from a PDF via PyMuPDF (stateless in-memory bytes or path)."""
     pages: List[Dict[str, Any]] = []
-    doc = fitz.open(str(pdf_path))
+    if isinstance(pdf_source, (bytes, bytearray)):
+        doc = fitz.open(stream=pdf_source, filetype="pdf")
+    else:
+        doc = fitz.open(str(pdf_source))
     try:
         for idx in range(len(doc)):
             text = doc[idx].get_text("text").replace("\x00", "").strip()
@@ -247,20 +263,25 @@ async def upload_and_ingest_document(
 
     document_id = str(uuid.uuid4())
 
-    # Persist to knowledge-base/uploads/ with a collision-proof, user-scoped name
+    # Build Supabase Storage object key and filename
     stored_filename = f"{user.id}_{document_id}.pdf"
-    storage_path = UPLOAD_DIR / stored_filename
+    storage_key = build_storage_key(user.id, document_id, original_name)
+
+    # 1. Upload original PDF directly to Supabase Storage (Stateless)
     try:
-        with open(storage_path, "wb") as fh:
-            fh.write(content)
+        storage_service.upload_file(
+            object_key=storage_key,
+            file_bytes=content,
+            content_type="application/pdf",
+        )
     except Exception as exc:  # pragma: no cover
-        log.error("Failed to persist uploaded PDF: %s", exc)
+        log.error("Failed to persist uploaded PDF to Supabase Storage: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to save the uploaded file.",
+            detail="Failed to save the uploaded file to cloud storage.",
         )
 
-    # Create the DB row up-front so a failed ingest is still visible/removable
+    # 2. Persist Document record to Supabase PostgreSQL
     doc = UploadedDocument(
         id=document_id,
         user_id=user.id,
@@ -268,7 +289,8 @@ async def upload_and_ingest_document(
         original_filename=original_name,
         file_type="pdf",
         file_size=file_size,
-        storage_path=str(storage_path),
+        storage_path=storage_key,
+        bucket_name=storage_service.default_bucket,
         chunk_count=0,
         is_processed=False,
         processing_status="processing",
@@ -276,10 +298,10 @@ async def upload_and_ingest_document(
     db.add(doc)
     db.commit()
 
-    # Parse + chunk + embed + upsert
+    # 3. Parse in-memory bytes + chunk + embed + upsert into Qdrant Cloud
     try:
         source_title = Path(original_name).stem.replace("_", " ").strip() or "Uploaded Document"
-        pages = _extract_pages(storage_path)
+        pages = _extract_pages(content)
         chunks = _chunk_pages(pages, source_title)
 
         if not chunks:
@@ -294,7 +316,11 @@ async def upload_and_ingest_document(
                 ),
             )
 
+<<<<<<< HEAD
         collection = _get_chroma_collection()
+=======
+        model = _get_embedding_model()
+>>>>>>> 232bc4799ec2a5dca5f6a60f53d8961cd65c4b4b
 
         texts = [c["text"] for c in chunks]
         embeddings = canonical_embedder.embed_documents(texts, batch_size=8)
@@ -307,24 +333,61 @@ async def upload_and_ingest_document(
                 "user_id": user.id,
                 "document_id": document_id,
                 "original_filename": original_name,
+                "jurisdiction": "User Document",
             }
             for c in chunks
         ]
 
-        batch = 100
-        for i in range(0, len(ids), batch):
-            j = min(i + batch, len(ids))
-            collection.upsert(
-                ids=ids[i:j],
-                documents=texts[i:j],
-                metadatas=metadatas[i:j],
-                embeddings=embeddings[i:j],
+        # 3a. Primary: Upsert chunk vectors and metadata into Qdrant Cloud
+        points_to_upsert = []
+        for cid, ctext, cemb, cmeta in zip(ids, texts, embeddings, metadatas):
+            meta_dict = dict(cmeta)
+            meta_dict["chunk_id"] = cid
+            points_to_upsert.append({
+                "id": cid,
+                "vector": cemb,
+                "text": ctext,
+                "metadata": meta_dict,
+            })
+
+        try:
+            qdrant_service.upsert_points(
+                collection_name=settings.QDRANT_USER_UPLOADS_COLLECTION,
+                points=points_to_upsert,
             )
+            log.info(
+                "Upserted %d chunk vectors to Qdrant collection '%s'",
+                len(points_to_upsert),
+                settings.QDRANT_USER_UPLOADS_COLLECTION,
+            )
+        except Exception as q_err:
+            log.error("Failed to index chunks into Qdrant: %s", q_err, exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to index document chunks into vector database: {q_err}",
+            )
+
+        # 3b. Dynamically update in-memory BM25 index in RAM
+        try:
+            bm25_chunks = []
+            for p in points_to_upsert:
+                c_item = dict(p["metadata"])
+                c_item["text"] = p["text"]
+                c_item["id"] = p["id"]
+                bm25_chunks.append(c_item)
+            get_bm25_index().add_chunks(bm25_chunks)
+        except Exception as bm_err:
+            log.warning("Could not update in-memory BM25 index with new chunks: %s", bm_err)
 
         doc.chunk_count = len(chunks)
         doc.is_processed = True
         doc.processing_status = "completed"
-        doc.metadata_json = json.dumps({"pages": len(pages), "collection": USER_UPLOADS_COLLECTION})
+        doc.metadata_json = json.dumps({
+            "pages": len(pages),
+            "collection": settings.QDRANT_USER_UPLOADS_COLLECTION,
+            "qdrant_indexed": True,
+            "bm25_indexed": True,
+        })
         db.commit()
 
         log.info(
@@ -393,7 +456,24 @@ def delete_document(
             detail="Document not found.",
         )
 
-    # Remove chunks from ChromaDB (scoped to this document + user)
+    # 1. Remove chunks from Qdrant Cloud
+    try:
+        deleted_count = qdrant_service.delete_by_document_id(
+            document_id=document_id,
+            collection_name=settings.QDRANT_USER_UPLOADS_COLLECTION,
+        )
+        log.info("Deleted %d Qdrant points for document %s", deleted_count, document_id)
+    except Exception as exc:  # pragma: no cover
+        log.warning("Failed to delete Qdrant points for %s: %s", document_id, exc)
+
+    # 2. Remove chunks from in-memory BM25 index
+    try:
+        removed_bm25 = get_bm25_index().remove_by_document_id(document_id)
+        log.info("Removed %d chunks from in-memory BM25 index for document %s", removed_bm25, document_id)
+    except Exception as exc:  # pragma: no cover
+        log.warning("Failed to remove chunks from BM25 index for %s: %s", document_id, exc)
+
+    # 3. Remove chunks from ChromaDB (if available)
     try:
         collection = _get_chroma_collection()
         collection.delete(where={"document_id": document_id})
@@ -403,12 +483,21 @@ def delete_document(
     except Exception as exc:  # pragma: no cover
         log.warning("Failed to delete ChromaDB chunks for %s: %s", document_id, exc)
 
-    # Remove file from disk
+    # 3. Remove file from Supabase Storage
     try:
+        storage_service.delete_file(doc.storage_path)
+    except Exception as exc:  # pragma: no cover
+        log.warning("Failed to delete storage object for %s: %s", document_id, exc)
+
+    # 4. Remove local backup file if present
+    try:
+        local_backup = UPLOAD_DIR / doc.filename if doc.filename else None
+        if local_backup and local_backup.exists():
+            local_backup.unlink(missing_ok=True)
         if doc.storage_path and os.path.exists(doc.storage_path):
             os.remove(doc.storage_path)
     except Exception as exc:  # pragma: no cover
-        log.warning("Failed to delete file for %s: %s", document_id, exc)
+        log.warning("Failed to delete local file for %s: %s", document_id, exc)
 
     db.delete(doc)
     db.commit()

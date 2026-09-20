@@ -19,16 +19,19 @@ from langchain_core.embeddings import Embeddings
 # Accommodate both absolute workspace imports and package relative imports
 try:
     from backend.app.services.bm25_service import PersistedBM25Index, get_bm25_index
+    from backend.app.services.qdrant_service import qdrant_service
     from backend.app.core.config import settings
     from backend.app.core.models import model_registry
 except ImportError:
     from app.services.bm25_service import PersistedBM25Index, get_bm25_index
+    from app.services.qdrant_service import qdrant_service
     from app.core.config import settings
     from app.core.models import model_registry
 
 log = logging.getLogger("app.services.retrieval_service")
 
 
+<<<<<<< HEAD
 try:
     from backend.app.services.embedding_service import canonical_embedder
 except ImportError:
@@ -36,6 +39,17 @@ except ImportError:
 
 
 class CanonicalBgeM3EmbeddingsAdapter(Embeddings):
+=======
+class RetrievedCandidate:
+    """Standardized candidate document object compatible with LangChain Document interface."""
+
+    def __init__(self, page_content: str, metadata: dict[str, Any]):
+        self.page_content = page_content
+        self.metadata = metadata
+
+
+class SentenceTransformerEmbeddingsAdapter(Embeddings):
+>>>>>>> 232bc4799ec2a5dca5f6a60f53d8961cd65c4b4b
     """
     LangChain compatible Embeddings adapter connecting to the canonical
     Hugging Face BGE-M3 InferenceClient embedding service.
@@ -58,7 +72,7 @@ SentenceTransformerEmbeddingsAdapter = CanonicalBgeM3EmbeddingsAdapter
 def get_chroma_vectorstore(collection_name: str) -> Chroma:
     """
     Initializes or returns a LangChain Chroma vector store instance
-    connected to the local persistent database.
+    connected to the local persistent database (available as fallback).
     """
     chroma_dir = settings.CHROMA_DB_DIR
     embeddings_adapter = SentenceTransformerEmbeddingsAdapter()
@@ -76,10 +90,11 @@ def hybrid_rrf_search(
     jurisdiction: str = "India",
     top_k: int = 5,
     rrf_k: int = 60,
+    user_id: Optional[str] = None,
 ) -> list[dict]:
     """
-    Combines dense semantic vector search (ChromaDB) and sparse lexical search (BM25)
-    using Reciprocal Rank Fusion (RRF).
+    Combines dense semantic vector search (Qdrant Cloud with ChromaDB fallback)
+    and sparse lexical search (in-memory BM25) using Reciprocal Rank Fusion (RRF).
 
     Parameters
     ----------
@@ -92,6 +107,8 @@ def hybrid_rrf_search(
         Number of final fused candidates to return (default: 5).
     rrf_k : int
         RRF smoothing constant (default: 60).
+    user_id : Optional[str]
+        Optional user identifier to include authorized user-uploaded documents.
 
     Returns
     -------
@@ -101,64 +118,120 @@ def hybrid_rrf_search(
     if not query or not query.strip():
         return []
 
+<<<<<<< HEAD
     _chroma_t_start = time.perf_counter()
 
     # 1. Route to the correct ChromaDB collection(s) based on jurisdiction.
+=======
+    # 1. Route to the correct collection(s) based on jurisdiction.
+>>>>>>> 232bc4799ec2a5dca5f6a60f53d8961cd65c4b4b
     #    'India' -> india_statutes, 'International' -> international_treaties,
     #    'Both' -> query BOTH collections and fuse the combined candidate pool.
     jur_clean = jurisdiction.strip().lower()
     if jur_clean == "both":
         collection_specs = [
-            ("india_statutes", "India"),
-            ("international_treaties", "International"),
+            (settings.QDRANT_INDIA_COLLECTION, "India"),
+            (settings.QDRANT_INTERNATIONAL_COLLECTION, "International"),
         ]
     elif "international" in jur_clean:
-        collection_specs = [("international_treaties", "International")]
+        collection_specs = [(settings.QDRANT_INTERNATIONAL_COLLECTION, "International")]
     else:
-        collection_specs = [("india_statutes", "India")]
+        collection_specs = [(settings.QDRANT_INDIA_COLLECTION, "India")]
+
+    # If user_id provided, also query user uploads
+    if user_id:
+        collection_specs.append((settings.QDRANT_USER_UPLOADS_COLLECTION, "User"))
 
     collection_names = [c[0] for c in collection_specs]
 
     log.info(
-        "Executing hybrid RRF search for query '%s' under jurisdiction '%s' (collections: %s)",
+        "Executing hybrid RRF search for query '%s' under jurisdiction '%s' (collections: %s, user: %s)",
         query[:50],
         jurisdiction,
         collection_names,
+        user_id,
     )
 
-    # 2. Query each routed ChromaDB vector store for candidates and record
-    #    (doc, distance, rank, collection_jurisdiction).
+    # 2. Dense Vector Search: Try Qdrant Cloud first, falling back to ChromaDB
     vector_candidates: list[tuple[Any, float, int, str]] = []
-    for collection_name, col_jur in collection_specs:
-        try:
-            vectorstore = get_chroma_vectorstore(collection_name)
-            raw_vector_results = vectorstore.similarity_search_with_score(
-                query=query,
-                k=top_k * 2,
-            )
-            for rank, (doc, distance) in enumerate(raw_vector_results, start=1):
-                vector_candidates.append((doc, float(distance), rank, col_jur))
-        except Exception as e:
-            log.error(
-                "Vector search query error in ChromaDB collection '%s': %s",
-                collection_name, e, exc_info=True,
-            )
+    qdrant_success = False
 
-    # 3. Query PersistedBM25Index for candidates and record (doc, bm25_score).
-    #    For 'Both', run BM25 once per jurisdiction so lexical matches from each
-    #    corpus are represented; otherwise a single filtered pass.
+    try:
+        if qdrant_service.is_healthy():
+            emb_model = model_registry.get_embedding_model()
+            query_vector = emb_model.encode(
+                [query],
+                show_progress_bar=False,
+                convert_to_numpy=True,
+                normalize_embeddings=True,
+            )[0].tolist()
+
+            total_qdrant_hits = 0
+            for collection_name, col_jur in collection_specs:
+                target_user = user_id if collection_name == settings.QDRANT_USER_UPLOADS_COLLECTION else None
+                q_hits = qdrant_service.search(
+                    collection_name=collection_name,
+                    query_vector=query_vector,
+                    limit=top_k * 2,
+                    user_id=target_user,
+                )
+                if q_hits:
+                    total_qdrant_hits += len(q_hits)
+                    for rank, hit in enumerate(q_hits, start=1):
+                        payload = hit.get("payload") or hit.get("metadata") or {}
+                        score = float(hit.get("score", 0.0))
+                        # Cosine distance: dist = 1 - score (bounded to [0, 2])
+                        dist = max(0.0, 1.0 - score)
+                        content = payload.get("text") or payload.get("page_content") or ""
+                        doc_candidate = RetrievedCandidate(
+                            page_content=content,
+                            metadata=payload,
+                        )
+                        vector_candidates.append((doc_candidate, dist, rank, col_jur))
+
+            if total_qdrant_hits > 0:
+                qdrant_success = True
+                log.info("Qdrant retrieval returned %d candidates", total_qdrant_hits)
+    except Exception as q_exc:
+        log.warning("Qdrant vector search failed: %s; falling back to ChromaDB", q_exc)
+        qdrant_success = False
+
+    # Fallback to ChromaDB if Qdrant didn't produce candidates
+    if not qdrant_success or len(vector_candidates) == 0:
+        log.info("Using ChromaDB vectorstore fallback for query: '%s'", query[:50])
+        vector_candidates.clear()
+        for collection_name, col_jur in collection_specs:
+            try:
+                vectorstore = get_chroma_vectorstore(collection_name)
+                raw_vector_results = vectorstore.similarity_search_with_score(
+                    query=query,
+                    k=top_k * 2,
+                )
+                for rank, (doc, distance) in enumerate(raw_vector_results, start=1):
+                    vector_candidates.append((doc, float(distance), rank, col_jur))
+            except Exception as e:
+                log.error(
+                    "Vector search query error in ChromaDB collection '%s': %s",
+                    collection_name, e, exc_info=True,
+                )
+
+    # 3. Query In-Memory BM25Index for candidates and record (doc, bm25_score).
     bm25_candidates: list[tuple[dict, float, int]] = []
     try:
         bm25_idx = get_bm25_index()
         if not bm25_idx.is_loaded:
-            bm25_idx.load_from_disk(settings.BM25_INDEX_PATH)
+            bm25_idx.rebuild_from_qdrant()
 
-        bm25_jurs = [c[1] for c in collection_specs]
+        bm25_jurs = [c[1] for c in collection_specs if c[1] != "User"]
+        if not bm25_jurs:
+            bm25_jurs = [jurisdiction]
+
         for bm_jur in bm25_jurs:
             bm25_results = bm25_idx.search(
                 query=query,
                 top_k=top_k * 2,
                 jurisdiction=bm_jur,
+                user_id=user_id,
             )
             for rank, b_doc in enumerate(bm25_results, start=1):
                 score = float(b_doc.get("bm25_score", 0.0))
@@ -174,7 +247,7 @@ def hybrid_rrf_search(
     for doc, dist, v_rank, col_jur in vector_candidates:
         doc_text = doc.page_content if hasattr(doc, "page_content") else str(doc)
         metadata = doc.metadata if hasattr(doc, "metadata") and doc.metadata else {}
-        doc_id = str(metadata.get("id") or metadata.get("chunk_id") or doc_text.strip())
+        doc_id = str(metadata.get("original_id") or metadata.get("id") or metadata.get("chunk_id") or doc_text.strip())
 
         rrf_contrib = 1.0 / (rrf_k + v_rank)
         # Cosine distance to similarity

@@ -160,19 +160,19 @@ def test_07_composite_confidence_weighted_formula():
     assert conf.label == "High"
 
 
-def test_08_duplicate_sqlalchemy_models_discrepancy():
-    """Document discrepancy between database.py and db.py models."""
+def test_08_consolidated_sqlalchemy_models():
+    """Verify that models and Base are consolidated between database.py and db.py."""
     from app.models.database import User as DatabaseUser, Base as DatabaseBase
     from app.models.db import User as DbUser, Base as DbBase
     
-    # database.py uses String (UUID) primary key
+    # Bases must now be the exact same authoritative instance
+    assert DatabaseBase is DbBase
+    
+    # Users must be the same canonical model with UUID string primary key
+    assert DatabaseUser is DbUser
     assert "VARCHAR" in str(DatabaseUser.id.property.columns[0].type)
-    
-    # db.py uses Integer primary key
-    assert str(DbUser.id.property.columns[0].type) == "INTEGER"
-    
-    # database.py has password_hash, db.py has hashed_password
     assert hasattr(DatabaseUser, "password_hash")
+<<<<<<< HEAD
     assert hasattr(DbUser, "hashed_password")
     
     # Bases are completely different instances
@@ -289,3 +289,5 @@ def test_16_canonical_embedder_service_and_no_silent_fallback():
     assert failed is True, "Expected EmbeddingServiceError was not raised on HF failure"
 
 
+=======
+>>>>>>> 232bc4799ec2a5dca5f6a60f53d8961cd65c4b4b
