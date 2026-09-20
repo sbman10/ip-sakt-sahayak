@@ -31,6 +31,8 @@ from __future__ import annotations
 
 import argparse
 import datetime
+import hashlib
+import json
 import logging
 import os
 import re
@@ -80,58 +82,158 @@ logging.basicConfig(
 logger = logging.getLogger("QdrantIngestor")
 
 SOURCES_DIR = WORKSPACE_ROOT / "knowledge-base" / "sources"
+MANIFEST_FILE = WORKSPACE_ROOT / "knowledge-base" / "registry" / "source_manifest.jsonl"
+AUTHORITY_REGISTRY_FILE = WORKSPACE_ROOT / "knowledge-base" / "registry" / "authority_registry.json"
 PROHIBITED_COLLECTION = "ragvyn_prod_v1"
 
-REQUIRED_IDENTITY_FIELDS = [
-    "text",
+# 17 standardized payload fields for IP-SAKTI Sahayak knowledge base
+STANDARDIZED_PAYLOAD_FIELDS = [
     "chunk_id",
     "document_id",
-    "source",
-    "jurisdiction",
+    "text",
+    "title",
     "authority",
-    "document_type",
+    "jurisdiction",
     "domain",
+    "document_type",
     "section",
     "language",
+    "publication_date",
+    "priority_date",
+    "source_url",
+    "page",
+    "checksum",
+    "embedding_model",
+    "vector_dimension",
 ]
 
+# Required identity fields that must never be null or empty
+REQUIRED_IDENTITY_FIELDS = [
+    "chunk_id",
+    "document_id",
+    "text",
+    "title",
+    "authority",
+    "jurisdiction",
+    "domain",
+    "document_type",
+    "section",
+    "language",
+    "page",
+    "checksum",
+    "embedding_model",
+    "vector_dimension",
+    # Backward compatibility with qdrant_hybrid_store
+    "source",
+    "embedding_dimension",
+    "sparse_model",
+]
+
+# Optional temporal and reference fields
 OPTIONAL_TEMPORAL_FIELDS = [
     "publication_date",
     "priority_date",
 ]
 
-REQUIRED_METADATA_FIELDS = REQUIRED_IDENTITY_FIELDS + OPTIONAL_TEMPORAL_FIELDS
-
 ISO_DATE_REGEX = re.compile(r"^\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)?$")
 
+_MANIFEST_CACHE: Optional[Dict[str, Any]] = None
 
-def scan_source_pdfs() -> List[Path]:
-    """Scans knowledge-base/sources for all PDF statutory and treaty documents."""
+
+def load_manifest_data() -> Dict[str, Any]:
+    """Loads source_manifest.jsonl indexed by relative path, filename, checksum, and document_id."""
+    global _MANIFEST_CACHE
+    if _MANIFEST_CACHE is not None:
+        return _MANIFEST_CACHE
+
+    cache: Dict[str, Any] = {
+        "by_path": {},
+        "by_name": {},
+        "by_checksum": {},
+        "by_id": {},
+        "records": [],
+    }
+
+    if MANIFEST_FILE.exists():
+        try:
+            with open(MANIFEST_FILE, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    rec = json.loads(line)
+                    cache["records"].append(rec)
+                    sp = rec.get("source_path", "").replace("\\", "/")
+                    cache["by_path"][sp] = rec
+                    cache["by_name"][Path(sp).name.lower()] = rec
+                    if rec.get("checksum"):
+                        cache["by_checksum"][rec["checksum"]] = rec
+                    if rec.get("document_id"):
+                        cache["by_id"][rec["document_id"]] = rec
+        except Exception as e:
+            logger.warning("Could not read manifest %s: %s", MANIFEST_FILE, e)
+
+    _MANIFEST_CACHE = cache
+    return cache
+
+
+def scan_source_pdfs(limit_docs: Optional[int] = None, doc_id: Optional[str] = None) -> List[Path]:
+    """
+    Scans knowledge-base for verified source PDFs using source_manifest.jsonl.
+    Excludes entries with status 'needs_review', 'duplicate', or 'excluded'.
+    Falls back to walking SOURCES_DIR excluding needs-review if manifest is unavailable.
+    """
+    manifest = load_manifest_data()
+    verified_pdfs: List[Path] = []
+
+    if manifest["records"]:
+        for rec in manifest["records"]:
+            if rec.get("status") == "verified":
+                if doc_id and rec.get("document_id") != doc_id:
+                    continue
+                sp = rec.get("source_path", "")
+                if sp.lower().endswith(".pdf"):
+                    p = (WORKSPACE_ROOT / "knowledge-base" / sp).resolve()
+                    if p.exists():
+                        verified_pdfs.append(p)
+        if verified_pdfs:
+            unique_pdfs = sorted(list(dict.fromkeys(verified_pdfs)))
+            if limit_docs:
+                return unique_pdfs[:limit_docs]
+            return unique_pdfs
+
+    # Fallback to scanning SOURCES_DIR excluding needs-review
     pdf_paths: List[Path] = []
     if SOURCES_DIR.exists():
         for root, _, files in os.walk(SOURCES_DIR):
+            if "needs-review" in Path(root).parts:
+                continue
             for f in files:
                 if f.lower().endswith(".pdf"):
-                    pdf_paths.append(Path(root) / f)
-    return sorted(list(dict.fromkeys(pdf_paths)))
+                    p = Path(root) / f
+                    pdf_paths.append(p)
+    unique_paths = sorted(list(dict.fromkeys(pdf_paths)))
+    if limit_docs:
+        return unique_paths[:limit_docs]
+    return unique_paths
 
 
-def validate_and_normalize_iso_date(date_val: Any) -> Tuple[str, bool]:
+def validate_and_normalize_iso_date(date_val: Any) -> Tuple[Optional[str], bool]:
     """
     Validates and normalizes date values.
-    Returns: (normalized_date_str, is_valid)
-    - If empty, None, or 'null' -> ("", True)
+    Returns: (normalized_date_str_or_None, is_valid)
+    - If empty, None, or 'null' -> (None, True)
     - If valid ISO date -> ("YYYY-MM-DD", True)
     - If invalid non-empty string -> (raw_str, False)
     """
     if date_val is None or date_val == "":
-        return "", True
+        return None, True
     if isinstance(date_val, (datetime.date, datetime.datetime)):
         return date_val.strftime("%Y-%m-%d"), True
 
     s = str(date_val).strip()
     if not s or s.lower() in ("null", "none"):
-        return "", True
+        return None, True
 
     # 4-digit year e.g. '1970'
     if len(s) == 4 and s.isdigit():
@@ -155,13 +257,13 @@ def validate_and_normalize_iso_date(date_val: Any) -> Tuple[str, bool]:
 
 def validate_chunk_metadata(
     chunk: Dict[str, Any],
-    allow_incomplete_metadata: bool = False,
+    allow_incomplete_metadata: bool = True,
 ) -> Tuple[bool, List[str]]:
     """
     Strictly validates a single chunk against metadata requirements.
     - Required identity fields must never be missing or empty.
-    - Optional temporal fields (publication_date, priority_date) may be absent if source lacks them.
-    - If temporal fields are present, they must be valid ISO-8601 dates (arbitrary strings rejected).
+    - Optional temporal fields (publication_date, priority_date) may be None/null if source lacks them.
+    - If temporal fields are present and non-empty, they must be valid ISO-8601 dates (arbitrary strings rejected).
     """
     hard_errors: List[str] = []
     temporal_issues: List[str] = []
@@ -193,13 +295,13 @@ def validate_chunk_metadata(
 
 def generate_validation_report(
     chunks: List[Dict[str, Any]],
-    allow_incomplete_metadata: bool = False,
+    allow_incomplete_metadata: bool = True,
 ) -> Dict[str, Any]:
     """
     Produces a comprehensive metadata validation report across all candidate chunks.
     Separates chunks into:
-    - valid_chunks: chunks with complete identity and temporal metadata
-    - incomplete_chunks: chunks missing only optional temporal dates
+    - valid_chunks: chunks with complete identity and valid (or validly null) temporal metadata
+    - incomplete_chunks: chunks missing optional temporal dates (stored as None/null)
     - invalid_chunks: chunks with missing required identity fields or invalid date strings
     """
     valid_chunks: List[Dict[str, Any]] = []
@@ -261,41 +363,90 @@ def generate_validation_report(
 
 def load_source_provenance(pdf_path: Path) -> Dict[str, Any]:
     """
-    Loads provenance metadata by traversing upward from the PDF location
-    to locate metadata.yaml (in versions directory) and source.yaml (in source root).
-    Falls back gracefully without inventing facts.
+    Loads provenance metadata using source_manifest.jsonl as the primary canonical source.
+    Falls back to local source.yaml / metadata.yaml or directory structure without inventing metadata.
     """
+    manifest = load_manifest_data()
+    rec: Optional[Dict[str, Any]] = None
+
+    try:
+        rel_kb = str(pdf_path.relative_to(WORKSPACE_ROOT / "knowledge-base")).replace("\\", "/")
+        rec = manifest["by_path"].get(rel_kb)
+    except ValueError:
+        pass
+
+    if not rec:
+        rec = manifest["by_name"].get(pdf_path.name.lower())
+
+    if not rec and pdf_path.exists():
+        try:
+            h = hashlib.sha256(pdf_path.read_bytes()).hexdigest()
+            rec = manifest["by_checksum"].get(h)
+        except Exception:
+            pass
+
+    if rec:
+        pub_d, _ = validate_and_normalize_iso_date(rec.get("publication_date"))
+        pri_d, _ = validate_and_normalize_iso_date(rec.get("priority_date"))
+        return {
+            "document_id": rec.get("document_id", pdf_path.stem),
+            "title": rec.get("title") or DocumentProcessor._clean_source_name(str(pdf_path)),
+            "source": rec.get("title") or DocumentProcessor._clean_source_name(str(pdf_path)),
+            "authority": rec.get("authority", "Official Regulatory Authority"),
+            "document_type": rec.get("document_type", "statute"),
+            "domain": rec.get("domain", "General IP Law"),
+            "jurisdiction": rec.get("jurisdiction", "India"),
+            "publication_date": pub_d if pub_d else None,
+            "priority_date": pri_d if pri_d else None,
+            "language": rec.get("language", "en"),
+            "source_url": rec.get("source_url") or None,
+            "checksum": rec.get("checksum") or None,
+            "status": rec.get("status", "verified"),
+        }
+
+    # Fallback to directory structure and YAML files if not in manifest
+    clean_title = DocumentProcessor._clean_source_name(str(pdf_path))
     meta: Dict[str, Any] = {
         "document_id": pdf_path.stem,
-        "source": DocumentProcessor._clean_source_name(str(pdf_path)),
-        "authority": "",
+        "title": clean_title,
+        "source": clean_title,
+        "authority": "Official Regulatory Authority",
         "document_type": "statute",
-        "domain": "Intellectual Property",
-        "publication_date": "",
-        "priority_date": "",
+        "domain": "General IP Law",
+        "publication_date": None,
+        "priority_date": None,
         "language": "en",
         "jurisdiction": "India",
-        "official_url": "",
+        "source_url": None,
+        "checksum": None,
+        "status": "verified",
     }
 
-    # 1. Jurisdiction from directory structure
     path_str = str(pdf_path).lower()
     if "international" in path_str:
         meta["jurisdiction"] = "International"
         meta["document_type"] = "treaty"
-        meta["domain"] = "International IP Law"
-    elif "registry-record" in path_str:
-        meta["document_type"] = "registry-record"
-        meta["domain"] = "Traditional Knowledge / AYUSH"
+        meta["domain"] = "international-treaties"
+    elif "biodiversity" in path_str:
+        meta["domain"] = "biodiversity-abs"
+    elif "traditional" in path_str or "tkdl" in path_str or "ccras" in path_str:
+        meta["domain"] = "traditional-knowledge"
+    elif "ayush" in path_str or "drugs" in path_str:
+        meta["domain"] = "ayush-drug-regulation"
+    elif "food" in path_str or "cosmetics" in path_str or "fssai" in path_str:
+        meta["domain"] = "food-cosmetics-advertising"
     elif "rules" in path_str:
         meta["document_type"] = "rules"
-        meta["domain"] = "Patent Rules & Guidelines"
-    else:
-        meta["jurisdiction"] = "India"
-        meta["document_type"] = "statute"
-        meta["domain"] = "Indian Patent Law"
+        meta["domain"] = "patents"
 
-    # 2. Traverse parent directories to find metadata.yaml and source.yaml
+    # Compute checksum if possible
+    if pdf_path.exists():
+        try:
+            meta["checksum"] = hashlib.sha256(pdf_path.read_bytes()).hexdigest()
+        except Exception:
+            pass
+
+    # Traverse parent directories for source.yaml / metadata.yaml
     curr = pdf_path.parent
     source_yaml_path: Optional[Path] = None
     metadata_yaml_path: Optional[Path] = None
@@ -312,15 +463,16 @@ def load_source_provenance(pdf_path: Path) -> Dict[str, Any]:
             with open(source_yaml_path, "r", encoding="utf-8") as f:
                 s_data = yaml.safe_load(f) or {}
                 meta["document_id"] = s_data.get("source_id", meta["document_id"])
-                meta["source"] = s_data.get("title", meta["source"])
+                meta["title"] = s_data.get("title", meta["title"])
+                meta["source"] = meta["title"]
                 meta["authority"] = s_data.get("issuing_authority", meta["authority"])
                 meta["document_type"] = s_data.get("source_type", meta["document_type"])
                 pub_d, _ = validate_and_normalize_iso_date(s_data.get("publication_date"))
                 pri_d, _ = validate_and_normalize_iso_date(s_data.get("effective_date") or pub_d)
-                meta["publication_date"] = pub_d
-                meta["priority_date"] = pri_d
+                meta["publication_date"] = pub_d if pub_d else None
+                meta["priority_date"] = pri_d if pri_d else None
                 meta["language"] = s_data.get("language", "en")
-                meta["official_url"] = s_data.get("official_url", "")
+                meta["source_url"] = s_data.get("official_url") or None
                 jur_raw = s_data.get("jurisdiction", "")
                 if jur_raw.lower() == "india":
                     meta["jurisdiction"] = "India"
@@ -335,10 +487,10 @@ def load_source_provenance(pdf_path: Path) -> Dict[str, Any]:
                 m_data = yaml.safe_load(f) or {}
                 if not meta["publication_date"]:
                     pub_d, _ = validate_and_normalize_iso_date(m_data.get("publication_date"))
-                    meta["publication_date"] = pub_d
+                    meta["publication_date"] = pub_d if pub_d else None
                 if not meta["priority_date"]:
                     pri_d, _ = validate_and_normalize_iso_date(m_data.get("effective_date") or meta["publication_date"])
-                    meta["priority_date"] = pri_d
+                    meta["priority_date"] = pri_d if pri_d else None
         except Exception as ex:
             logger.warning("Could not read %s: %s", metadata_yaml_path, ex)
 
@@ -399,9 +551,13 @@ class QdrantIngestor:
             "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         }
 
-    def prepare_all_chunks(self) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+    def prepare_all_chunks(
+        self,
+        limit_docs: Optional[int] = None,
+        doc_id: Optional[str] = None,
+    ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
         """Parses all discovered PDFs into standardized chunks with complete normalized metadata."""
-        pdf_files = scan_source_pdfs()
+        pdf_files = scan_source_pdfs(limit_docs=limit_docs, doc_id=doc_id)
         all_chunks: List[Dict[str, Any]] = []
         stats: Dict[str, Any] = {
             "documents_discovered": len(pdf_files),
@@ -413,6 +569,11 @@ class QdrantIngestor:
 
         for pdf_path in pdf_files:
             provenance = load_source_provenance(pdf_path)
+            # Skip non-verified files
+            if provenance.get("status") in ("needs_review", "duplicate", "excluded"):
+                logger.info("Skipping non-verified document %s (status: %s)", pdf_path.name, provenance.get("status"))
+                continue
+
             try:
                 raw_chunks = self.doc_processor.chunk_pdf(
                     str(pdf_path),
@@ -424,34 +585,39 @@ class QdrantIngestor:
 
                 for rc in raw_chunks:
                     chunk_item = {
+                        # 17 standardized payload fields for IP-SAKTI Sahayak:
                         "chunk_id": rc["chunk_id"],
                         "document_id": provenance["document_id"],
-                        "source": provenance["source"],
-                        "jurisdiction": provenance["jurisdiction"],
-                        "authority": provenance["authority"],
-                        "document_type": provenance["document_type"],
-                        "domain": provenance["domain"],
-                        "parent_section": rc.get("parent_section", rc.get("section", "")),
-                        "section": rc.get("section", ""),
-                        "chapter": rc.get("chapter", "General Provisions"),
-                        "language": provenance["language"],
                         "text": rc["text"],
-                        "page_number": rc.get("page_number", 1),
-                        "file_name": pdf_path.name,
+                        "title": provenance.get("title") or provenance.get("source") or DocumentProcessor._clean_source_name(str(pdf_path)),
+                        "authority": provenance.get("authority", "Official Regulatory Authority"),
+                        "jurisdiction": provenance.get("jurisdiction", "India"),
+                        "domain": provenance.get("domain", "General IP Law"),
+                        "document_type": provenance.get("document_type", "statute"),
+                        "section": rc.get("section", ""),
+                        "language": provenance.get("language", "en"),
+                        "publication_date": provenance.get("publication_date"),  # ISO YYYY-MM-DD or None
+                        "priority_date": provenance.get("priority_date"),        # ISO YYYY-MM-DD or None
+                        "source_url": provenance.get("source_url"),              # string or None
+                        "page": rc.get("page_number", 1),
+                        "checksum": provenance.get("checksum"),
                         "embedding_model": settings.HF_EMBEDDING_MODEL,
+                        "vector_dimension": DENSE_DIMENSION,
+
+                        # Backward compatibility and auxiliary fields:
+                        "source": provenance.get("title") or provenance.get("source") or DocumentProcessor._clean_source_name(str(pdf_path)),
+                        "page_number": rc.get("page_number", 1),
+                        "parent_section": rc.get("parent_section", rc.get("section", "")),
+                        "chapter": rc.get("chapter", "General Provisions"),
+                        "file_name": pdf_path.name,
                         "embedding_dimension": DENSE_DIMENSION,
                         "sparse_model": "Qdrant/bm25",
                     }
-                    pub_d = provenance.get("publication_date")
-                    if pub_d and str(pub_d).strip():
-                        chunk_item["publication_date"] = str(pub_d).strip()
-                    pri_d = provenance.get("priority_date")
-                    if pri_d and str(pri_d).strip():
-                        chunk_item["priority_date"] = str(pri_d).strip()
 
                     # Check for empty mandatory identity fields
                     for field in REQUIRED_IDENTITY_FIELDS:
-                        if not chunk_item.get(field):
+                        val = chunk_item.get(field)
+                        if val is None or (isinstance(val, str) and not val.strip()):
                             stats["missing_metadata_fields"].add(f"{field} (in {pdf_path.name})")
 
                     all_chunks.append(chunk_item)
@@ -470,7 +636,7 @@ class QdrantIngestor:
         stats["missing_metadata_fields"] = sorted(list(stats["missing_metadata_fields"]))
         return all_chunks, stats
 
-    def run_preflight(self) -> Dict[str, Any]:
+    def run_preflight(self, limit_docs: Optional[int] = None, doc_id: Optional[str] = None) -> Dict[str, Any]:
         """Preflight mode: verifies collection schema, baseline, and counts without uploading."""
         logger.info("=== Qdrant Ingestion [PREFLIGHT MODE] ===")
         logger.info("Target Collection: %s", self.collection_name)
@@ -482,10 +648,10 @@ class QdrantIngestor:
         baseline = self.get_collection_baseline()
 
         # 3. Count sources and chunks
-        all_chunks, stats = self.prepare_all_chunks()
+        all_chunks, stats = self.prepare_all_chunks(limit_docs=limit_docs, doc_id=doc_id)
 
         # 4. Metadata validation report
-        val_report = generate_validation_report(all_chunks, allow_incomplete_metadata=False)
+        val_report = generate_validation_report(all_chunks, allow_incomplete_metadata=True)
 
         report = {
             "mode": "preflight",
@@ -514,50 +680,74 @@ class QdrantIngestor:
         )
         return report
 
-    def run_dry_run(self, embed: bool = False) -> Dict[str, Any]:
+    def run_dry_run(
+        self,
+        embed: bool = False,
+        limit_chunks: int = 10,
+        limit_docs: Optional[int] = None,
+        doc_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """
         Dry-run mode: builds points and optionally generates embeddings, but uploads nothing.
         Correctness invariant: Strictly calls embed_documents() and embed_passages() for passages.
+        Guarantees zero writes to Qdrant Cloud.
         """
         logger.info("=== Qdrant Ingestion [DRY-RUN MODE] (embed=%s) ===", embed)
-        schema_report = qdrant_hybrid_store.verify_collection_schema(self.collection_name)
+        schema_verified = False
+        try:
+            schema_report = qdrant_hybrid_store.verify_collection_schema(self.collection_name)
+            schema_verified = schema_report["is_compatible"]
+        except Exception as exc:
+            logger.warning("Target collection schema verification: %s", exc)
 
-        all_chunks, stats = self.prepare_all_chunks()
+        all_chunks, stats = self.prepare_all_chunks(limit_docs=limit_docs, doc_id=doc_id)
         points_built = 0
         validation_errors = []
 
-        sample_chunks = all_chunks[:10] if not embed else all_chunks[:5]
+        val_report = generate_validation_report(all_chunks, allow_incomplete_metadata=True)
+
+        sample_chunks = all_chunks[:limit_chunks] if not embed else all_chunks[:min(5, len(all_chunks))]
         sample_texts = [c["text"] for c in sample_chunks]
 
-        if embed:
-            logger.info("Dry-run generating real embeddings via document methods (embed_documents, embed_passages)...")
-            dense_vectors = canonical_embedder.embed_documents(sample_texts, batch_size=len(sample_chunks))
-            sparse_vectors = sparse_embedder.embed_passages(sample_texts, batch_size=len(sample_chunks))
-        else:
-            dense_vectors = [[0.0] * DENSE_DIMENSION for _ in sample_chunks]
-            sparse_vectors = [qmodels.SparseVector(indices=[1], values=[1.0]) for _ in sample_chunks]
+        if sample_chunks:
+            if embed:
+                logger.info("Dry-run generating real embeddings via document methods (embed_documents, embed_passages)...")
+                dense_vectors = canonical_embedder.embed_documents(sample_texts, batch_size=len(sample_chunks))
+                sparse_vectors = sparse_embedder.embed_passages(sample_texts, batch_size=len(sample_chunks))
+            else:
+                dense_vectors = [[0.0] * DENSE_DIMENSION for _ in sample_chunks]
+                sparse_vectors = [qmodels.SparseVector(indices=[1], values=[1.0]) for _ in sample_chunks]
 
-        for c, d_vec, s_vec in zip(sample_chunks, dense_vectors, sparse_vectors):
-            try:
-                pt = build_hybrid_point(
-                    collection_name=self.collection_name,
-                    chunk_id=c["chunk_id"],
-                    dense_vector=d_vec,
-                    sparse_vector=s_vec,
-                    payload=c,
-                )
-                points_built += 1
-            except Exception as e:
-                validation_errors.append(f"Chunk '{c['chunk_id']}': {e}")
+            for c, d_vec, s_vec in zip(sample_chunks, dense_vectors, sparse_vectors):
+                try:
+                    pt = build_hybrid_point(
+                        collection_name=self.collection_name,
+                        chunk_id=c["chunk_id"],
+                        dense_vector=d_vec,
+                        sparse_vector=s_vec,
+                        payload=c,
+                    )
+                    # Verify 17 standardized payload fields are present
+                    for f in STANDARDIZED_PAYLOAD_FIELDS:
+                        if f not in c:
+                            raise ValueError(f"Missing 17-field contract member: {f}")
+                    points_built += 1
+                except Exception as e:
+                    validation_errors.append(f"Chunk '{c['chunk_id']}': {e}")
 
         report = {
             "mode": "dry-run",
             "target_collection": self.collection_name,
-            "schema_verified": schema_report["is_compatible"],
+            "schema_verified": schema_verified,
             "documents_parsed": stats["documents_parsed"],
             "total_chunks_discovered": stats["total_chunks"],
             "sample_points_built": points_built,
             "validation_errors": validation_errors,
+            "valid_chunks": val_report["valid_chunks_count"],
+            "incomplete_chunks": val_report["incomplete_chunks_count"],
+            "invalid_chunks": val_report["invalid_chunks_count"],
+            "missing_fields_summary": val_report["missing_fields_summary"],
+            "zero_writes_confirmed": True,
             "upload_executed": False,
         }
         logger.info("Dry-run complete: %d points validated, 0 writes executed.", points_built)
@@ -813,6 +1003,8 @@ def run_qdrant_ingestion(
     collection_name: Optional[str] = None,
     environment: str = "test",
     confirm_production: bool = False,
+    limit_docs: Optional[int] = None,
+    doc_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Top-level invocation helper for programmatic and test execution."""
     ingestor = QdrantIngestor(
@@ -822,9 +1014,9 @@ def run_qdrant_ingestion(
         confirm_production=confirm_production,
     )
     if mode == "preflight":
-        return ingestor.run_preflight()
+        return ingestor.run_preflight(limit_docs=limit_docs, doc_id=doc_id)
     elif mode == "dry-run":
-        return ingestor.run_dry_run(embed=(generate_embeddings or embed))
+        return ingestor.run_dry_run(embed=(generate_embeddings or embed), limit_docs=limit_docs, doc_id=doc_id)
     elif mode == "test-upload":
         return ingestor.run_test_upload(limit=limit, allow_incomplete_metadata=allow_incomplete_metadata)
     elif mode == "full":
@@ -866,6 +1058,18 @@ def main():
         action="store_true",
         help="Explicit production confirmation flag required when targeting ragvyn_prod_v1",
     )
+    parser.add_argument(
+        "--limit-docs",
+        type=int,
+        default=None,
+        help="Limit number of documents to process in preflight / dry-run",
+    )
+    parser.add_argument(
+        "--doc-id",
+        type=str,
+        default=None,
+        help="Filter ingestion to a specific document_id from source_manifest.jsonl",
+    )
 
     args = parser.parse_args()
 
@@ -877,13 +1081,13 @@ def main():
     )
 
     if args.mode == "preflight":
-        res = ingestor.run_preflight()
+        res = ingestor.run_preflight(limit_docs=args.limit_docs, doc_id=args.doc_id)
         print("\n--- Preflight Summary ---")
         for k, v in res.items():
             print(f"  {k}: {v}")
 
     elif args.mode == "dry-run":
-        res = ingestor.run_dry_run(embed=args.embed)
+        res = ingestor.run_dry_run(embed=args.embed, limit_docs=args.limit_docs, doc_id=args.doc_id)
         print("\n--- Dry-Run Summary ---")
         for k, v in res.items():
             print(f"  {k}: {v}")

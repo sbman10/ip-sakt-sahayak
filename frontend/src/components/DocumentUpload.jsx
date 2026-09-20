@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
 const TOKEN_KEY = 'ip_sakti_access_token'
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 

@@ -2,6 +2,11 @@
 Sliding Window PDF Parser for IP-SAKTI Sahayak Backend.
 Extracts clean text from legislative PDFs and generates overlapping 500-word
 chunks with accurate page citations formatted as JSONL.
+
+Updated for Phase 3:
+- Reads knowledge-base/registry/source_manifest.jsonl as canonical metadata source.
+- Uses new sources/ root and preserves deterministic chunk citations.
+- Excludes duplicate, quarantined, and non-authoritative files automatically.
 """
 
 import json
@@ -9,7 +14,7 @@ import logging
 import os
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import pymupdf as fitz
 
@@ -25,6 +30,30 @@ logger = logging.getLogger("PDFParser")
 BASE_DIR = Path(__file__).resolve().parent
 RAW_DATA_DIR = BASE_DIR / "sources"
 PROCESSED_DATA_DIR = BASE_DIR / "derived" / "chunks"
+MANIFEST_FILE = BASE_DIR / "registry" / "source_manifest.jsonl"
+
+
+def load_manifest_lookup() -> Dict[str, Dict[str, Any]]:
+    """Loads source_manifest.jsonl indexed by relative path and filename."""
+    lookup: Dict[str, Dict[str, Any]] = {}
+    if not MANIFEST_FILE.exists():
+        return lookup
+
+    try:
+        with open(MANIFEST_FILE, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                rec = json.loads(line)
+                sp = rec.get("source_path", "").replace("\\", "/")
+                lookup[sp] = rec
+                lookup[Path(sp).name.lower()] = rec
+                lookup[rec.get("checksum", "")] = rec
+    except Exception as e:
+        logger.warning(f"Could not load manifest from {MANIFEST_FILE}: {e}")
+
+    return lookup
 
 
 def clean_source_title(file_stem: str) -> str:
@@ -134,13 +163,14 @@ def chunk_text(
 def process_all_pdfs() -> None:
     """
     Scans the raw data directory for all PDFs, parses them into overlapping
-    chunks, and writes JSONL outputs to the processed directory.
+    chunks using manifest metadata when available, and writes JSONL outputs.
     """
     if not RAW_DATA_DIR.exists():
         logger.warning(f"Raw data directory not found at: {RAW_DATA_DIR}")
         RAW_DATA_DIR.mkdir(parents=True, exist_ok=True)
 
     PROCESSED_DATA_DIR.mkdir(parents=True, exist_ok=True)
+    manifest_lookup = load_manifest_lookup()
 
     pdf_files = sorted(list(RAW_DATA_DIR.rglob("*.pdf")) + list(RAW_DATA_DIR.rglob("*.PDF")))
     pdf_files = list(dict.fromkeys(pdf_files))
@@ -149,11 +179,26 @@ def process_all_pdfs() -> None:
         logger.info(f"No PDF files found in {RAW_DATA_DIR}. Please place legislative PDFs there.")
         return
 
-    logger.info(f"Found {len(pdf_files)} PDF file(s) for parsing.")
+    logger.info(f"Found {len(pdf_files)} PDF file(s) across {RAW_DATA_DIR}.")
 
     for pdf_path in pdf_files:
-        file_stem = pdf_path.stem
-        source_title = clean_source_title(file_stem)
+        rel_path = str(pdf_path.relative_to(BASE_DIR)).replace("\\", "/")
+        m_rec = manifest_lookup.get(rel_path) or manifest_lookup.get(pdf_path.name.lower())
+
+        # Skip files explicitly marked excluded, duplicate, or needs_review
+        if m_rec:
+            status = m_rec.get("status", "verified")
+            if status in ("excluded", "duplicate", "needs_review"):
+                logger.info(f"Skipping {pdf_path.name} (status: {status}).")
+                continue
+            source_title = m_rec.get("title") or clean_source_title(pdf_path.stem)
+            jurisdiction = m_rec.get("jurisdiction", "India").lower()
+        else:
+            if "needs-review" in rel_path:
+                logger.info(f"Skipping unverified file: {pdf_path.name}")
+                continue
+            source_title = clean_source_title(pdf_path.stem)
+            jurisdiction = "international" if "international" in rel_path else "india"
 
         pages_data = extract_pages(pdf_path)
         if not pages_data:
@@ -166,15 +211,19 @@ def process_all_pdfs() -> None:
 
         chunks = chunk_text(pages_data, source_title, window_size=500, overlap=50)
 
-        output_filename = f"{file_stem}_chunks.jsonl"
-        output_filepath = PROCESSED_DATA_DIR / output_filename
+        # Place chunks in jurisdiction subdirectory if available
+        juris_dir = PROCESSED_DATA_DIR / jurisdiction
+        juris_dir.mkdir(parents=True, exist_ok=True)
+
+        output_filename = f"{pdf_path.stem}_chunks.jsonl"
+        output_filepath = juris_dir / output_filename
 
         with open(output_filepath, "w", encoding="utf-8") as f:
             for chunk in chunks:
                 f.write(json.dumps(chunk, ensure_ascii=False) + "\n")
 
         logger.info(
-            f"Extracting [{pdf_path.name}]... Created {len(chunks)} overlapping chunks on page-range {page_range_str}."
+            f"Extracted [{pdf_path.name}] -> {output_filepath.name}: {len(chunks)} chunks ({page_range_str})."
         )
 
 

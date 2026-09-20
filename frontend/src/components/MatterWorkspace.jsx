@@ -3,7 +3,7 @@ import MatterCard from './MatterCard'
 import MatterTimeline from './MatterTimeline'
 import AddMatterModal from './AddMatterModal'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
 const TOKEN_KEY = 'ip_sakti_access_token'
 
 const STATUS_COLUMNS = [

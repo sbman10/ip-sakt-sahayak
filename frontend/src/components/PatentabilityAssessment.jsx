@@ -12,7 +12,7 @@ import { Link } from 'react-router-dom'
  * Section 3(p)/3(d)/3(e) statutory issue cards, and experimental evidence gap checklists.
  */
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
 
 const RESULT_CATEGORIES = {
   'Potentially distinguishable based on supplied information': {

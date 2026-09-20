@@ -12,7 +12,7 @@ sources:
   source_type: registry-record
   issuing_authority: Central Council for Research in Ayurvedic Sciences (CCRAS)
   current_version: '2025-01-28'
-  package_path: sources/india/registry-records/ccras-patent-records
+  package_path: sources/india/traditional-knowledge/ccras-patent-records
   verification_status: pending-review
 - source_id: tkdl-overview
   title: Traditional Knowledge Digital Library — Overview
@@ -22,7 +22,7 @@ sources:
   issuing_authority: Council of Scientific and Industrial Research (CSIR) / Ministry
     of AYUSH
   current_version: current
-  package_path: sources/india/registry-records/tkdl-records
+  package_path: sources/india/traditional-knowledge/tkdl-records
   verification_status: pending-review
 - source_id: nba-abs-guidelines
   title: NBA Guidelines on Access and Benefit Sharing
@@ -31,7 +31,7 @@ sources:
   source_type: rule
   issuing_authority: National Biodiversity Authority
   current_version: current
-  package_path: sources/india/rules/nba-abs-guidelines
+  package_path: sources/india/biodiversity-abs/nba-abs-guidelines
   verification_status: pending-review
 - source_id: patents-rules-2003
   title: The Patents Rules, 2003
@@ -40,7 +40,7 @@ sources:
   source_type: rule
   issuing_authority: Ministry of Commerce and Industry, Government of India
   current_version: 2003-original
-  package_path: sources/india/rules/patents-rules-2003
+  package_path: sources/india/patents/patents-rules-2003
   verification_status: pending-review
 - source_id: biological-diversity-act-2002
   title: The Biological Diversity Act, 2002
@@ -49,7 +49,7 @@ sources:
   source_type: statute
   issuing_authority: Parliament of India
   current_version: 2002-original
-  package_path: sources/india/statutes/biological-diversity-act-2002
+  package_path: sources/india/biodiversity-abs/biological-diversity-act-2002
   verification_status: pending-review
 - source_id: drugs-and-cosmetics-act-1940
   title: The Drugs and Cosmetics Act, 1940
@@ -58,7 +58,7 @@ sources:
   source_type: statute
   issuing_authority: Parliament of India
   current_version: 1940-original
-  package_path: sources/india/statutes/drugs-and-cosmetics-act-1940
+  package_path: sources/india/ayush-drug-regulation/drugs-and-cosmetics-act-1940
   verification_status: pending-review
 - source_id: patents-act-1970
   title: The Patents Act, 1970
@@ -67,7 +67,7 @@ sources:
   source_type: statute
   issuing_authority: Parliament of India
   current_version: 1970-original
-  package_path: sources/india/statutes/patents-act-1970
+  package_path: sources/india/patents/patents-act-1970
   verification_status: pending-review
 - source_id: nagoya-protocol
   title: Nagoya Protocol on Access to Genetic Resources and the Fair and Equitable

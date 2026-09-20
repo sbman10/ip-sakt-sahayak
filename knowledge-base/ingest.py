@@ -53,6 +53,7 @@ logger = logging.getLogger("UnifiedIngestor")
 # Directory configurations
 KB_DIR = WORKSPACE_ROOT / "knowledge-base"
 KB_SOURCES_DIR = KB_DIR / "sources"
+KB_MANIFEST_PATH = KB_DIR / "registry" / "source_manifest.jsonl"
 
 # Target Storage Destinations
 try:
@@ -75,11 +76,46 @@ INDIA_KEYWORDS = ["patent", "biodiversity", "drugs", "cosmetics", "tkdl", "nba",
 INTERNATIONAL_KEYWORDS = ["nagoya", "wipo", "trips", "treaty", "international", "pct"]
 
 
+def load_manifest_lookup() -> Dict[str, Dict[str, Any]]:
+    """Loads source_manifest.jsonl indexed by relative path, filename, and checksum."""
+    lookup: Dict[str, Dict[str, Any]] = {}
+    if not KB_MANIFEST_PATH.exists():
+        return lookup
+    try:
+        import json
+        with open(KB_MANIFEST_PATH, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    r = json.loads(line)
+                    sp = r.get("source_path", "").replace("\\", "/")
+                    lookup[sp] = r
+                    lookup[Path(sp).name.lower()] = r
+    except Exception as e:
+        logger.warning("Could not read manifest %s: %s", KB_MANIFEST_PATH, e)
+    return lookup
+
+
 def determine_jurisdiction(file_path: Path) -> Tuple[str, str]:
     """
-    Determines jurisdiction and target Chroma collection based on filepath and filename keywords.
+    Determines jurisdiction and target Chroma collection based on manifest record
+    with fallback to directory structure and filename keywords.
     Returns: (collection_name, jurisdiction_label)
     """
+    manifest_lookup = load_manifest_lookup()
+    try:
+        rel_str = str(file_path.relative_to(KB_DIR)).replace("\\", "/")
+    except ValueError:
+        rel_str = file_path.name
+
+    rec = manifest_lookup.get(rel_str) or manifest_lookup.get(file_path.name.lower())
+    if rec:
+        jur = rec.get("jurisdiction", "").strip()
+        if jur.lower() == "international":
+            return COLLECTION_INTERNATIONAL, "International"
+        elif jur.lower() == "india":
+            return COLLECTION_INDIA, "India"
+
     path_str = str(file_path).lower()
     filename = file_path.name.lower()
 
@@ -94,13 +130,26 @@ def determine_jurisdiction(file_path: Path) -> Tuple[str, str]:
 
 
 def scan_all_pdfs() -> List[Path]:
-    """Finds all raw PDF legal documents in knowledge base sources directory."""
+    """Finds all verified PDF legal documents in knowledge base sources directory."""
     pdf_paths: List[Path] = []
+    manifest_lookup = load_manifest_lookup()
+
     if KB_SOURCES_DIR.exists():
         for root, _, files in os.walk(KB_SOURCES_DIR):
             for f in files:
                 if f.lower().endswith(".pdf"):
                     pdf_path = Path(root) / f
+                    try:
+                        rel_str = str(pdf_path.relative_to(KB_DIR)).replace("\\", "/")
+                    except ValueError:
+                        rel_str = pdf_path.name
+
+                    rec = manifest_lookup.get(rel_str) or manifest_lookup.get(f.lower())
+                    if rec and rec.get("status") in ("excluded", "duplicate", "needs_review"):
+                        continue
+                    if "needs-review" in rel_str:
+                        continue
+
                     if pdf_path not in pdf_paths:
                         pdf_paths.append(pdf_path)
 

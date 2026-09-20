@@ -22,8 +22,7 @@ import {
    The parent passes the shared page chrome (Navbar/header) around it.
    ------------------------------------------------------------------ */
 
-const API_BASE =
-  (import.meta.env && import.meta.env.VITE_API_BASE_URL) || 'http://127.0.0.1:8000'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
 
 // Template catalogue — drives the dropdown and the dynamic field set.
 const TEMPLATES = [

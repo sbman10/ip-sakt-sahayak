@@ -1,39 +1,66 @@
 # IP-SAKTI Sahayak — Legal & Regulatory Knowledge Base
 
-A curated, version-tracked, sovereign-separated knowledge base for AYUSH, Intellectual Property, Biodiversity, and regulatory compliance.
+A clean, auditable, Qdrant-ready knowledge base structure tailored for the Ministry of Ayush problem statement, intellectual property law, biodiversity compliance, and regulatory affairs.
 
 ## Architecture Overview
 
 ```
 knowledge-base/
-├── schemas/          <- YAML schemas for sources, versions, case-law, citations
-├── manifests/        <- Master source catalogs, current version indexes, boundaries
-├── sources/          <- Primary authoritative sources (PDFs, metadata)
-│   ├── india/        <- Domestic Indian statutes, rules, standards, records
-│   └── international/<- International treaties, conventions, standards
-├── derived/          <- Extracted text, normalized records, and chunk embeddings
-├── quarantine/       <- Unverified, incomplete, and secondary materials
-├── scripts/          <- Integrity validation, checksum verification, catalog builders
-├── tests/            <- Pytest automated integrity test suite
-└── docs/             <- Governance policies and operational guidelines
+├── sources/
+│   ├── india/
+│   │   ├── patents/
+│   │   ├── trademarks/
+│   │   ├── geographical-indications/
+│   │   ├── copyright/
+│   │   ├── designs/
+│   │   ├── trade-secrets/
+│   │   ├── plant-variety-protection/
+│   │   ├── traditional-knowledge/
+│   │   ├── biodiversity-abs/
+│   │   ├── ayush-drug-regulation/
+│   │   ├── food-cosmetics-advertising/
+│   │   ├── case-law/
+│   │   └── official-guidance/
+│   ├── international/
+│   │   ├── treaties/
+│   │   ├── patents/
+│   │   ├── trademarks/
+│   │   ├── geographical-indications/
+│   │   ├── copyright/
+│   │   ├── designs/
+│   │   ├── traditional-knowledge/
+│   │   ├── biodiversity-abs/
+│   │   ├── case-law/
+│   │   └── official-guidance/
+│   └── needs-review/
+├── curated/
+├── derived/
+│   ├── extracted-text/
+│   ├── chunks/
+│   │   ├── india/
+│   │   └── international/
+│   ├── manifests/
+│   └── embeddings/
+├── registry/
+│   ├── source_manifest.jsonl
+│   ├── authority_registry.json
+│   └── README.md
+└── README.md
 ```
 
 ## Key Architectural Guarantees
-1. **Strict Jurisdiction Isolation:** Indian law and International conventions are segregated into dedicated namespaces with zero cross-contamination.
-2. **Immutable Provenance:** Original PDFs are preserved with SHA-256 cryptographic checksums.
-3. **Clear Authoritative vs Secondary Boundaries:** Primary gazette copies reside in `sources/`, while secondary summaries and unverified narratives reside in `quarantine/` or `derived/`.
 
-## Running Integrity Checks
+1. **Strict Jurisdiction Separation:** Domestic Indian law (`sources/india/`) and International treaties/rules (`sources/international/`) are segregated into dedicated namespaces with zero cross-contamination.
+2. **Canonical Manifest & Registry:** `registry/source_manifest.jsonl` provides a deterministic, machine-readable catalog with verified SHA-256 checksums, statutory authority links, and ISO dates.
+3. **Immutable Provenance:** Original source documents are never modified or deleted; duplicate copies are flagged as `duplicate`, and uncertified secondary materials are segregated into `sources/needs-review/`.
+4. **Qdrant Cloud Hybrid Readiness:** All chunk generation and payloads are standardized for dual-vector hybrid search (1,024-d dense BAAI/bge-m3 + sparse Qdrant/bm25 with IDF).
+
+## Running Validation & Tests
+
 ```bash
 # Run pytest test suite
-python -m pytest knowledge-base/tests/ -v
+python -m pytest -q knowledge-base/tests
 
-# Run metadata validation
-python knowledge-base/scripts/validate-source-metadata.py
-
-# Verify SHA-256 checksums
-python knowledge-base/scripts/verify-checksums.py
-
-# Verify jurisdiction separation
-python knowledge-base/scripts/validate-jurisdiction-separation.py
+# Run dry-run ingestion validation (zero writes)
+python knowledge-base/qdrant_ingest.py --mode dry-run
 ```
