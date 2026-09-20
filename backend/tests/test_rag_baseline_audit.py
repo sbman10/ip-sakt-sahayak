@@ -172,11 +172,6 @@ def test_08_consolidated_sqlalchemy_models():
     assert DatabaseUser is DbUser
     assert "VARCHAR" in str(DatabaseUser.id.property.columns[0].type)
     assert hasattr(DatabaseUser, "password_hash")
-<<<<<<< HEAD
-    assert hasattr(DbUser, "hashed_password")
-    
-    # Bases are completely different instances
-    assert DatabaseBase is not DbBase
 
 
 def test_09_gemini_key_pool_and_retry_config():

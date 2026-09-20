@@ -43,13 +43,11 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.models.database import UploadedDocument, User, get_db
 from app.routers.auth import require_auth
-<<<<<<< HEAD
 from app.services.embedding_service import canonical_embedder
-=======
 from app.services.storage_service import build_storage_key, storage_service
 from app.services.qdrant_service import qdrant_service
 from app.services.bm25_service import get_bm25_index
->>>>>>> 232bc4799ec2a5dca5f6a60f53d8961cd65c4b4b
+
 
 # ---------------------------------------------------------------------------
 # Third-party imports with clear startup guards
@@ -75,12 +73,9 @@ _KB_ROOT = _PROJECT_ROOT / "knowledge-base"
 UPLOAD_DIR = _KB_ROOT / "uploads"
 CHROMA_DB_PATH = settings.CHROMA_DB_DIR
 
-<<<<<<< HEAD
-USER_UPLOADS_COLLECTION = "user_uploads"
-=======
 EMBEDDING_MODEL_NAME = settings.EMBEDDING_MODEL_NAME
-USER_UPLOADS_COLLECTION = settings.QDRANT_USER_UPLOADS_COLLECTION
->>>>>>> 232bc4799ec2a5dca5f6a60f53d8961cd65c4b4b
+USER_UPLOADS_COLLECTION = getattr(settings, "QDRANT_USER_UPLOADS_COLLECTION", "user_uploads")
+
 
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 CHUNK_WINDOW = 500                 # words per chunk (matches knowledge-base/parser.py)
@@ -316,11 +311,8 @@ async def upload_and_ingest_document(
                 ),
             )
 
-<<<<<<< HEAD
         collection = _get_chroma_collection()
-=======
-        model = _get_embedding_model()
->>>>>>> 232bc4799ec2a5dca5f6a60f53d8961cd65c4b4b
+
 
         texts = [c["text"] for c in chunks]
         embeddings = canonical_embedder.embed_documents(texts, batch_size=8)

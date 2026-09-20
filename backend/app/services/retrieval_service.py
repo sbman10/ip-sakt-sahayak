@@ -31,15 +31,12 @@ except ImportError:
 log = logging.getLogger("app.services.retrieval_service")
 
 
-<<<<<<< HEAD
 try:
     from backend.app.services.embedding_service import canonical_embedder
 except ImportError:
     from app.services.embedding_service import canonical_embedder
 
 
-class CanonicalBgeM3EmbeddingsAdapter(Embeddings):
-=======
 class RetrievedCandidate:
     """Standardized candidate document object compatible with LangChain Document interface."""
 
@@ -48,8 +45,8 @@ class RetrievedCandidate:
         self.metadata = metadata
 
 
-class SentenceTransformerEmbeddingsAdapter(Embeddings):
->>>>>>> 232bc4799ec2a5dca5f6a60f53d8961cd65c4b4b
+class CanonicalBgeM3EmbeddingsAdapter(Embeddings):
+
     """
     LangChain compatible Embeddings adapter connecting to the canonical
     Hugging Face BGE-M3 InferenceClient embedding service.
@@ -118,13 +115,9 @@ def hybrid_rrf_search(
     if not query or not query.strip():
         return []
 
-<<<<<<< HEAD
     _chroma_t_start = time.perf_counter()
-
     # 1. Route to the correct ChromaDB collection(s) based on jurisdiction.
-=======
-    # 1. Route to the correct collection(s) based on jurisdiction.
->>>>>>> 232bc4799ec2a5dca5f6a60f53d8961cd65c4b4b
+
     #    'India' -> india_statutes, 'International' -> international_treaties,
     #    'Both' -> query BOTH collections and fuse the combined candidate pool.
     jur_clean = jurisdiction.strip().lower()
