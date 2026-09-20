@@ -1,0 +1,46 @@
+# Render Blueprint Specification for IP-SAKTI Sahayak Backend
+# Documentation: https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: ip-sakti-sahayak-backend
+    runtime: python
+    rootDir: backend
+    plan: standard # 2 GB RAM / 1 CPU (or pro: 4 GB RAM recommended for ML models)
+    region: frankfurt # Low latency connection to Supabase / Qdrant Cloud (AWS eu-central-1)
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1
+    healthCheckPath: /readiness
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: ENVIRONMENT
+        value: production
+      - key: EMBEDDING_MODEL_NAME
+        value: BAAI/bge-m3
+      - key: DATABASE_URL
+        sync: false # Set in Render Dashboard: postgresql+psycopg://postgres.[ref]:[pwd]@aws-0-[region].pooler.supabase.com:6543/postgres
+      - key: SUPABASE_URL
+        sync: false # Set in Render Dashboard: https://[ref].supabase.co
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false # Set in Render Dashboard
+      - key: SUPABASE_STORAGE_BUCKET
+        value: legal-documents
+      - key: QDRANT_URL
+        sync: false # Set in Render Dashboard: https://[cluster-id].eu-central-1.aws.cloud.qdrant.io:6333
+      - key: QDRANT_API_KEY
+        sync: false # Set in Render Dashboard
+      - key: QDRANT_INDIA_COLLECTION
+        value: india_statutes
+      - key: QDRANT_INTERNATIONAL_COLLECTION
+        value: international_treaties
+      - key: QDRANT_USER_UPLOADS_COLLECTION
+        value: user_uploads
+      - key: GEMINI_API_KEY
+        sync: false # Set in Render Dashboard
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: FRONTEND_URL
+        sync: false # Set in Render Dashboard: e.g. https://ip-sakti-sahayak.vercel.app
+      - key: ALLOWED_ORIGINS
+        sync: false # Set in Render Dashboard: e.g. ["https://ip-sakti-sahayak.vercel.app"]

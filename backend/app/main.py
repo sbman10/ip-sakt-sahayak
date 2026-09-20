@@ -15,7 +15,7 @@ import os
 from pathlib import Path
 import traceback
 from contextlib import asynccontextmanager
-from typing import AsyncIterator
+from typing import Any, AsyncIterator
 
 from fastapi import FastAPI, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -85,15 +85,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     except Exception as e:
         log.error("[PID %s] Database initialization error: %s", pid, e, exc_info=True)
 
-    # 2. Preload BM25 disk index
+    # 2. Rebuild In-Memory BM25 index from Qdrant payloads
     try:
         bm25_loaded = load_bm25_index_on_startup()
         if bm25_loaded:
-            log.info("[PID %s] BM25 index preloaded from disk.", pid)
+            log.info("[PID %s] In-memory BM25 index reconstructed successfully from Qdrant.", pid)
         else:
-            log.warning("[PID %s] BM25 index not found on disk. Will be created on first document ingestion.", pid)
+            log.warning("[PID %s] BM25 index empty at startup. Chunks will be indexed as documents are added.", pid)
     except Exception as e:
-        log.warning("[PID %s] BM25 index preloading warning: %s", pid, e)
+        log.warning("[PID %s] BM25 index reconstruction warning: %s", pid, e)
 
     # 3. Preload SentenceTransformer and CrossEncoder asynchronously
     try:
@@ -248,16 +248,39 @@ def health_check() -> dict[str, str]:
     "/readiness",
     tags=["Health"],
     summary="Readiness Probe",
-    description="Checks whether ML models are loaded and ChromaDB/Database are reachable.",
+    description="Checks PostgreSQL, Qdrant Cloud, BGE-M3, and CrossEncoder readiness.",
 )
-async def readiness_check(response: Response) -> dict[str, str]:
+async def readiness_check(response: Response) -> dict[str, Any]:
     """
-    Readiness probe validating model preloading and database connectivity.
+    Readiness probe validating database connectivity, Qdrant Cloud availability,
+    and ML model preloading (BGE-M3 bi-encoder + CrossEncoder reranker).
     Returns HTTP 200 when ready, HTTP 503 when initializing or degraded.
     """
-    models_ready = model_registry.is_ready
+    # 1. Check PostgreSQL / database connectivity
+    db_ok = False
+    try:
+        from sqlalchemy import text
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        db_ok = True
+    except Exception as e:
+        log.warning("Readiness probe database check warning: %s", e)
+        db_ok = False
 
-    # Check chroma reachability
+    # 2. Check Qdrant Cloud connectivity
+    qdrant_ok = False
+    try:
+        from app.services.qdrant_service import qdrant_service
+        qdrant_ok = qdrant_service.is_healthy()
+    except Exception as e:
+        log.warning("Readiness probe Qdrant check warning: %s", e)
+        qdrant_ok = False
+
+    # 3. Check BGE-M3 & CrossEncoder ML models
+    bge_m3_ok = bool(model_registry._embedding_model is not None or model_registry.is_ready)
+    cross_encoder_ok = bool(model_registry._reranker_model is not None or model_registry.is_ready)
+
+    # 4. Check ChromaDB fallback reachability
     chroma_ok = False
     try:
         import chromadb
@@ -266,13 +289,30 @@ async def readiness_check(response: Response) -> dict[str, str]:
         chroma_ok = True
     except Exception as e:
         log.warning("Readiness probe ChromaDB check warning: %s", e)
-        chroma_ok = True  # Soft-fail: don't block readiness on ChromaDB
+        chroma_ok = True  # Soft-fail: fallback store doesn't block readiness
 
-    if models_ready and chroma_ok:
-        return {"status": "ready"}
+    checks = {
+        "database": db_ok,
+        "qdrant": qdrant_ok,
+        "bge_m3": bge_m3_ok,
+        "cross_encoder": cross_encoder_ok,
+        "chroma_fallback": chroma_ok,
+    }
+
+    # All primary subsystems required for production readiness
+    all_ready = db_ok and qdrant_ok and bge_m3_ok and cross_encoder_ok
+
+    if all_ready:
+        return {
+            "status": "ready",
+            "checks": checks,
+        }
 
     response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
-    return {"status": "initializing"}
+    return {
+        "status": "initializing" if not (bge_m3_ok and cross_encoder_ok) else "degraded",
+        "checks": checks,
+    }
 
 
 # ---------------------------------------------------------------------------
