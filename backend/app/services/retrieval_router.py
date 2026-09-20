@@ -404,7 +404,7 @@ class RetrievalRouter:
         """Call Qdrant hybrid store directly targeting the production collection."""
         from app.services.qdrant_hybrid_store import qdrant_hybrid_store
 
-        target_collection = settings.QDRANT_PRODUCTION_COLLECTION or "ragvyn_prod_v1"
+        target_collection = settings.QDRANT_PRODUCTION_COLLECTION or "ragvyn_prod_v2"
 
         raw_points = qdrant_hybrid_store.query_hybrid(
             query_text=query,
@@ -494,7 +494,7 @@ class RetrievalRouter:
                 return []
 
         # -------------------------------------------------------------
-        # Path B: Qdrant Hybrid Canary (ragvyn_prod_v1) with Safe Fallback
+        # Path B: Qdrant Hybrid Production Retrieval with Safe Fallback
         # -------------------------------------------------------------
         fallback_needed = False
         fallback_category: Optional[str] = None
@@ -643,4 +643,3 @@ def retrieve(
         user_id=user_id,
         **filters,
     )
-

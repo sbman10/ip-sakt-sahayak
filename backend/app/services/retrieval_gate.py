@@ -53,16 +53,57 @@ def evaluate_retrieval_quality(
             "top_rrf_score": 0.0,
         }
 
-    # Inspect best vector distance and top RRF score
+    # Qdrant's native RRF score is not a cosine similarity or distance. A
+    # reciprocal-rank score is positive when at least one hybrid branch
+    # returned the candidate, so it requires its own threshold. Applying the
+    # Chroma distance threshold to it would incorrectly abstain on valid
+    # Qdrant results.
+    qdrant_rrf_candidates = [
+        c for c in candidates if c.get("retrieval_score_type") == "qdrant_rrf"
+    ]
+
+    rrf_scores = [float(c.get("rrf_score", 0.0)) for c in candidates]
+    top_rrf_score = max(rrf_scores) if rrf_scores else 0.0
+
+    if qdrant_rrf_candidates:
+        rrf_min_score = float(getattr(settings, "QDRANT_RRF_MIN_SCORE", 0.01))
+        if top_rrf_score < rrf_min_score:
+            log.warning(
+                "Qdrant RRF gate failed: top_rrf_score=%.4f is below minimum %.4f.",
+                top_rrf_score,
+                rrf_min_score,
+            )
+            return {
+                "is_sufficient": False,
+                "reason": "Insufficient evidence in legal registers",
+                "best_distance": 1.0,
+                "top_rrf_score": top_rrf_score,
+            }
+
+        # Compatibility value for downstream confidence code only. It is not
+        # treated as a real cosine distance; native RRF remains authoritative.
+        max_two_branch_rank_one = 2.0 / 61.0
+        normalized_rrf = min(1.0, top_rrf_score / max_two_branch_rank_one)
+        best_distance = 1.0 - normalized_rrf
+        log.info(
+            "Qdrant RRF quality accepted: top_rrf_score=%.4f, minimum=%.4f.",
+            top_rrf_score,
+            rrf_min_score,
+        )
+        return {
+            "is_sufficient": True,
+            "reason": "Sufficient hybrid statutory evidence found",
+            "best_distance": best_distance,
+            "top_rrf_score": top_rrf_score,
+        }
+
+    # Legacy Chroma/BM25 path: inspect its vector distance as before.
     distances = [
         float(c.get("distance", c.get("vector_distance", 1.0)))
         for c in candidates
         if c.get("distance") is not None or c.get("vector_distance") is not None
     ]
     best_distance = min(distances) if distances else 1.0
-
-    rrf_scores = [float(c.get("rrf_score", 0.0)) for c in candidates]
-    top_rrf_score = max(rrf_scores) if rrf_scores else 0.0
 
     log.info(
         "Evaluating retrieval quality: best_distance=%.4f, top_rrf_score=%.4f, threshold=%.2f",

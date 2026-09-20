@@ -85,15 +85,21 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     except Exception as e:
         log.error("[PID %s] Database initialization error: %s", pid, e, exc_info=True)
 
-    # 2. Rebuild In-Memory BM25 index from Qdrant payloads
-    try:
-        bm25_loaded = load_bm25_index_on_startup()
-        if bm25_loaded:
-            log.info("[PID %s] In-memory BM25 index reconstructed successfully from Qdrant.", pid)
-        else:
-            log.warning("[PID %s] BM25 index empty at startup. Chunks will be indexed as documents are added.", pid)
-    except Exception as e:
-        log.warning("[PID %s] BM25 index reconstruction warning: %s", pid, e)
+    # 2. Rebuild the legacy in-process BM25 index only when the legacy
+    # Chroma/BM25 backend is active. Qdrant-native hybrid retrieval already
+    # performs sparse BM25 search inside Qdrant and must not make extra
+    # startup calls to the old separate collections.
+    if settings.RETRIEVAL_BACKEND == "chroma_bm25":
+        try:
+            bm25_loaded = load_bm25_index_on_startup()
+            if bm25_loaded:
+                log.info("[PID %s] In-memory BM25 index reconstructed successfully from Qdrant.", pid)
+            else:
+                log.warning("[PID %s] BM25 index empty at startup. Chunks will be indexed as documents are added.", pid)
+        except Exception as e:
+            log.warning("[PID %s] BM25 index reconstruction warning: %s", pid, e)
+    else:
+        log.info("[PID %s] Skipping legacy BM25 rebuild; Qdrant native sparse retrieval is active.", pid)
 
     # 3. Preload SentenceTransformer and CrossEncoder asynchronously
     try:
@@ -138,7 +144,7 @@ app = FastAPI(
     description=(
         "Ayurvedic Intellectual Property Assistant - a high-performance RAG-powered legal Q&A backend "
         "supporting Ministry of AYUSH Problem Statement 26045. "
-        "Features hybrid BM25 + ChromaDB retrieval, CrossEncoder reranking, and "
+        "Features Qdrant hybrid retrieval with a safe Chroma/BM25 fallback and "
         "Gemini grounded citations with composite confidence scoring."
     ),
     version="1.0.0",
@@ -225,6 +231,20 @@ async def validation_error_handler(request: Request, exc: Exception) -> JSONResp
 _FAVICON_PATH = Path(__file__).resolve().parents[2] / "frontend" / "public" / "favicon.svg"
 
 
+@app.get("/", tags=["Health"], summary="Service status")
+def service_status() -> dict[str, Any]:
+    """Human-friendly status endpoint; the API is not a frontend host."""
+    return {
+        "service": settings.PROJECT_NAME,
+        "status": "alive",
+        "retrieval_backend": settings.RETRIEVAL_BACKEND,
+        "qdrant_collection": settings.QDRANT_PRODUCTION_COLLECTION,
+        "docs": "/docs",
+        "health": "/health",
+        "readiness": "/readiness",
+    }
+
+
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon() -> Response:
     """Serve the application favicon or return 204 to prevent browser 404 logs."""
@@ -260,7 +280,7 @@ async def readiness_check(response: Response) -> dict[str, Any]:
       - Does NOT require local BGE-M3 model object, CrossEncoder model object, or Qdrant Cloud.
     For Qdrant canary or qdrant_hybrid startup:
       - Additionally validates Qdrant URL and API key
-      - Validates target production collection (ragvyn_prod_v1) exists, schema is valid, and status is green.
+      - Validates the configured production collection exists, has the hybrid schema, and is green.
     """
     checks: dict[str, Any] = {}
     is_ready = True
@@ -315,11 +335,18 @@ async def readiness_check(response: Response) -> dict[str, Any]:
             checks["qdrant_collection"] = False
         else:
             try:
-                from app.services.qdrant_service import qdrant_service
+                from app.services.qdrant_hybrid_store import qdrant_hybrid_store
                 col_name = settings.QDRANT_PRODUCTION_COLLECTION
-                q_status = qdrant_service.verify_collection_readiness(col_name)
+                schema = qdrant_hybrid_store.verify_collection_schema(col_name)
+                q_status = {
+                    "exists": True,
+                    "green": str(schema.get("status", "")).lower() == "green",
+                    "schema_valid": bool(schema.get("is_compatible")),
+                    "points_count": schema.get("points_count"),
+                    "collection": col_name,
+                }
                 checks["qdrant_collection"] = q_status
-                if not (q_status.get("exists") and q_status.get("green") and q_status.get("schema_valid")):
+                if not (q_status["exists"] and q_status["green"] and q_status["schema_valid"]):
                     is_ready = False
             except Exception as e:
                 log.warning("Readiness probe Qdrant verification failed: %s", e)

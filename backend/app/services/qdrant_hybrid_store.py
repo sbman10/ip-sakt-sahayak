@@ -9,7 +9,7 @@ Enforces:
 - Deterministic UUID5 point IDs from chunk identifiers (no raw strings)
 - Complete payload metadata contract
 - Strict validation rejecting single-vector (dense-only or sparse-only) points
-- Non-destructive schema verification for target collection (ragvyn_hybrid_test)
+- Non-destructive schema verification for the configured production collection
 - Prefetch-based Reciprocal Rank Fusion (RRF) query construction
 """
 
@@ -70,6 +70,10 @@ REQUIRED_PAYLOAD_INDEXES = [
     "publication_date",
     "priority_date",
 ]
+
+# v1 remains available as an immutable legacy collection for rollback/shadow
+# checks. v2 is the current production corpus.
+PRODUCTION_COLLECTIONS = {"ragvyn_prod_v1", "ragvyn_prod_v2"}
 
 
 class IncompatibleSchemaError(RuntimeError):
@@ -264,7 +268,7 @@ class QdrantHybridStore:
             )
 
         # 5. For production collection, verify exact schema invariants
-        if target.strip() == "ragvyn_prod_v1":
+        if target.strip() in PRODUCTION_COLLECTIONS:
             if dense_params.on_disk is True:
                 raise IncompatibleSchemaError(
                     f"Production collection '{target}' requires dense vector 'on_disk=False', found on_disk={dense_params.on_disk}"
@@ -313,13 +317,14 @@ class QdrantHybridStore:
         - sparse: 'bm25' (Modifier.IDF, on_disk=True)
         and creates all required payload indexes.
 
-        SAFETY: Creating 'ragvyn_prod_v1' requires allow_production=True.
-        If 'ragvyn_prod_v1' already exists, it will abort immediately without recreation.
+        SAFETY: Creating a production collection requires allow_production=True.
+        If a production collection already exists, it will abort immediately
+        without recreation.
         """
-        is_prod = (collection_name.strip() == "ragvyn_prod_v1")
+        is_prod = collection_name.strip() in PRODUCTION_COLLECTIONS
         if is_prod and not allow_production:
             raise ValueError(
-                "Creation of production collection 'ragvyn_prod_v1' is strictly prohibited "
+                f"Creation of production collection '{collection_name}' is strictly prohibited "
                 "unless allow_production=True."
             )
 

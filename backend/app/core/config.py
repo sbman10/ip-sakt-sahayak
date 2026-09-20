@@ -45,7 +45,9 @@ class Settings(BaseSettings):
     # Qdrant Cloud settings
     QDRANT_URL: str = ""
     QDRANT_API_KEY: str = ""
-    QDRANT_COLLECTION: str = "ragvyn_hybrid_test"
+    # Default to the verified production hybrid collection. Local experiments
+    # should override this explicitly in an ignored backend/.env file.
+    QDRANT_COLLECTION: str = "ragvyn_prod_v2"
     QDRANT_SHADOW_RETRIEVAL: bool = False
     QDRANT_SHADOW_COLLECTION: str = "ragvyn_prod_v1"
     QDRANT_SHADOW_TIMEOUT_SECONDS: float = 3.0
@@ -54,9 +56,12 @@ class Settings(BaseSettings):
 
     # Retrieval Backend Routing & Safe Fallback (Phase 5B)
     RETRIEVAL_BACKEND: str = "chroma_bm25"
-    QDRANT_PRODUCTION_COLLECTION: str = "ragvyn_prod_v1"
+    # Official production corpus currently deployed in Qdrant Cloud.
+    QDRANT_PRODUCTION_COLLECTION: str = "ragvyn_prod_v2"
     QDRANT_FALLBACK_ENABLED: bool = True
     QDRANT_REQUEST_TIMEOUT_SECONDS: float = 5.0
+    # Qdrant RRF scores are rank-fusion scores, not cosine distances.
+    QDRANT_RRF_MIN_SCORE: float = 0.01
 
     # Controlled Canary Rollout Settings (Phase 5D)
     QDRANT_CANARY_ENABLED: bool = False
@@ -99,9 +104,7 @@ class Settings(BaseSettings):
     SUPABASE_SERVICE_ROLE_KEY: str = ""
     SUPABASE_STORAGE_BUCKET: str = "legal-documents"
 
-    # Qdrant Cloud Vector Database
-    QDRANT_URL: str = ""
-    QDRANT_API_KEY: str = ""
+    # Additional Qdrant collection names used by specialized features.
     QDRANT_INDIA_COLLECTION: str = "india_statutes"
     QDRANT_INTERNATIONAL_COLLECTION: str = "international_treaties"
     QDRANT_USER_UPLOADS_COLLECTION: str = "user_uploads"
@@ -138,7 +141,7 @@ class Settings(BaseSettings):
         if val_clean in prohibited or "test" in val_clean:
             raise ValueError(
                 f"Prohibited collection: '{v}' is a test collection and cannot be used for production shadow validation. "
-                "Production shadow retrieval must target 'ragvyn_prod_v1'."
+                "Production shadow retrieval must target a verified non-test collection."
             )
         return v.strip()
 

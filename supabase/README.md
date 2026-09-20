@@ -172,7 +172,7 @@ If the application upgrades to `BAAI/bge-m3` in Phase 2, vectors must be re-embe
 ### Target Contract
 In Phase 3, create a centralized `frontend/src/api/client.js` reading `import.meta.env.VITE_API_BASE_URL`.
 * **Vercel Environment Variables**:
-  * `VITE_API_BASE_URL`: URL of the deployed Render backend (e.g. `https://ragvyn-backend.onrender.com`).
+  * `VITE_API_BASE_URL`: URL of the deployed Render backend: `https://ragvyn.onrender.com`.
 
 ---
 
@@ -212,7 +212,7 @@ ALLOWED_ORIGINS="https://ragvyn.vercel.app,https://*-your-org.vercel.app,http://
 
 ### Vercel Frontend
 ```bash
-VITE_API_BASE_URL="https://[RENDER-SERVICE-NAME].onrender.com"
+VITE_API_BASE_URL="https://ragvyn.onrender.com"
 ```
 
 ---
