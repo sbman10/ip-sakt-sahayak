@@ -131,6 +131,36 @@ class QdrantService:
             log.warning("Qdrant health check failed: %s", exc)
             return False
 
+    def verify_collection_readiness(self, collection_name: str) -> Dict[str, Any]:
+        """
+        Validates collection exists, schema is valid (dense vector configured),
+        and collection status is green.
+        """
+        try:
+            col_info = self.client.get_collection(collection_name)
+            status_str = str(col_info.status).lower()
+            is_green = "green" in status_str or "optimizing" in status_str
+            params = getattr(col_info.config, "params", None)
+            vectors_param = getattr(params, "vectors", None) if params else None
+            schema_valid = vectors_param is not None
+            return {
+                "exists": True,
+                "status": str(col_info.status),
+                "green": is_green,
+                "schema_valid": schema_valid,
+                "points_count": getattr(col_info, "points_count", None),
+            }
+        except Exception as exc:
+            log.warning("Qdrant collection readiness check failed for '%s': %s", collection_name, exc)
+            return {
+                "exists": False,
+                "status": "error",
+                "green": False,
+                "schema_valid": False,
+                "error": str(exc),
+            }
+
+
     def ensure_collections(self) -> Dict[str, str]:
         """
         Idempotently initializes target collections (india_statutes, international_treaties,

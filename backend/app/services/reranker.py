@@ -60,6 +60,14 @@ class ConditionalReranker:
         if not candidates:
             return []
 
+        # When CrossEncoder is globally disabled, safely preserve hybrid retrieval ordering
+        if not settings.ENABLE_CROSS_ENCODER:
+            log.info("CrossEncoder reranking disabled (ENABLE_CROSS_ENCODER=false). Preserving hybrid retrieval ordering.")
+            for cand in candidates:
+                cand["rerank_score"] = float(cand.get("vector_similarity", cand.get("rrf_score", 0.5)))
+                cand["rerank_bypassed"] = True
+            return candidates[:top_k]
+
         # Check conditional shortcut: if top candidate has vector_distance <= skip_threshold
         top_cand = candidates[0]
         top_dist = top_cand.get("vector_distance", 1.0)

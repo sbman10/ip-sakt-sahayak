@@ -95,9 +95,26 @@ class UnifiedVectorStore:
                     log.debug("Payload index creation note for %s: %s", field, ex)
 
     def _get_embedding(self, text: str) -> List[float]:
+        if not settings.ENABLE_LOCAL_BGE_PRELOAD:
+            try:
+                from app.services.embedding_service import canonical_embedder
+                return canonical_embedder.embed_query(text)
+            except Exception as e:
+                log.warning("Remote canonical embedding unavailable: %s. Using placeholder vector.", e)
+                return [0.0] * EMBEDDING_DIM
+
         model = model_registry.get_embedding_model()
+        if model is None:
+            try:
+                from app.services.embedding_service import canonical_embedder
+                return canonical_embedder.embed_query(text)
+            except Exception as e:
+                log.warning("Embedding model is None and remote fallback failed: %s. Using placeholder vector.", e)
+                return [0.0] * EMBEDDING_DIM
+
         emb = model.encode([text], show_progress_bar=False, normalize_embeddings=True)
         return emb[0].tolist()
+
 
     def _seed_authoritative_statutes(self):
         """Seed foundational Indian Patents Act 1970 sections and TKDL prior-art anchors."""
@@ -203,19 +220,23 @@ class UnifiedVectorStore:
         ]
 
         for s in seeds:
-            self.index_chunk(
-                chunk_id=s["chunk_id"],
-                document_id=s["document_id"],
-                title=s["title"],
-                document_type=s["document_type"],
-                publication_date=s["publication_date"],
-                priority_date=s.get("priority_date"),
-                authority=s["authority"],
-                jurisdiction=s["jurisdiction"],
-                section=s["section"],
-                page=s["page"],
-                text=s["text"],
-            )
+            try:
+                self.index_chunk(
+                    chunk_id=s["chunk_id"],
+                    document_id=s["document_id"],
+                    title=s["title"],
+                    document_type=s["document_type"],
+                    publication_date=s["publication_date"],
+                    priority_date=s.get("priority_date"),
+                    authority=s["authority"],
+                    jurisdiction=s["jurisdiction"],
+                    section=s["section"],
+                    page=s["page"],
+                    text=s["text"],
+                )
+            except Exception as seed_err:
+                log.warning("Seeding chunk %s non-fatal warning: %s", s.get("chunk_id"), seed_err)
+
 
     def index_chunk(
         self,

@@ -56,6 +56,18 @@ async def conditional_rerank(
         log.info("No candidates supplied to conditional_rerank; returning empty list.")
         return [], True
 
+
+    if not settings.ENABLE_CROSS_ENCODER:
+        log.info("CrossEncoder reranking disabled (ENABLE_CROSS_ENCODER=false). Preserving candidate ordering.")
+        for c in candidates:
+            dist = float(c.get("distance", c.get("vector_distance", 1.0 - c.get("vector_similarity", 0.5))))
+            sim = float(c.get("vector_similarity", round(max(0.0, min(1.0, 1.0 - dist)), 4)))
+            c["reranker_score"] = sim
+            c["rerank_skipped"] = True
+        return candidates[:final_k], True
+
+
+
     # Inspect the best vector distance among candidates
     distances = [
         float(c.get("distance", c.get("vector_distance", 1.0)))

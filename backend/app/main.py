@@ -248,15 +248,24 @@ def health_check() -> dict[str, str]:
     "/readiness",
     tags=["Health"],
     summary="Readiness Probe",
-    description="Checks PostgreSQL, Qdrant Cloud, BGE-M3, and CrossEncoder readiness.",
+    description="Configuration-aware readiness probe for active backend and retrieval topology.",
 )
 async def readiness_check(response: Response) -> dict[str, Any]:
     """
-    Readiness probe validating database connectivity, Qdrant Cloud availability,
-    and ML model preloading (BGE-M3 bi-encoder + CrossEncoder reranker).
-    Returns HTTP 200 when ready, HTTP 503 when initializing or degraded.
+    Readiness probe validating only the subsystems required for the active configuration.
+    For default chroma_bm25 startup:
+      - Validates database connectivity
+      - Validates HF dense embedding configuration (without preloading local model)
+      - Validates ChromaDB & BM25 index
+      - Does NOT require local BGE-M3 model object, CrossEncoder model object, or Qdrant Cloud.
+    For Qdrant canary or qdrant_hybrid startup:
+      - Additionally validates Qdrant URL and API key
+      - Validates target production collection (ragvyn_prod_v1) exists, schema is valid, and status is green.
     """
-    # 1. Check PostgreSQL / database connectivity
+    checks: dict[str, Any] = {}
+    is_ready = True
+
+    # 1. Database connectivity
     db_ok = False
     try:
         from sqlalchemy import text
@@ -266,53 +275,89 @@ async def readiness_check(response: Response) -> dict[str, Any]:
     except Exception as e:
         log.warning("Readiness probe database check warning: %s", e)
         db_ok = False
+    checks["database"] = db_ok
+    if not db_ok:
+        is_ready = False
 
-    # 2. Check Qdrant Cloud connectivity
-    qdrant_ok = False
-    try:
-        from app.services.qdrant_service import qdrant_service
-        qdrant_ok = qdrant_service.is_healthy()
-    except Exception as e:
-        log.warning("Readiness probe Qdrant check warning: %s", e)
-        qdrant_ok = False
+    # 2. Dense embeddings configuration
+    hf_configured = bool(settings.HF_TOKEN and settings.HF_EMBEDDING_MODEL)
+    checks["hf_embedding_configured"] = hf_configured
+    if not hf_configured:
+        is_ready = False
 
-    # 3. Check BGE-M3 & CrossEncoder ML models
-    bge_m3_ok = bool(model_registry._embedding_model is not None or model_registry.is_ready)
-    cross_encoder_ok = bool(model_registry._reranker_model is not None or model_registry.is_ready)
+    if settings.ENABLE_LOCAL_BGE_PRELOAD:
+        local_bge_ok = bool(model_registry._embedding_model is not None)
+        checks["local_bge_m3"] = local_bge_ok
+        if not local_bge_ok:
+            is_ready = False
+    else:
+        checks["local_bge_m3"] = "disabled"
 
-    # 4. Check ChromaDB fallback reachability
-    chroma_ok = False
-    try:
-        import chromadb
-        client = chromadb.PersistentClient(path=settings.CHROMA_DB_DIR)
-        client.heartbeat()
-        chroma_ok = True
-    except Exception as e:
-        log.warning("Readiness probe ChromaDB check warning: %s", e)
-        chroma_ok = True  # Soft-fail: fallback store doesn't block readiness
+    # 3. CrossEncoder reranker
+    if settings.ENABLE_CROSS_ENCODER:
+        ce_ok = bool(model_registry._reranker_model is not None)
+        checks["cross_encoder"] = ce_ok
+        if not ce_ok:
+            is_ready = False
+    else:
+        checks["cross_encoder"] = "disabled"
 
-    checks = {
-        "database": db_ok,
-        "qdrant": qdrant_ok,
-        "bge_m3": bge_m3_ok,
-        "cross_encoder": cross_encoder_ok,
-        "chroma_fallback": chroma_ok,
-    }
+    # 4. Retrieval Subsystem Readiness
+    is_canary = settings.QDRANT_CANARY_ENABLED and settings.QDRANT_TRAFFIC_PERCENT > 0
+    is_qdrant_active = (settings.RETRIEVAL_BACKEND == "qdrant_hybrid") or is_canary
 
-    # All primary subsystems required for production readiness
-    all_ready = db_ok and qdrant_ok and bge_m3_ok and cross_encoder_ok
+    if is_qdrant_active:
+        # Active Qdrant or Canary mode: must verify Qdrant config and collection status
+        qdrant_configured = bool(settings.QDRANT_URL and settings.QDRANT_API_KEY)
+        checks["qdrant_configured"] = qdrant_configured
+        if not qdrant_configured:
+            is_ready = False
+            checks["qdrant_collection"] = False
+        else:
+            try:
+                from app.services.qdrant_service import qdrant_service
+                col_name = settings.QDRANT_PRODUCTION_COLLECTION
+                q_status = qdrant_service.verify_collection_readiness(col_name)
+                checks["qdrant_collection"] = q_status
+                if not (q_status.get("exists") and q_status.get("green") and q_status.get("schema_valid")):
+                    is_ready = False
+            except Exception as e:
+                log.warning("Readiness probe Qdrant verification failed: %s", e)
+                checks["qdrant_collection"] = {"exists": False, "green": False, "error": str(e)}
+                is_ready = False
+    else:
+        # Default startup (chroma_bm25, canary disabled)
+        # Does NOT require Qdrant production retrieval
+        checks["qdrant"] = "not_required"
+        chroma_ok = False
+        try:
+            import chromadb
+            client = chromadb.PersistentClient(path=settings.CHROMA_DB_DIR)
+            client.heartbeat()
+            chroma_ok = True
+        except Exception as e:
+            log.warning("Readiness probe ChromaDB check warning: %s", e)
+            chroma_ok = False
+        checks["chroma_bm25"] = chroma_ok
+        if not chroma_ok:
+            is_ready = False
 
-    if all_ready:
+    if is_ready:
         return {
             "status": "ready",
+            "backend": settings.RETRIEVAL_BACKEND,
+            "canary_enabled": settings.QDRANT_CANARY_ENABLED,
             "checks": checks,
         }
 
     response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
     return {
-        "status": "initializing" if not (bge_m3_ok and cross_encoder_ok) else "degraded",
+        "status": "degraded",
+        "backend": settings.RETRIEVAL_BACKEND,
+        "canary_enabled": settings.QDRANT_CANARY_ENABLED,
         "checks": checks,
     }
+
 
 
 # ---------------------------------------------------------------------------

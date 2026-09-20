@@ -39,6 +39,8 @@ class Settings(BaseSettings):
     HF_EMBEDDING_TIMEOUT: float = 60.0
     HF_EMBEDDING_NORMALIZE: bool = True
     LOCAL_BGE_FALLBACK: bool = False
+    ENABLE_LOCAL_BGE_PRELOAD: bool = False
+    ENABLE_CROSS_ENCODER: bool = False
 
     # Qdrant Cloud settings
     QDRANT_URL: str = ""

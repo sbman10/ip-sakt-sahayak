@@ -283,6 +283,3 @@ def test_16_canonical_embedder_service_and_no_silent_fallback():
         failed = True
     assert failed is True, "Expected EmbeddingServiceError was not raised on HF failure"
 
-
-=======
->>>>>>> 232bc4799ec2a5dca5f6a60f53d8961cd65c4b4b
