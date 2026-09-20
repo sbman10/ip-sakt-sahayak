@@ -66,6 +66,8 @@ services:
         sync: false # Set in Render Dashboard
       - key: SUPABASE_STORAGE_BUCKET
         value: legal-documents
+      - key: GOOGLE_REDIRECT_URI
+        value: https://ragvyn.onrender.com/api/auth/google/callback
       - key: FRONTEND_URL
         sync: false # Set in Render Dashboard: e.g. https://ip-sakti-sahayak.vercel.app
       - key: ALLOWED_ORIGINS

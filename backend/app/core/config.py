@@ -93,7 +93,9 @@ class Settings(BaseSettings):
     # Google OAuth
     GOOGLE_CLIENT_ID: str = ""
     GOOGLE_CLIENT_SECRET: str = ""
-    GOOGLE_REDIRECT_URI: str = "http://localhost:8000/api/auth/google/callback"
+    # Production callback for the deployed Render API. Local development can
+    # override this in the ignored backend/.env file.
+    GOOGLE_REDIRECT_URI: str = "https://ragvyn.onrender.com/api/auth/google/callback"
 
     # Database URLs
     DATABASE_URL: str = "sqlite:///./ip_sakti.db"
