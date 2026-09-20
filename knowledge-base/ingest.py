@@ -1,14 +1,25 @@
 """
 knowledge-base/ingest.py
 ------------------------
-Unified offline ingestion script for IP-SAKTI Sahayak.
-Parses raw PDF legal statutes and treaties from the knowledge base,
-generates dense vector embeddings with SentenceTransformers, populates ChromaDB
-collections (isolated by jurisdiction), and builds + serializes a persisted BM25 index.
+[DEPRECATED in Phase 2]
+Legacy offline ingestion script for ChromaDB and rank_bm25 using local SentenceTransformer.
 
-Usage:
+For canonical Qdrant hybrid ingestion using Hugging Face BAAI/bge-m3 (dense 1024-d)
+and FastEmbed Qdrant/bm25 (sparse), use:
+    knowledge-base/qdrant_ingest.py
+
+Architectural roles:
+- BGE-M3 via Hugging Face InferenceClient: dense embeddings (documents & queries)
+- FastEmbed Qdrant/bm25: sparse embeddings (passage_embed & query_embed)
+- CrossEncoder: neural reranking only (reranker_service.py)
+- ChromaDB: legacy retrieval backend
+- Qdrant: shadow hybrid retrieval during Phase 2
+
+Usage (Legacy):
     python knowledge-base/ingest.py
 """
+
+import warnings
 
 from __future__ import annotations
 
@@ -103,6 +114,12 @@ def run_ingestion(
     """
     Orchestrates end-to-end PDF extraction, vector indexing, and BM25 index compilation.
     """
+    warnings.warn(
+        "knowledge-base/ingest.py is deprecated in Phase 2. "
+        "Use knowledge-base/qdrant_ingest.py for canonical Qdrant hybrid ingestion.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     embedding_model_name = embedding_model_name or os.getenv("EMBEDDING_MODEL_NAME", DEFAULT_EMBEDDING_MODEL)
     logger.info("=== Starting IP-SAKTI Sahayak Unified Ingestion Pipeline ===")
     logger.info("Workspace Root: %s", WORKSPACE_ROOT)
@@ -230,6 +247,40 @@ def run_ingestion(
     logger.info("ChromaDB Persisted Path:    %s", BACKEND_CHROMA_PATH)
     logger.info("BM25 Index Persisted Path:  %s", BACKEND_BM25_PATH)
     logger.info("=== Ingestion Completed Successfully ===")
+
+
+def build_qdrant_hybrid_points(
+    chunks: List[Dict[str, Any]],
+    collection_name: str = "ragvyn_hybrid_test",
+    batch_size: int = 16,
+) -> List[Any]:
+    """
+    Constructs dual-vector PointStructs for Qdrant Cloud ingestion using
+    the canonical Hugging Face dense embedder and FastEmbed BM25 sparse embedder.
+    Enforces strict UUID5 IDs and complete payload metadata.
+    """
+    from app.services.embedding_service import canonical_embedder
+    from app.services.sparse_embedding_service import sparse_embedder
+    from app.services.qdrant_hybrid_store import build_hybrid_point
+
+    if not chunks:
+        return []
+
+    texts = [c["text"] for c in chunks]
+    dense_vectors = canonical_embedder.embed_documents(texts, batch_size=batch_size)
+    sparse_vectors = sparse_embedder.embed_passages(texts, batch_size=batch_size)
+
+    points = []
+    for item, d_vec, s_vec in zip(chunks, dense_vectors, sparse_vectors):
+        pt = build_hybrid_point(
+            collection_name=collection_name,
+            chunk_id=item["chunk_id"],
+            dense_vector=d_vec,
+            sparse_vector=s_vec,
+            payload=item,
+        )
+        points.append(pt)
+    return points
 
 
 if __name__ == "__main__":

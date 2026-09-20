@@ -28,7 +28,7 @@ from app.schemas.chat import CitationItem
 from app.schemas.roadmap import RoadmapRequest, RoadmapResponse, RoadmapStage
 
 from app.services.pii_scrubber import pii_scrubber
-from app.services.retrieval_service import hybrid_rrf_search
+from app.services.retrieval_router import retrieve
 from app.services.retrieval_gate import evaluate_retrieval_quality
 from app.services.reranker_service import conditional_rerank
 from app.services.context_compressor import context_compressor
@@ -88,7 +88,7 @@ async def roadmap_endpoint(request: RoadmapRequest) -> RoadmapResponse:
 
     # ── Stage 3: Hybrid RRF retrieval ──────────────────────────
     try:
-        candidates = hybrid_rrf_search(
+        candidates = retrieve(
             query=retrieval_query,
             jurisdiction=jurisdiction,
             top_k=8,

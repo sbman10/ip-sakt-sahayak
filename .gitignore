@@ -18,6 +18,8 @@ frontend/.env.local
 .pytest_cache/
 .coverage
 htmlcov/
+reports/
+.shadow_reports/
 
 # Node / Frontend
 node_modules/

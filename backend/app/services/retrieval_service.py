@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import logging
 import os
+import time
 from typing import Any, Dict, List, Optional
 
 import chromadb
@@ -28,35 +29,30 @@ except ImportError:
 log = logging.getLogger("app.services.retrieval_service")
 
 
-class SentenceTransformerEmbeddingsAdapter(Embeddings):
+try:
+    from backend.app.services.embedding_service import canonical_embedder
+except ImportError:
+    from app.services.embedding_service import canonical_embedder
+
+
+class CanonicalBgeM3EmbeddingsAdapter(Embeddings):
     """
-    LangChain compatible Embeddings adapter that connects to the
-    pre-warmed SentenceTransformer model in model_registry.
+    LangChain compatible Embeddings adapter connecting to the canonical
+    Hugging Face BGE-M3 InferenceClient embedding service.
     """
 
     def __init__(self) -> None:
         pass
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
-        model = model_registry.get_embedding_model()
-        embs = model.encode(
-            texts,
-            batch_size=8,
-            show_progress_bar=False,
-            convert_to_numpy=True,
-            normalize_embeddings=True,
-        )
-        return [vec.tolist() for vec in embs]
+        return canonical_embedder.embed_documents(texts)
 
     def embed_query(self, text: str) -> list[float]:
-        model = model_registry.get_embedding_model()
-        emb = model.encode(
-            [text],
-            show_progress_bar=False,
-            convert_to_numpy=True,
-            normalize_embeddings=True,
-        )
-        return emb[0].tolist()
+        return canonical_embedder.embed_query(text)
+
+
+# Backwards compatibility alias
+SentenceTransformerEmbeddingsAdapter = CanonicalBgeM3EmbeddingsAdapter
 
 
 def get_chroma_vectorstore(collection_name: str) -> Chroma:
@@ -104,6 +100,8 @@ def hybrid_rrf_search(
     """
     if not query or not query.strip():
         return []
+
+    _chroma_t_start = time.perf_counter()
 
     # 1. Route to the correct ChromaDB collection(s) based on jurisdiction.
     #    'India' -> india_statutes, 'International' -> international_treaties,
@@ -249,5 +247,24 @@ def hybrid_rrf_search(
         len(bm25_candidates),
         top_results[0]["rrf_score"] if top_results else 0.0,
     )
+
+    _chroma_latency_ms = (time.perf_counter() - _chroma_t_start) * 1000.0
+
+    # 6. Optional Shadow Retrieval (non-destructive comparison)
+    #    Shadow runs AFTER the user response is fully assembled; no blocking wait.
+    if getattr(settings, "QDRANT_SHADOW_RETRIEVAL", False):
+        try:
+            from app.services.shadow_retrieval import log_and_record_shadow_comparison
+
+            log_and_record_shadow_comparison(
+                query=query,
+                jurisdiction=jurisdiction,
+                top_k=top_k,
+                chroma_results=top_results,
+                collection_name=getattr(settings, "QDRANT_SHADOW_COLLECTION", None),
+                chroma_latency_ms=_chroma_latency_ms,
+            )
+        except Exception as shadow_err:
+            log.warning("Shadow retrieval non-blocking error: %s", shadow_err)
 
     return top_results

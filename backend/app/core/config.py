@@ -32,6 +32,34 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "IP-SAKTI Sahayak"
     ENVIRONMENT: str = "development"
     EMBEDDING_MODEL_NAME: str = "BAAI/bge-m3"
+    EMBEDDING_PROVIDER: str = "hf_inference"
+    HF_TOKEN: str = ""
+    HF_EMBEDDING_MODEL: str = "BAAI/bge-m3"
+    HF_INFERENCE_PROVIDER: str = "auto"
+    HF_EMBEDDING_TIMEOUT: float = 60.0
+    HF_EMBEDDING_NORMALIZE: bool = True
+    LOCAL_BGE_FALLBACK: bool = False
+
+    # Qdrant Cloud settings
+    QDRANT_URL: str = ""
+    QDRANT_API_KEY: str = ""
+    QDRANT_COLLECTION: str = "ragvyn_hybrid_test"
+    QDRANT_SHADOW_RETRIEVAL: bool = False
+    QDRANT_SHADOW_COLLECTION: str = "ragvyn_prod_v1"
+    QDRANT_SHADOW_TIMEOUT_SECONDS: float = 3.0
+    QDRANT_SHADOW_SAMPLE_RATE: float = 1.0
+    QDRANT_SHADOW_MAX_FAILURES: int = 3
+
+    # Retrieval Backend Routing & Safe Fallback (Phase 5B)
+    RETRIEVAL_BACKEND: str = "chroma_bm25"
+    QDRANT_PRODUCTION_COLLECTION: str = "ragvyn_prod_v1"
+    QDRANT_FALLBACK_ENABLED: bool = True
+    QDRANT_REQUEST_TIMEOUT_SECONDS: float = 5.0
+
+    # Controlled Canary Rollout Settings (Phase 5D)
+    QDRANT_CANARY_ENABLED: bool = False
+    QDRANT_TRAFFIC_PERCENT: int = 0
+
     CHROMA_DB_DIR: str = str(_BASE_DIR / "chroma_db")
     BM25_INDEX_PATH: str = str(_BASE_DIR / "bm25_index.pkl")
 
@@ -87,6 +115,45 @@ class Settings(BaseSettings):
         if not p.is_absolute():
             p = (_BASE_DIR / v).resolve()
         return str(p)
+
+    @field_validator("QDRANT_SHADOW_COLLECTION", mode="after")
+    @classmethod
+    def validate_shadow_collection(cls, v: str) -> str:
+        prohibited = {"ragvyn_hybrid_test", "ragvyn_hybrid_test_v2"}
+        val_clean = v.strip().lower()
+        if val_clean in prohibited or "test" in val_clean:
+            raise ValueError(
+                f"Prohibited collection: '{v}' is a test collection and cannot be used for production shadow validation. "
+                "Production shadow retrieval must target 'ragvyn_prod_v1'."
+            )
+        return v.strip()
+
+    @field_validator("RETRIEVAL_BACKEND", mode="after")
+    @classmethod
+    def validate_retrieval_backend(cls, v: str) -> str:
+        allowed = {"chroma_bm25", "qdrant_hybrid"}
+        val_clean = v.strip().lower()
+        if val_clean not in allowed:
+            raise ValueError(
+                f"Invalid RETRIEVAL_BACKEND: '{v}'. Must be one of: {sorted(allowed)}"
+            )
+        return val_clean
+
+    @field_validator("QDRANT_PRODUCTION_COLLECTION", mode="after")
+    @classmethod
+    def validate_production_collection(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("QDRANT_PRODUCTION_COLLECTION must be explicitly configured and non-empty.")
+        return v.strip()
+
+    @field_validator("QDRANT_TRAFFIC_PERCENT", mode="after")
+    @classmethod
+    def validate_canary_traffic_percent(cls, v: int) -> int:
+        if not isinstance(v, int) or v < 0 or v > 100:
+            raise ValueError(
+                f"Invalid QDRANT_TRAFFIC_PERCENT: '{v}'. Must be an integer between 0 and 100."
+            )
+        return v
 
     @field_validator("GEMINI_API_KEYS", mode="before")
     @classmethod

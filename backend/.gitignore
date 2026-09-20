@@ -19,6 +19,8 @@ htmlcov/
 
 # Logs
 *.log
+reports/
+.shadow_reports/
 
 # VS Code / IDEs
 .vscode/

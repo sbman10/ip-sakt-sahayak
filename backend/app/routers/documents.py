@@ -43,6 +43,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.models.database import UploadedDocument, User, get_db
 from app.routers.auth import require_auth
+from app.services.embedding_service import canonical_embedder
 
 # ---------------------------------------------------------------------------
 # Third-party imports with clear startup guards
@@ -57,11 +58,6 @@ try:
 except ImportError:  # pragma: no cover
     chromadb = None  # type: ignore
 
-try:
-    from sentence_transformers import SentenceTransformer
-except ImportError:  # pragma: no cover
-    SentenceTransformer = None  # type: ignore
-
 log = logging.getLogger(__name__)
 router = APIRouter()
 
@@ -75,7 +71,6 @@ _KB_ROOT = _PROJECT_ROOT / "knowledge-base"
 UPLOAD_DIR = _KB_ROOT / "uploads"
 CHROMA_DB_PATH = settings.CHROMA_DB_DIR
 
-EMBEDDING_MODEL_NAME = settings.EMBEDDING_MODEL_NAME
 USER_UPLOADS_COLLECTION = "user_uploads"
 
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
@@ -86,25 +81,9 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # ---------------------------------------------------------------------------
-# Lazy singletons — heavy objects initialised once on first ingest request
+# Lazy singletons — Chroma client initialised once on first ingest request
 # ---------------------------------------------------------------------------
-_embedding_model: "SentenceTransformer | None" = None
 _chroma_client: Any = None
-
-
-def _get_embedding_model() -> "SentenceTransformer":
-    global _embedding_model
-    if _embedding_model is None:
-        if SentenceTransformer is None:
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="sentence-transformers not installed on the server.",
-            )
-        log.info("Loading embedding model '%s' for user uploads...", EMBEDDING_MODEL_NAME)
-        _embedding_model = SentenceTransformer(
-            EMBEDDING_MODEL_NAME,
-        )
-    return _embedding_model
 
 
 def _get_chroma_collection():
@@ -316,15 +295,9 @@ async def upload_and_ingest_document(
             )
 
         collection = _get_chroma_collection()
-        model = _get_embedding_model()
 
         texts = [c["text"] for c in chunks]
-        embeddings = model.encode(
-            texts,
-            batch_size=8,
-            show_progress_bar=False,
-            normalize_embeddings=True,
-        ).tolist()
+        embeddings = canonical_embedder.embed_documents(texts, batch_size=8)
 
         ids = [f"{document_id}_{i}" for i in range(len(chunks))]
         metadatas = [

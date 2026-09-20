@@ -40,7 +40,9 @@ from app.services.intent_classifier import (
     build_out_of_scope_response,
     build_unsafe_response,
 )
-from app.services.retrieval_service import hybrid_rrf_search
+from app.services.retrieval_router import retrieve
+# Alias for full backward compatibility with tests patching app.routers.chat.hybrid_rrf_search
+hybrid_rrf_search = retrieve
 from app.services.retrieval_gate import evaluate_retrieval_quality, get_abstention_response
 from app.services.reranker_service import conditional_rerank
 from app.services.context_compressor import context_compressor
