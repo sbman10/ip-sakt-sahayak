@@ -2999,7 +2999,7 @@ function ChatWelcome({ onPromptClick, onOpenWizard }) {
         </div>
       </div>
 
-      <div style={{ width: '100%', maxWidth: 860, margin: '2.5rem auto 0.5rem', textAlign: 'center' }}>
+      <div style={{ width: '100%', maxWidth: '100%', margin: '2.5rem auto 0.5rem', textAlign: 'center' }}>
         <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--secondary, #1E8449)', margin: '0 0 4px' }}>
           Explore IP Tools
         </h3>
@@ -5003,112 +5003,6 @@ function LandingPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, 
       {/* Stats Counter */}
       <StatsCounter />
 
-      {/* ===== INTELLIGENT IP TOOLS SECTION ===== */}
-      <section className="section tools-section" id="tools" aria-labelledby="tools-title">
-        <div className="tools-section-backdrop-glow" aria-hidden="true" />
-        <div className="tools-section-container">
-          <Reveal>
-            <div className="tools-section-header">
-              <h2 className="tools-section-heading" id="tools-title">
-                INTELLIGENT IP TOOLS
-              </h2>
-              <p className="tools-section-sub">
-                Specialized statutory calculators, compliance monitors, and procedural roadmaps engineered to navigate Ayurvedic patent law and regulatory frameworks.
-              </p>
-            </div>
-          </Reveal>
-
-          <div className="tech-tools-grid">
-            {[
-              {
-                id: 'roadmap',
-                title: 'IP Journey Roadmap',
-                badge: 'Timeline & Strategy',
-                desc: 'Interactive milestone roadmap mapping your formulation from prior-art search to patent grant and post-grant protection.',
-                to: '/roadmap',
-                cta: 'Launch Roadmap',
-                icon: <IconTrendingUp size={22} />,
-                theme: 'theme-indigo',
-              },
-              {
-                id: 'guardian',
-                title: 'Dual-Use Guardian',
-                badge: 'Statutory Shield',
-                desc: 'Unified cross-statute compliance engine spanning Indian Patents Act, AYUSH regulations, ABS, and FSSAI guidelines.',
-                to: '/guardian',
-                cta: 'Check Dual-Use',
-                icon: <IconShieldCheck size={22} />,
-                theme: 'theme-cyan',
-              },
-              {
-                id: 'fee-calc',
-                title: 'Patent Fee Calculator',
-                badge: 'Fee Estimator',
-                desc: 'Instant statutory fee estimation for Form-1, Form-2, Form-18, and renewals across Startups, Individuals, and Corporates.',
-                to: '/ip-calculator',
-                cta: 'Calculate Fees',
-                icon: <IconCurrencyRupee size={22} />,
-                theme: 'theme-blue',
-              },
-              {
-                id: 'deadline-calc',
-                title: 'Deadline Calculator',
-                badge: 'Statutory Clock',
-                desc: 'Precision statutory clock tracking mandatory RFE (48 mo), FER responses (6 mo), convention priority, and PCT national phase.',
-                to: '/deadline-calculator',
-                cta: 'Track Deadlines',
-                icon: <IconCalendar size={22} />,
-                theme: 'theme-amber',
-              },
-              {
-                id: 'abs-checker',
-                title: 'ABS Checker',
-                badge: 'Biodiversity Act',
-                desc: 'Biological Diversity Act compliance matrix: assess State Biodiversity Board (SBB) and NBA Form III approval pathways.',
-                to: '/abs-checker',
-                cta: 'Verify ABS Compliance',
-                icon: <IconLeaf size={22} />,
-                theme: 'theme-teal',
-              },
-              {
-                id: 'checklists',
-                title: 'Filing Checklists',
-                badge: 'Document Prep',
-                desc: 'Step-by-step statutory document checklists for Patent specifications, Trade Marks, Design registration, and GI filings.',
-                to: '/checklists',
-                cta: 'Open Checklists',
-                icon: <IconCheck size={22} />,
-                theme: 'theme-purple',
-              },
-            ].map((tool, i) => (
-              <Reveal key={tool.id} delay={i * 80}>
-                <Link to={tool.to} className={`tech-tool-card ${tool.theme}`}>
-                  <div className="tech-tool-card-glow" aria-hidden="true" />
-                  <div className="tech-tool-card-header">
-                    <div className="tech-tool-icon-wrap" aria-hidden="true">
-                      {tool.icon}
-                    </div>
-                    <span className="tech-tool-badge">{tool.badge}</span>
-                  </div>
-
-                  <div className="tech-tool-card-body">
-                    <h3 className="tech-tool-title">{tool.title}</h3>
-                    <p className="tech-tool-desc">{tool.desc}</p>
-                  </div>
-
-                  <div className="tech-tool-footer">
-                    <span className="tech-tool-cta">
-                      <span>{tool.cta}</span>
-                      <IconArrowRight size={15} className="tech-tool-cta-arrow" />
-                    </span>
-                  </div>
-                </Link>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Live Demo Preview */}
       <DemoPreview />
 
@@ -5825,16 +5719,20 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
     }
   }
 
-  // Auto-resize textarea
+  // Auto-resize textarea whenever input value changes (typing, pasting, voice, suggestions, clear)
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+      const scrollH = textareaRef.current.scrollHeight
+      const newHeight = Math.min(Math.max(scrollH, 28), 160)
+      textareaRef.current.style.height = `${newHeight}px`
+    }
+  }, [input])
+
   const handleInputChange = (e) => {
     const value = e.target.value
     if (value.length <= MAX_CHARS) {
       setInput(value)
-    }
-    // Auto-resize
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto'
-      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 150) + 'px'
     }
   }
 
