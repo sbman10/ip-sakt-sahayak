@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { getApiBase } from '../api/config'
 
 // Icons
 const IconCheck = ({ size = 16 }) => (
@@ -32,7 +33,7 @@ const IconCrown = ({ size = 16 }) => (
   </svg>
 )
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+const API_BASE = getApiBase()
 
 export default function PricingPage() {
   const [plans, setPlans] = useState([])

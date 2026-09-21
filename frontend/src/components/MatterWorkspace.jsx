@@ -2,8 +2,9 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import MatterCard from './MatterCard'
 import MatterTimeline from './MatterTimeline'
 import AddMatterModal from './AddMatterModal'
+import { getApiBase } from '../api/config'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+const API_BASE = getApiBase()
 const TOKEN_KEY = 'ip_sakti_access_token'
 
 const STATUS_COLUMNS = [

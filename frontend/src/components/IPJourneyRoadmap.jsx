@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { getApiBase } from '../api/config'
 
 /**
  * IPJourneyRoadmap — personalized, grounded IP journey timeline.
@@ -10,7 +11,7 @@ import { Link } from 'react-router-dom'
  * action items. Nothing is hard-coded — everything comes from the API.
  */
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+const API_BASE = getApiBase()
 
 const STATUS_THEME = {
   required: { color: '#1E8449', label: 'Required' },

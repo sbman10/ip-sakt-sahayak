@@ -3,14 +3,18 @@
 
 services:
   - type: web
-    name: ip-sakti-sahayak-backend
+    # Keep the Blueprint service name aligned with the existing Render service.
+    # This prevents a Blueprint sync from describing a second, differently named API.
+    name: ragvyn
     runtime: python
     rootDir: backend
     plan: free # Note: Free tier allocates 512 MB RAM. Local BGE-M3 & CrossEncoder preloading must be disabled to prevent OOM.
     region: frankfurt # Low latency connection to Supabase / Qdrant Cloud (AWS eu-central-1)
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1
-    healthCheckPath: /readiness
+    # Liveness must not depend on external Qdrant/Supabase availability.
+    # Validate dependencies separately through /readiness after deployment.
+    healthCheckPath: /health
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
@@ -33,19 +37,21 @@ services:
       - key: ENABLE_CROSS_ENCODER
         value: "false"
       - key: RETRIEVAL_BACKEND
-        value: chroma_bm25
+        value: qdrant_hybrid
       - key: QDRANT_URL
         sync: false # Set in Render Dashboard: e.g. https://[cluster-id].eu-central-1.aws.cloud.qdrant.io:6333
       - key: QDRANT_API_KEY
         sync: false # Set in Render Dashboard
       - key: QDRANT_PRODUCTION_COLLECTION
-        value: ragvyn_prod_v1
+        value: ragvyn_prod_v2
       - key: QDRANT_COLLECTION
-        value: ragvyn_prod_v1
+        value: ragvyn_prod_v2
       - key: QDRANT_FALLBACK_ENABLED
         value: "true"
       - key: QDRANT_REQUEST_TIMEOUT_SECONDS
         value: "5"
+      - key: QDRANT_RRF_MIN_SCORE
+        value: "0.01"
       - key: QDRANT_CANARY_ENABLED
         value: "false"
       - key: QDRANT_TRAFFIC_PERCENT
@@ -60,6 +66,8 @@ services:
         sync: false # Set in Render Dashboard
       - key: SUPABASE_STORAGE_BUCKET
         value: legal-documents
+      - key: GOOGLE_REDIRECT_URI
+        value: https://ragvyn.onrender.com/api/auth/google/callback
       - key: FRONTEND_URL
         sync: false # Set in Render Dashboard: e.g. https://ip-sakti-sahayak.vercel.app
       - key: ALLOWED_ORIGINS

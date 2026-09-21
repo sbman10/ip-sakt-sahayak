@@ -1,0 +1,156 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="3300" viewBox="0 0 1600 3300">
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 z" fill="#334155"/>
+    </marker>
+    <style>
+      .title{font:700 34px Arial,sans-serif;fill:#0f172a}
+      .subtitle{font:400 17px Arial,sans-serif;fill:#475569}
+      .stage{font:700 21px Arial,sans-serif;fill:#0f172a}
+      .node-title{font:700 18px Arial,sans-serif;fill:#0f172a}
+      .body{font:400 16px Arial,sans-serif;fill:#334155}
+      .small{font:400 14px Arial,sans-serif;fill:#475569}
+      .label{font:700 15px Arial,sans-serif;fill:#334155}
+      .box{stroke-width:2}
+      .arrow{stroke:#334155;stroke-width:3;fill:none;marker-end:url(#arrow)}
+      .branch{stroke:#64748b;stroke-width:2;fill:none;marker-end:url(#arrow)}
+    </style>
+  </defs>
+
+  <rect width="1600" height="3300" fill="#f8fafc"/>
+  <text x="800" y="55" text-anchor="middle" class="title">IP-SAKTI SAHAYAK — END-TO-END RAG SYSTEM</text>
+  <text x="800" y="86" text-anchor="middle" class="subtitle">Citation-grounded AYUSH and intellectual-property information assistant</text>
+
+  <!-- Main flow -->
+  <rect x="80" y="125" width="1440" height="270" rx="22" fill="#e0f2fe" stroke="#0284c7" class="box"/>
+  <text x="115" y="165" class="stage">1. INPUT LAYER</text>
+  <rect x="115" y="190" width="470" height="160" rx="14" fill="#ffffff" stroke="#7dd3fc"/>
+  <text x="140" y="222" class="node-title">User</text>
+  <text x="140" y="252" class="body">• Types a question</text>
+  <text x="140" y="278" class="body">• Selects jurisdiction and language</text>
+  <text x="140" y="304" class="body">• May add formulation or document details</text>
+  <rect x="635" y="190" width="850" height="160" rx="14" fill="#ffffff" stroke="#7dd3fc"/>
+  <text x="660" y="222" class="node-title">React + Vite frontend — Vercel</text>
+  <text x="660" y="252" class="body">Sends the authenticated request to the FastAPI API</text>
+  <text x="660" y="282" class="body">Displays answers, citations, confidence and escalation guidance</text>
+  <text x="660" y="312" class="small">Optional Bhashini voice and language services can be added later.</text>
+
+  <path d="M800 395 L800 430" class="arrow"/>
+
+  <rect x="80" y="440" width="1440" height="285" rx="22" fill="#ede9fe" stroke="#7c3aed" class="box"/>
+  <text x="115" y="480" class="stage">2. API AND QUERY PROCESSING</text>
+  <rect x="115" y="505" width="620" height="165" rx="14" fill="#ffffff" stroke="#c4b5fd"/>
+  <text x="140" y="537" class="node-title">FastAPI backend — Render</text>
+  <text x="140" y="567" class="body">• JWT authentication and access control</text>
+  <text x="140" y="593" class="body">• Pydantic request validation and CORS</text>
+  <text x="140" y="619" class="body">• PII scrubbing, rate limits and request logging</text>
+  <text x="140" y="645" class="body">• Calls retrieval and generation services</text>
+  <rect x="785" y="505" width="700" height="165" rx="14" fill="#ffffff" stroke="#c4b5fd"/>
+  <text x="810" y="537" class="node-title">Query understanding</text>
+  <text x="810" y="567" class="body">Intent • jurisdiction • IP domain • formulation type • risk</text>
+  <text x="810" y="597" class="body">Preserves sections, article numbers, ingredients and legal terms</text>
+  <text x="810" y="627" class="body">Produces a structured routing decision</text>
+
+  <path d="M800 725 L800 760" class="arrow"/>
+
+  <rect x="80" y="770" width="1440" height="275" rx="22" fill="#f3e8ff" stroke="#9333ea" class="box"/>
+  <text x="115" y="810" class="stage">3. ROUTING DECISION</text>
+  <rect x="115" y="835" width="400" height="155" rx="14" fill="#ffffff" stroke="#d8b4fe"/>
+  <text x="140" y="867" class="node-title">Conversational query</text>
+  <text x="140" y="897" class="body">General, non-substantive question</text>
+  <text x="140" y="927" class="body">→ Gemini with disclaimer</text>
+  <rect x="600" y="835" width="400" height="155" rx="14" fill="#ffffff" stroke="#d8b4fe"/>
+  <text x="625" y="867" class="node-title">Out-of-scope or unsafe</text>
+  <text x="625" y="897" class="body">No reliable or permitted handling path</text>
+  <text x="625" y="927" class="body">→ Refuse safely or redirect</text>
+  <rect x="1085" y="835" width="400" height="155" rx="14" fill="#ffffff" stroke="#d8b4fe"/>
+  <text x="1110" y="867" class="node-title">Legal, IP or AYUSH query</text>
+  <text x="1110" y="897" class="body">Substantive information request</text>
+  <text x="1110" y="927" class="body">→ Continue to hybrid RAG</text>
+  <path d="M800 1045 L800 1080" class="arrow"/>
+
+  <rect x="80" y="1090" width="1440" height="375" rx="22" fill="#ccfbf1" stroke="#0f766e" class="box"/>
+  <text x="115" y="1130" class="stage">4. HYBRID RETRIEVAL — QDRANT CLOUD</text>
+  <rect x="115" y="1155" width="390" height="245" rx="14" fill="#ffffff" stroke="#99f6e4"/>
+  <text x="140" y="1187" class="node-title">Query representation</text>
+  <text x="140" y="1217" class="body">• Preserve exact legal terms</text>
+  <text x="140" y="1243" class="body">• Extract entities and ingredients</text>
+  <text x="140" y="1269" class="body">• Apply jurisdiction and metadata filters</text>
+  <text x="140" y="1295" class="body">• Prepare dense and sparse queries</text>
+  <text x="140" y="1335" class="small">The LLM does not search the corpus directly.</text>
+  <rect x="555" y="1155" width="390" height="245" rx="14" fill="#ffffff" stroke="#99f6e4"/>
+  <text x="580" y="1187" class="node-title">Embedding representations</text>
+  <text x="580" y="1217" class="body">Dense: Hugging Face BAAI/bge-m3</text>
+  <text x="580" y="1243" class="body">Dimension: 1,024 • metric: cosine</text>
+  <text x="580" y="1281" class="body">Sparse: Qdrant BM25 vector</text>
+  <text x="580" y="1307" class="body">Used for exact legal terms and sections</text>
+  <rect x="995" y="1155" width="490" height="245" rx="14" fill="#ffffff" stroke="#99f6e4"/>
+  <text x="1020" y="1187" class="node-title">Collection: ragvyn_prod_v2</text>
+  <text x="1020" y="1217" class="body">• Dense field: bge_m3</text>
+  <text x="1020" y="1243" class="body">• Sparse field: bm25</text>
+  <text x="1020" y="1269" class="body">• Payload filters: authority, domain,</text>
+  <text x="1035" y="1295" class="body">jurisdiction, document type, section, dates</text>
+  <text x="1020" y="1335" class="body">• Dense + sparse retrieval → RRF</text>
+  <path d="M505 1275 L555 1275" class="branch"/>
+  <path d="M945 1275 L995 1275" class="branch"/>
+  <path d="M800 1465 L800 1500" class="arrow"/>
+
+  <rect x="80" y="1510" width="1440" height="330" rx="22" fill="#fff7ed" stroke="#ea580c" class="box"/>
+  <text x="115" y="1550" class="stage">5. EVIDENCE VALIDATION</text>
+  <rect x="115" y="1575" width="650" height="215" rx="14" fill="#ffffff" stroke="#fdba74"/>
+  <text x="140" y="1607" class="node-title">Check every retrieved chunk</text>
+  <text x="140" y="1637" class="body">Relevance • jurisdiction • authority • document type</text>
+  <text x="140" y="1663" class="body">Section/article • page • source URL • evidence strength</text>
+  <text x="140" y="1705" class="body">Weak evidence → retry with adjusted filters</text>
+  <text x="140" y="1731" class="body">Still insufficient → abstain instead of guessing</text>
+  <rect x="815" y="1575" width="670" height="215" rx="14" fill="#ffffff" stroke="#fdba74"/>
+  <text x="840" y="1607" class="node-title">Verified evidence pack</text>
+  <text x="840" y="1637" class="body">User query • classification • retrieved legal text</text>
+  <text x="840" y="1663" class="body">Source metadata • citation fields • grounding instructions</text>
+  <text x="840" y="1705" class="small">Only validated evidence is passed to the generation step.</text>
+  <path d="M800 1840 L800 1875" class="arrow"/>
+
+  <rect x="80" y="1885" width="1440" height="280" rx="22" fill="#dcfce7" stroke="#16a34a" class="box"/>
+  <text x="115" y="1925" class="stage">6. GROUNDED GENERATION</text>
+  <rect x="115" y="1950" width="1370" height="160" rx="14" fill="#ffffff" stroke="#86efac"/>
+  <text x="140" y="1982" class="node-title">Google Gemini — synthesis only</text>
+  <text x="140" y="2012" class="body">Receives the verified evidence pack and answers in plain language</text>
+  <text x="140" y="2038" class="body">Must use supplied evidence, must not invent laws, sections, authorities or sources</text>
+  <text x="140" y="2064" class="body">Separates legal text from explanation and states uncertainty or limitations</text>
+  <path d="M800 2165 L800 2200" class="arrow"/>
+
+  <rect x="80" y="2210" width="1440" height="310" rx="22" fill="#fff7ed" stroke="#ea580c" class="box"/>
+  <text x="115" y="2250" class="stage">7. POST-GENERATION VERIFICATION</text>
+  <rect x="115" y="2275" width="1370" height="185" rx="14" fill="#ffffff" stroke="#fdba74"/>
+  <text x="140" y="2307" class="body">• Match important claims to retrieved evidence</text>
+  <text x="140" y="2333" class="body">• Validate citations and remove unsupported claims</text>
+  <text x="140" y="2359" class="body">• Calculate confidence and check scope/safety</text>
+  <text x="140" y="2385" class="body">• Add legal-information disclaimer and escalation recommendation</text>
+  <text x="140" y="2425" class="small">If validation fails, revise, abstain or request human review.</text>
+  <path d="M800 2520 L800 2555" class="arrow"/>
+
+  <rect x="80" y="2565" width="1440" height="305" rx="22" fill="#fce7f3" stroke="#db2777" class="box"/>
+  <text x="115" y="2605" class="stage">8. DATA PERSISTENCE AND AUDIT</text>
+  <rect x="115" y="2630" width="650" height="185" rx="14" fill="#ffffff" stroke="#f9a8d4"/>
+  <text x="140" y="2662" class="node-title">Supabase PostgreSQL</text>
+  <text x="140" y="2692" class="body">Users • conversations • messages • audit records</text>
+  <text x="140" y="2718" class="body">Document metadata • patentability assessments</text>
+  <text x="140" y="2744" class="body">Citations and confidence records</text>
+  <rect x="815" y="2630" width="670" height="185" rx="14" fill="#ffffff" stroke="#f9a8d4"/>
+  <text x="840" y="2662" class="node-title">Supabase Storage</text>
+  <text x="840" y="2692" class="body">Private uploaded documents and source files</text>
+  <text x="840" y="2718" class="body">Backend stores object keys and metadata, not public secrets</text>
+  <path d="M800 2870 L800 2905" class="arrow"/>
+
+  <rect x="80" y="2915" width="1440" height="260" rx="22" fill="#e0f2fe" stroke="#0284c7" class="box"/>
+  <text x="115" y="2955" class="stage">9. VERIFIED OUTPUT</text>
+  <text x="140" y="3005" class="body">Plain-language answer • applicable law or regulation • clickable citations</text>
+  <text x="140" y="3035" class="body">Confidence indicator • suggested next step • human-expert escalation</text>
+  <text x="140" y="3075" class="node-title">“This tool provides general information and is not legal advice.”</text>
+  <text x="800" y="3140" text-anchor="middle" class="small">Response returns to the React/Vite frontend.</text>
+
+  <!-- Supporting ingestion flow -->
+  <rect x="80" y="3205" width="1440" height="0" fill="none"/>
+  <text x="800" y="3230" text-anchor="middle" class="stage">SUPPORTING PIPELINE — KNOWLEDGE-BASE INGESTION</text>
+  <text x="800" y="3260" text-anchor="middle" class="small">Authoritative sources → manifest and metadata → parsing and legal chunking → quality control → BGE-M3 + BM25 → Qdrant Cloud ragvyn_prod_v2</text>
+</svg>

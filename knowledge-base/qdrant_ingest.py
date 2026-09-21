@@ -534,13 +534,18 @@ class QdrantIngestor:
         try:
             col_info = client.get_collection(self.collection_name)
             points_count = col_info.points_count or 0
-            records, _ = client.scroll(
-                collection_name=self.collection_name,
-                limit=10000,
-                with_payload=False,
-                with_vectors=False,
-            )
-            existing_point_ids = [str(r.id) for r in records]
+            offset = None
+            while True:
+                records, offset = client.scroll(
+                    collection_name=self.collection_name,
+                    limit=10000,
+                    offset=offset,
+                    with_payload=False,
+                    with_vectors=False,
+                )
+                existing_point_ids.extend(str(r.id) for r in records)
+                if offset is None:
+                    break
         except Exception as exc:
             logger.warning("Could not fetch collection baseline for '%s': %s", self.collection_name, exc)
 
@@ -919,15 +924,41 @@ class QdrantIngestor:
             )
 
         baseline_before = self.get_collection_baseline()
+        existing_set = set(baseline_before["point_ids"])
 
         points_uploaded = 0
         batches_failed = 0
         all_uploaded_ids: List[str] = []
+        failed_chunk_ids: List[str] = []
+        failed_doc_ids: Set[str] = set()
 
-        logger.info("Starting ingestion of %d chunks across %d batches...", total_chunks, (total_chunks + batch_size - 1) // batch_size)
+        logger.info(
+            "Starting ingestion of %d chunks across %d batches (Collection baseline: %d existing points)...",
+            total_chunks,
+            (total_chunks + batch_size - 1) // batch_size,
+            len(existing_set),
+        )
 
         for i in range(0, total_chunks, batch_size):
             batch_chunks = all_chunks[i : i + batch_size]
+            batch_point_ids = [
+                generate_point_id(self.collection_name, c["chunk_id"]) for c in batch_chunks
+            ]
+
+            # Fast resume: Skip batch if all point IDs already exist in collection
+            if set(batch_point_ids).issubset(existing_set):
+                points_uploaded += len(batch_chunks)
+                all_uploaded_ids.extend(batch_point_ids)
+                if (i // batch_size) % 50 == 0 or (i + len(batch_chunks)) >= total_chunks:
+                    logger.info(
+                        "Verified existing points for batch %d..%d / %d (Total verified: %d)",
+                        i,
+                        i + len(batch_chunks),
+                        total_chunks,
+                        points_uploaded,
+                    )
+                continue
+
             batch_texts = [c["text"] for c in batch_chunks]
 
             try:
@@ -960,8 +991,15 @@ class QdrantIngestor:
 
             except Exception as exc:
                 batches_failed += 1
-                logger.error("Failed to ingest batch %d..%d: %s", i, i + len(batch_chunks), exc, exc_info=True)
-                raise RuntimeError(f"Ingestion halted on batch {i}: {exc}") from exc
+                logger.error("Failed to ingest batch %d..%d: %s", i, i + len(batch_chunks), exc)
+                for c in batch_chunks:
+                    failed_chunk_ids.append(c["chunk_id"])
+                    failed_doc_ids.add(c["document_id"])
+                raise RuntimeError(
+                    f"Ingestion halted on batch {i}: {exc}. "
+                    f"Failed chunk count in batch: {len(batch_chunks)}. "
+                    f"Sample failed chunk: {batch_chunks[0]['chunk_id']}"
+                ) from exc
 
         baseline_after = self.get_collection_baseline()
         existing_set = set(baseline_before["point_ids"])
@@ -977,12 +1015,16 @@ class QdrantIngestor:
             "documents_parsed": stats["documents_parsed"],
             "documents_failed": stats["documents_failed"],
             "total_chunks": total_chunks,
+            "expected_chunk_count": total_chunks,
             "points_before": baseline_before["points_count"],
             "points_uploaded": points_uploaded,
             "points_after": baseline_after["points_count"],
             "deterministic_id_collisions": len(collisions),
             "newly_created_points": len(newly_created),
-            "points_failed": batches_failed * batch_size,
+            "points_failed": len(failed_chunk_ids),
+            "failed_chunk_ids": failed_chunk_ids,
+            "failed_document_ids": sorted(list(failed_doc_ids)),
+            "is_count_consistent": (baseline_after["points_count"] == total_chunks),
             "dense_embedding_model": settings.HF_EMBEDDING_MODEL,
             "sparse_embedding_model": "Qdrant/bm25",
             "elapsed_seconds": round(elapsed, 2),
