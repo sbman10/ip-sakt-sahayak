@@ -11560,6 +11560,131 @@ html, body {
   letter-spacing: 0.02em !important;
 }
 
+/* Demo Video Screen - Inside Existing Mockup Frame */
+.demo-video-wrapper {
+  position: relative !important;
+  width: 100% !important;
+  aspect-ratio: 16 / 9 !important;
+  background: #060d0b !important;
+  border-radius: 0 0 24px 24px !important;
+  overflow: hidden !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+}
+
+.demo-screen-video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  display: block !important;
+  border-radius: 0 0 24px 24px !important;
+  background: #060d0b !important;
+}
+
+.demo-video-fallback-overlay {
+  position: absolute !important;
+  inset: 0 !important;
+  background: rgba(6, 13, 11, 0.6) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 12px !important;
+  z-index: 10 !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+}
+
+.demo-video-fallback-overlay:hover {
+  background: rgba(6, 13, 11, 0.45) !important;
+}
+
+.demo-play-circle {
+  width: 64px !important;
+  height: 64px !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, var(--primary, #1A4D3E) 0%, #2A725D 100%) !important;
+  color: #ffffff !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 0 0 4px rgba(255, 255, 255, 0.2) !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.demo-play-circle svg {
+  margin-left: 3px !important;
+}
+
+.demo-video-fallback-overlay:hover .demo-play-circle {
+  transform: scale(1.08) !important;
+  box-shadow: 0 12px 32px rgba(26, 77, 62, 0.5), 0 0 0 6px rgba(255, 255, 255, 0.3) !important;
+}
+
+.demo-play-circle-text {
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+  letter-spacing: 0.02em !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6) !important;
+}
+
+.demo-sound-btn {
+  position: absolute !important;
+  bottom: 16px !important;
+  right: 16px !important;
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 50% !important;
+  background: rgba(15, 23, 42, 0.75) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  z-index: 15 !important;
+  transition: all 0.2s ease !important;
+}
+
+.demo-sound-btn:hover {
+  background: rgba(26, 77, 62, 0.9) !important;
+  transform: scale(1.08) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.demo-header-badge {
+  margin-left: auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 4px 10px !important;
+  border-radius: 12px !important;
+  background: rgba(20, 61, 48, 0.06) !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  color: var(--text-secondary, #4A5568) !important;
+}
+
+.demo-status-indicator {
+  width: 7px !important;
+  height: 7px !important;
+  border-radius: 50% !important;
+  background: #94A3B8 !important;
+  transition: all 0.3s ease !important;
+}
+
+.demo-status-indicator.active {
+  background: #22C55E !important;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.8) !important;
+}
+
 /* Demo Body: Spacious, premium feel */
 .demo-body {
   padding: 28px 24px 32px !important;
@@ -11760,6 +11885,11 @@ html, body {
   color: #E9A84A !important;
 }
 
+[data-theme="dark"] .demo-header-badge {
+  background: rgba(94, 234, 212, 0.1) !important;
+  color: #94A3B8 !important;
+}
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .demo-msg { animation: none !important; }
@@ -11770,12 +11900,29 @@ html, body {
 /* Mobile responsive */
 @media (max-width: 768px) {
   .demo-card {
-    margin: 0 -8px !important;
+    margin: 0 !important;
     border-radius: 20px !important;
   }
   .demo-header {
     padding: 14px 16px !important;
     border-radius: 20px 20px 0 0 !important;
+  }
+  .demo-video-wrapper,
+  .demo-screen-video {
+    border-radius: 0 0 20px 20px !important;
+  }
+  .demo-sound-btn {
+    bottom: 10px !important;
+    right: 10px !important;
+    width: 34px !important;
+    height: 34px !important;
+  }
+  .demo-play-circle {
+    width: 52px !important;
+    height: 52px !important;
+  }
+  .demo-play-circle-text {
+    font-size: 0.85rem !important;
   }
   .demo-body {
     padding: 20px 16px 24px !important;
