@@ -265,6 +265,23 @@ def health_check() -> dict[str, str]:
 
 
 @app.get(
+    "/api/health/llm",
+    tags=["Health"],
+    summary="Safe LLM Provider Diagnostics",
+    description="Reports configured primary/fallback providers, availability, and model names without exposing keys.",
+)
+def llm_health_check() -> dict[str, Any]:
+    from app.services.llm import get_llm_diagnostics
+    return get_llm_diagnostics()
+
+
+@app.get("/health/llm", include_in_schema=False)
+def llm_health_check_alias() -> dict[str, Any]:
+    from app.services.llm import get_llm_diagnostics
+    return get_llm_diagnostics()
+
+
+@app.get(
     "/readiness",
     tags=["Health"],
     summary="Readiness Probe",
@@ -368,6 +385,16 @@ async def readiness_check(response: Response) -> dict[str, Any]:
         checks["chroma_bm25"] = chroma_ok
         if not chroma_ok:
             is_ready = False
+
+    # 5. LLM Provider Topology
+    from app.services.llm import get_llm_diagnostics
+    llm_diag = get_llm_diagnostics()
+    checks["llm_providers"] = llm_diag
+    # If neither provider is available, mark readiness as not ready
+    if not (llm_diag["cerebras_key_present"] or llm_diag["gemini_key_present"]):
+        checks["llm_configured"] = False
+    else:
+        checks["llm_configured"] = True
 
     if is_ready:
         return {

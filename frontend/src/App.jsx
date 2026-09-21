@@ -5991,6 +5991,7 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
       let buffer = ''
       let sawError = false
       let gotToken = false
+      let accumulatedCitations = []
 
       setRetrievalState('Preparing cited answer...')
 
@@ -6014,29 +6015,44 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
               .map(line => line.slice(5).trimStart())
             if (dataLines.length === 0) continue
 
+            const rawPayload = dataLines.join('\n')
+            // Ignore legacy non-JSON control signals like [DONE] safely
+            if (rawPayload.trim() === '[DONE]') continue
+
             let parsed
             try {
-              parsed = JSON.parse(dataLines.join('\n'))
+              parsed = JSON.parse(rawPayload)
             } catch {
               continue // ignore malformed frame
             }
 
-            if (parsed.error) {
+            if (parsed.type === 'error' || parsed.error) {
               sawError = true
-              // If no tokens streamed yet, we can cleanly fall back.
+              // If no tokens streamed yet, cleanly fall back to /api/chat
               if (!gotToken) return false
-              // Partial content already shown — close it out gracefully.
-              finalize({ status: 'answered' })
+              // If partial tokens were received, DO NOT call /api/chat again; mark status as degraded
+              finalize({ status: 'degraded', citations: accumulatedCitations })
               return true
             }
 
-            if (typeof parsed.token === 'string') {
+            if (parsed.type === 'citations' && Array.isArray(parsed.citations)) {
+              accumulatedCitations = parsed.citations
+            }
+
+            if (parsed.type === 'token' && typeof parsed.token === 'string') {
+              gotToken = true
+              appendToken(parsed.token)
+            } else if (typeof parsed.token === 'string') {
               gotToken = true
               appendToken(parsed.token)
             }
 
-            if (parsed.done) {
-              finalize(parsed)
+            if (parsed.type === 'done' || parsed.done) {
+              finalize({
+                ...parsed,
+                citations: (parsed.citations && parsed.citations.length > 0) ? parsed.citations : accumulatedCitations,
+                status: parsed.status || 'answered',
+              })
               return true
             }
           }
@@ -6044,13 +6060,13 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
       } catch (err) {
         // Stream broke mid-flight.
         if (!gotToken) return false // nothing shown -> fallback to /api/chat
-        finalize({ status: 'answered' }) // keep partial answer
+        finalize({ status: 'degraded', citations: accumulatedCitations }) // keep partial answer, do not call /api/chat again
         return true
       }
 
       // Stream ended without an explicit `done` frame.
       if (!gotToken && !sawError) return false
-      finalize({ status: 'answered' })
+      finalize({ status: sawError ? 'degraded' : 'answered', citations: accumulatedCitations })
       return true
     }
 

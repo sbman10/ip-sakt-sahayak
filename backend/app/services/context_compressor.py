@@ -136,10 +136,13 @@ class ContextCompressor:
 
         for idx, chunk in enumerate(unique_chunks, start=1):
             source_id = chunk.get("source_id") or f"SRC-{idx:03d}"
-            source = chunk.get("source", "Legal Statute")
-            section = chunk.get("section", "General")
-            jurisdiction = chunk.get("jurisdiction", "India")
-            doc_type = chunk.get("type") or chunk.get("doc_type") or "Statute / Regulatory Record"
+            title = chunk.get("source") or chunk.get("title") or "Legal Statute"
+            authority = chunk.get("authority") or "Government of India / Statutory Authority"
+            jurisdiction = chunk.get("jurisdiction") or "India"
+            doc_type = chunk.get("document_type") or chunk.get("type") or chunk.get("doc_type") or "Statute"
+            section = chunk.get("section") or "General"
+            page = chunk.get("page") or chunk.get("page_number") or "N/A"
+            source_url = chunk.get("source_url") or chunk.get("url") or "Official Gazette / Statute Register"
             raw_text = chunk.get("text", "")
 
             compressed_text = self.compress_passage(raw_text)
@@ -147,26 +150,32 @@ class ContextCompressor:
                 continue
 
             block = (
-                f"SOURCE_ID: {source_id}\n"
-                f"Document title: {source}\n"
-                f"Document type: {doc_type}\n"
+                f"[{source_id}]\n"
+                f"Title: {title}\n"
+                f"Authority: {authority}\n"
                 f"Jurisdiction: {jurisdiction}\n"
-                f"Section / Rule: {section}\n"
-                f"Content:\n{compressed_text}"
+                f"Document type: {doc_type}\n"
+                f"Section: {section}\n"
+                f"Page: {page}\n"
+                f"Source URL: {source_url}\n"
+                f"Text:\n{compressed_text}"
             )
             block_len = len(block) + 2  # including newline separator
 
             if current_chars + block_len > max_chars:
                 # If even the first block exceeds max_chars, truncate it
                 if not context_blocks:
-                    truncated_text = compressed_text[: max_chars - 120] + "..."
+                    truncated_text = compressed_text[: max_chars - 140] + "..."
                     block = (
-                        f"SOURCE_ID: {source_id}\n"
-                        f"Document title: {source}\n"
-                        f"Document type: {doc_type}\n"
+                        f"[{source_id}]\n"
+                        f"Title: {title}\n"
+                        f"Authority: {authority}\n"
                         f"Jurisdiction: {jurisdiction}\n"
-                        f"Section / Rule: {section}\n"
-                        f"Content:\n{truncated_text}"
+                        f"Document type: {doc_type}\n"
+                        f"Section: {section}\n"
+                        f"Page: {page}\n"
+                        f"Source URL: {source_url}\n"
+                        f"Text:\n{truncated_text}"
                     )
                     context_blocks.append(block)
                     chunk_copy = dict(chunk)

@@ -311,9 +311,8 @@ async def chat_endpoint(
         return ChatResponse(
             answer=(
                 "I found relevant sources in the knowledge base, but the "
-                "answer service is temporarily unavailable and I could not "
-                "generate a grounded response right now. Please try again in a "
-                "moment. The cited sources below are still relevant to your query."
+                "answer service is temporarily unavailable (rate-limited or server error). "
+                "The cited sources below are still relevant to your query."
             ),
             citations=citations,
             confidence=ConfidenceScore(
@@ -323,7 +322,7 @@ async def chat_endpoint(
                 citation_scores=[],
             ),
             latency_ms=round(elapsed_ms, 2),
-            status="error",
+            status="degraded",
             conversation_id=request.conversation_id,
             jurisdiction=jurisdiction,
             source_filters=source_filters,
@@ -506,8 +505,8 @@ async def chat_stream_endpoint(
         def _stream_chitchat():
             yield f"data: {json.dumps({'type': 'meta', 'intent': 'CHITCHAT', 'jurisdiction': jurisdiction, 'source_filters': source_filters})}\n\n"
             yield f"data: {json.dumps({'type': 'citations', 'citations': []})}\n\n"
-            yield f"data: {json.dumps({'chunk': resp.answer})}\n\n"
-            yield "data: [DONE]\n\n"
+            yield f"data: {json.dumps({'type': 'token', 'token': resp.answer})}\n\n"
+            yield f"data: {json.dumps({'type': 'done', 'done': True, 'status': 'answered', 'completed': True})}\n\n"
 
         return StreamingResponse(_stream_chitchat(), media_type="text/event-stream")
 
@@ -522,8 +521,8 @@ async def chat_stream_endpoint(
         def _stream_clarification():
             yield f"data: {json.dumps({'type': 'meta', 'intent': 'CLARIFICATION_NEEDED', 'jurisdiction': jurisdiction, 'source_filters': source_filters})}\n\n"
             yield f"data: {json.dumps({'type': 'citations', 'citations': []})}\n\n"
-            yield f"data: {json.dumps({'chunk': resp.answer})}\n\n"
-            yield "data: [DONE]\n\n"
+            yield f"data: {json.dumps({'type': 'token', 'token': resp.answer})}\n\n"
+            yield f"data: {json.dumps({'type': 'done', 'done': True, 'status': 'answered', 'completed': True})}\n\n"
 
         return StreamingResponse(_stream_clarification(), media_type="text/event-stream")
 
@@ -538,8 +537,8 @@ async def chat_stream_endpoint(
         def _stream_out_of_scope():
             yield f"data: {json.dumps({'type': 'meta', 'intent': 'OUT_OF_SCOPE', 'jurisdiction': jurisdiction, 'source_filters': source_filters})}\n\n"
             yield f"data: {json.dumps({'type': 'citations', 'citations': []})}\n\n"
-            yield f"data: {json.dumps({'chunk': resp.answer})}\n\n"
-            yield "data: [DONE]\n\n"
+            yield f"data: {json.dumps({'type': 'token', 'token': resp.answer})}\n\n"
+            yield f"data: {json.dumps({'type': 'done', 'done': True, 'status': 'answered', 'completed': True})}\n\n"
 
         return StreamingResponse(_stream_out_of_scope(), media_type="text/event-stream")
 
@@ -552,8 +551,10 @@ async def chat_stream_endpoint(
         )
 
         def _stream_unsafe():
-            yield f"data: {json.dumps({'chunk': resp.answer})}\n\n"
-            yield "data: [DONE]\n\n"
+            yield f"data: {json.dumps({'type': 'meta', 'intent': 'UNSAFE_OR_DISALLOWED', 'jurisdiction': jurisdiction, 'source_filters': source_filters})}\n\n"
+            yield f"data: {json.dumps({'type': 'citations', 'citations': []})}\n\n"
+            yield f"data: {json.dumps({'type': 'token', 'token': resp.answer})}\n\n"
+            yield f"data: {json.dumps({'type': 'done', 'done': True, 'status': 'answered', 'completed': True})}\n\n"
 
         return StreamingResponse(_stream_unsafe(), media_type="text/event-stream")
 
@@ -581,8 +582,8 @@ async def chat_stream_endpoint(
         def _stream_abstention():
             yield f"data: {json.dumps({'type': 'meta', 'intent': 'KNOWLEDGE_SEEK', 'jurisdiction': jurisdiction, 'source_filters': source_filters})}\n\n"
             yield f"data: {json.dumps({'type': 'citations', 'citations': []})}\n\n"
-            yield f"data: {json.dumps({'chunk': abstention['answer']})}\n\n"
-            yield "data: [DONE]\n\n"
+            yield f"data: {json.dumps({'type': 'token', 'token': abstention['answer']})}\n\n"
+            yield f"data: {json.dumps({'type': 'done', 'done': True, 'status': 'no_data', 'completed': True})}\n\n"
 
         return StreamingResponse(_stream_abstention(), media_type="text/event-stream")
 
@@ -618,6 +619,7 @@ async def chat_stream_endpoint(
         citation_data = [c.model_dump() for c in citations]
         yield f"data: {json.dumps({'type': 'citations', 'citations': citation_data})}\n\n"
 
+        had_error = False
         try:
             for token in stream_grounded_answer(
                 question=scrubbed_query,
@@ -630,15 +632,13 @@ async def chat_stream_endpoint(
                 user_intent=user_intent,
                 requested_information=requested_information,
             ):
-                yield f"data: {json.dumps({'chunk': token})}\n\n"
+                yield f"data: {json.dumps({'type': 'token', 'token': token})}\n\n"
         except Exception as stream_err:
+            had_error = True
             log.error("Streaming generation failed: %s", stream_err, exc_info=True)
-            fallback = (
-                " [The answer service was interrupted. The cited sources above "
-                "remain relevant; please try again in a moment.]"
-            )
-            yield f"data: {json.dumps({'chunk': fallback})}\n\n"
+            yield f"data: {json.dumps({'type': 'error', 'message': str(stream_err), 'status': 'degraded'})}\n\n"
 
-        yield "data: [DONE]\n\n"
+        if not had_error:
+            yield f"data: {json.dumps({'type': 'done', 'done': True, 'status': 'answered', 'completed': True})}\n\n"
 
     return StreamingResponse(_generate_stream(), media_type="text/event-stream")

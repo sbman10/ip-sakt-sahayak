@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import List, Union
+from typing import List, Optional, Union
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -70,17 +70,33 @@ class Settings(BaseSettings):
     CHROMA_DB_DIR: str = str(_BASE_DIR / "chroma_db")
     BM25_INDEX_PATH: str = str(_BASE_DIR / "bm25_index.pkl")
 
-    # API Keys & LLM settings
+    # API Keys & LLM settings (Dual-Provider Architecture)
+    LLM_PRIMARY_PROVIDER: str = "gemini"
+    LLM_FALLBACK_PROVIDER: str = "cerebras"
+
+    CEREBRAS_API_KEY: str = ""
+    CEREBRAS_BASE_URL: str = "https://api.cerebras.ai/v1"
+    CEREBRAS_MODEL: str = "gpt-oss-120b"
+
     GEMINI_API_KEY: str = ""
     GEMINI_API_KEYS: Union[List[str], str] = []
+    GEMINI_MODEL: str = "gemini-3.5-flash"
     PRIMARY_MODEL: str = "gemini-3.5-flash"
+
+    GENERATION_MAX_RETRIES: int = 1
+    GENERATION_TIMEOUT_SECONDS: float = 60.0
 
     # Hybrid Search & Reranking Thresholds
     SIMILARITY_THRESHOLD: float = 0.65
     RERANK_SKIP_THRESHOLD: float = 0.25
 
-    # Intent Classification & Early Routing
-    INTENT_CLASSIFICATION_ENABLED: bool = True
+    # Mode-aware answer length limits (Requirement 4)
+    TOKEN_LIMIT_BRIEF: int = 700
+    TOKEN_LIMIT_STANDARD: int = 1400
+    TOKEN_LIMIT_DETAILED: int = 2400
+
+    # Intent Classification & Early Routing (Requirement 5: disabled by default in production)
+    INTENT_CLASSIFICATION_ENABLED: bool = False
     INTENT_CLASSIFIER_MODEL: str = "gemini-3.5-flash"
     INTENT_CLASSIFIER_TIMEOUT_SECONDS: float = 3.0
     INTENT_CONFIDENCE_THRESHOLD: float = 0.60
@@ -89,6 +105,15 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str = "ip-sakti-sahayak-super-secret-key-change-in-production-2024"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 1 day
+
+    def get_mode_token_limit(self, answer_mode: Optional[str] = None) -> int:
+        """Returns max output token limit based on the requested answer mode."""
+        mode = (answer_mode or "standard").strip().lower()
+        if mode == "brief":
+            return self.TOKEN_LIMIT_BRIEF
+        if mode == "detailed":
+            return self.TOKEN_LIMIT_DETAILED
+        return self.TOKEN_LIMIT_STANDARD
 
     # Google OAuth
     GOOGLE_CLIENT_ID: str = ""
@@ -165,6 +190,7 @@ class Settings(BaseSettings):
             raise ValueError("QDRANT_PRODUCTION_COLLECTION must be explicitly configured and non-empty.")
         return v.strip()
 
+
     @field_validator("QDRANT_TRAFFIC_PERCENT", mode="after")
     @classmethod
     def validate_canary_traffic_percent(cls, v: int) -> int:
@@ -188,6 +214,25 @@ class Settings(BaseSettings):
             keys = [str(k).strip() for k in v if str(k).strip()]
 
         return keys
+
+    @field_validator("LLM_PRIMARY_PROVIDER", "LLM_FALLBACK_PROVIDER", mode="after")
+    @classmethod
+    def validate_llm_provider(cls, v: str) -> str:
+        allowed = {"gemini", "cerebras"}
+        val_clean = v.strip().lower()
+        if val_clean not in allowed:
+            raise ValueError(f"Invalid LLM provider: '{v}'. Must be one of: {sorted(allowed)}")
+        return val_clean
+
+    @property
+    def is_cerebras_configured(self) -> bool:
+        """True if Cerebras API key is set and non-empty."""
+        return bool(self.CEREBRAS_API_KEY and self.CEREBRAS_API_KEY.strip())
+
+    @property
+    def is_gemini_configured(self) -> bool:
+        """True if at least one Gemini API key is configured."""
+        return bool(self.GEMINI_API_KEY or self.get_gemini_keys())
 
     def get_gemini_keys(self) -> List[str]:
         """Return the list of all available Gemini API keys."""
