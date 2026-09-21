@@ -1539,6 +1539,82 @@ function ComparisonSection() {
    ============================================================ */
 function DemoPreview() {
   const { t } = useLanguage()
+  const videoRef = useRef(null)
+  const cardRef = useRef(null)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [isMuted, setIsMuted] = useState(true)
+  const [autoplayBlocked, setAutoplayBlocked] = useState(false)
+
+  // IntersectionObserver for autoplay when entering viewport
+  useEffect(() => {
+    const el = cardRef.current
+    if (!el) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            if (videoRef.current) {
+              videoRef.current.muted = true
+              const playPromise = videoRef.current.play()
+              if (playPromise !== undefined) {
+                playPromise
+                  .then(() => {
+                    setIsPlaying(true)
+                    setAutoplayBlocked(false)
+                  })
+                  .catch(() => {
+                    setIsPlaying(false)
+                    setAutoplayBlocked(true)
+                  })
+              }
+            }
+          } else {
+            if (videoRef.current && !videoRef.current.paused) {
+              videoRef.current.pause()
+              setIsPlaying(false)
+            }
+          }
+        })
+      },
+      { threshold: 0.25 }
+    )
+
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  const handleManualPlay = (e) => {
+    if (e) e.stopPropagation()
+    if (!videoRef.current) return
+    videoRef.current.play()
+      .then(() => {
+        setIsPlaying(true)
+        setAutoplayBlocked(false)
+      })
+      .catch((err) => {
+        console.warn('Playback blocked:', err)
+      })
+  }
+
+  const togglePlayPause = () => {
+    if (!videoRef.current) return
+    if (videoRef.current.paused) {
+      handleManualPlay()
+    } else {
+      videoRef.current.pause()
+      setIsPlaying(false)
+    }
+  }
+
+  const toggleMute = (e) => {
+    e.stopPropagation()
+    if (!videoRef.current) return
+    const nextMuted = !videoRef.current.muted
+    videoRef.current.muted = nextMuted
+    setIsMuted(nextMuted)
+  }
+
   return (
     <section className="section demo-section" id="demo">
       <Reveal>
@@ -1546,40 +1622,84 @@ function DemoPreview() {
         <h2 className="section-title">{t('demoTitle')}</h2>
       </Reveal>
       <Reveal delay={150}>
-        <div className="demo-card">
+        <div className="demo-card" ref={cardRef}>
           <div className="demo-header">
             <div className="demo-dot red" />
             <div className="demo-dot yellow" />
             <div className="demo-dot green" />
             <span className="demo-title">{t('demoSampleResponse')}</span>
+            <div className="demo-header-badge">
+              <span className={`demo-status-indicator ${isPlaying ? 'active' : ''}`} />
+              <span>{isPlaying ? 'Live Demo' : 'Ready'}</span>
+            </div>
           </div>
-          <div className="demo-body">
-            <div className="demo-msg user">
-              <div className="demo-avatar user"><IconUser size={18} /></div>
-              <div className="demo-bubble user">{t('demoUserQuestion')}</div>
-            </div>
-            <div className="demo-msg ai">
-              <div className="demo-avatar ai"><IconLeaf size={18} /></div>
-              <div className="demo-bubble ai">
-                <p>{t('demoAiResponse1')}</p>
-                <p style={{ marginTop: '0.75rem' }}>{t('demoAiResponse2')}</p>
-                <div className="demo-citations">
-                  <span className="demo-citation"><IconScroll size={13} /> Patents Act 1970 §3(p)</span>
-                  <span className="demo-citation"><IconBook size={13} /> TKDL Database</span>
-                  <span className="demo-citation"><IconScroll size={13} /> Patents Act 1970 §2(1)(j)</span>
+          <div className="demo-video-wrapper" onClick={togglePlayPause}>
+            <video
+              ref={videoRef}
+              src="/demo-video.mp4"
+              playsInline
+              muted={isMuted}
+              loop
+              autoPlay
+              preload="auto"
+              className="demo-screen-video"
+              onPlay={() => {
+                setIsPlaying(true)
+                setAutoplayBlocked(false)
+              }}
+              onPause={() => setIsPlaying(false)}
+            />
+
+            {/* Clean play fallback button if autoplay is blocked or when paused */}
+            {(!isPlaying || autoplayBlocked) && (
+              <div
+                className="demo-video-fallback-overlay"
+                onClick={handleManualPlay}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleManualPlay(e) }}
+                aria-label="Play Live Demo"
+              >
+                <div className="demo-play-circle">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+                    <polygon points="6 4 20 12 6 20 6 4" />
+                  </svg>
                 </div>
-                <div className="demo-meta">
-                  <span className="demo-confidence high">● {t('demoHighConfidence')}</span>
-                  <span className="demo-disclaimer"><IconInfo size={13} /> {t('demoDisclaimer')}</span>
-                </div>
+                <span className="demo-play-circle-text">Click to Play Demo</span>
               </div>
-            </div>
+            )}
+
+            {/* Subtle sound toggle in bottom right corner */}
+            <button
+              type="button"
+              className="demo-sound-btn"
+              onClick={toggleMute}
+              aria-label={isMuted ? 'Unmute video audio' : 'Mute video audio'}
+              title={isMuted ? 'Unmute sound' : 'Mute sound'}
+            >
+              {isMuted ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  <line x1="23" y1="9" x2="17" y2="15" />
+                  <line x1="17" y1="9" x2="23" y2="15" />
+                </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
+                </svg>
+              )}
+            </button>
           </div>
         </div>
       </Reveal>
       <Reveal delay={250}>
         <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-          <Link to="/chat" className="btn-primary demo-try-btn">
+          <Link
+            to="/chat"
+            className="btn-primary demo-try-btn"
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          >
             {t('demoTryIt')}
             <IconArrowRight size={17} className="btn-arrow" />
           </Link>
@@ -2999,7 +3119,7 @@ function ChatWelcome({ onPromptClick, onOpenWizard }) {
         </div>
       </div>
 
-      <div style={{ width: '100%', maxWidth: 860, margin: '2.5rem auto 0.5rem', textAlign: 'center' }}>
+      <div style={{ width: '100%', maxWidth: '100%', margin: '2.5rem auto 0.5rem', textAlign: 'center' }}>
         <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--secondary, #1E8449)', margin: '0 0 4px' }}>
           Explore IP Tools
         </h3>
@@ -5003,112 +5123,6 @@ function LandingPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, 
       {/* Stats Counter */}
       <StatsCounter />
 
-      {/* ===== INTELLIGENT IP TOOLS SECTION ===== */}
-      <section className="section tools-section" id="tools" aria-labelledby="tools-title">
-        <div className="tools-section-backdrop-glow" aria-hidden="true" />
-        <div className="tools-section-container">
-          <Reveal>
-            <div className="tools-section-header">
-              <h2 className="tools-section-heading" id="tools-title">
-                INTELLIGENT IP TOOLS
-              </h2>
-              <p className="tools-section-sub">
-                Specialized statutory calculators, compliance monitors, and procedural roadmaps engineered to navigate Ayurvedic patent law and regulatory frameworks.
-              </p>
-            </div>
-          </Reveal>
-
-          <div className="tech-tools-grid">
-            {[
-              {
-                id: 'roadmap',
-                title: 'IP Journey Roadmap',
-                badge: 'Timeline & Strategy',
-                desc: 'Interactive milestone roadmap mapping your formulation from prior-art search to patent grant and post-grant protection.',
-                to: '/roadmap',
-                cta: 'Launch Roadmap',
-                icon: <IconTrendingUp size={22} />,
-                theme: 'theme-indigo',
-              },
-              {
-                id: 'guardian',
-                title: 'Dual-Use Guardian',
-                badge: 'Statutory Shield',
-                desc: 'Unified cross-statute compliance engine spanning Indian Patents Act, AYUSH regulations, ABS, and FSSAI guidelines.',
-                to: '/guardian',
-                cta: 'Check Dual-Use',
-                icon: <IconShieldCheck size={22} />,
-                theme: 'theme-cyan',
-              },
-              {
-                id: 'fee-calc',
-                title: 'Patent Fee Calculator',
-                badge: 'Fee Estimator',
-                desc: 'Instant statutory fee estimation for Form-1, Form-2, Form-18, and renewals across Startups, Individuals, and Corporates.',
-                to: '/ip-calculator',
-                cta: 'Calculate Fees',
-                icon: <IconCurrencyRupee size={22} />,
-                theme: 'theme-blue',
-              },
-              {
-                id: 'deadline-calc',
-                title: 'Deadline Calculator',
-                badge: 'Statutory Clock',
-                desc: 'Precision statutory clock tracking mandatory RFE (48 mo), FER responses (6 mo), convention priority, and PCT national phase.',
-                to: '/deadline-calculator',
-                cta: 'Track Deadlines',
-                icon: <IconCalendar size={22} />,
-                theme: 'theme-amber',
-              },
-              {
-                id: 'abs-checker',
-                title: 'ABS Checker',
-                badge: 'Biodiversity Act',
-                desc: 'Biological Diversity Act compliance matrix: assess State Biodiversity Board (SBB) and NBA Form III approval pathways.',
-                to: '/abs-checker',
-                cta: 'Verify ABS Compliance',
-                icon: <IconLeaf size={22} />,
-                theme: 'theme-teal',
-              },
-              {
-                id: 'checklists',
-                title: 'Filing Checklists',
-                badge: 'Document Prep',
-                desc: 'Step-by-step statutory document checklists for Patent specifications, Trade Marks, Design registration, and GI filings.',
-                to: '/checklists',
-                cta: 'Open Checklists',
-                icon: <IconCheck size={22} />,
-                theme: 'theme-purple',
-              },
-            ].map((tool, i) => (
-              <Reveal key={tool.id} delay={i * 80}>
-                <Link to={tool.to} className={`tech-tool-card ${tool.theme}`}>
-                  <div className="tech-tool-card-glow" aria-hidden="true" />
-                  <div className="tech-tool-card-header">
-                    <div className="tech-tool-icon-wrap" aria-hidden="true">
-                      {tool.icon}
-                    </div>
-                    <span className="tech-tool-badge">{tool.badge}</span>
-                  </div>
-
-                  <div className="tech-tool-card-body">
-                    <h3 className="tech-tool-title">{tool.title}</h3>
-                    <p className="tech-tool-desc">{tool.desc}</p>
-                  </div>
-
-                  <div className="tech-tool-footer">
-                    <span className="tech-tool-cta">
-                      <span>{tool.cta}</span>
-                      <IconArrowRight size={15} className="tech-tool-cta-arrow" />
-                    </span>
-                  </div>
-                </Link>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Live Demo Preview */}
       <DemoPreview />
 
@@ -5825,16 +5839,20 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
     }
   }
 
-  // Auto-resize textarea
+  // Auto-resize textarea whenever input value changes (typing, pasting, voice, suggestions, clear)
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+      const scrollH = textareaRef.current.scrollHeight
+      const newHeight = Math.min(Math.max(scrollH, 28), 160)
+      textareaRef.current.style.height = `${newHeight}px`
+    }
+  }, [input])
+
   const handleInputChange = (e) => {
     const value = e.target.value
     if (value.length <= MAX_CHARS) {
       setInput(value)
-    }
-    // Auto-resize
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto'
-      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 150) + 'px'
     }
   }
 
