@@ -90,15 +90,15 @@ def test_error_event_format():
 # ============================================================================
 
 def test_mode_token_limits():
-    assert settings.TOKEN_LIMIT_BRIEF == 700
-    assert settings.TOKEN_LIMIT_STANDARD == 1400
-    assert settings.TOKEN_LIMIT_DETAILED == 2400
+    assert settings.TOKEN_LIMIT_BRIEF == 1500
+    assert settings.TOKEN_LIMIT_STANDARD == 4096
+    assert settings.TOKEN_LIMIT_DETAILED == 8192
 
-    assert settings.get_mode_token_limit("brief") == 700
-    assert settings.get_mode_token_limit("standard") == 1400
-    assert settings.get_mode_token_limit("detailed") == 2400
-    assert settings.get_mode_token_limit("unknown") == 1400
-    assert settings.get_mode_token_limit(None) == 1400
+    assert settings.get_mode_token_limit("brief") == 1500
+    assert settings.get_mode_token_limit("standard") == 4096
+    assert settings.get_mode_token_limit("detailed") == 8192
+    assert settings.get_mode_token_limit("unknown") == 4096
+    assert settings.get_mode_token_limit(None) == 4096
 
 
 # ============================================================================
@@ -110,16 +110,18 @@ def test_no_retry_on_429():
     mock_client = MagicMock()
     mock_client.models.generate_content.side_effect = Exception("429 RESOURCE_EXHAUSTED: Quota exceeded")
 
-    with patch("app.services.llm._get_client_and_key", return_value=(mock_client, "fake-key-123")):
-        with patch("app.services.llm.key_manager.mark_rate_limited") as mock_mark:
-            with pytest.raises(GeminiQuotaExceededError):
-                generate_grounded_answer(
-                    question="What is Section 3(p)?",
-                    context="[SRC-001] Context",
-                )
-            # Must have attempted exactly once (no retry on 429)
-            assert mock_client.models.generate_content.call_count == 1
-            mock_mark.assert_called_once_with("fake-key-123")
+    with patch.object(settings, "LLM_PRIMARY_PROVIDER", "gemini"), \
+         patch.object(settings, "LLM_FALLBACK_PROVIDER", "gemini"):
+        with patch("app.services.llm._get_client_and_key", return_value=(mock_client, "fake-key-123")):
+            with patch("app.services.llm.key_manager.mark_rate_limited") as mock_mark:
+                with pytest.raises(GeminiQuotaExceededError):
+                    generate_grounded_answer(
+                        question="What is Section 3(p)?",
+                        context="[SRC-001] Context",
+                    )
+                # Must have attempted exactly once (no retry on 429)
+                assert mock_client.models.generate_content.call_count == 1
+                mock_mark.assert_called_once_with("fake-key-123")
 
 
 def test_single_retry_on_503():
@@ -127,16 +129,18 @@ def test_single_retry_on_503():
     mock_client = MagicMock()
     mock_client.models.generate_content.side_effect = Exception("503 Service Unavailable: High load")
 
-    with patch("app.services.llm._get_client_and_key", return_value=(mock_client, "fake-key-123")):
-        with patch("time.sleep") as mock_sleep:
-            with pytest.raises(GeminiGenerationError):
-                generate_grounded_answer(
-                    question="What is Section 3(p)?",
-                    context="[SRC-001] Context",
-                )
-            # Exactly 2 attempts (1 initial + 1 retry)
-            assert mock_client.models.generate_content.call_count == 2
-            mock_sleep.assert_called_once_with(1.5)
+    with patch.object(settings, "LLM_PRIMARY_PROVIDER", "gemini"), \
+         patch.object(settings, "LLM_FALLBACK_PROVIDER", "gemini"):
+        with patch("app.services.llm._get_client_and_key", return_value=(mock_client, "fake-key-123")):
+            with patch("time.sleep") as mock_sleep:
+                with pytest.raises(GeminiGenerationError):
+                    generate_grounded_answer(
+                        question="What is Section 3(p)?",
+                        context="[SRC-001] Context",
+                    )
+                # Exactly 2 attempts (1 initial + 1 retry)
+                assert mock_client.models.generate_content.call_count == 2
+                mock_sleep.assert_called_once_with(1.5)
 
 
 # ============================================================================

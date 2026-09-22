@@ -43,11 +43,11 @@ CORE OPERATIONAL PRINCIPLES:
 - Never fabricate citations or cite non-existent source IDs.
 
 3. INTENT-SPECIFIC MODES:
-- For simple factual legal questions:
-  * Answer directly in 3–6 sentences or concise bullet points.
-  * Mention only the relevant provisions and statutes directly answering the query.
+- For factual legal questions:
+  * Provide a clear, comprehensive, and complete statutory explanation using structured points or paragraphs.
+  * Mention all relevant provisions, requirements, and statutory authorities directly answering the query to full completion.
   * Cite each substantive claim with [SRC-XXX].
-  * Do NOT append unsolicited patentability analyses, TKDL treatises, or ABS compliance sections.
+  * Never truncate sentences or leave bullet points half-finished.
 - For patentability queries:
   * Separate preliminary assessment from legal conclusions.
   * Systematically analyze novelty, inventive step, and statutory subject-matter exclusions.
@@ -183,10 +183,10 @@ CORE OPERATIONAL PRINCIPLES:
         else:
             intent_directive = (
                 "INTENT DIRECTIVE: FACTUAL STATUTORY QUERY\n"
-                "- Answer directly in 3–6 sentences or concise bullet points.\n"
-                "- Address ONLY the specific statutory provision, rule, or legal principle asked.\n"
+                "- Provide a comprehensive, fully articulated, and well-structured answer.\n"
+                "- Clearly articulate all relevant statutory requirements, provisions, procedures, and authorities to full completion.\n"
                 "- Cite each key claim with [SRC-XXX].\n"
-                "- Do NOT invent or add unsolicited patentability assessments, ABS clearances, or Traditional Knowledge treatises unless specifically asked."
+                "- Ensure every requirement or bullet point is fully written out and completed without cutting off mid-sentence."
             )
 
         # ── 6. Requested Information Block ──────────────────────────
@@ -220,7 +220,8 @@ CORE OPERATIONAL PRINCIPLES:
             "REMINDERS:\n"
             "1. Use ONLY facts from the retrieved evidence. If facts are missing, say 'The available sources do not establish this.'\n"
             "2. Cite every material claim using [SRC-XXX] citing only existing source IDs.\n"
-            "3. Conclude with a brief disclaimer that this is general statutory information and not legal advice."
+            "3. Ensure the response is complete from beginning to end; do not truncate, cut off, or leave sentences unfinished.\n"
+            "4. Conclude with a brief disclaimer that this is general statutory information and not legal advice."
         )
 
         prompt = (

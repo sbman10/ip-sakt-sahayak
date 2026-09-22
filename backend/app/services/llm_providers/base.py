@@ -89,7 +89,7 @@ class BaseLLMProvider(ABC):
         self,
         system_prompt: str,
         user_prompt: str,
-        max_output_tokens: int = 1400,
+        max_output_tokens: int = 4096,
         temperature: float = 0.2,
     ) -> LLMResponse:
         """
@@ -102,7 +102,7 @@ class BaseLLMProvider(ABC):
         self,
         system_prompt: str,
         user_prompt: str,
-        max_output_tokens: int = 1400,
+        max_output_tokens: int = 4096,
         temperature: float = 0.2,
     ) -> Iterator[str]:
         """

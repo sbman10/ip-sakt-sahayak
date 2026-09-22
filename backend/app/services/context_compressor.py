@@ -106,11 +106,11 @@ class ContextCompressor:
     def build_prompt_context(
         self,
         chunks: list[dict],
-        max_tokens: int = 1500,
+        max_tokens: int = 3500,
     ) -> tuple[str, list[dict]]:
         """
         Compresses each chunk and constructs a clean context block:
-        `[Source: {source} | Section: {section}]\\n{compressed_text}`
+        `[Source: {source} | Section: {section}]\n{compressed_text}`
 
         Ensures cumulative context length remains strictly under `max_tokens`.
         (Approximates 1 token ~= 4 characters for conservative safety).
@@ -120,7 +120,7 @@ class ContextCompressor:
         chunks : list[dict]
             Input candidate chunks.
         max_tokens : int
-            Maximum token budget for prompt injection (default: 1500).
+            Maximum token budget for prompt injection (default: 3500).
 
         Returns
         -------
@@ -212,7 +212,7 @@ class ContextCompressor:
         """
         Maintains API compatibility with existing router endpoints.
         """
-        context_str, cleaned = self.build_prompt_context(ranked_passages[:max_passages], max_tokens=1500)
+        context_str, cleaned = self.build_prompt_context(ranked_passages[:max_passages], max_tokens=3500)
 
         citations: list[CitationItem] = []
         for idx, c in enumerate(cleaned, start=1):

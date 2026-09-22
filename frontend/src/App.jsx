@@ -2696,6 +2696,164 @@ function CollapsibleCitations({ citations }) {
   )
 }
 
+/* ============================================================
+   RENDER TEXT WITH INLINE CITATION LINKS
+   ============================================================ */
+function renderTextWithCitations(text, onCitationClick) {
+  if (!text || !onCitationClick) return text
+  // Match [SRC-001], [SRC-002], etc.
+  const parts = text.split(/(\[SRC-\d+\])/g)
+  if (parts.length <= 1) return text
+  return parts.map((part, i) => {
+    const match = part.match(/^\[(SRC-\d+)\]$/)
+    if (match) {
+      const srcId = match[1]
+      return (
+        <button
+          key={i}
+          className="inline-citation-link"
+          onClick={(e) => { e.stopPropagation(); onCitationClick(srcId) }}
+          title={`View source ${srcId}`}
+          aria-label={`Jump to source ${srcId}`}
+        >
+          [{srcId}]
+        </button>
+      )
+    }
+    return part
+  })
+}
+
+/* ============================================================
+   SOURCES PANEL (Right-side panel for citations)
+   ============================================================ */
+function SourcesPanel({ citations, isOpen, onClose, highlightedSourceId, onClearHighlight }) {
+  const panelRef = useRef(null)
+  const cardRefs = useRef({})
+  const [expandedIds, setExpandedIds] = useState({})
+
+  // Scroll to highlighted card
+  useEffect(() => {
+    if (highlightedSourceId && cardRefs.current[highlightedSourceId]) {
+      cardRefs.current[highlightedSourceId].scrollIntoView({ behavior: 'smooth', block: 'center' })
+      // Clear highlight after 2 seconds
+      const timer = setTimeout(() => onClearHighlight?.(), 2500)
+      return () => clearTimeout(timer)
+    }
+  }, [highlightedSourceId, onClearHighlight])
+
+  const toggleExpand = (id) => {
+    setExpandedIds(prev => ({ ...prev, [id]: !prev[id] }))
+  }
+
+  const hasCitations = citations && citations.length > 0
+
+  return (
+    <>
+      {/* Mobile backdrop */}
+      {isOpen && (
+        <div
+          className="sources-panel-backdrop"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
+      <aside
+        className={`sources-panel ${isOpen ? 'open' : 'collapsed'}`}
+        ref={panelRef}
+        aria-label="Sources panel"
+      >
+        <div className="sources-panel-header">
+          <span className="sources-panel-title">
+            <IconScroll size={16} />
+            Sources
+            {hasCitations && <span className="sources-count">{citations.length}</span>}
+          </span>
+          <button
+            className="sources-panel-close"
+            onClick={onClose}
+            aria-label="Close sources panel"
+            title="Close sources panel"
+          >
+            <IconClose size={16} />
+          </button>
+        </div>
+
+        <div className="sources-panel-body">
+          {!hasCitations ? (
+            <div className="sources-empty-state">
+              <IconFileText size={28} />
+              <p>No supporting sources were returned for this answer.</p>
+            </div>
+          ) : (
+            citations.map((c, i) => {
+              const id = c.source_id || `src-${i}`
+              const displayTitle = formatSourceName(c.source || c.title || '')
+              const sectionLabel = c.section || ''
+              const snippetText = c.text || ''
+              const isExpanded = !!expandedIds[id]
+              const isHighlighted = highlightedSourceId === id || highlightedSourceId === c.source_id
+
+              return (
+                <div
+                  key={id}
+                  ref={el => { cardRefs.current[id] = el; if (c.source_id) cardRefs.current[c.source_id] = el }}
+                  className={`source-card ${isHighlighted ? 'highlighted' : ''} ${isExpanded ? 'expanded' : ''}`}
+                >
+                  <button
+                    className="source-card-header"
+                    onClick={() => toggleExpand(id)}
+                    aria-expanded={isExpanded}
+                  >
+                    <span className="source-card-icon" aria-hidden="true">{getSourceIcon(c.source)}</span>
+                    <div className="source-card-meta">
+                      <span className="source-card-title">{displayTitle}</span>
+                      {c.source_id && <span className="source-card-id">{c.source_id}</span>}
+                      {sectionLabel && <span className="source-card-section">{sectionLabel}</span>}
+                      {c.authority && <span className="source-card-detail">{c.authority}</span>}
+                      {c.jurisdiction && <span className="source-card-detail">{c.jurisdiction}</span>}
+                      {c.page_number && <span className="source-card-detail">Page {c.page_number}</span>}
+                    </div>
+                    <span className={`source-card-chevron ${isExpanded ? 'expanded' : ''}`} aria-hidden="true">
+                      <IconChevronDown size={14} />
+                    </span>
+                  </button>
+
+                  {isExpanded && (
+                    <div className="source-card-content">
+                      {snippetText ? (
+                        <p className="source-card-snippet">{snippetText}</p>
+                      ) : (
+                        <p className="source-card-snippet source-unavailable">Source text unavailable.</p>
+                      )}
+                      {c.relevance && (
+                        <p className="source-card-relevance">
+                          <strong>Relevance:</strong> {c.relevance}
+                        </p>
+                      )}
+                      {c.url && (
+                        <a
+                          href={c.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="source-card-link"
+                        >
+                          <IconExternalLink size={14} />
+                          <span>{c.url}</span>
+                        </a>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            })
+          )}
+        </div>
+      </aside>
+    </>
+  )
+}
+
 function ConfidenceBadge({ level }) {
   // Handle both old string format and new object format
   let label, cls, icon, score, reason
@@ -3185,7 +3343,7 @@ function ScrollToBottomBtn({ onClick, visible }) {
   )
 }
 
-function MessageBubble({ msg, onFollowUp, onRegenerate, onFeedback, isLatestAI }) {
+function MessageBubble({ msg, onFollowUp, onRegenerate, onFeedback, isLatestAI, onCitationClick }) {
   const timestamp = msg.timestamp || msg.id
 
   if (msg.role === 'user') {
@@ -3208,6 +3366,16 @@ function MessageBubble({ msg, onFollowUp, onRegenerate, onFeedback, isLatestAI }
   // Get follow-up questions from response or use defaults
   const followUps = msg.followUpQuestions || []
 
+  // Render text content: for non-streaming, parse [SRC-xxx] references into clickable links
+  const renderBubbleContent = () => {
+    if (msg.streaming) return msg.text
+    // Wrap JargonText output with citation links if onCitationClick provided
+    if (onCitationClick && msg.text) {
+      return renderTextWithCitations(msg.text, onCitationClick)
+    }
+    return <JargonText text={msg.text} />
+  }
+
   return (
     <div className="message-row ai-row message-fade-in">
       <div className="avatar ai-avatar" aria-hidden="true">
@@ -3219,11 +3387,12 @@ function MessageBubble({ msg, onFollowUp, onRegenerate, onFeedback, isLatestAI }
           <span className="ai-sender-tag">Statute-Grounded</span>
         </div>
         <div className="bubble ai-bubble" style={{ whiteSpace: 'pre-line' }}>
-          {msg.streaming ? msg.text : <JargonText text={msg.text} />}
+          {renderBubbleContent()}
           {msg.streaming && <span className="typewriter-cursor" aria-hidden="true">|</span>}
         </div>
 
-        <CollapsibleCitations citations={msg.citations} />
+        {/* Show inline citations only for historical messages, not the latest (which uses the Sources panel) */}
+        {!isLatestAI && <CollapsibleCitations citations={msg.citations} />}
 
         {msg.confidence && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -5659,6 +5828,12 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
   })
   const [activeSessionId, setActiveSessionId] = useState(null)
 
+  // Sources panel state
+  const [sourcesPanelOpen, setSourcesPanelOpen] = useState(() => {
+    return typeof window !== 'undefined' ? window.innerWidth > 768 : true
+  })
+  const [highlightedSourceId, setHighlightedSourceId] = useState(null)
+
   // Persisted conversation state
   const [conversationId, setConversationId] = useState(null)
   const [sessions, setSessions] = useState([])
@@ -6258,6 +6433,15 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
           <button className="btn-secondary chat-about-btn" onClick={onOpenAbout}>
             <IconInfo size={14} /> <span>{t('about')}</span>
           </button>
+          <button
+            className="btn-secondary chat-about-btn sources-toggle-btn"
+            onClick={() => setSourcesPanelOpen(prev => !prev)}
+            aria-label={sourcesPanelOpen ? 'Hide sources panel' : 'Show sources panel'}
+            title={sourcesPanelOpen ? 'Hide sources' : 'Show sources'}
+          >
+            <IconBook size={14} />
+            <span className="sources-toggle-label">{sourcesPanelOpen ? 'Hide Sources' : 'Sources'}</span>
+          </button>
           <ThemeToggleBtn theme={theme} toggleTheme={toggleTheme} />
         </div>
       </header>
@@ -6287,246 +6471,262 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
         />
 
         <div className="chat-main-area">
-          {/* Chat Body */}
-          <div
-            className="chat-body"
-            id="chat-messages"
-            role="log"
-            aria-live="polite"
-            ref={chatBodyRef}
-            onScroll={handleScroll}
-          >
-            <div className="chat-conversation-inner">
-              {/* Wizard shortcuts - only show when not in welcome state */}
-              {!showWelcome && (
-                <div className="wizard-shortcut-bar" aria-label={t('quickActions')}>
-                  {[
-                    { icon: <IconFlask size={14} />, labelKey: 'formulationWizard', action: onOpenWizard },
-                    { icon: <IconLeaf size={14} />, labelKey: 'absChecker', link: '/abs-checker' },
-                    { icon: <IconScroll size={14} />, labelKey: 'patentsActSection', prompt: 'What is Section 3(p) of Patents Act 1970?' },
-                    { icon: <IconBook size={14} />, labelKey: 'tkdlCheck', prompt: 'How does TKDL prevent traditional knowledge biopiracy?' },
-                    { icon: <IconTag size={14} />, labelKey: 'giTagging', prompt: 'How do I register a Geographical Indication for an Ayurvedic herb?' },
-                  ].map((b, idx) => (
-                    b.link ? (
-                      <Link key={idx} to={b.link} className="wizard-btn">
-                        <span aria-hidden="true" style={{ display: 'flex' }}>{b.icon}</span>
-                        <span>{t(b.labelKey)}</span>
-                      </Link>
-                    ) : (
-                      <button
-                        key={idx}
-                        className="wizard-btn"
-                        onClick={() => b.action ? b.action() : setInput(b.prompt)}
-                      >
-                        <span aria-hidden="true" style={{ display: 'flex' }}>{b.icon}</span>
-                        <span>{t(b.labelKey)}</span>
-                      </button>
-                    )
-                  ))}
-                </div>
-              )}
+          {/* Chat content area (chat body + input bar) */}
+          <div className="chat-content-area">
+            {/* Chat Body */}
+            <div
+              className="chat-body"
+              id="chat-messages"
+              role="log"
+              aria-live="polite"
+              ref={chatBodyRef}
+              onScroll={handleScroll}
+            >
+              <div className="chat-conversation-inner">
+                {/* Wizard shortcuts - only show when not in welcome state */}
+                {!showWelcome && (
+                  <div className="wizard-shortcut-bar" aria-label={t('quickActions')}>
+                    {[
+                      { icon: <IconFlask size={14} />, labelKey: 'formulationWizard', action: onOpenWizard },
+                      { icon: <IconLeaf size={14} />, labelKey: 'absChecker', link: '/abs-checker' },
+                      { icon: <IconScroll size={14} />, labelKey: 'patentsActSection', prompt: 'What is Section 3(p) of Patents Act 1970?' },
+                      { icon: <IconBook size={14} />, labelKey: 'tkdlCheck', prompt: 'How does TKDL prevent traditional knowledge biopiracy?' },
+                      { icon: <IconTag size={14} />, labelKey: 'giTagging', prompt: 'How do I register a Geographical Indication for an Ayurvedic herb?' },
+                    ].map((b, idx) => (
+                      b.link ? (
+                        <Link key={idx} to={b.link} className="wizard-btn">
+                          <span aria-hidden="true" style={{ display: 'flex' }}>{b.icon}</span>
+                          <span>{t(b.labelKey)}</span>
+                        </Link>
+                      ) : (
+                        <button
+                          key={idx}
+                          className="wizard-btn"
+                          onClick={() => b.action ? b.action() : setInput(b.prompt)}
+                        >
+                          <span aria-hidden="true" style={{ display: 'flex' }}>{b.icon}</span>
+                          <span>{t(b.labelKey)}</span>
+                        </button>
+                      )
+                    ))}
+                  </div>
+                )}
 
-              {/* Welcome state or Messages */}
-              {showWelcome ? (
-                <ChatWelcome
-                  onPromptClick={(text) => {
-                    setInput(text)
-                    if (textareaRef.current) textareaRef.current.focus()
-                  }}
-                  onOpenWizard={onOpenWizard}
-                />
-              ) : (
-                messages.map(msg => (
-                  <MessageBubble
-                    key={msg.id}
-                    msg={msg}
-                    onFollowUp={handleFollowUp}
-                    onRegenerate={handleRegenerate}
-                    onFeedback={handleFeedback}
-                    isLatestAI={latestAIMessage && msg.id === latestAIMessage.id && !typing}
+                {/* Welcome state or Messages */}
+                {showWelcome ? (
+                  <ChatWelcome
+                    onPromptClick={(text) => {
+                      setInput(text)
+                      if (textareaRef.current) textareaRef.current.focus()
+                    }}
+                    onOpenWizard={onOpenWizard}
                   />
-                ))
-              )}
+                ) : (
+                  messages.map(msg => (
+                    <MessageBubble
+                      key={msg.id}
+                      msg={msg}
+                      onFollowUp={handleFollowUp}
+                      onRegenerate={handleRegenerate}
+                      onFeedback={handleFeedback}
+                      isLatestAI={latestAIMessage && msg.id === latestAIMessage.id && !typing}
+                      onCitationClick={(srcId) => {
+                        setSourcesPanelOpen(true)
+                        setHighlightedSourceId(srcId)
+                      }}
+                    />
+                  ))
+                )}
 
-              {/* Typing indicator with retrieval state */}
-              {typing && <TypingIndicator retrievalState={retrievalState} />}
-            </div>
-
-            {/* Scroll to bottom button */}
-            <ScrollToBottomBtn onClick={scrollToBottom} visible={showScrollBtn} />
-          </div>
-
-          {/* Input Bar */}
-          <div className="chat-input-bar">
-            <div className="chat-input-inner">
-              {/* Voice Input Visual Indicator */}
-              <VoiceInputIndicator
-                isListening={isListening}
-                interimText={interimText}
-                confidence={voiceConfidence}
-                voiceLang={voiceLang}
-              />
-
-              {/* Voice error display */}
-              {voiceError && (
-                <div className="voice-error-text">
-                  <IconAlertTriangle size={14} />
-                  <span>{voiceError}</span>
-                </div>
-              )}
-
-              {/* Voice confidence indicator - show when confidence is low */}
-              {voiceConfidence !== null && voiceConfidence < 0.5 && (
-                <div className="voice-confidence-warning">
-                  <IconAlertTriangle size={14} />
-                  <span>कम सटीकता / Low accuracy ({(voiceConfidence * 100).toFixed(0)}%) - कृपया स्पष्ट बोलें / Please speak clearly</span>
-                </div>
-              )}
-
-              {/* Jurisdiction selector — lives beside the chat composer */}
-              <div className="chat-jurisdiction-row">
-                <label htmlFor="chat-jurisdiction-select" className="chat-jurisdiction-label">
-                  {t('chooseJurisdiction') || 'Choose Jurisdiction'}
-                </label>
-                <select
-                  id="chat-jurisdiction-select"
-                  className="chat-jurisdiction-select"
-                  value={jurisdiction}
-                  onChange={e => setJurisdiction(e.target.value)}
-                  aria-label={t('chooseJurisdiction') || 'Choose Jurisdiction'}
-                >
-                  <option value="india">{t('jurisdictionIndia') || 'India'}</option>
-                  <option value="international">{t('jurisdictionInternational') || 'International'}</option>
-                  <option value="both">{t('jurisdictionBoth') || 'Both'}</option>
-                </select>
-                <span className="chat-jurisdiction-current">
-                  {jurisdiction === 'both'
-                    ? (t('jurisdictionBoth') || 'Both')
-                    : jurisdiction === 'international'
-                      ? (t('jurisdictionInternational') || 'International')
-                      : (t('jurisdictionIndia') || 'India')}
-                </span>
+                {/* Typing indicator with retrieval state */}
+                {typing && <TypingIndicator retrievalState={retrievalState} />}
               </div>
 
-              <div className="input-row">
-                <div className="chat-input-wrap">
-                  <textarea
-                    ref={textareaRef}
-                    className="chat-input"
-                    id="chat-input-field"
-                    value={input}
-                    onChange={handleInputChange}
-                    onKeyDown={handleKeyDown}
-                    placeholder={isListening ? t('voiceListening') : "Ask about Patents Act, ABS clearance, BD Act, TKDL, trademarks... (e.g., 'Can I patent my Ayurvedic formulation?')"}
-                    rows={1}
-                    aria-label={t('typeYourQuestion')}
-                  />
-                  {/* File Upload Button */}
-                  <div className="chat-file-upload">
-                    <input
-                      type="file"
-                      id="chat-file-input"
-                      accept=".pdf,.docx,.doc,.txt,.png,.jpg,.jpeg"
-                      onChange={handleFileSelect}
-                      style={{ display: 'none' }}
-                    />
-                    <button
-                      type="button"
-                      className="file-upload-btn"
-                      onClick={() => document.getElementById('chat-file-input')?.click()}
-                      aria-label="Attach file"
-                      title="Upload PDF, Word, or Image"
-                      style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-                    >
-                      <IconPaperClip size={16} />
-                    </button>
+              {/* Scroll to bottom button */}
+              <ScrollToBottomBtn onClick={scrollToBottom} visible={showScrollBtn} />
+            </div>
+
+            {/* Input Bar */}
+            <div className="chat-input-bar">
+              <div className="chat-input-inner">
+                {/* Voice Input Visual Indicator */}
+                <VoiceInputIndicator
+                  isListening={isListening}
+                  interimText={interimText}
+                  confidence={voiceConfidence}
+                  voiceLang={voiceLang}
+                />
+
+                {/* Voice error display */}
+                {voiceError && (
+                  <div className="voice-error-text">
+                    <IconAlertTriangle size={14} />
+                    <span>{voiceError}</span>
                   </div>
-                  {/* Voice Input Controls */}
-                  {voiceSupported && (
-                    <div className="voice-controls">
-                      <VoiceLanguageSelector
-                        value={voiceLang}
-                        onChange={setVoiceLang}
-                        isListening={isListening}
+                )}
+
+                {/* Voice confidence indicator - show when confidence is low */}
+                {voiceConfidence !== null && voiceConfidence < 0.5 && (
+                  <div className="voice-confidence-warning">
+                    <IconAlertTriangle size={14} />
+                    <span>कम सटीकता / Low accuracy ({(voiceConfidence * 100).toFixed(0)}%) - कृपया स्पष्ट बोलें / Please speak clearly</span>
+                  </div>
+                )}
+
+                {/* Jurisdiction selector — lives beside the chat composer */}
+                <div className="chat-jurisdiction-row">
+                  <label htmlFor="chat-jurisdiction-select" className="chat-jurisdiction-label">
+                    {t('chooseJurisdiction') || 'Choose Jurisdiction'}
+                  </label>
+                  <select
+                    id="chat-jurisdiction-select"
+                    className="chat-jurisdiction-select"
+                    value={jurisdiction}
+                    onChange={e => setJurisdiction(e.target.value)}
+                    aria-label={t('chooseJurisdiction') || 'Choose Jurisdiction'}
+                  >
+                    <option value="india">{t('jurisdictionIndia') || 'India'}</option>
+                    <option value="international">{t('jurisdictionInternational') || 'International'}</option>
+                    <option value="both">{t('jurisdictionBoth') || 'Both'}</option>
+                  </select>
+                  <span className="chat-jurisdiction-current">
+                    {jurisdiction === 'both'
+                      ? (t('jurisdictionBoth') || 'Both')
+                      : jurisdiction === 'international'
+                        ? (t('jurisdictionInternational') || 'International')
+                        : (t('jurisdictionIndia') || 'India')}
+                  </span>
+                </div>
+
+                <div className="input-row">
+                  <div className="chat-input-wrap">
+                    <textarea
+                      ref={textareaRef}
+                      className="chat-input"
+                      id="chat-input-field"
+                      value={input}
+                      onChange={handleInputChange}
+                      onKeyDown={handleKeyDown}
+                      placeholder={isListening ? t('voiceListening') : "Ask about Patents Act, ABS clearance, BD Act, TKDL, trademarks... (e.g., 'Can I patent my Ayurvedic formulation?')"}
+                      rows={1}
+                      aria-label={t('typeYourQuestion')}
+                    />
+                    {/* File Upload Button */}
+                    <div className="chat-file-upload">
+                      <input
+                        type="file"
+                        id="chat-file-input"
+                        accept=".pdf,.docx,.doc,.txt,.png,.jpg,.jpeg"
+                        onChange={handleFileSelect}
+                        style={{ display: 'none' }}
                       />
                       <button
                         type="button"
-                        className={`voice-btn ${isListening ? 'listening' : ''}`}
-                        onClick={isListening ? stopListening : startListening}
-                        aria-label={isListening ? t('voiceListening') : t('tapToSpeak')}
-                        title={t('voiceInput')}
+                        className="file-upload-btn"
+                        onClick={() => document.getElementById('chat-file-input')?.click()}
+                        aria-label="Attach file"
+                        title="Upload PDF, Word, or Image"
                         style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                       >
-                        {isListening ? (
-                          <span className="voice-waves">
-                            <span></span><span></span><span></span>
-                          </span>
-                        ) : <IconMic size={16} />}
+                        <IconPaperClip size={16} />
                       </button>
                     </div>
-                  )}
-                </div>
-                <button
-                  className="send-btn"
-                  id="send-message-btn"
-                  onClick={handleSend}
-                  disabled={!input.trim() || typing}
-                  aria-label={t('sendMessage')}
-                  style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-                >
-                  <IconSend size={16} />
-                </button>
-              </div>
-
-              {/* Attached file preview */}
-              {attachedFile && (
-                <div className="attached-file-preview">
-                  <div className="attached-file-info">
-                    <IconFileText size={16} />
-                    <span className="attached-file-name">{attachedFile.name}</span>
-                    <span className="attached-file-size">({(attachedFile.size / 1024).toFixed(1)} KB)</span>
+                    {/* Voice Input Controls */}
+                    {voiceSupported && (
+                      <div className="voice-controls">
+                        <VoiceLanguageSelector
+                          value={voiceLang}
+                          onChange={setVoiceLang}
+                          isListening={isListening}
+                        />
+                        <button
+                          type="button"
+                          className={`voice-btn ${isListening ? 'listening' : ''}`}
+                          onClick={isListening ? stopListening : startListening}
+                          aria-label={isListening ? t('voiceListening') : t('tapToSpeak')}
+                          title={t('voiceInput')}
+                          style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                          {isListening ? (
+                            <span className="voice-waves">
+                              <span></span><span></span><span></span>
+                            </span>
+                          ) : <IconMic size={16} />}
+                        </button>
+                      </div>
+                    )}
                   </div>
                   <button
-                    type="button"
-                    className="remove-file-btn"
-                    onClick={() => setAttachedFile(null)}
-                    aria-label="Remove file"
+                    className="send-btn"
+                    id="send-message-btn"
+                    onClick={handleSend}
+                    disabled={!input.trim() || typing}
+                    aria-label={t('sendMessage')}
+                    style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                   >
-                    <IconClose size={14} />
+                    <IconSend size={16} />
                   </button>
                 </div>
-              )}
 
-              {/* Character count indicator */}
-              <div className="input-meta">
-                <span className={`char-count ${input.length > MAX_CHARS * 0.9 ? 'warning' : ''} ${input.length >= MAX_CHARS ? 'limit' : ''}`}>
-                  {input.length}/{MAX_CHARS}
-                </span>
-                <span className="input-hint">Press Enter to send, Shift+Enter for new line</span>
-              </div>
+                {/* Attached file preview */}
+                {attachedFile && (
+                  <div className="attached-file-preview">
+                    <div className="attached-file-info">
+                      <IconFileText size={16} />
+                      <span className="attached-file-name">{attachedFile.name}</span>
+                      <span className="attached-file-size">({(attachedFile.size / 1024).toFixed(1)} KB)</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="remove-file-btn"
+                      onClick={() => setAttachedFile(null)}
+                      aria-label="Remove file"
+                    >
+                      <IconClose size={14} />
+                    </button>
+                  </div>
+                )}
 
-              <div className="input-actions">
-                <DPDPProtectionBadge />
-                <button className="action-btn" onClick={onOpenWizard} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                  <IconFlask size={14} /> {t('formulationWizard')}
-                </button>
-                <Link to="/abs-checker" className="action-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                  <IconLeaf size={14} /> {t('absCompliance')}
-                </Link>
-                <button
-                  className="action-btn pdf-export-btn"
-                  onClick={() => handleExportPdf(messages, t, jurisdiction)}
-                  disabled={messages.length === 0}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                >
-                  <IconFileText size={14} /> {t('exportPdf')}
-                </button>
-                <button className="action-btn" id="clear-chat-btn" onClick={handleClear} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                  <IconTrash size={14} /> {t('clearSession')}
-                </button>
+                {/* Character count indicator */}
+                <div className="input-meta">
+                  <span className={`char-count ${input.length > MAX_CHARS * 0.9 ? 'warning' : ''} ${input.length >= MAX_CHARS ? 'limit' : ''}`}>
+                    {input.length}/{MAX_CHARS}
+                  </span>
+                  <span className="input-hint">Press Enter to send, Shift+Enter for new line</span>
+                </div>
+
+                <div className="input-actions">
+                  <DPDPProtectionBadge />
+                  <button className="action-btn" onClick={onOpenWizard} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <IconFlask size={14} /> {t('formulationWizard')}
+                  </button>
+                  <Link to="/abs-checker" className="action-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <IconLeaf size={14} /> {t('absCompliance')}
+                  </Link>
+                  <button
+                    className="action-btn pdf-export-btn"
+                    onClick={() => handleExportPdf(messages, t, jurisdiction)}
+                    disabled={messages.length === 0}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    <IconFileText size={14} /> {t('exportPdf')}
+                  </button>
+                  <button className="action-btn" id="clear-chat-btn" onClick={handleClear} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <IconTrash size={14} /> {t('clearSession')}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
+
+          {/* Sources Panel (right side) */}
+          <SourcesPanel
+            citations={latestAIMessage?.citations || []}
+            isOpen={sourcesPanelOpen}
+            onClose={() => setSourcesPanelOpen(false)}
+            highlightedSourceId={highlightedSourceId}
+            onClearHighlight={() => setHighlightedSourceId(null)}
+          />
         </div>
       </div>
     </div>

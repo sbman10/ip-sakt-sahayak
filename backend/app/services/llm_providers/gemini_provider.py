@@ -86,7 +86,7 @@ class GeminiProvider(BaseLLMProvider):
         self,
         system_prompt: str,
         user_prompt: str,
-        max_output_tokens: int = 1400,
+        max_output_tokens: int = 4096,
         temperature: float = 0.2,
     ) -> LLMResponse:
         """
@@ -104,7 +104,7 @@ class GeminiProvider(BaseLLMProvider):
         self,
         system_prompt: str,
         user_prompt: str,
-        max_output_tokens: int = 1400,
+        max_output_tokens: int = 4096,
         temperature: float = 0.2,
     ) -> LLMResponse:
         client, active_key = self._get_client_and_key()
@@ -183,7 +183,7 @@ class GeminiProvider(BaseLLMProvider):
         self,
         system_prompt: str,
         user_prompt: str,
-        max_output_tokens: int = 1400,
+        max_output_tokens: int = 4096,
         temperature: float = 0.2,
     ) -> Iterator[str]:
         client, active_key = self._get_client_and_key()

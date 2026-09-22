@@ -273,7 +273,7 @@ async def chat_endpoint(
     # ── Stage (f): Context Compression & Citation Formatting ────
     context_text, cleaned_chunks = context_compressor.build_prompt_context(
         chunks=reranked_passages,
-        max_tokens=2000,
+        max_tokens=3500,
     )
 
     # Build CitationItem list from cleaned chunks with SOURCE_ID traceability
@@ -594,7 +594,7 @@ async def chat_stream_endpoint(
         final_k=3,
     )
 
-    context_text, cleaned_chunks = context_compressor.build_prompt_context(reranked, max_tokens=1500)
+    context_text, cleaned_chunks = context_compressor.build_prompt_context(reranked, max_tokens=3500)
 
     # Build citation items with SOURCE_IDs
     citations = []

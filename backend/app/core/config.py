@@ -80,8 +80,8 @@ class Settings(BaseSettings):
 
     GEMINI_API_KEY: str = ""
     GEMINI_API_KEYS: Union[List[str], str] = []
-    GEMINI_MODEL: str = "gemini-3.5-flash"
-    PRIMARY_MODEL: str = "gemini-3.5-flash"
+    GEMINI_MODEL: str = "gemini-3.6-flash"
+    PRIMARY_MODEL: str = "gemini-3.6-flash"
 
     GENERATION_MAX_RETRIES: int = 1
     GENERATION_TIMEOUT_SECONDS: float = 60.0
@@ -90,14 +90,14 @@ class Settings(BaseSettings):
     SIMILARITY_THRESHOLD: float = 0.65
     RERANK_SKIP_THRESHOLD: float = 0.25
 
-    # Mode-aware answer length limits (Requirement 4)
-    TOKEN_LIMIT_BRIEF: int = 700
-    TOKEN_LIMIT_STANDARD: int = 1400
-    TOKEN_LIMIT_DETAILED: int = 2400
+    # Mode-aware answer length limits (Requirement 4: enhanced for complete answers)
+    TOKEN_LIMIT_BRIEF: int = 1500
+    TOKEN_LIMIT_STANDARD: int = 4096
+    TOKEN_LIMIT_DETAILED: int = 8192
 
     # Intent Classification & Early Routing (Requirement 5: disabled by default in production)
     INTENT_CLASSIFICATION_ENABLED: bool = False
-    INTENT_CLASSIFIER_MODEL: str = "gemini-3.5-flash"
+    INTENT_CLASSIFIER_MODEL: str = "gemini-3.6-flash"
     INTENT_CLASSIFIER_TIMEOUT_SECONDS: float = 3.0
     INTENT_CONFIDENCE_THRESHOLD: float = 0.60
 
