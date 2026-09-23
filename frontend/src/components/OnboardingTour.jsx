@@ -20,7 +20,7 @@ import React, { useState, useEffect, useLayoutEffect, useCallback } from 'react'
  * i18n: title/description come from t() keys, so they translate with the UI.
  */
 
-const STORAGE_KEY = 'ip_sakti_tour_done_v1'
+const STORAGE_KEY = 'ip_sakti_tour_done_v2'
 
 // English fallbacks so the tour is fully functional even before i18n keys exist.
 const TOUR_FALLBACK = {
@@ -49,6 +49,8 @@ const TOUR_FALLBACK = {
   tourAbsDesc: 'Check if your biological resource needs NBA / ABS approval under the Biodiversity Act before you commercialise.',
   tourChecklistTitle: '✅ Filing Checklists',
   tourChecklistDesc: 'Step-by-step interactive checklists for Patent, Trademark, GI and ABS filings with docs, time and fees.',
+  tourFtoTitle: 'FTO',
+  tourFtoDesc: 'It helps users identify relevant existing patents and potential infringement risks before commercializing an Ayurvedic product or formulation.',
   tourServicesTitle: '💼 Services',
   tourServicesDesc: 'Open this menu for hands-on services — draft generation, your case workspace, document upload and expert help.',
   tourDraftsTitle: '📝 Draft Generator',
@@ -138,6 +140,13 @@ const STEPS = [
     descKey: 'tourChecklistDesc',
     placement: 'right',
     openTools: true,
+  },
+  // ---- FTO navigation item ----
+  {
+    selector: '[data-tour="fto"]',
+    titleKey: 'tourFtoTitle',
+    descKey: 'tourFtoDesc',
+    placement: 'bottom',
   },
   // ---- Services dropdown ----
   {
