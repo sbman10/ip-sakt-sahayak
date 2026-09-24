@@ -21,7 +21,7 @@ class ProviderError(Exception):
 
 
 class ProviderQuotaError(ProviderError):
-    """Raised when a provider hits rate limits or quota exhaustion (HTTP 429)."""
+    """Raised when a provider hits rate limits or quota exhaustion (HTTP 402, 429)."""
     pass
 
 

@@ -83,7 +83,7 @@ def main():
     client = QdrantClient(
         url=qdrant_url,
         api_key=qdrant_api_key,
-        timeout=30,
+        timeout=40,
     )
 
     # Read-only collection inspection
@@ -290,15 +290,11 @@ def main():
         for failure in failures:
             print(f"- {failure}")
 
-        print(
-            "\nDo not create ragvyn_prod_v1 yet."
-        )
+        print("\nDo not create ragvyn_prod_v1 yet.")
         sys.exit(1)
 
     print("PREFLIGHT PASSED")
-    print(
-        "\nThe collection schema is ready for Qdrant hybrid ingestion."
-    )
+    print("\nThe collection schema is ready for Qdrant hybrid ingestion." )
 
 
 if __name__ == "__main__":

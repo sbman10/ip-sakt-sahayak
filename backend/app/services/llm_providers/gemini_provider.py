@@ -187,33 +187,50 @@ class GeminiProvider(BaseLLMProvider):
         temperature: float = 0.2,
     ) -> Iterator[str]:
         client, active_key = self._get_client_and_key()
+        max_attempts = 1 + max(0, self._max_retries)
+        attempts = 0
 
-        try:
-            response_stream = client.models.generate_content_stream(
-                model=self._model,
-                contents=user_prompt,
-                config=genai_types.GenerateContentConfig(
-                    system_instruction=system_prompt,
-                    temperature=temperature,
-                    top_p=0.9,
-                    max_output_tokens=max_output_tokens,
-                ),
-            )
-            for chunk in response_stream:
-                if chunk.text:
-                    yield chunk.text
+        while attempts < max_attempts:
+            attempts += 1
+            tokens_emitted = 0
+            try:
+                response_stream = client.models.generate_content_stream(
+                    model=self._model,
+                    contents=user_prompt,
+                    config=genai_types.GenerateContentConfig(
+                        system_instruction=system_prompt,
+                        temperature=temperature,
+                        top_p=0.9,
+                        max_output_tokens=max_output_tokens,
+                    ),
+                )
+                for chunk in response_stream:
+                    if chunk.text:
+                        tokens_emitted += 1
+                        yield chunk.text
+                return
 
-        except Exception as e:
-            if self._is_quota_error(e):
-                log.warning("Gemini streaming quota hit on key ...%s", active_key[-6:] if len(active_key) >= 6 else active_key)
-                key_manager.mark_rate_limited(active_key)
-                raise ProviderQuotaError("Gemini quota exceeded during streaming.", provider=self.name, status_code=429) from e
+            except Exception as e:
+                if self._is_quota_error(e):
+                    log.warning("Gemini streaming quota hit on key ...%s", active_key[-6:] if len(active_key) >= 6 else active_key)
+                    key_manager.mark_rate_limited(active_key)
+                    raise ProviderQuotaError("Gemini quota exceeded during streaming.", provider=self.name, status_code=429) from e
 
-            if self._is_auth_error(e):
-                raise ProviderAuthError(f"Gemini authentication failed: {e}", provider=self.name, status_code=401) from e
+                if self._is_auth_error(e):
+                    raise ProviderAuthError(f"Gemini authentication failed: {e}", provider=self.name, status_code=401) from e
 
-            if self._is_transient_error(e):
-                raise ProviderTransientError(f"Gemini server unavailable during stream: {e}", provider=self.name, status_code=503) from e
+                # UPDATED: If transient 503 occurs BEFORE tokens are emitted, retry stream setup with backoff
+                if self._is_transient_error(e) and tokens_emitted == 0 and attempts < max_attempts:
+                    log.warning("Gemini transient 503 server error during stream init (attempt %d/%d): %s. Retrying in 1.5s...", attempts, max_attempts, e)
+                    time.sleep(1.5)
+                    try:
+                        client, active_key = self._get_client_and_key()
+                    except Exception:
+                        pass
+                    continue
 
-            log.error("Gemini streaming error: %s", e)
-            raise ProviderTransientError(f"Gemini streaming error: {e}", provider=self.name) from e
+                if self._is_transient_error(e):
+                    raise ProviderTransientError(f"Gemini server unavailable during stream: {e}", provider=self.name, status_code=503) from e
+
+                log.error("Gemini streaming error: %s", e)
+                raise ProviderTransientError(f"Gemini streaming error: {e}", provider=self.name) from e

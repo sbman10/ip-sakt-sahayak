@@ -308,9 +308,25 @@ class ChatResponse(BaseModel):
         default_factory=list,
         description="Relevant follow-up questions the user might want to ask.",
     )
-    status: Literal["answered", "out_of_scope", "no_data", "error", "chitchat", "clarification_needed"] = Field(
+<<<<<<< HEAD
+    status: Literal[
+        "answered",
+        "out_of_scope",
+        "no_data",
+        "error",
+        "degraded",
+        "chitchat",
+        "clarification_needed",
+    ] = Field(
+=======
+    # UPDATED: Added 'degraded' to permitted statuses to allow graceful fallback when LLM is unavailable without Pydantic validation error
+    status: Literal["answered", "out_of_scope", "no_data", "error", "chitchat", "clarification_needed", "degraded"] = Field(
+>>>>>>> 137bdee4e54eeba51872d20d396744d36bfd3f8e
         default="answered",
-        description="Response status indicating the type of response.",
+        description=(
+            "Response status. 'degraded' means retrieval succeeded but all configured "
+            "generation providers were unavailable; no unsupported answer is fabricated."
+        ),
     )
     conversation_id: Optional[str] = Field(
         default=None,
