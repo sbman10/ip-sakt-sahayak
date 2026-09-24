@@ -59,7 +59,7 @@ class Settings(BaseSettings):
     # Official production corpus currently deployed in Qdrant Cloud.
     QDRANT_PRODUCTION_COLLECTION: str = "ragvyn_prod_v2"
     QDRANT_FALLBACK_ENABLED: bool = True
-    QDRANT_REQUEST_TIMEOUT_SECONDS: float = 5.0
+    QDRANT_REQUEST_TIMEOUT_SECONDS: float = 15.0 #5 to 15
     # Qdrant RRF scores are rank-fusion scores, not cosine distances.
     QDRANT_RRF_MIN_SCORE: float = 0.01
 

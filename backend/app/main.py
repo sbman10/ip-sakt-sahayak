@@ -17,6 +17,9 @@ import traceback
 from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator
 
+# UPDATED: Disable huggingface_hub symlink warning on Windows environments
+os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
+
 from fastapi import FastAPI, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
@@ -68,6 +71,21 @@ log = logging.getLogger("app.main")
 # ---------------------------------------------------------------------------
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    #Used try block here
+    # try:
+    #     logger.info("Warming up sparse embedder...")
+
+    #     sparse_embedder.embed_query("warmup")
+
+    #     logger.info("Sparse embedder warm-up complete")
+
+    # except Exception as exc:
+    #     logger.warning(
+    #         "Sparse embedder warm-up failed: %s",
+    #         exc,
+    #     )
+
+    # yield
     """
     Application lifespan context manager:
     - Startup: initializes database tables, preloads BM25 index,
@@ -108,7 +126,13 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             model_registry.load_models,
             settings.EMBEDDING_MODEL_NAME,
         )
-        log.info("[PID %s] ML models preloaded and warmed up.", pid)
+        # 4. Preload and warm up FastEmbed sparse BM25 tokenizer
+        try:
+            from app.services.sparse_embedding_service import sparse_embedder
+            await asyncio.to_thread(sparse_embedder.embed_query, "Ayurvedic patent inquiry")
+            log.info("[PID %s] FastEmbed BM25 sparse tokenizer preloaded and warmed up.", pid)
+        except Exception as e:
+            log.warning("[PID %s] FastEmbed BM25 warmup note: %s", pid, e)
     except Exception as e:
         log.error("[PID %s] Failed model preloading during startup: %s", pid, e, exc_info=True)
 
