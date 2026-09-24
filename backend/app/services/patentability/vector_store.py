@@ -84,15 +84,18 @@ class UnifiedVectorStore:
                 "document_id",
                 "language",
             ]
-            for field in index_fields:
-                try:
-                    self.qdrant.create_payload_index(
-                        collection_name=QDRANT_COLLECTION_NAME,
-                        field_name=field,
-                        field_schema=qmodels.PayloadSchemaType.KEYWORD,
-                    )
-                except Exception as ex:
-                    log.debug("Payload index creation note for %s: %s", field, ex)
+            import warnings
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", message=".*Payload indexes have no effect in the local Qdrant.*")
+                for field in index_fields:
+                    try:
+                        self.qdrant.create_payload_index(
+                            collection_name=QDRANT_COLLECTION_NAME,
+                            field_name=field,
+                            field_schema=qmodels.PayloadSchemaType.KEYWORD,
+                        )
+                    except Exception as ex:
+                        log.debug("Payload index creation note for %s: %s", field, ex)
 
     def _get_embedding(self, text: str) -> List[float]:
         if not settings.ENABLE_LOCAL_BGE_PRELOAD:

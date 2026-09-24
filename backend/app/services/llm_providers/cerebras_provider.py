@@ -93,8 +93,9 @@ class CerebrasProvider(BaseLLMProvider):
 
         if status_code in (401, 403):
             raise ProviderAuthError(f"Cerebras authentication failed: {err_text}", provider=self.name, status_code=status_code)
-        elif status_code == 429:
-            raise ProviderQuotaError(f"Cerebras rate limit/quota exceeded: {err_text}", provider=self.name, status_code=status_code)
+        # UPDATED: Treat HTTP 402 Payment Required as ProviderQuotaError so caller knows credits are exhausted without retrying
+        elif status_code in (402, 429):
+            raise ProviderQuotaError(f"Cerebras quota or payment required (HTTP {status_code}): {err_text}", provider=self.name, status_code=status_code)
         elif status_code in (500, 502, 503, 504):
             raise ProviderTransientError(f"Cerebras server error ({status_code}): {err_text}", provider=self.name, status_code=status_code)
         else:
@@ -146,7 +147,8 @@ class CerebrasProvider(BaseLLMProvider):
                     return LLMResponse(
                         text=content,
                         provider=self.name,
-                        model=self._model,
+                        # model=self._model,
+                        model=self.default_model,
                         finish_reason=raw_fr,
                         completed=is_completed,
                         usage=data.get("usage"),

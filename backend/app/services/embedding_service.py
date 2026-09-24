@@ -67,7 +67,9 @@ class CanonicalEmbeddingService:
         if self._client is None:
             if not self.token:
                 raise EmbeddingServiceError("HF_TOKEN is missing or empty. Cannot authenticate with Hugging Face.")
-            provider_arg = self.provider if self.provider and self.provider != "none" else None
+            # UPDATED: 'auto' routes through router.huggingface.co which requires prepaid credits. Treat 'none', 'auto', or empty as None for free direct HF serverless inference.
+            raw_provider = (self.provider or "").strip().lower()
+            provider_arg = self.provider if raw_provider and raw_provider not in ("none", "auto") else None
             self._client = InferenceClient(
                 token=self.token,
                 provider=provider_arg,
@@ -93,6 +95,13 @@ class CanonicalEmbeddingService:
             arr = arr / norm
 
         return arr.tolist()
+
+    def _get_local_model(self):
+        if not hasattr(self, "_local_model") or self._local_model is None:
+            log.info("Loading local SentenceTransformer BGE-M3 for embedding fallback...")
+            from sentence_transformers import SentenceTransformer
+            self._local_model = SentenceTransformer(self.model)
+        return self._local_model
 
     def embed_query(self, query: str) -> List[float]:
         """
@@ -120,6 +129,14 @@ class CanonicalEmbeddingService:
                 return self._validate_vector(vec, context=f"query '{query[:30]}...'")
             except Exception as exc:
                 last_error = exc
+                err_str = str(exc).lower()
+                # UPDATED: If third-party router returned 402 Payment Required or depleted credits, immediately fall back to free direct HF endpoint
+                if ("402" in err_str or "payment required" in err_str or "depleted" in err_str) and getattr(client, "provider", None) is not None:
+                    log.warning("HF inference provider '%s' failed with 402 Payment Required. Falling back to direct HuggingFace endpoint.", getattr(client, "provider", None))
+                    self._client = InferenceClient(token=self.token, provider=None, timeout=self.timeout)
+                    client = self._client
+                    continue
+
                 wait_time = self.backoff_factor ** attempt
                 log.warning(
                     "HF embedding query attempt %d/%d failed: %s. Retrying in %.1fs...",
@@ -131,12 +148,16 @@ class CanonicalEmbeddingService:
                 if attempt < self.max_retries:
                     time.sleep(wait_time)
 
-        # Failure handling: strictly fail without local fallback
-        if self.local_fallback:
-            raise EmbeddingServiceError(
-                f"HF inference failed after {self.max_retries} attempts: {last_error}. "
-                f"Local fallback requested but prohibited in canonical production architecture."
-            )
+        # UPDATED: Use local SentenceTransformer BGE-M3 fallback when HF remote inference fails or returns 402 Payment Required
+        if self.local_fallback or (last_error and "402" in str(last_error)):
+            log.warning("HF remote embedding unavailable (%s). Falling back to local SentenceTransformer BGE-M3.", last_error)
+            try:
+                local_m = self._get_local_model()
+                vec = local_m.encode([query.strip()], show_progress_bar=False, normalize_embeddings=self.normalize)[0]
+                return self._validate_vector(vec, context=f"local fallback query '{query[:30]}...'")
+            except Exception as local_err:
+                log.error("Local BGE-M3 fallback failed: %s", local_err)
+
         raise EmbeddingServiceError(
             f"HF dense embedding failed after {self.max_retries} attempts for query. "
             f"Original error: {last_error}"
@@ -177,6 +198,14 @@ class CanonicalEmbeddingService:
                     break
                 except Exception as exc:
                     last_error = exc
+                    err_str = str(exc).lower()
+                    # UPDATED: If third-party router returned 402 Payment Required in batch, fall back to direct HF endpoint
+                    if ("402" in err_str or "payment required" in err_str or "depleted" in err_str) and getattr(client, "provider", None) is not None:
+                        log.warning("HF inference provider '%s' failed with 402 in batch. Falling back to direct HuggingFace endpoint.", getattr(client, "provider", None))
+                        self._client = InferenceClient(token=self.token, provider=None, timeout=self.timeout)
+                        client = self._client
+                        continue
+
                     wait_time = self.backoff_factor ** attempt
                     log.warning(
                         "HF batch embedding attempt %d/%d failed: %s. Retrying in %.1fs...",
