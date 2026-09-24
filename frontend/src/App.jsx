@@ -66,7 +66,17 @@ import {
   IconBriefcase,
   IconPaperClip,
   IconEdit,
+  IconPalette,
+  IconPlay,
+  IconPause,
+  IconRotateCcw10,
+  IconRotateCw10,
+  IconMaximize,
+  IconMinimize,
+  IconVolume,
+  IconVolumeX,
 } from './components/Icons'
+import { RAGVYN_THEMES, getChatTheme, getThemeCSSVariables, DEFAULT_THEME_ID } from './config/chatThemes'
 import DraftGenerator from './components/DraftGenerator'
 import { getApiBase } from './api/config'
 
@@ -1314,10 +1324,19 @@ function useScrollReveal(options = {}) {
           observer.unobserve(entry.target)
         }
       },
-      { threshold: options.threshold ?? 0.15, rootMargin: options.rootMargin ?? '0px 0px -50px 0px' }
+      { threshold: options.threshold ?? 0.05, rootMargin: options.rootMargin ?? '0px 0px 80px 0px' }
     )
     observer.observe(node)
-    return () => observer.disconnect()
+
+    // Safety fallback: guarantee content visibility even if IntersectionObserver is delayed or un-scrolled
+    const timer = setTimeout(() => {
+      setVisible(true)
+    }, 1000)
+
+    return () => {
+      clearTimeout(timer)
+      observer.disconnect()
+    }
   }, [options.threshold, options.rootMargin])
 
   return { ref, visible }
@@ -1541,13 +1560,23 @@ function ComparisonSection() {
    ============================================================ */
 function DemoPreview() {
   const { t } = useLanguage()
-  const videoRef = useRef(null)
+  const sectionRef = useRef(null)
   const cardRef = useRef(null)
+  const videoRef = useRef(null)
+
+  const isIntersectingRef = useRef(false)
+  const userPausedRef = useRef(false)
+
   const [isPlaying, setIsPlaying] = useState(false)
   const [isMuted, setIsMuted] = useState(true)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const [isSeeking, setIsSeeking] = useState(false)
+  const [seekTime, setSeekTime] = useState(0)
+  const [isFullscreen, setIsFullscreen] = useState(false)
   const [autoplayBlocked, setAutoplayBlocked] = useState(false)
 
-  // IntersectionObserver for autoplay when entering viewport
+  // IntersectionObserver for reliable viewport detection
   useEffect(() => {
     const el = cardRef.current
     if (!el) return
@@ -1555,86 +1584,211 @@ function DemoPreview() {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            if (videoRef.current) {
-              videoRef.current.muted = true
-              const playPromise = videoRef.current.play()
+          const video = videoRef.current
+          if (!video) return
+
+          if (entry.isIntersecting && entry.intersectionRatio >= 0.2) {
+            // Fresh entry into view (first time or returning after scrolling away)
+            if (!isIntersectingRef.current) {
+              isIntersectingRef.current = true
+              userPausedRef.current = false
+
+              // Reset to beginning and play
+              video.currentTime = 0
+              setCurrentTime(0)
+              video.muted = isMuted
+              const playPromise = video.play()
               if (playPromise !== undefined) {
                 playPromise
                   .then(() => {
                     setIsPlaying(true)
                     setAutoplayBlocked(false)
                   })
-                  .catch(() => {
+                  .catch((err) => {
+                    console.warn('Autoplay blocked:', err)
                     setIsPlaying(false)
                     setAutoplayBlocked(true)
                   })
               }
             }
-          } else {
-            if (videoRef.current && !videoRef.current.paused) {
-              videoRef.current.pause()
-              setIsPlaying(false)
+          } else if (!entry.isIntersecting || entry.intersectionRatio < 0.15) {
+            // User scrolled away from Live Demo -> pause immediately
+            isIntersectingRef.current = false
+            if (!video.paused) {
+              video.pause()
             }
+            setIsPlaying(false)
           }
         })
       },
-      { threshold: 0.25 }
+      { threshold: [0, 0.15, 0.25] }
     )
 
     observer.observe(el)
     return () => observer.disconnect()
+  }, [isMuted])
+
+  // Track Fullscreen state
+  useEffect(() => {
+    const onFsChange = () => {
+      setIsFullscreen(!!(document.fullscreenElement || document.webkitFullscreenElement))
+    }
+    document.addEventListener('fullscreenchange', onFsChange)
+    document.addEventListener('webkitfullscreenchange', onFsChange)
+    return () => {
+      document.removeEventListener('fullscreenchange', onFsChange)
+      document.removeEventListener('webkitfullscreenchange', onFsChange)
+    }
   }, [])
 
-  const handleManualPlay = (e) => {
-    if (e) e.stopPropagation()
-    if (!videoRef.current) return
-    videoRef.current.play()
-      .then(() => {
-        setIsPlaying(true)
-        setAutoplayBlocked(false)
-      })
-      .catch((err) => {
-        console.warn('Playback blocked:', err)
-      })
+  const handleTimeUpdate = () => {
+    if (!videoRef.current || isSeeking) return
+    setCurrentTime(videoRef.current.currentTime)
   }
 
-  const togglePlayPause = () => {
-    if (!videoRef.current) return
-    if (videoRef.current.paused) {
-      handleManualPlay()
+  const handleLoadedMetadata = () => {
+    if (videoRef.current) {
+      setDuration(videoRef.current.duration || 0)
+    }
+  }
+
+  const togglePlayPause = (e) => {
+    if (e) e.stopPropagation()
+    const video = videoRef.current
+    if (!video) return
+
+    if (video.paused) {
+      userPausedRef.current = false
+      video.play()
+        .then(() => {
+          setIsPlaying(true)
+          setAutoplayBlocked(false)
+        })
+        .catch((err) => {
+          console.warn('Play error:', err)
+          setIsPlaying(false)
+          setAutoplayBlocked(true)
+        })
     } else {
-      videoRef.current.pause()
+      userPausedRef.current = true
+      video.pause()
       setIsPlaying(false)
     }
   }
 
+  const handleSkip = (seconds, e) => {
+    if (e) e.stopPropagation()
+    const video = videoRef.current
+    if (!video) return
+    const dur = video.duration || 100
+    const target = Math.max(0, Math.min(dur, video.currentTime + seconds))
+    video.currentTime = target
+    setCurrentTime(target)
+  }
+
+  const handleSeekChange = (e) => {
+    const val = parseFloat(e.target.value)
+    setSeekTime(val)
+    if (videoRef.current) {
+      videoRef.current.currentTime = val
+      setCurrentTime(val)
+    }
+  }
+
+  const handleSeekStart = () => {
+    setIsSeeking(true)
+  }
+
+  const handleSeekEnd = (e) => {
+    setIsSeeking(false)
+    const val = parseFloat(e.target.value)
+    if (videoRef.current) {
+      videoRef.current.currentTime = val
+      setCurrentTime(val)
+    }
+  }
+
   const toggleMute = (e) => {
-    e.stopPropagation()
-    if (!videoRef.current) return
-    const nextMuted = !videoRef.current.muted
-    videoRef.current.muted = nextMuted
+    if (e) e.stopPropagation()
+    const video = videoRef.current
+    if (!video) return
+    const nextMuted = !video.muted
+    video.muted = nextMuted
     setIsMuted(nextMuted)
   }
 
+  const toggleFullscreen = async (e) => {
+    if (e) e.stopPropagation()
+    const container = cardRef.current
+    if (!container) return
+
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+      try {
+        if (container.requestFullscreen) {
+          await container.requestFullscreen()
+        } else if (container.webkitRequestFullscreen) {
+          await container.webkitRequestFullscreen()
+        } else if (container.msRequestFullscreen) {
+          await container.msRequestFullscreen()
+        }
+      } catch (err) {
+        console.warn('Fullscreen request failed:', err)
+      }
+    } else {
+      try {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen()
+        } else if (document.webkitExitFullscreen) {
+          await document.webkitExitFullscreen()
+        }
+      } catch (err) {
+        console.warn('Exit fullscreen failed:', err)
+      }
+    }
+  }
+
+  const formatTime = (secs) => {
+    if (isNaN(secs) || secs < 0) return '00:00'
+    const m = Math.floor(secs / 60)
+    const s = Math.floor(secs % 60)
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+  }
+
+  const displayCurrentTime = isSeeking ? seekTime : currentTime
+  const progressPercent = duration > 0 ? (displayCurrentTime / duration) * 100 : 0
+
   return (
-    <section className="section demo-section" id="demo">
+    <section className="section demo-section" id="demo" ref={sectionRef}>
       <Reveal>
-        <p className="section-label">{t('demoLabel')}</p>
-        <h2 className="section-title">{t('demoTitle')}</h2>
+        <div className="demo-header-container">
+          <div className="demo-eyebrow-pill">
+            <span className="demo-live-badge-dot" />
+            <span>{t('demoLabel') || 'Live Demo'}</span>
+          </div>
+          <h2 className="demo-prominent-title">Live Demo</h2>
+          <p className="demo-prominent-subtitle">
+            {t('demoTitle') || 'See IP-SAKTI in Action'} — Statutory guidance, prior-art screening, and real-time citations
+          </p>
+        </div>
       </Reveal>
+
       <Reveal delay={150}>
-        <div className="demo-card" ref={cardRef}>
+        <div className={`demo-card ${isFullscreen ? 'demo-card-fullscreen' : ''}`} ref={cardRef}>
+          {/* macOS / Chrome style Window Header */}
           <div className="demo-header">
-            <div className="demo-dot red" />
-            <div className="demo-dot yellow" />
-            <div className="demo-dot green" />
-            <span className="demo-title">{t('demoSampleResponse')}</span>
+            <div className="demo-header-controls" aria-hidden="true">
+              <div className="demo-dot red" />
+              <div className="demo-dot yellow" />
+              <div className="demo-dot green" />
+            </div>
+            <span className="demo-title">{t('demoSampleResponse') || 'IP-SAKTI Sahayak: Live Walkthrough'}</span>
             <div className="demo-header-badge">
               <span className={`demo-status-indicator ${isPlaying ? 'active' : ''}`} />
-              <span>{isPlaying ? 'Live Demo' : 'Ready'}</span>
+              <span>{isPlaying ? 'Live Playing' : 'Paused'}</span>
             </div>
           </div>
+
+          {/* Video Container Area */}
           <div className="demo-video-wrapper" onClick={togglePlayPause}>
             <video
               ref={videoRef}
@@ -1642,9 +1796,10 @@ function DemoPreview() {
               playsInline
               muted={isMuted}
               loop
-              autoPlay
               preload="auto"
               className="demo-screen-video"
+              onTimeUpdate={handleTimeUpdate}
+              onLoadedMetadata={handleLoadedMetadata}
               onPlay={() => {
                 setIsPlaying(true)
                 setAutoplayBlocked(false)
@@ -1652,49 +1807,115 @@ function DemoPreview() {
               onPause={() => setIsPlaying(false)}
             />
 
-            {/* Clean play fallback button if autoplay is blocked or when paused */}
+            {/* Click to play fallback overlay when paused */}
             {(!isPlaying || autoplayBlocked) && (
               <div
                 className="demo-video-fallback-overlay"
-                onClick={handleManualPlay}
                 role="button"
                 tabIndex={0}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleManualPlay(e) }}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') togglePlayPause(e) }}
                 aria-label="Play Live Demo"
               >
                 <div className="demo-play-circle">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
-                    <polygon points="6 4 20 12 6 20 6 4" />
-                  </svg>
+                  <IconPlay size={26} />
                 </div>
                 <span className="demo-play-circle-text">Click to Play Demo</span>
               </div>
             )}
+          </div>
 
-            {/* Subtle sound toggle in bottom right corner */}
-            <button
-              type="button"
-              className="demo-sound-btn"
-              onClick={toggleMute}
-              aria-label={isMuted ? 'Unmute video audio' : 'Mute video audio'}
-              title={isMuted ? 'Unmute sound' : 'Mute sound'}
-            >
-              {isMuted ? (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                  <line x1="23" y1="9" x2="17" y2="15" />
-                  <line x1="17" y1="9" x2="23" y2="15" />
-                </svg>
-              ) : (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
-                </svg>
-              )}
-            </button>
+          {/* Media Player Control Bar */}
+          <div className="demo-control-bar" onClick={(e) => e.stopPropagation()}>
+            <div className="demo-controls-left">
+              {/* Play / Pause */}
+              <button
+                type="button"
+                className="demo-ctrl-btn demo-ctrl-play"
+                onClick={togglePlayPause}
+                aria-label={isPlaying ? 'Pause video' : 'Play video'}
+                title={isPlaying ? 'Pause (Space)' : 'Play (Space)'}
+              >
+                {isPlaying ? <IconPause size={17} /> : <IconPlay size={17} />}
+              </button>
+
+              {/* Seek Backward 10s */}
+              <button
+                type="button"
+                className="demo-ctrl-btn"
+                onClick={(e) => handleSkip(-10, e)}
+                aria-label="Seek backward 10 seconds"
+                title="Rewind 10 seconds"
+              >
+                <IconRotateCcw10 size={18} />
+              </button>
+
+              {/* Seek Forward 10s */}
+              <button
+                type="button"
+                className="demo-ctrl-btn"
+                onClick={(e) => handleSkip(10, e)}
+                aria-label="Seek forward 10 seconds"
+                title="Forward 10 seconds"
+              >
+                <IconRotateCw10 size={18} />
+              </button>
+
+              {/* Time Display */}
+              <div className="demo-time-box" aria-live="off">
+                <span className="demo-time-current">{formatTime(displayCurrentTime)}</span>
+                <span className="demo-time-sep">/</span>
+                <span className="demo-time-total">{formatTime(duration)}</span>
+              </div>
+            </div>
+
+            {/* Progress / Seek bar */}
+            <div className="demo-seek-wrapper">
+              <input
+                type="range"
+                className="demo-seek-range"
+                min="0"
+                max={duration > 0 ? duration : 100}
+                step="0.1"
+                value={displayCurrentTime}
+                onChange={handleSeekChange}
+                onMouseDown={handleSeekStart}
+                onTouchStart={handleSeekStart}
+                onMouseUp={handleSeekEnd}
+                onTouchEnd={handleSeekEnd}
+                aria-label="Seek video progress"
+                style={{
+                  background: `linear-gradient(to right, var(--primary, #155E75) ${progressPercent}%, rgba(20, 61, 48, 0.18) ${progressPercent}%)`
+                }}
+              />
+            </div>
+
+            <div className="demo-controls-right">
+              {/* Sound toggle */}
+              <button
+                type="button"
+                className="demo-ctrl-btn"
+                onClick={toggleMute}
+                aria-label={isMuted ? 'Unmute video audio' : 'Mute video audio'}
+                title={isMuted ? 'Unmute audio' : 'Mute audio'}
+              >
+                {isMuted ? <IconVolumeX size={18} /> : <IconVolume size={18} />}
+              </button>
+
+              {/* Fullscreen toggle */}
+              <button
+                type="button"
+                className="demo-ctrl-btn demo-ctrl-fs"
+                onClick={toggleFullscreen}
+                aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+                title={isFullscreen ? 'Exit fullscreen (Esc)' : 'Enter fullscreen'}
+              >
+                {isFullscreen ? <IconMinimize size={18} /> : <IconMaximize size={18} />}
+              </button>
+            </div>
           </div>
         </div>
       </Reveal>
+
       <Reveal delay={250}>
         <div style={{ textAlign: 'center', marginTop: '2rem' }}>
           <Link
@@ -2334,7 +2555,7 @@ function FormulationWizardModal({ isOpen, onClose, onAskChat }) {
 /* ============================================================
    HISTORY SIDEBAR RAIL
    ============================================================ */
-function ChatSidebar({ collapsed, onClose, activeId, onSelectSession, onNewChat, onOpenWizard, onOpenAbout, sessions = [], onDeleteSession, onRenameSession, loadingSessions }) {
+function ChatSidebar({ collapsed, onClose, activeId, onSelectSession, onNewChat, onOpenWizard, onOpenAbout, sessions = [], onDeleteSession, onRenameSession, loadingSessions, width, isResizing, onStartResize }) {
   const { t } = useLanguage()
   const [editingId, setEditingId] = useState(null)
   const [editValue, setEditValue] = useState('')
@@ -2360,7 +2581,13 @@ function ChatSidebar({ collapsed, onClose, activeId, onSelectSession, onNewChat,
   }
 
   return (
-    <aside className={`chat-sidebar ${collapsed ? 'collapsed' : 'open mobile-open'}`} aria-label={t('chatHistory')}>
+    <aside
+      className={`chat-sidebar ${collapsed ? 'collapsed' : 'open mobile-open'} ${isResizing ? 'resizing' : ''}`}
+      aria-label={t('chatHistory')}
+      style={{
+        width: collapsed ? undefined : (typeof width === 'number' ? `${width}px` : undefined),
+      }}
+    >
       <div className="sidebar-header">
         <button
           className="new-chat-btn"
@@ -2479,6 +2706,19 @@ function ChatSidebar({ collapsed, onClose, activeId, onSelectSession, onNewChat,
           <span>{t('aboutIpSakti')}</span>
         </button>
       </div>
+
+      {!collapsed && (
+        <div
+          className={`sidebar-resize-handle ${isResizing ? 'resizing' : ''}`}
+          onMouseDown={onStartResize}
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize sidebar"
+          title="Drag to resize sidebar"
+        >
+          <div className="resize-handle-bar" />
+        </div>
+      )}
     </aside>
   )
 }
@@ -4193,7 +4433,7 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout 
           </li>
 
           {/* Direct Links */}
-          <li>
+          <li className="gov-nav-item-secondary">
             <button
               type="button"
               className="gov-nav-link-btn"
@@ -4216,7 +4456,7 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout 
               <span>Pricing</span>
             </Link>
           </li>
-          <li>
+          <li className="gov-nav-item-secondary">
             <button
               type="button"
               className="gov-nav-link-btn"
@@ -4229,7 +4469,7 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout 
               <span>About</span>
             </button>
           </li>
-          <li>
+          <li className="gov-nav-item-secondary">
             <button
               type="button"
               className="gov-nav-link-btn"
@@ -5859,6 +6099,80 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
   // Character count limit
   const MAX_CHARS = 2000
 
+  // RagVyn Visual Theme State
+  const [chatThemeId, setChatThemeId] = useState(() => {
+    const saved = localStorage.getItem('ragvyn_chat_theme')
+    return saved || DEFAULT_THEME_ID
+  })
+  const [showThemePicker, setShowThemePicker] = useState(false)
+  const themePickerRef = useRef(null)
+
+  // Resizable Sidebar State (desktop bounds 220px - 500px)
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    const saved = localStorage.getItem('ragvyn_sidebar_width')
+    const num = parseInt(saved, 10)
+    return (!isNaN(num) && num >= 220 && num <= 480) ? num : 260
+  })
+  const [isResizingSidebar, setIsResizingSidebar] = useState(false)
+
+  // Close theme picker when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (themePickerRef.current && !themePickerRef.current.contains(e.target)) {
+        setShowThemePicker(false)
+      }
+    }
+    if (showThemePicker) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showThemePicker])
+
+  const handleSelectTheme = (id) => {
+    setChatThemeId(id)
+    localStorage.setItem('ragvyn_chat_theme', id)
+    setShowThemePicker(false)
+  }
+
+  // Sidebar drag-to-resize handler
+  const handleStartResize = (e) => {
+    e.preventDefault()
+    setIsResizingSidebar(true)
+    const startX = e.clientX
+    const startWidth = sidebarWidth
+
+    const onMouseMove = (moveEvent) => {
+      const delta = moveEvent.clientX - startX
+      const minW = 220
+      const maxW = Math.min(500, Math.floor(window.innerWidth * 0.45))
+      const newW = Math.max(minW, Math.min(maxW, startWidth + delta))
+      setSidebarWidth(newW)
+    }
+
+    const onMouseUp = (upEvent) => {
+      setIsResizingSidebar(false)
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mouseup', onMouseUp)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      const delta = upEvent.clientX - startX
+      const minW = 220
+      const maxW = Math.min(500, Math.floor(window.innerWidth * 0.45))
+      const finalW = Math.max(minW, Math.min(maxW, startWidth + delta))
+      localStorage.setItem('ragvyn_sidebar_width', finalW)
+    }
+
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+    window.addEventListener('mousemove', onMouseMove)
+    window.addEventListener('mouseup', onMouseUp)
+  }
+
+  const currentChatTheme = useMemo(() => getChatTheme(chatThemeId), [chatThemeId])
+  const themeCSSVariables = useMemo(() => getThemeCSSVariables(currentChatTheme), [currentChatTheme])
+
   // Voice Input - auto-sync with UI language
   // Map UI lang code to Speech Recognition lang code
   const UI_TO_VOICE_LANG = {
@@ -6396,7 +6710,14 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
   const latestAIMessage = messages.filter(m => m.role === 'ai').slice(-1)[0]
 
   return (
-    <div className="chat-layout" role="main">
+    <div
+      className="chat-layout"
+      role="main"
+      style={{
+        ...themeCSSVariables,
+        '--sidebar-width': `${sidebarWidth}px`,
+      }}
+    >
       <GovtAccessibilityBar theme={theme} toggleTheme={toggleTheme} fontSize={fontSize} setFontSize={setFontSize} />
 
       {/* Topbar */}
@@ -6427,6 +6748,63 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
         </div>
 
         <div className="topbar-right">
+          {/* RagVyn Theme Selector Popover */}
+          <div className="chat-theme-picker-anchor" ref={themePickerRef}>
+            <button
+              className={`btn-secondary chat-theme-btn ${showThemePicker ? 'active' : ''}`}
+              onClick={() => setShowThemePicker(prev => !prev)}
+              aria-label="Select Chat Visual Theme"
+              title="Select Chat Visual Theme"
+              id="ragvyn-theme-selector-btn"
+            >
+              <IconPalette size={15} />
+              <span className="theme-btn-label">Themes</span>
+              <span className="theme-current-badge">{currentChatTheme.name.split(' ')[0]}</span>
+            </button>
+            {showThemePicker && (
+              <div className="chat-theme-popover" role="dialog" aria-label="Select RagVyn Theme">
+                <div className="theme-popover-header">
+                  <div className="theme-popover-title-row">
+                    <IconPalette size={15} />
+                    <span className="theme-popover-title">Visual Themes</span>
+                  </div>
+                  <button className="theme-popover-close" onClick={() => setShowThemePicker(false)} aria-label="Close">
+                    <IconClose size={14} />
+                  </button>
+                </div>
+                <p className="theme-popover-desc">
+                  Choose a theme to adjust both the outer background and inner chat surface.
+                </p>
+                <div className="theme-options-list">
+                  {RAGVYN_THEMES.map(th => {
+                    const isActive = th.id === chatThemeId
+                    return (
+                      <button
+                        key={th.id}
+                        type="button"
+                        className={`theme-option-card ${isActive ? 'active' : ''}`}
+                        onClick={() => handleSelectTheme(th.id)}
+                      >
+                        <div className="theme-swatch-combo">
+                          <span className="swatch-outer" style={{ background: th.preview.outer }} title="Outer Background" />
+                          <span className="swatch-surface" style={{ background: th.preview.surface }} title="Chat Surface" />
+                          <span className="swatch-bubble" style={{ background: th.preview.userBubble }} title="User Message" />
+                        </div>
+                        <div className="theme-option-info">
+                          <div className="theme-option-name-row">
+                            <span className="theme-option-name">{th.name}</span>
+                            {isActive && <span className="theme-active-tag">Active</span>}
+                          </div>
+                          <span className="theme-option-sub">{th.subtitle}</span>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
           <select
             className="lang-select"
             value={lang}
@@ -6477,6 +6855,9 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
           loadingSessions={loadingSessions}
           onDeleteSession={handleDeleteSession}
           onRenameSession={handleRenameSession}
+          width={sidebarWidth}
+          isResizing={isResizingSidebar}
+          onStartResize={handleStartResize}
         />
 
         <div className="chat-main-area">
