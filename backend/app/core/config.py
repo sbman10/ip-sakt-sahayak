@@ -40,7 +40,7 @@ class Settings(BaseSettings):
     HF_EMBEDDING_NORMALIZE: bool = True
     LOCAL_BGE_FALLBACK: bool = False
     ENABLE_LOCAL_BGE_PRELOAD: bool = False
-    ENABLE_CROSS_ENCODER: bool = False
+    ENABLE_CROSS_ENCODER: bool = True
 
     # Qdrant Cloud settings
     QDRANT_URL: str = ""
@@ -55,11 +55,11 @@ class Settings(BaseSettings):
     QDRANT_SHADOW_MAX_FAILURES: int = 3
 
     # Retrieval Backend Routing & Safe Fallback (Phase 5B)
-    RETRIEVAL_BACKEND: str = "chroma_bm25"
+    RETRIEVAL_BACKEND: str = "qdrant_hybrid"
     # Official production corpus currently deployed in Qdrant Cloud.
     QDRANT_PRODUCTION_COLLECTION: str = "ragvyn_prod_v2"
     QDRANT_FALLBACK_ENABLED: bool = True
-    QDRANT_REQUEST_TIMEOUT_SECONDS: float = 15.0 #5 to 15
+    QDRANT_REQUEST_TIMEOUT_SECONDS: float = 15.0
     # Qdrant RRF scores are rank-fusion scores, not cosine distances.
     QDRANT_RRF_MIN_SCORE: float = 0.01
 

@@ -52,6 +52,31 @@ class CanonicalBgeM3ModelAdapter:
         return embeddings
 
 
+class FastEmbedRerankerAdapter:
+    """
+    Ultra-lightweight ONNX-based CrossEncoder reranker powered by FastEmbed.
+    Consumes ~40MB RAM (vs >600MB with PyTorch/sentence-transformers),
+    preventing Out-Of-Memory (OOM) crashes in memory-constrained environments
+    such as Render Free Tier (512MB RAM) and providing blazing-fast local inference.
+    """
+
+    def __init__(self, model_name: str = "Xenova/ms-marco-MiniLM-L-6-v2") -> None:
+        from fastembed.rerank.cross_encoder import TextCrossEncoder
+        self.model = TextCrossEncoder(model_name=model_name)
+
+    def predict(self, pairs: list[tuple[str, str]], show_progress_bar: bool = False) -> list[float]:
+        if not pairs:
+            return []
+        scores = list(self.model.rerank_pairs(pairs))
+        return [float(s) for s in scores]
+
+    def rerank(self, query: str, documents: list[str]) -> list[float]:
+        if not documents:
+            return []
+        scores = list(self.model.rerank(query, documents))
+        return [float(s) for s in scores]
+
+
 class ModelRegistry:
     """
     Thread-safe Singleton registry holding preloaded ML models.
@@ -115,11 +140,21 @@ class ModelRegistry:
 
                 # 2. CrossEncoder Reranker
                 if settings.ENABLE_CROSS_ENCODER:
-                    log.info("[PID %s] Loading reranker model: %s", pid, reranker_model_name)
-                    from sentence_transformers import CrossEncoder
-                    self._reranker_model = CrossEncoder(reranker_model_name)
-                    _ = self._reranker_model.predict([("Warmup legal query", "Warmup statutory passage")])
-                    log.info("[PID %s] Reranker model loaded and warmed up successfully.", pid)
+                    log.info("[PID %s] Initializing CrossEncoder reranker (FastEmbed ONNX -> SentenceTransformers fallback)...", pid)
+                    try:
+                        self._reranker_model = FastEmbedRerankerAdapter(model_name="Xenova/ms-marco-MiniLM-L-6-v2")
+                        _ = self._reranker_model.predict([("Warmup legal query", "Warmup statutory passage")])
+                        log.info("[PID %s] FastEmbed ONNX reranker loaded and warmed up successfully (memory safe).", pid)
+                    except Exception as fe_exc:
+                        log.warning(
+                            "[PID %s] FastEmbed reranker initialization failed (%s); falling back to sentence-transformers CrossEncoder.",
+                            pid,
+                            fe_exc,
+                        )
+                        from sentence_transformers import CrossEncoder
+                        self._reranker_model = CrossEncoder(reranker_model_name)
+                        _ = self._reranker_model.predict([("Warmup legal query", "Warmup statutory passage")])
+                        log.info("[PID %s] SentenceTransformers CrossEncoder loaded and warmed up successfully.", pid)
                 else:
                     log.info(
                         "[PID %s] CrossEncoder disabled (ENABLE_CROSS_ENCODER=false). "
