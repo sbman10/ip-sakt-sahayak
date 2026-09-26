@@ -130,12 +130,9 @@ class CanonicalEmbeddingService:
             except Exception as exc:
                 last_error = exc
                 err_str = str(exc).lower()
-                # UPDATED: If third-party router returned 402 Payment Required or depleted credits, immediately fall back to free direct HF endpoint
-                if ("402" in err_str or "payment required" in err_str or "depleted" in err_str) and getattr(client, "provider", None) is not None:
-                    log.warning("HF inference provider '%s' failed with 402 Payment Required. Falling back to direct HuggingFace endpoint.", getattr(client, "provider", None))
-                    self._client = InferenceClient(token=self.token, provider=None, timeout=self.timeout)
-                    client = self._client
-                    continue
+                if "402" in err_str or "payment required" in err_str or "depleted" in err_str:
+                    log.warning("HuggingFace credits depleted (402). Skipping retries to use local model directly.")
+                    break
 
                 wait_time = self.backoff_factor ** attempt
                 log.warning(
