@@ -7547,7 +7547,7 @@ function DocumentsPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize
   )
 }
 
-function DraftsPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize }) {
+function DraftsPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize, isLoggedIn, userName, onLogout }) {
   const navigate = useNavigate()
 
   return (
@@ -7559,8 +7559,49 @@ function DraftsPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, s
         toggleTheme={toggleTheme}
         fontSize={fontSize}
         setFontSize={setFontSize}
+        isLoggedIn={isLoggedIn}
+        userName={userName}
+        onLogout={onLogout}
       />
       <DraftGenerator onBack={() => navigate('/')} />
+    </div>
+  )
+}
+
+function WorkspacePage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize, isLoggedIn, userName, onLogout }) {
+  return (
+    <div style={{ minHeight: '100vh', background: 'var(--mw-bg, #f8fafc)' }}>
+      <Navbar
+        onOpenAbout={onOpenAbout}
+        onOpenWizard={onOpenWizard}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        fontSize={fontSize}
+        setFontSize={setFontSize}
+        isLoggedIn={isLoggedIn}
+        userName={userName}
+        onLogout={onLogout}
+      />
+      <MatterWorkspace />
+    </div>
+  )
+}
+
+function ExpertConnectPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize, isLoggedIn, userName, onLogout }) {
+  return (
+    <div style={{ minHeight: '100vh', background: 'var(--ec-bg, #f8fafc)' }}>
+      <Navbar
+        onOpenAbout={onOpenAbout}
+        onOpenWizard={onOpenWizard}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        fontSize={fontSize}
+        setFontSize={setFontSize}
+        isLoggedIn={isLoggedIn}
+        userName={userName}
+        onLogout={onLogout}
+      />
+      <ExpertConnect />
     </div>
   )
 }
@@ -9770,6 +9811,9 @@ export default function App() {
                 toggleTheme={toggleTheme}
                 fontSize={fontSize}
                 setFontSize={setFontSize}
+                isLoggedIn={isLoggedIn}
+                userName={userName}
+                onLogout={handleLogout}
               />
             }
           />
@@ -9789,7 +9833,17 @@ export default function App() {
             path="/workspace"
             element={
               <ProtectedRoute isLoggedIn={isLoggedIn}>
-                <MatterWorkspace />
+                <WorkspacePage
+                  onOpenAbout={() => setIsAboutOpen(true)}
+                  onOpenWizard={() => setIsWizardOpen(true)}
+                  theme={theme}
+                  toggleTheme={toggleTheme}
+                  fontSize={fontSize}
+                  setFontSize={setFontSize}
+                  isLoggedIn={isLoggedIn}
+                  userName={userName}
+                  onLogout={handleLogout}
+                />
               </ProtectedRoute>
             }
           />
@@ -9847,7 +9901,17 @@ export default function App() {
           <Route
             path="/experts"
             element={
-              <ExpertConnect />
+              <ExpertConnectPage
+                onOpenAbout={() => setIsAboutOpen(true)}
+                onOpenWizard={() => setIsWizardOpen(true)}
+                theme={theme}
+                toggleTheme={toggleTheme}
+                fontSize={fontSize}
+                setFontSize={setFontSize}
+                isLoggedIn={isLoggedIn}
+                userName={userName}
+                onLogout={handleLogout}
+              />
             }
           />
           <Route

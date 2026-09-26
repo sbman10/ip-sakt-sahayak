@@ -1,7 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import {
-  IconFileText,
   IconSparkles,
   IconCopy,
   IconCheck,
@@ -440,151 +438,117 @@ export default function DraftGenerator({ onBack }) {
   }, [result])
 
   return (
-    <div className="dg-container">
-      {/* Top Utility Navigation Strip */}
-      <div className="dg-top-strip">
-        <div className="dg-breadcrumbs">
-          <Link to="/" className="dg-breadcrumb-link" onClick={onBack}>
-            <span>←</span>
-            <span>Back to Portal</span>
-          </Link>
-          <span className="dg-breadcrumb-sep">/</span>
-          <span className="dg-breadcrumb-link">IP Tools</span>
-          <span className="dg-breadcrumb-sep">/</span>
-          <span className="dg-breadcrumb-active">Statutory Document Preparation Assistant</span>
-        </div>
-        <div className="dg-top-actions">
-          <Link to="/workspace" className="dg-portal-link" title="Open Matter Workspace">
-            <span>📁</span>
-            <span>Matter Workspace</span>
-          </Link>
-          <Link to="/chat" className="dg-portal-link" title="Consult RagVyn AI">
-            <span>✨</span>
-            <span>Ask RagVyn AI</span>
-          </Link>
+    <div className="dg-page">
+      {/* 2. TOP AREA: Compact modern controls sitting above the main content */}
+      <div className="dg-top-controls">
+        <button
+          type="button"
+          className="dg-btn-back-pill"
+          onClick={onBack}
+          title="Return to IP-SAKTI Portal"
+        >
+          <span className="dg-back-arrow" aria-hidden="true">←</span>
+          <span>Back to Portal</span>
+        </button>
+
+        <div className="dg-top-controls-right">
+          <div className="dg-est-time-pill" title="Estimated preparation duration">
+            <span className="dg-green-indicator" aria-hidden="true" />
+            <span>Estimated: ~3 mins</span>
+          </div>
+
+          <button
+            type="button"
+            className="dg-btn-sample"
+            onClick={() => handleFillSample(templateType)}
+            title="Populate statutory demonstration data"
+          >
+            <span>🧪</span>
+            <span>Fill Sample Data</span>
+          </button>
         </div>
       </div>
 
-      <div className="dg-content">
-        {/* 1. TOP PAGE HEADER */}
-        <header className="dg-header">
-          <div className="dg-header-left">
-            <div className="dg-header-icon-box" aria-hidden="true">
-              <IconFileText size={24} />
-            </div>
-            <div className="dg-header-titles">
-              <span className="dg-category-chip">IP DOCUMENT TOOL</span>
-              <h1>Statutory Document Preparation Assistant</h1>
-              <p className="dg-header-subtitle">
-                Prepare structured statutory drafts and filing-ready documents for Indian IP and biodiversity requirements.
-              </p>
-            </div>
+      {/* 3. MAIN TOOL CARD: Large premium white card with strong internal hierarchy */}
+      <div className="dg-main-card">
+        {/* 4. TOOL HEADER */}
+        <header className="dg-tool-header">
+          <div className="dg-tool-badge">
+            <span className="dg-badge-icon" aria-hidden="true">📜</span>
+            <span>STATUTORY DOCUMENT PREPARATION ASSISTANT</span>
           </div>
-
-          <div className="dg-header-right">
-            <div className="dg-est-time-badge" title="Estimated preparation duration">
-              <span>⚡</span>
-              <span>~3 min draft generation</span>
-            </div>
-            <button
-              type="button"
-              className="dg-btn-secondary"
-              onClick={() => handleFillSample(templateType)}
-              title="Auto-fill high quality statutory demonstration data"
-            >
-              <span>🧪</span>
-              <span>Fill Sample Data</span>
-            </button>
-          </div>
+          <h1 className="dg-tool-title">Prepare your statutory document</h1>
+          <p className="dg-tool-desc">
+            Generate structured, pre-formatted draft templates for Patent Form-1, NBA approval applications, and Section 3(p) pre-grant oppositions with statutory declarations formatted for patent agent review.
+          </p>
         </header>
 
-        {/* 2. HERO / TOOL INTRO CARD */}
-        <section className="dg-hero-card">
-          <div>
-            <span className="dg-hero-badge">STATUTORY DOCUMENT PREPARATION</span>
-            <h2 className="dg-hero-heading">Prepare your statutory document</h2>
-            <p className="dg-hero-desc">
-              Generate structured, pre-formatted draft templates for Patent Form-1, NBA approval applications, and Section 3(p) pre-grant oppositions with statutory declarations formatted for patent agent review.
-            </p>
-            <div className="dg-hero-highlights">
-              <div className="dg-hero-highlight-item">
-                <span className="dg-hero-highlight-dot">✓</span>
-                <span>Standardized Statutory Drafting</span>
-              </div>
-              <div className="dg-hero-highlight-item">
-                <span className="dg-hero-highlight-dot">✓</span>
-                <span>Section 3(p) & TKDL Safeguards</span>
-              </div>
-              <div className="dg-hero-highlight-item">
-                <span className="dg-hero-highlight-dot">✓</span>
-                <span>Filing-Ready Agent Scaffolds</span>
-              </div>
-            </div>
-          </div>
-          <div className="dg-hero-illustration" aria-hidden="true">
-            ⚖️
-          </div>
-        </section>
-
-        {/* 3. STEP-BY-STEP WORKFLOW */}
-        <section className="dg-stepper-card" aria-label="Workflow progress">
+        {/* 5. HOW IT WORKS: Clean horizontal stepper inside a subtle inner card */}
+        <div className="dg-stepper-inner-card" aria-label="How it works workflow steps">
           <div className="dg-stepper-track">
+            {/* Step 1 */}
             <div
-              className={`dg-step-item ${currentStep === 1 ? 'active' : ''} ${currentStep > 1 ? 'completed' : ''}`}
+              className={`dg-stepper-step ${currentStep === 1 ? 'active' : ''} ${currentStep > 1 ? 'completed' : ''}`}
               onClick={() => {
                 const el = document.getElementById('dg-template-selection')
                 if (el) el.scrollIntoView({ behavior: 'smooth' })
               }}
             >
-              <div className="dg-step-number-box">
+              <div className="dg-step-badge">
                 {currentStep > 1 ? '✓' : '01'}
               </div>
-              <div className="dg-step-meta">
-                <span className="dg-step-title">Select Template</span>
-                <span className="dg-step-desc">Choose statutory instrument</span>
+              <div className="dg-step-info">
+                <span className="dg-step-label">Select Document Template</span>
+                <span className="dg-step-subtext">Choose statutory instrument</span>
               </div>
             </div>
 
+            <div className="dg-stepper-connector" aria-hidden="true" />
+
+            {/* Step 2 */}
             <div
-              className={`dg-step-item ${currentStep === 2 ? 'active' : ''} ${currentStep > 2 ? 'completed' : ''}`}
+              className={`dg-stepper-step ${currentStep === 2 ? 'active' : ''} ${currentStep > 2 ? 'completed' : ''}`}
               onClick={() => {
                 const el = document.getElementById('dg-form-section')
                 if (el) el.scrollIntoView({ behavior: 'smooth' })
               }}
             >
-              <div className="dg-step-number-box">
+              <div className="dg-step-badge">
                 {currentStep > 2 ? '✓' : '02'}
               </div>
-              <div className="dg-step-meta">
-                <span className="dg-step-title">Enter Details</span>
-                <span className="dg-step-desc">Applicant, invention & bio-data</span>
+              <div className="dg-step-info">
+                <span className="dg-step-label">Fill Innovation & Entity Details</span>
+                <span className="dg-step-subtext">Applicant, invention & bio-data</span>
               </div>
             </div>
 
+            <div className="dg-stepper-connector" aria-hidden="true" />
+
+            {/* Step 3 */}
             <div
-              className={`dg-step-item ${currentStep === 3 ? 'active' : ''}`}
+              className={`dg-stepper-step ${currentStep === 3 ? 'active' : ''}`}
               onClick={() => {
                 const el = document.getElementById('dg-preview-anchor')
                 if (el) el.scrollIntoView({ behavior: 'smooth' })
               }}
             >
-              <div className="dg-step-number-box">
+              <div className="dg-step-badge">
                 {result ? '✓' : '03'}
               </div>
-              <div className="dg-step-meta">
-                <span className="dg-step-title">Generate Draft</span>
-                <span className="dg-step-desc">Export structured legal draft</span>
+              <div className="dg-step-info">
+                <span className="dg-step-label">Export Formatted Legal Draft</span>
+                <span className="dg-step-subtext">Export formatted legal draft</span>
               </div>
             </div>
           </div>
-        </section>
+        </div>
 
-        {/* 4. DOCUMENT TEMPLATE SELECTION */}
-        <section className="dg-section-card" id="dg-template-selection">
-          <div className="dg-section-header">
-            <h2 className="dg-section-title">Choose a document</h2>
+        {/* 6. DOCUMENT TEMPLATE AREA */}
+        <section className="dg-section-block" id="dg-template-selection">
+          <div className="dg-section-heading-wrap">
+            <h2 className="dg-section-title">Select Document Template</h2>
             <p className="dg-section-subtitle">
-              Select the statutory instrument that matches your filing or regulatory opposition requirement.
+              Choose the statutory instrument that matches your filing or regulatory opposition requirement.
             </p>
           </div>
 
@@ -611,63 +575,51 @@ export default function DraftGenerator({ onBack }) {
                     }
                   }}
                 >
-                  <div>
-                    <div className="dg-template-top">
-                      <div className="dg-template-icon-wrap" aria-hidden="true">
-                        <span>{tpl.icon}</span>
-                      </div>
-                      <div className="dg-template-radio" aria-label={`Select ${tpl.label}`}>
-                        {isSelected && <span className="dg-template-radio-dot" />}
-                      </div>
+                  <div className="dg-template-top">
+                    <div className="dg-template-icon-wrap" aria-hidden="true">
+                      <span>{tpl.icon}</span>
                     </div>
-
-                    <span className="dg-template-tag">{tpl.category}</span>
-                    <h3 className="dg-template-name">{tpl.label}</h3>
-                    <div className="dg-template-ref">{tpl.reference}</div>
-                    <p className="dg-template-desc">{tpl.subtitle}</p>
+                    <div className={`dg-template-radio ${isSelected ? 'checked' : ''}`} aria-label={`Select ${tpl.label}`}>
+                      {isSelected && <span className="dg-radio-inner-dot" />}
+                    </div>
                   </div>
 
-                  <div style={{ marginTop: 14, paddingTop: 10, borderTop: '1px solid var(--dg-card-border)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: 11, color: 'var(--dg-text-muted)', fontWeight: 600 }}>
-                        {isSelected ? '✓ Selected for drafting' : 'Click to select'}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          toggleDetails(tpl.id)
-                        }}
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          color: 'var(--dg-purple)',
-                          fontSize: 12,
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          padding: 0,
-                        }}
-                      >
-                        {showDet ? 'Hide details' : 'View details'}
-                      </button>
-                    </div>
+                  <span className="dg-template-tag">{tpl.category}</span>
+                  <h3 className="dg-template-name">{tpl.label}</h3>
+                  <div className="dg-template-ref">{tpl.reference}</div>
+                  <p className="dg-template-desc">{tpl.subtitle}</p>
 
-                    {showDet && (
-                      <div style={{ marginTop: 8, fontSize: 12, color: 'var(--dg-text-body)', background: 'var(--dg-bg)', padding: '8px 10px', borderRadius: 6 }}>
-                        <strong>Best suited for:</strong> {tpl.suitableFor}
-                      </div>
-                    )}
+                  <div className="dg-template-footer">
+                    <span className="dg-template-selection-text">
+                      {isSelected ? '✓ Selected for drafting' : 'Click to select'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggleDetails(tpl.id)
+                      }}
+                      className="dg-btn-link-details"
+                    >
+                      {showDet ? 'Hide details' : 'View details'}
+                    </button>
                   </div>
+
+                  {showDet && (
+                    <div className="dg-template-details-box">
+                      <strong>Best suited for:</strong> {tpl.suitableFor}
+                    </div>
+                  )}
                 </div>
               )
             })}
           </div>
         </section>
 
-        {/* 5. ENTITY & INNOVATION DETAILS (FORM) */}
-        <section className="dg-section-card" id="dg-form-section">
-          <div className="dg-section-header">
-            <h2 className="dg-section-title">Innovation & Entity Details</h2>
+        {/* 7. FORM / ENTITY DETAILS */}
+        <section className="dg-section-block" id="dg-form-section">
+          <div className="dg-section-heading-wrap">
+            <h2 className="dg-section-title">Fill Innovation & Entity Details</h2>
             <p className="dg-section-subtitle">
               Provide accurate applicant and invention details required for the selected statutory instrument ({activeTemplate.label}).
             </p>
@@ -678,42 +630,42 @@ export default function DraftGenerator({ onBack }) {
               e.preventDefault()
               handleGenerate()
             }}
-            className="dg-form-groups"
+            className="dg-form-wrapper"
           >
-            {/* Group 1: Applicant / Opponent Information */}
-            <div className="dg-form-group-card">
-              <div className="dg-group-header">
-                <span className="dg-group-badge">👤</span>
+            {/* Form Group 1: Applicant / Opponent */}
+            <div className="dg-form-group-box">
+              <div className="dg-group-title-row">
+                <span className="dg-group-icon" aria-hidden="true">👤</span>
                 <h3 className="dg-group-title">
                   {templateType === '3p_petition' ? 'Opponent / Petitioner Information' : 'Applicant Information'}
                 </h3>
               </div>
 
-              <div className="dg-form-grid-2">
+              <div className="dg-grid-2col">
                 <div className="dg-form-field">
-                  <label htmlFor="dg-applicant" className="dg-label">
+                  <label htmlFor="dg-applicant" className="dg-field-label">
                     <span>{templateType === '3p_petition' ? 'Opponent Legal Name' : 'Applicant / Innovator Name'}</span>
-                    <span className="dg-req-star">*</span>
+                    <span className="dg-req-mark">*</span>
                   </label>
                   <input
                     id="dg-applicant"
                     type="text"
-                    className="dg-input"
+                    className="dg-form-input"
                     value={applicantName}
                     onChange={(e) => setApplicantName(e.target.value)}
                     placeholder="e.g. Dr. Anjali Sharma / Arogya Labs Pvt Ltd"
                     required
                   />
-                  <span className="dg-field-hint">Full legal entity or individual inventor name</span>
+                  <span className="dg-field-help">Full legal entity or individual inventor name</span>
                 </div>
 
                 <div className="dg-form-field">
-                  <label htmlFor="dg-entity-type" className="dg-label">
+                  <label htmlFor="dg-entity-type" className="dg-field-label">
                     <span>Entity Category / Legal Status</span>
                   </label>
                   <select
                     id="dg-entity-type"
-                    className="dg-select"
+                    className="dg-form-select"
                     value={entityType}
                     onChange={(e) => setEntityType(e.target.value)}
                   >
@@ -722,32 +674,32 @@ export default function DraftGenerator({ onBack }) {
                     <option value="Educational Institution">Educational / University Institution</option>
                     <option value="Others">Others (Large Entity / Corporation / NGO)</option>
                   </select>
-                  <span className="dg-field-hint">Affects official statutory fee computation under Patents Rules</span>
+                  <span className="dg-field-help">Affects official statutory fee computation under Patents Rules</span>
                 </div>
 
-                <div className="dg-form-field full-width">
-                  <label htmlFor="dg-address" className="dg-label">
+                <div className="dg-form-field dg-col-span-2">
+                  <label htmlFor="dg-address" className="dg-field-label">
                     <span>{templateType === '3p_petition' ? 'Address for Service in India' : 'Postal Address in India'}</span>
                   </label>
                   <input
                     id="dg-address"
                     type="text"
-                    className="dg-input"
+                    className="dg-form-input"
                     value={applicantAddress}
                     onChange={(e) => setApplicantAddress(e.target.value)}
                     placeholder="e.g. Sector 10, Jankipuram Extension, Lucknow 226031, Uttar Pradesh, India"
                   />
-                  <span className="dg-field-hint">Required for official correspondence from the Indian Patent Office / NBA</span>
+                  <span className="dg-field-help">Required for official correspondence from the Indian Patent Office / NBA</span>
                 </div>
 
-                <div className="dg-form-field full-width">
-                  <label htmlFor="dg-contact" className="dg-label">
+                <div className="dg-form-field dg-col-span-2">
+                  <label htmlFor="dg-contact" className="dg-field-label">
                     <span>Contact Information (Email / Phone)</span>
                   </label>
                   <input
                     id="dg-contact"
                     type="text"
-                    className="dg-input"
+                    className="dg-form-input"
                     value={applicantContact}
                     onChange={(e) => setApplicantContact(e.target.value)}
                     placeholder="e.g. counsel@ip-sakti.org | +91 11 2345 6789"
@@ -756,42 +708,42 @@ export default function DraftGenerator({ onBack }) {
               </div>
             </div>
 
-            {/* Group 2: Innovation / Patent Specification */}
-            <div className="dg-form-group-card">
-              <div className="dg-group-header">
-                <span className="dg-group-badge">⚙️</span>
+            {/* Form Group 2: Innovation / Patent Particulars */}
+            <div className="dg-form-group-box">
+              <div className="dg-group-title-row">
+                <span className="dg-group-icon" aria-hidden="true">⚙️</span>
                 <h3 className="dg-group-title">
                   {templateType === '3p_petition' ? 'Target Patent Particulars' : 'Innovation / Patent Particulars'}
                 </h3>
               </div>
 
-              <div className="dg-form-grid-2">
-                <div className="dg-form-field full-width">
-                  <label htmlFor="dg-title" className="dg-label">
+              <div className="dg-grid-2col">
+                <div className="dg-form-field dg-col-span-2">
+                  <label htmlFor="dg-title" className="dg-field-label">
                     <span>{templateType === '3p_petition' ? 'Title of Impugned Patent Application' : 'Invention / Application Title'}</span>
-                    <span className="dg-req-star">*</span>
+                    <span className="dg-req-mark">*</span>
                   </label>
                   <input
                     id="dg-title"
                     type="text"
-                    className="dg-input"
+                    className="dg-form-input"
                     value={inventionTitle}
                     onChange={(e) => setInventionTitle(e.target.value)}
                     placeholder="e.g. A Synergistic Nano-Formulation of Withania Somnifera with Enhanced Bioavailability"
                     required
                   />
-                  <span className="dg-field-hint">Clear, descriptive title matching technical content (min 3 characters)</span>
+                  <span className="dg-field-help">Clear, descriptive title matching technical content (min 3 characters)</span>
                 </div>
 
                 <div className="dg-form-field">
-                  <label htmlFor="dg-date" className="dg-label">
+                  <label htmlFor="dg-date" className="dg-field-label">
                     <span>{templateType === '3p_petition' ? 'Date of Representation' : 'Intended Filing Date'}</span>
-                    <span className="dg-req-star">*</span>
+                    <span className="dg-req-mark">*</span>
                   </label>
                   <input
                     id="dg-date"
                     type="date"
-                    className="dg-input"
+                    className="dg-form-input"
                     value={filingDate}
                     onChange={(e) => setFilingDate(e.target.value)}
                     required
@@ -802,28 +754,28 @@ export default function DraftGenerator({ onBack }) {
                 {activeTemplate.showRespondent && (
                   <>
                     <div className="dg-form-field">
-                      <label htmlFor="dg-appno" className="dg-label">
+                      <label htmlFor="dg-appno" className="dg-field-label">
                         <span>Impugned Patent Application No.</span>
                       </label>
                       <input
                         id="dg-appno"
                         type="text"
-                        className="dg-input"
+                        className="dg-form-input"
                         value={applicationNumber}
                         onChange={(e) => setApplicationNumber(e.target.value)}
                         placeholder="e.g. IN202311054321"
                       />
-                      <span className="dg-field-hint">Official application number being formally challenged</span>
+                      <span className="dg-field-help">Official application number being formally challenged</span>
                     </div>
 
-                    <div className="dg-form-field full-width">
-                      <label htmlFor="dg-respondent" className="dg-label">
+                    <div className="dg-form-field dg-col-span-2">
+                      <label htmlFor="dg-respondent" className="dg-field-label">
                         <span>Respondent Name (Patent Applicant Being Opposed)</span>
                       </label>
                       <input
                         id="dg-respondent"
                         type="text"
-                        className="dg-input"
+                        className="dg-form-input"
                         value={respondentName}
                         onChange={(e) => setRespondentName(e.target.value)}
                         placeholder="e.g. Global Nutra Pharma AG"
@@ -834,10 +786,10 @@ export default function DraftGenerator({ onBack }) {
               </div>
             </div>
 
-            {/* Group 3: Technical Description & Biodiversity Grounds */}
-            <div className="dg-form-group-card">
-              <div className="dg-group-header">
-                <span className="dg-group-badge">📝</span>
+            {/* Form Group 3: Technical Description & Grounds */}
+            <div className="dg-form-group-box">
+              <div className="dg-group-title-row">
+                <span className="dg-group-icon" aria-hidden="true">📝</span>
                 <h3 className="dg-group-title">
                   {templateType === 'nba'
                     ? 'Biological Resource Origin & Access Disclosures'
@@ -847,41 +799,41 @@ export default function DraftGenerator({ onBack }) {
                 </h3>
               </div>
 
-              <div className="dg-form-field full-width">
-                <label htmlFor="dg-description" className="dg-label">
+              <div className="dg-form-field">
+                <label htmlFor="dg-description" className="dg-field-label">
                   <span>{activeTemplate.descriptionLabel}</span>
-                  <span className="dg-req-star">*</span>
+                  <span className="dg-req-mark">*</span>
                 </label>
                 <textarea
                   id="dg-description"
-                  className="dg-textarea"
+                  className="dg-form-textarea"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder={activeTemplate.descriptionHint}
                   rows={5}
                   required
                 />
-                <span className="dg-field-hint">
+                <span className="dg-field-help">
                   Minimum 10 characters required. The technical text will be formatted directly into statutory document body sections.
                 </span>
               </div>
             </div>
 
-            {/* Group 4: Patent Claims & Disclosures (Shown for Patent Form 1) */}
+            {/* Form Group 4: Patent Claims Scaffold (Form 1 only) */}
             {activeTemplate.showClaims && (
-              <div className="dg-form-group-card">
-                <div className="dg-group-header">
-                  <span className="dg-group-badge">📋</span>
+              <div className="dg-form-group-box">
+                <div className="dg-group-title-row">
+                  <span className="dg-group-icon" aria-hidden="true">📋</span>
                   <h3 className="dg-group-title">Statutory Patent Claims Scaffold</h3>
                 </div>
 
-                <div className="dg-form-field full-width">
-                  <label htmlFor="dg-claims" className="dg-label">
+                <div className="dg-form-field">
+                  <label htmlFor="dg-claims" className="dg-field-label">
                     <span>Initial Patent Claims (One claim per line)</span>
                   </label>
                   <textarea
                     id="dg-claims"
-                    className="dg-textarea"
+                    className="dg-form-textarea"
                     value={claimsText}
                     onChange={(e) => setClaimsText(e.target.value)}
                     placeholder={
@@ -889,238 +841,250 @@ export default function DraftGenerator({ onBack }) {
                     }
                     rows={4}
                   />
-                  <span className="dg-field-hint">
+                  <span className="dg-field-help">
                     Each line becomes a numbered statutory claim in the generated draft. Leave blank to insert a standard placeholder claim scaffold.
                   </span>
                 </div>
               </div>
             )}
 
+            {/* 8. WHAT YOU'LL GET (ONE clean 2x2 grid, NO DUPLICATE) */}
+            <div className="dg-deliverables-section">
+              <div className="dg-section-heading-wrap">
+                <h2 className="dg-section-title">What You'll Get</h2>
+                <p className="dg-section-subtitle">
+                  Every generated instrument includes verified statutory structure and filing declarations ready for registered professional inspection.
+                </p>
+              </div>
+
+              <div className="dg-deliverables-2x2">
+                <div className="dg-deliverable-item">
+                  <div className="dg-deliverable-check" aria-hidden="true">✓</div>
+                  <div className="dg-deliverable-body">
+                    <h4 className="dg-deliverable-name">Standardized Statutory Draft</h4>
+                    <p className="dg-deliverable-text">
+                      Formatted according to official Indian Patent Office & NBA statutory filing rules.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="dg-deliverable-item">
+                  <div className="dg-deliverable-check" aria-hidden="true">✓</div>
+                  <div className="dg-deliverable-body">
+                    <h4 className="dg-deliverable-name">Pre-populated Legal Clauses</h4>
+                    <p className="dg-deliverable-text">
+                      Standard formal declarations, applicant verifications, and Section 3(p) non-infringement clauses.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="dg-deliverable-item">
+                  <div className="dg-deliverable-check" aria-hidden="true">✓</div>
+                  <div className="dg-deliverable-body">
+                    <h4 className="dg-deliverable-name">Exportable Document Preview</h4>
+                    <p className="dg-deliverable-text">
+                      Formatted digital sheet view with instant text copy and clean .txt file download.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="dg-deliverable-item">
+                  <div className="dg-deliverable-check" aria-hidden="true">✓</div>
+                  <div className="dg-deliverable-body">
+                    <h4 className="dg-deliverable-name">Filing Checklist & Attachments</h4>
+                    <p className="dg-deliverable-text">
+                      Clear audit checklist of required attachments including Form 2, 3, 5, and Form 26 Power of Attorney.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Error Notification */}
             {error && (
-              <div className="dg-error-banner" role="alert">
+              <div className="dg-error-box" role="alert">
                 <IconAlertTriangle size={18} style={{ flexShrink: 0 }} />
                 <span>{error}</span>
               </div>
             )}
 
-            {/* 8. PRIMARY CTA */}
-            <div className="dg-cta-bar">
+            {/* 9. PRIMARY CTA */}
+            <div className="dg-cta-zone">
               <button
                 type="submit"
                 disabled={!canSubmit || loading}
-                className="dg-btn-generate"
+                className="dg-btn-primary-cta"
                 id="dg-primary-cta"
               >
                 {loading ? (
                   <>
-                    <span className="dg-btn-spinner" />
+                    <span className="dg-spinner" aria-hidden="true" />
                     <span>Generating Statutory Draft…</span>
                   </>
                 ) : (
                   <>
                     <IconSparkles size={16} />
-                    <span>Generate Document</span>
-                    <span>→</span>
+                    <span>Start Using Tool</span>
+                    <span className="dg-cta-arrow" aria-hidden="true">→</span>
                   </>
                 )}
               </button>
             </div>
+
+            {/* 10. LEGAL DISCLAIMER */}
+            <div className="dg-disclaimer-row">
+              <span className="dg-disclaimer-dot" aria-hidden="true" />
+              <span>
+                Information for guidance only — not legal advice. Always review statutory instruments with a registered patent agent or advocate before filing with the Indian Patent Office or National Biodiversity Authority.
+              </span>
+            </div>
           </form>
         </section>
+      </div>
 
-        {/* 6. DELIVERABLES ("What you'll receive") */}
-        <section className="dg-section-card">
-          <div className="dg-section-header">
-            <h2 className="dg-section-title">What you'll receive</h2>
-            <p className="dg-section-subtitle">
-              Every generated instrument includes verified statutory structure and filing declarations ready for registered professional inspection.
-            </p>
-          </div>
-
-          <div className="dg-deliverables-grid">
-            <div className="dg-deliverable-card">
-              <div className="dg-deliverable-icon-wrap">📋</div>
-              <div className="dg-deliverable-content">
-                <h4>Standardized Statutory Draft</h4>
-                <p>Formatted according to official Indian Patent Office & NBA statutory filing rules.</p>
+      {/* 11. GENERATED DOCUMENT PREVIEW PANEL (Rendered when Result Exists) */}
+      {result && (
+        <div id="dg-preview-anchor" className="dg-preview-wrapper">
+          <div className="dg-preview-card">
+            <div className="dg-preview-header-bar">
+              <div>
+                <div className="dg-tool-badge" style={{ marginBottom: 6 }}>
+                  <span>OFFICIAL DRAFT</span>
+                </div>
+                <h2 className="dg-preview-title">Generated Statutory Document</h2>
+                <p className="dg-preview-subtitle">
+                  Review, audit, and export your legal instrument below.
+                </p>
               </div>
+              <button
+                type="button"
+                onClick={handleReset}
+                className="dg-btn-secondary-sm"
+              >
+                <span>✕</span>
+                <span>Clear Result</span>
+              </button>
             </div>
 
-            <div className="dg-deliverable-card">
-              <div className="dg-deliverable-icon-wrap">⚖️</div>
-              <div className="dg-deliverable-content">
-                <h4>Pre-populated Legal Clauses</h4>
-                <p>Standard formal declarations, applicant verifications, and Section 3(p) non-infringement clauses.</p>
-              </div>
-            </div>
+            <div className="dg-preview-grid">
+              {/* Left Controls & Summary */}
+              <div className="dg-preview-sidebar">
+                <div className="dg-sidebar-meta">
+                  <span className="dg-sidebar-tag">{result.template_type?.toUpperCase()}</span>
+                  <h3 className="dg-sidebar-title">{result.document_title}</h3>
+                  <p className="dg-sidebar-ref">{result.form_reference}</p>
+                </div>
 
-            <div className="dg-deliverable-card">
-              <div className="dg-deliverable-icon-wrap">📄</div>
-              <div className="dg-deliverable-content">
-                <h4>Exportable Document Preview</h4>
-                <p>Formatted digital sheet view with instant text copy and clean .txt file download.</p>
-              </div>
-            </div>
-
-            <div className="dg-deliverable-card">
-              <div className="dg-deliverable-icon-wrap">🛡️</div>
-              <div className="dg-deliverable-content">
-                <h4>Filing Checklist & Attachments</h4>
-                <p>Clear audit checklist of required attachments including Form 2, 3, 5, and Form 26 Power of Attorney.</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 7. DOCUMENT PREVIEW PANEL (Rendered when Result Exists) */}
-        {result && (
-          <div id="dg-preview-anchor" style={{ scrollMarginTop: 32 }}>
-            <section className="dg-section-card" style={{ padding: '28px' }}>
-              <div className="dg-section-header">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-                  <div>
-                    <h2 className="dg-section-title">Generated Statutory Document</h2>
-                    <p className="dg-section-subtitle">
-                      Review, audit, and export your legal instrument below.
-                    </p>
+                <div className="dg-stats-strip">
+                  <div className="dg-stat-cell">
+                    <span className="dg-stat-value">{stats.words}</span>
+                    <span className="dg-stat-caption">Total Words</span>
                   </div>
+                  <div className="dg-stat-cell">
+                    <span className="dg-stat-value">{stats.sections}</span>
+                    <span className="dg-stat-caption">Sections</span>
+                  </div>
+                </div>
+
+                <div className="dg-sidebar-actions">
                   <button
                     type="button"
-                    onClick={handleReset}
-                    className="dg-btn-secondary"
+                    onClick={handleCopy}
+                    className={`dg-btn-action ${copied ? 'copied' : 'primary-action'}`}
                   >
-                    <span>✕</span>
-                    <span>Clear Result</span>
+                    {copied ? <IconCheck size={16} /> : <IconCopy size={16} />}
+                    <span>{copied ? 'Copied to Clipboard' : 'Copy Full Draft'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleDownload}
+                    className="dg-btn-action"
+                  >
+                    <span>💾</span>
+                    <span>Download .txt File</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleDownloadJson}
+                    className="dg-btn-action"
+                  >
+                    <span>📦</span>
+                    <span>Export JSON Payload</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    className="dg-btn-action"
+                  >
+                    <span>🖨️</span>
+                    <span>Print Document</span>
                   </button>
                 </div>
+
+                <div className="dg-agent-checklist">
+                  <div className="dg-checklist-head">
+                    <span className="dg-check-icon" aria-hidden="true">✓</span>
+                    <span>Registered Agent Checklist</span>
+                  </div>
+                  <ul className="dg-checklist-items">
+                    <li>Verify Indian Patent Office jurisdiction branch</li>
+                    <li>Affix physical/digital signature on Form 1</li>
+                    <li>Attach Form 2 (Complete/Provisional Specification)</li>
+                    <li>Include Form 3 (Statement of Foreign Applications)</li>
+                    <li>Attach Form 5 (Declaration of Inventorship)</li>
+                    <li>Include Form 26 (Power of Attorney if represented)</li>
+                  </ul>
+                </div>
               </div>
 
-              <div className="dg-preview-layout">
-                {/* Left Controls & Summary */}
-                <div className="dg-preview-controls-card">
-                  <div className="dg-preview-meta-top">
-                    <span className="dg-category-chip" style={{ marginBottom: 6 }}>OFFICIAL DRAFT</span>
-                    <h3>{result.document_title}</h3>
-                    <p>{result.form_reference}</p>
+              {/* Right Realistic Document Paper Sheet */}
+              <article className="dg-paper-sheet">
+                <span className="dg-sheet-page-indicator">PAGE 1 OF 1 • STATUTORY DRAFT</span>
+
+                <header className="dg-sheet-header">
+                  <div className="dg-sheet-emblem" aria-hidden="true">🇮🇳</div>
+                  <div className="dg-sheet-gov">GOVERNMENT OF INDIA</div>
+                  <div className="dg-sheet-title">{result.document_title}</div>
+                  <div className="dg-sheet-ref">{result.form_reference}</div>
+                </header>
+
+                <div className="dg-sheet-sections">
+                  {result.sections.map((sec, idx) => (
+                    <section key={idx} className="dg-sheet-section">
+                      <div className="dg-sheet-section-heading">{sec.heading}</div>
+                      <pre className="dg-sheet-section-body">{sec.body}</pre>
+                    </section>
+                  ))}
+                </div>
+
+                {/* Verification & Signature Line */}
+                <div className="dg-sheet-verification">
+                  <div>
+                    <p style={{ margin: 0, fontSize: 12, fontStyle: 'italic' }}>
+                      Dated this {new Date(filingDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </p>
+                    <p style={{ margin: '4px 0 0', fontSize: 11, opacity: 0.7 }}>
+                      Place: India
+                    </p>
                   </div>
-
-                  <div className="dg-preview-stats">
-                    <div className="dg-stat-item">
-                      <span className="dg-stat-num">{stats.words}</span>
-                      <span className="dg-stat-label">Total Words</span>
-                    </div>
-                    <div className="dg-stat-item">
-                      <span className="dg-stat-num">{stats.sections}</span>
-                      <span className="dg-stat-label">Sections</span>
-                    </div>
-                  </div>
-
-                  <div className="dg-preview-btn-group">
-                    <button
-                      type="button"
-                      onClick={handleCopy}
-                      className={`dg-btn-action ${copied ? 'copied' : 'primary-action'}`}
-                    >
-                      {copied ? <IconCheck size={16} /> : <IconCopy size={16} />}
-                      <span>{copied ? 'Copied to Clipboard' : 'Copy Full Draft'}</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={handleDownload}
-                      className="dg-btn-action"
-                    >
-                      <span>💾</span>
-                      <span>Download .txt File</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={handleDownloadJson}
-                      className="dg-btn-action"
-                    >
-                      <span>📦</span>
-                      <span>Export JSON Payload</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => window.print()}
-                      className="dg-btn-action"
-                    >
-                      <span>🖨️</span>
-                      <span>Print Document</span>
-                    </button>
-                  </div>
-
-                  <div className="dg-checklist-box">
-                    <div className="dg-checklist-title">
-                      <span>✓</span>
-                      <span>Registered Agent Checklist</span>
-                    </div>
-                    <ul>
-                      <li>Verify Indian Patent Office jurisdiction branch</li>
-                      <li>Affix physical/digital signature on Form 1</li>
-                      <li>Attach Form 2 (Complete/Provisional Specification)</li>
-                      <li>Include Form 3 (Statement of Foreign Applications)</li>
-                      <li>Attach Form 5 (Declaration of Inventorship)</li>
-                      <li>Include Form 26 (Power of Attorney if represented)</li>
-                    </ul>
+                  <div className="dg-sig-line">
+                    Signature of the Applicant / Registered Patent Agent
                   </div>
                 </div>
 
-                {/* Right Realistic Document Paper Sheet */}
-                <article className="dg-paper-sheet">
-                  <span className="dg-sheet-page-indicator">PAGE 1 OF 1 • STATUTORY DRAFT</span>
-
-                  <header className="dg-sheet-header">
-                    <div className="dg-sheet-emblem">🇮🇳</div>
-                    <div className="dg-sheet-gov">GOVERNMENT OF INDIA</div>
-                    <div className="dg-sheet-title">{result.document_title}</div>
-                    <div className="dg-sheet-ref">{result.form_reference}</div>
-                  </header>
-
-                  <div className="dg-sheet-sections">
-                    {result.sections.map((sec, idx) => (
-                      <section key={idx} className="dg-sheet-section">
-                        <div className="dg-sheet-section-heading">{sec.heading}</div>
-                        <pre className="dg-sheet-section-body">{sec.body}</pre>
-                      </section>
-                    ))}
-                  </div>
-
-                  {/* Verification & Signature Line */}
-                  <div className="dg-sheet-verification">
-                    <div>
-                      <p style={{ margin: 0, fontSize: 12, fontStyle: 'italic' }}>
-                        Dated this {new Date(filingDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
-                      </p>
-                      <p style={{ margin: '4px 0 0', fontSize: 11, opacity: 0.7 }}>
-                        Place: India
-                      </p>
-                    </div>
-                    <div className="dg-sig-line">
-                      Signature of the Applicant / Registered Patent Agent
-                    </div>
-                  </div>
-
-                  {result.disclaimer && (
-                    <footer style={{ marginTop: 28, paddingTop: 14, borderTop: '1px dashed rgba(0,0,0,0.15)', fontSize: 11, fontStyle: 'italic', opacity: 0.75 }}>
-                      <strong>Disclaimer:</strong> {result.disclaimer}
-                    </footer>
-                  )}
-                </article>
-              </div>
-            </section>
+                {result.disclaimer && (
+                  <footer className="dg-sheet-disclaimer">
+                    <strong>Disclaimer:</strong> {result.disclaimer}
+                  </footer>
+                )}
+              </article>
+            </div>
           </div>
-        )}
-
-        {/* 9. LEGAL DISCLAIMER */}
-        <p className="dg-disclaimer">
-          Information provided for guidance only — not legal advice. Always review statutory instruments with a registered patent agent or advocate before filing with the Indian Patent Office or National Biodiversity Authority.
-        </p>
-      </div>
+        </div>
+      )}
     </div>
   )
 }
