@@ -7508,9 +7508,9 @@ import {
    Computes key Indian patent deadlines from a filing / priority
    date, with a timeline visualization + urgency alerts.
    ============================================================ */
-function DocumentsPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize }) {
+function DocumentsPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize, isLoggedIn, userName, onLogout }) {
   return (
-    <div className="page-container calc-page">
+    <div style={{ minHeight: '100vh', background: 'var(--doc-bg, #f8fafc)' }}>
       <Navbar
         onOpenAbout={onOpenAbout}
         onOpenWizard={onOpenWizard}
@@ -7518,30 +7518,10 @@ function DocumentsPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize
         toggleTheme={toggleTheme}
         fontSize={fontSize}
         setFontSize={setFontSize}
+        isLoggedIn={isLoggedIn}
+        userName={userName}
+        onLogout={onLogout}
       />
-
-      <header className="page-header">
-        <span
-          className="chip"
-          style={{
-            background: 'var(--color-primary-light, #eaf2ed)',
-            color: 'var(--color-primary, #143D30)',
-            marginBottom: '0.75rem',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-          }}
-        >
-          <IconFileText size={14} /> Document Library
-        </span>
-        <h1 className="page-title">My Documents</h1>
-        <p className="page-subtitle">
-          Upload your own PDFs — case files, prior-art references, notes — to make them
-          searchable inside your AI consultations. Files are parsed, chunked and indexed
-          into a private knowledge collection scoped to your account.
-        </p>
-      </header>
-
       <DocumentUpload />
     </div>
   )
@@ -9858,6 +9838,9 @@ export default function App() {
                   toggleTheme={toggleTheme}
                   fontSize={fontSize}
                   setFontSize={setFontSize}
+                  isLoggedIn={isLoggedIn}
+                  userName={userName}
+                  onLogout={handleLogout}
                 />
               </ProtectedRoute>
             }
