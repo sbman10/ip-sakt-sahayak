@@ -302,6 +302,7 @@ const UI_TRANSLATIONS = {
     faqReadIn: 'Read in:',
     moreQuestions: 'Have more questions? Ask RagVyn AI!',
     askIpSakti: 'Ask IP-SAKTI',
+    askRagvynAi: 'Ask RagVyn AI',
 
     // Footer
     footerDesc: 'AI-powered IP guidance for Ayurveda',
@@ -800,6 +801,7 @@ const UI_TRANSLATIONS = {
     faqReadIn: 'इसमें पढ़ें:',
     moreQuestions: 'क्या आपके पास और प्रश्न हैं? RagVyn AI से पूछें!',
     askIpSakti: 'IP-SAKTI से पूछें',
+    askRagvynAi: 'RagVyn AI से पूछें',
 
     // Footer
     footerDesc: 'आयुर्वेद के लिए AI-संचालित IP मार्गदर्शन',
@@ -1919,14 +1921,16 @@ function DemoPreview() {
       </Reveal>
 
       <Reveal delay={250}>
-        <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+        <div className="demo-try-container">
           <Link
             to="/chat"
-            className="btn-primary demo-try-btn"
+            className="demo-try-btn"
+            id="demo-try-it-btn"
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            aria-label={`${t('demoTryIt')} - Open RagVyn AI Chatbot`}
           >
-            {t('demoTryIt')}
-            <IconArrowRight size={17} className="btn-arrow" />
+            <span className="demo-try-text">{t('demoTryIt')}</span>
+            <IconArrowRight size={18} className="btn-arrow" />
           </Link>
         </div>
       </Reveal>
@@ -4132,11 +4136,19 @@ function FAQSection() {
 
       {/* CTA to Chat */}
       <div className="faq-cta">
-        <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+        <p className="faq-cta-prompt">
           {t('moreQuestions')}
         </p>
-        <Link to="/chat" className="btn-primary">
-          {t('askIpSakti')} →
+        <Link
+          to="/chat"
+          className="faq-ask-ragvyn-btn"
+          id="faq-ask-ragvyn-btn"
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          aria-label={`${t('askRagvynAi')} - Open RagVyn AI Chatbot`}
+        >
+          <IconSparkles size={18} className="btn-sparkle" />
+          <span className="faq-ask-ragvyn-text">{t('askRagvynAi')}</span>
+          <IconArrowRight size={18} className="btn-arrow" />
         </Link>
       </div>
     </section>
@@ -7565,9 +7577,9 @@ import {
    Computes key Indian patent deadlines from a filing / priority
    date, with a timeline visualization + urgency alerts.
    ============================================================ */
-function DocumentsPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize }) {
+function DocumentsPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize, isLoggedIn, userName, onLogout }) {
   return (
-    <div className="page-container calc-page">
+    <div style={{ minHeight: '100vh', background: 'var(--doc-bg, #f8fafc)' }}>
       <Navbar
         onOpenAbout={onOpenAbout}
         onOpenWizard={onOpenWizard}
@@ -7575,40 +7587,20 @@ function DocumentsPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize
         toggleTheme={toggleTheme}
         fontSize={fontSize}
         setFontSize={setFontSize}
+        isLoggedIn={isLoggedIn}
+        userName={userName}
+        onLogout={onLogout}
       />
-
-      <header className="page-header">
-        <span
-          className="chip"
-          style={{
-            background: 'var(--color-primary-light, #eaf2ed)',
-            color: 'var(--color-primary, #143D30)',
-            marginBottom: '0.75rem',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-          }}
-        >
-          <IconFileText size={14} /> Document Library
-        </span>
-        <h1 className="page-title">My Documents</h1>
-        <p className="page-subtitle">
-          Upload your own PDFs — case files, prior-art references, notes — to make them
-          searchable inside your AI consultations. Files are parsed, chunked and indexed
-          into a private knowledge collection scoped to your account.
-        </p>
-      </header>
-
       <DocumentUpload />
     </div>
   )
 }
 
-function DraftsPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize }) {
-  const [showIntro, setShowIntro] = useState(true)
+function DraftsPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize, isLoggedIn, userName, onLogout }) {
+  const navigate = useNavigate()
 
   return (
-    <div className="page-container calc-page">
+    <div style={{ minHeight: '100vh', background: 'var(--dg-bg, #f8fafc)' }}>
       <Navbar
         onOpenAbout={onOpenAbout}
         onOpenWizard={onOpenWizard}
@@ -7616,52 +7608,49 @@ function DraftsPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, s
         toggleTheme={toggleTheme}
         fontSize={fontSize}
         setFontSize={setFontSize}
+        isLoggedIn={isLoggedIn}
+        userName={userName}
+        onLogout={onLogout}
       />
+      <DraftGenerator onBack={() => navigate('/')} />
+    </div>
+  )
+}
 
-      {showIntro ? (
-        <ToolIntro
-          config={TOOL_INTRO_CONFIGS['draft-generator']}
-          icon={<IconFileText size={28} />}
-          onStart={() => setShowIntro(false)}
-          backTo="/"
-          backLabel="Back to Portal"
-        />
-      ) : (
-        <>
-          <header className="page-header" style={{ position: 'relative' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '0.75rem' }}>
-              <span
-                className="chip"
-                style={{
-                  background: 'var(--color-primary-light, #eaf2ed)',
-                  color: 'var(--color-primary, #143D30)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                }}
-              >
-                <IconFileText size={14} /> Draft Generation
-              </span>
-              <button
-                type="button"
-                className="tool-guide-return-btn"
-                onClick={() => setShowIntro(true)}
-                title="View tool overview & instructions"
-              >
-                <IconInfo size={14} />
-                <span>Tool Overview & Guide</span>
-              </button>
-            </div>
-            <h1 className="page-title">IP Document Draft Generator</h1>
-            <p className="page-subtitle">
-              Auto-generate a structured draft of a Patent Form-1, an NBA application, or a
-              Section 3(p) opposition petition. Review with a registered patent agent before filing.
-            </p>
-          </header>
+function WorkspacePage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize, isLoggedIn, userName, onLogout }) {
+  return (
+    <div style={{ minHeight: '100vh', background: 'var(--mw-bg, #f8fafc)' }}>
+      <Navbar
+        onOpenAbout={onOpenAbout}
+        onOpenWizard={onOpenWizard}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        fontSize={fontSize}
+        setFontSize={setFontSize}
+        isLoggedIn={isLoggedIn}
+        userName={userName}
+        onLogout={onLogout}
+      />
+      <MatterWorkspace />
+    </div>
+  )
+}
 
-          <DraftGenerator />
-        </>
-      )}
+function ExpertConnectPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize, isLoggedIn, userName, onLogout }) {
+  return (
+    <div style={{ minHeight: '100vh', background: 'var(--ec-bg, #f8fafc)' }}>
+      <Navbar
+        onOpenAbout={onOpenAbout}
+        onOpenWizard={onOpenWizard}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        fontSize={fontSize}
+        setFontSize={setFontSize}
+        isLoggedIn={isLoggedIn}
+        userName={userName}
+        onLogout={onLogout}
+      />
+      <ExpertConnect />
     </div>
   )
 }
@@ -9889,6 +9878,9 @@ export default function App() {
                 toggleTheme={toggleTheme}
                 fontSize={fontSize}
                 setFontSize={setFontSize}
+                isLoggedIn={isLoggedIn}
+                userName={userName}
+                onLogout={handleLogout}
               />
             }
           />
@@ -9908,7 +9900,17 @@ export default function App() {
             path="/workspace"
             element={
               <ProtectedRoute isLoggedIn={isLoggedIn}>
-                <MatterWorkspace />
+                <WorkspacePage
+                  onOpenAbout={() => setIsAboutOpen(true)}
+                  onOpenWizard={() => setIsWizardOpen(true)}
+                  theme={theme}
+                  toggleTheme={toggleTheme}
+                  fontSize={fontSize}
+                  setFontSize={setFontSize}
+                  isLoggedIn={isLoggedIn}
+                  userName={userName}
+                  onLogout={handleLogout}
+                />
               </ProtectedRoute>
             }
           />
@@ -9923,6 +9925,9 @@ export default function App() {
                   toggleTheme={toggleTheme}
                   fontSize={fontSize}
                   setFontSize={setFontSize}
+                  isLoggedIn={isLoggedIn}
+                  userName={userName}
+                  onLogout={handleLogout}
                 />
               </ProtectedRoute>
             }
@@ -9966,7 +9971,17 @@ export default function App() {
           <Route
             path="/experts"
             element={
-              <ExpertConnect />
+              <ExpertConnectPage
+                onOpenAbout={() => setIsAboutOpen(true)}
+                onOpenWizard={() => setIsWizardOpen(true)}
+                theme={theme}
+                toggleTheme={toggleTheme}
+                fontSize={fontSize}
+                setFontSize={setFontSize}
+                isLoggedIn={isLoggedIn}
+                userName={userName}
+                onLogout={handleLogout}
+              />
             }
           />
           <Route

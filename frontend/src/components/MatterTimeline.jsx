@@ -1,5 +1,3 @@
-import React from 'react'
-
 function fmt(value, withTime = false) {
   if (!value) return '—'
   try {
@@ -12,23 +10,31 @@ function fmt(value, withTime = false) {
 }
 
 const EVENT_META = {
-  filing: { color: '#0ea5e9', icon: '📨' },
-  office_action: { color: '#f59e0b', icon: '📋' },
-  deadline: { color: '#ef4444', icon: '⏰' },
-  response: { color: '#8b5cf6', icon: '✍️' },
-  grant: { color: '#10b981', icon: '🏆' },
-  note: { color: '#94a3b8', icon: '📝' },
+  filing: { color: '#0284c7', bg: '#e0f2fe', icon: '📨', label: 'Initial Filing' },
+  office_action: { color: '#d97706', bg: '#fef3c7', icon: '📋', label: 'Office Action' },
+  deadline: { color: '#dc2626', bg: '#fee2e2', icon: '⏰', label: 'Statutory Deadline' },
+  response: { color: '#7c3aed', bg: '#f5f3ff', icon: '✍️', label: 'Response Filed' },
+  grant: { color: '#16a34a', bg: '#dcfce7', icon: '🏆', label: 'Patent Granted' },
+  note: { color: '#64748b', bg: '#f1f5f9', icon: '📝', label: 'Case Note' },
 }
 
 /**
- * Vertical timeline of a matter's events.
+ * Vertical timeline of a matter's events with modern SaaS legal-tech aesthetics.
  * Props: events [{id,event_type,event_date,description,reminder_date}]
  */
 export default function MatterTimeline({ events = [] }) {
   if (!events.length) {
     return (
-      <div style={{ padding: '32px 12px', textAlign: 'center', opacity: 0.6, fontSize: 14 }}>
-        No events yet. Add a filing, office action, or reminder to build the timeline.
+      <div style={{
+        padding: '32px 16px',
+        textAlign: 'center',
+        color: 'var(--mw-text-muted, #64748b)',
+        fontSize: 13,
+        background: 'var(--mw-bg, #f8fafc)',
+        borderRadius: 10,
+        border: '1px dashed var(--mw-card-border, #e2e8f0)',
+      }}>
+        No events recorded yet. Add a filing, office action, response or reminder below to build the audit history.
       </div>
     )
   }
@@ -40,47 +46,78 @@ export default function MatterTimeline({ events = [] }) {
   })
 
   return (
-    <div style={{ position: 'relative', paddingLeft: 28, marginTop: 8 }}>
+    <div style={{ position: 'relative', paddingLeft: 28, marginTop: 12 }}>
       {/* spine */}
       <div style={{
-        position: 'absolute', left: 9, top: 6, bottom: 6, width: 2,
-        background: 'linear-gradient(to bottom, rgba(99,102,241,0.6), rgba(16,185,129,0.4))',
+        position: 'absolute', left: 9, top: 8, bottom: 8, width: 2,
+        background: 'linear-gradient(to bottom, #7c3aed, #10b981)',
         borderRadius: 2,
+        opacity: 0.6,
       }} />
       {sorted.map((ev) => {
-        const meta = EVENT_META[ev.event_type] || { color: '#94a3b8', icon: '•' }
+        const meta = EVENT_META[ev.event_type] || { color: '#64748b', bg: '#f1f5f9', icon: '•', label: ev.event_type }
         const overdue = ev.reminder_date && new Date(ev.reminder_date) < new Date()
         return (
-          <div key={ev.id} style={{ position: 'relative', marginBottom: 18 }}>
+          <div key={ev.id} style={{ position: 'relative', marginBottom: 16 }}>
+            {/* Dot marker */}
             <span style={{
-              position: 'absolute', left: -27, top: 2, width: 18, height: 18,
+              position: 'absolute', left: -27, top: 4, width: 20, height: 20,
               borderRadius: '50%', background: meta.color, display: 'flex',
-              alignItems: 'center', justifyContent: 'center', fontSize: 10,
-              boxShadow: `0 0 0 3px ${meta.color}33`,
+              alignItems: 'center', justifyContent: 'center', fontSize: 11,
+              color: '#ffffff',
+              boxShadow: `0 0 0 3px ${meta.color}25`,
             }}>{meta.icon}</span>
 
+            {/* Event Card */}
             <div style={{
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: 12, padding: '10px 14px', backdropFilter: 'blur(8px)',
+              background: 'var(--mw-card-bg, #ffffff)',
+              border: '1px solid var(--mw-card-border, #e2e8f0)',
+              borderRadius: 10,
+              padding: '12px 14px',
+              boxShadow: 'var(--mw-shadow-sm, 0 1px 3px rgba(0,0,0,0.05))',
             }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'baseline' }}>
-                <strong style={{ textTransform: 'capitalize', fontSize: 13, color: meta.color }}>
-                  {String(ev.event_type).replace(/_/g, ' ')}
-                </strong>
-                <span style={{ fontSize: 11, opacity: 0.65 }}>{fmt(ev.event_date)}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', marginBottom: 4 }}>
+                <span style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                  color: meta.color,
+                  background: `${meta.color}15`,
+                  padding: '2px 8px',
+                  borderRadius: 4,
+                }}>
+                  {meta.label}
+                </span>
+                <span style={{ fontSize: 12, color: 'var(--mw-text-muted, #64748b)', fontWeight: 500 }}>
+                  {fmt(ev.event_date)}
+                </span>
               </div>
               {ev.description && (
-                <p style={{ margin: '6px 0 0', fontSize: 13, opacity: 0.85, lineHeight: 1.45 }}>
+                <p style={{
+                  margin: '6px 0 0',
+                  fontSize: 13,
+                  color: 'var(--mw-text-body, #334155)',
+                  lineHeight: 1.5,
+                }}>
                   {ev.description}
                 </p>
               )}
               {ev.reminder_date && (
                 <div style={{
-                  marginTop: 8, fontSize: 11, fontWeight: 600,
-                  color: overdue ? '#ef4444' : '#f59e0b',
+                  marginTop: 8,
+                  fontSize: 11,
+                  fontWeight: 600,
+                  padding: '4px 8px',
+                  borderRadius: 6,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  background: overdue ? '#fee2e2' : '#fef3c7',
+                  color: overdue ? '#b91c1c' : '#92400e',
+                  border: `1px solid ${overdue ? '#fca5a5' : '#fde68a'}`,
                 }}>
-                  {overdue ? '⚠️ Overdue reminder: ' : '⏰ Reminder: '}{fmt(ev.reminder_date, true)}
+                  {overdue ? '⚠️ Overdue deadline: ' : '⏰ Action deadline: '}{fmt(ev.reminder_date, true)}
                 </div>
               )}
             </div>
