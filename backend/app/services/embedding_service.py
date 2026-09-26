@@ -103,14 +103,25 @@ class CanonicalEmbeddingService:
             self._local_model = SentenceTransformer(self.model)
         return self._local_model
 
+    def _should_use_local(self) -> bool:
+        return (
+            getattr(self, "_remote_depleted", False)
+            or getattr(settings, "ENABLE_LOCAL_BGE_PRELOAD", False)
+            or getattr(settings, "EMBEDDING_PROVIDER", "").strip().lower() == "local"
+        )
+
     def embed_query(self, query: str) -> List[float]:
         """
         Embed an online search query into a normalized 1,024-dimensional dense vector.
-        Retries with bounded exponential backoff.
-        Fails explicitly without silent fallback.
+        Uses local BGE-M3 model if preloaded/configured or if remote HF is out of credits.
         """
         if not query or not query.strip():
             raise ValueError("Cannot embed empty query.")
+
+        if self._should_use_local():
+            local_m = self._get_local_model()
+            vec = local_m.encode([query.strip()], show_progress_bar=False, normalize_embeddings=self.normalize)[0]
+            return self._validate_vector(vec, context=f"local query '{query[:30]}...'")
 
         client = self._get_client()
         last_error: Optional[Exception] = None
@@ -123,19 +134,18 @@ class CanonicalEmbeddingService:
                     normalize=self.normalize,
                 )
                 vec = np.asarray(raw, dtype=np.float32)
-                # If 2D (1, 1024), flatten to 1D
                 if vec.ndim == 2 and vec.shape[0] == 1:
                     vec = vec[0]
                 return self._validate_vector(vec, context=f"query '{query[:30]}...'")
             except Exception as exc:
                 last_error = exc
                 err_str = str(exc).lower()
-                # UPDATED: If third-party router returned 402 Payment Required or depleted credits, immediately fall back to free direct HF endpoint
-                if ("402" in err_str or "payment required" in err_str or "depleted" in err_str) and getattr(client, "provider", None) is not None:
-                    log.warning("HF inference provider '%s' failed with 402 Payment Required. Falling back to direct HuggingFace endpoint.", getattr(client, "provider", None))
-                    self._client = InferenceClient(token=self.token, provider=None, timeout=self.timeout)
-                    client = self._client
-                    continue
+
+                # If 402 Payment Required or depleted credits, mark remote depleted and immediately fall back
+                if "402" in err_str or "payment required" in err_str or "depleted" in err_str:
+                    self._remote_depleted = True
+                    log.warning("HF inference credits depleted (HTTP 402). Falling back to local SentenceTransformer BGE-M3.")
+                    break
 
                 wait_time = self.backoff_factor ** attempt
                 log.warning(
@@ -148,9 +158,8 @@ class CanonicalEmbeddingService:
                 if attempt < self.max_retries:
                     time.sleep(wait_time)
 
-        # UPDATED: Use local SentenceTransformer BGE-M3 fallback when HF remote inference fails or returns 402 Payment Required
-        if self.local_fallback or (last_error and "402" in str(last_error)):
-            log.warning("HF remote embedding unavailable (%s). Falling back to local SentenceTransformer BGE-M3.", last_error)
+        # Local fallback
+        if self.local_fallback or getattr(self, "_remote_depleted", False) or (last_error and "402" in str(last_error)):
             try:
                 local_m = self._get_local_model()
                 vec = local_m.encode([query.strip()], show_progress_bar=False, normalize_embeddings=self.normalize)[0]
@@ -170,8 +179,18 @@ class CanonicalEmbeddingService:
         if not documents:
             return []
 
+        if self._should_use_local():
+            local_m = self._get_local_model()
+            all_embeddings: List[List[float]] = []
+            for i in range(0, len(documents), batch_size):
+                batch = [doc.strip() for doc in documents[i : i + batch_size]]
+                raw_vecs = local_m.encode(batch, show_progress_bar=False, normalize_embeddings=self.normalize)
+                for j, single_vec in enumerate(raw_vecs):
+                    all_embeddings.append(self._validate_vector(single_vec, context=f"local batch item {i + j}"))
+            return all_embeddings
+
         client = self._get_client()
-        all_embeddings: List[List[float]] = []
+        all_embeddings = []
 
         for i in range(0, len(documents), batch_size):
             batch = [doc.strip() for doc in documents[i : i + batch_size]]
@@ -199,12 +218,11 @@ class CanonicalEmbeddingService:
                 except Exception as exc:
                     last_error = exc
                     err_str = str(exc).lower()
-                    # UPDATED: If third-party router returned 402 Payment Required in batch, fall back to direct HF endpoint
-                    if ("402" in err_str or "payment required" in err_str or "depleted" in err_str) and getattr(client, "provider", None) is not None:
-                        log.warning("HF inference provider '%s' failed with 402 in batch. Falling back to direct HuggingFace endpoint.", getattr(client, "provider", None))
-                        self._client = InferenceClient(token=self.token, provider=None, timeout=self.timeout)
-                        client = self._client
-                        continue
+
+                    if "402" in err_str or "payment required" in err_str or "depleted" in err_str:
+                        self._remote_depleted = True
+                        log.warning("HF inference credits depleted (HTTP 402) in batch. Falling back to local SentenceTransformer BGE-M3.")
+                        break
 
                     wait_time = self.backoff_factor ** attempt
                     log.warning(
@@ -217,6 +235,16 @@ class CanonicalEmbeddingService:
                     if attempt < self.max_retries:
                         time.sleep(wait_time)
             else:
+                if self.local_fallback or getattr(self, "_remote_depleted", False):
+                    try:
+                        local_m = self._get_local_model()
+                        raw_vecs = local_m.encode(batch, show_progress_bar=False, normalize_embeddings=self.normalize)
+                        for j, single_vec in enumerate(raw_vecs):
+                            all_embeddings.append(self._validate_vector(single_vec, context=f"local batch item {i + j}"))
+                        continue
+                    except Exception as local_err:
+                        log.error("Local BGE-M3 fallback failed for batch: %s", local_err)
+
                 raise EmbeddingServiceError(
                     f"HF document batch embedding failed after {self.max_retries} attempts for batch {i}..{i+len(batch)}. "
                     f"Original error: {last_error}"
