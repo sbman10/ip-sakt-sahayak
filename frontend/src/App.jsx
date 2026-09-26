@@ -2070,6 +2070,17 @@ function ThemeToggleBtn({ theme, toggleTheme }) {
    ============================================================ */
 function AboutModal({ isOpen, onClose }) {
   const { t } = useLanguage()
+
+  // Handle escape key to close modal for keyboard accessibility
+  useEffect(() => {
+    if (!isOpen) return
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, onClose])
+
   if (!isOpen) return null
 
   const corpusList = [
@@ -2084,15 +2095,34 @@ function AboutModal({ isOpen, onClose }) {
   return (
     <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="about-modal-title">
       <div className="modal-card about-modal-card" onClick={e => e.stopPropagation()}>
-        {/* 1. Header with Government/AYUSH branding */}
+        {/* Subtle Decorative Botanical Watermark (Strictly background, zero readability interference) */}
+        <div className="about-bg-decorations" aria-hidden="true">
+          <svg className="about-bg-botanical-svg" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="200" cy="200" r="160" stroke="currentColor" strokeWidth="1" strokeDasharray="3 6" opacity="0.4" />
+            <circle cx="200" cy="200" r="110" stroke="currentColor" strokeWidth="0.8" opacity="0.3" />
+            <path d="M200 40 C 230 110, 290 170, 360 200 C 290 230, 230 290, 200 360 C 170 290, 110 230, 40 200 C 110 170, 170 110, 200 40 Z" stroke="currentColor" strokeWidth="1.2" opacity="0.35" />
+            <path d="M200 90 C 215 140, 260 185, 310 200 C 260 215, 215 260, 200 310 C 185 260, 140 215, 90 200 C 140 185, 185 140, 200 90 Z" stroke="currentColor" strokeWidth="0.8" opacity="0.25" />
+          </svg>
+        </div>
+
+        {/* 1. Header with Prominent Official IP-SAKTI Logo & Brand Identity */}
         <div className="about-modal-header">
           <div className="about-header-branding">
-            <div className="about-header-emblem" aria-hidden="true">
-              <IconGovt size={22} />
+            <div className="about-brand-emblem-box">
+              <img
+                src="/logo.png"
+                alt="IP-SAKTI Sahayak Official Logo"
+                className="about-official-logo"
+              />
             </div>
             <div className="about-header-text">
-              <h2 id="about-modal-title">{t('aboutTitle') || 'About IP-SAKTI Sahayak'}</h2>
-              <p className="about-header-subtitle">{t('aboutSubtitle') || 'Intellectual Property & Regulatory Guidance Platform'}</p>
+              <div className="about-brand-title-row">
+                <h2 id="about-modal-title">IP-SAKTI Sahayak</h2>
+                <span className="about-heritage-tagline">आयुर्वेद • ज्ञान • संरक्षण • समृद्धि</span>
+              </div>
+              <p className="about-header-subtitle">
+                {t('aboutSubtitle') || 'National IP & Regulatory Intelligence for Ayurvedic Innovation'}
+              </p>
             </div>
           </div>
           <button
@@ -2104,7 +2134,7 @@ function AboutModal({ isOpen, onClose }) {
           </button>
         </div>
 
-        {/* 2. Modal Body */}
+        {/* 2. Modal Body with Editorial Narrative & Harmonious Text Highlighting */}
         <div className="about-modal-body">
           {/* Section 1: Purpose & Vision */}
           <section className="about-section-card about-vision-card" aria-labelledby="about-purpose-title">
@@ -2113,20 +2143,20 @@ function AboutModal({ isOpen, onClose }) {
                 <IconSparkles size={14} />
               </span>
               <h3 id="about-purpose-title" className="about-section-heading">
-                {t('aboutPurposeTitle') || 'Purpose & Vision'}
+                {t('aboutPurposeTitle') || 'Brand Story & Mission'}
               </h3>
             </div>
             <div className="about-section-content">
               <p className="about-intro-text">
-                <strong className="about-emphasis-brand">IP-SAKTI Sahayak</strong> is an <strong className="about-emphasis-keyword">AI-powered platform</strong> designed to help AYUSH innovators and Vaidyas navigate Indian Intellectual Property laws, Traditional Knowledge, and biological diversity compliance through a structured and evidence-based digital interface.
+                <span className="about-hl-brand">IP-SAKTI Sahayak</span> is a specialized sovereign legal-intelligence platform engineered to empower <span className="about-hl-ayurveda">Ayurveda</span> innovators, Vaidyas, and ASU manufacturers navigating the intricate nexus of <span className="about-hl-ip">Intellectual Property</span> laws and <span className="about-hl-tk">Traditional Knowledge</span> protection.
               </p>
               <p className="about-body-text">
-                The platform brings together regulatory tools, <strong className="about-emphasis-keyword">authoritative sources</strong>, and <strong className="about-emphasis-brand">RagVyn AI</strong>, its RAG-based AI assistant, to make complex IP and regulatory information easier to understand and access.
+                By bridging indigenous herbal heritage with <span className="about-hl-ai">Evidence-Grounded AI</span>, the platform democratizes access to statutory clearance, patentability guidance under <span className="about-hl-compliance">Section 3(p)</span>, and mandatory Biological Diversity Act benefit-sharing protocols.
               </p>
             </div>
           </section>
 
-          {/* Section 2: Grounding Policy & Zero Hallucination */}
+          {/* Section 2: Grounding Policy & Safe Abstention Guarantee */}
           <section className="about-section-card about-grounding-card" aria-labelledby="about-grounding-title">
             <div className="about-section-heading-row about-grounding-heading-row">
               <div className="about-heading-with-icon">
@@ -2134,7 +2164,7 @@ function AboutModal({ isOpen, onClose }) {
                   <IconShieldCheck size={15} />
                 </span>
                 <h3 id="about-grounding-title" className="about-section-heading">
-                  {t('aboutGroundingTitle') || 'Grounding Policy & Zero Hallucination'}
+                  {t('aboutGroundingTitle') || 'Grounding Protocol & Zero Hallucination'}
                 </h3>
               </div>
               <span className="about-status-pill">
@@ -2144,13 +2174,10 @@ function AboutModal({ isOpen, onClose }) {
             </div>
             <div className="about-section-content">
               <p className="about-body-text">
-                <strong className="about-emphasis-brand">RagVyn AI</strong> uses Retrieval-Augmented Generation (RAG) to ground responses in the platform&apos;s <strong className="about-emphasis-keyword">official knowledge corpus</strong>.
+                The platform&apos;s retrieval engine, <span className="about-hl-brand">RagVyn AI</span>, operates under a zero-hallucination mandate. Responses are synthesized strictly from authenticated statutory corpora, gazette notifications, and published prior art.
               </p>
               <p className="about-body-text">
-                When relevant legal or regulatory evidence is unavailable, it <strong className="about-emphasis-alert">abstains</strong> rather than inventing information.
-              </p>
-              <p className="about-body-text">
-                Responses include <strong className="about-emphasis-keyword">section citations</strong>, <strong className="about-emphasis-keyword">source/database references</strong>, and <strong className="about-emphasis-keyword">confidence indicators</strong> wherever applicable.
+                If statutory precedent or official evidence is lacking for a specific formulation, the system <span className="about-hl-abstain">abstains safely</span> rather than conjecturing legal conclusions.
               </p>
             </div>
             <div className="about-grounding-features">
@@ -2160,11 +2187,11 @@ function AboutModal({ isOpen, onClose }) {
               </div>
               <div className="about-feature-chip">
                 <IconShield size={13} aria-hidden="true" />
-                <span>Safe Abstention Policy</span>
+                <span>Safe Abstention Mandate</span>
               </div>
               <div className="about-feature-chip">
                 <IconScroll size={13} aria-hidden="true" />
-                <span>Section Citations & Scores</span>
+                <span>Precise Section Citations</span>
               </div>
             </div>
           </section>
@@ -2177,10 +2204,10 @@ function AboutModal({ isOpen, onClose }) {
                   <IconBook size={14} />
                 </span>
                 <h3 id="about-corpora-title" className="about-section-heading">
-                  {t('aboutCorporaTitle') || 'Core Ingested Corpora'}
+                  {t('aboutCorporaTitle') || 'Core Ingested Statutory Corpora'}
                 </h3>
               </div>
-              <span className="about-corpus-count-badge">6 Statutory Archives</span>
+              <span className="about-corpus-count-badge">6 Canonical Archives</span>
             </div>
             <div className="about-corpus-grid">
               {corpusList.map((c, idx) => (
@@ -2197,14 +2224,14 @@ function AboutModal({ isOpen, onClose }) {
             </div>
           </section>
 
-          {/* Section 4: Disclaimer */}
+          {/* Section 4: Official Legal Disclaimer */}
           <div className="about-disclaimer-box" role="note" aria-label="Legal disclaimer">
             <span className="about-disclaimer-icon-wrap" aria-hidden="true">
               <IconAlertTriangle size={18} />
             </span>
             <div className="about-disclaimer-content">
-              <strong className="about-disclaimer-label">{t('disclaimer') || 'Disclaimer'}:</strong>{' '}
-              IP-SAKTI Sahayak is an <strong className="about-disclaimer-strong">informational research platform</strong> for AYUSH innovators and Vaidyas. It <strong className="about-disclaimer-strong">does not replace professional legal representation</strong> before the Controller General of Patents or High Courts.
+              <strong className="about-disclaimer-label">{t('disclaimer') || 'Legal Disclaimer'}:</strong>{' '}
+              IP-SAKTI Sahayak is an informational research and regulatory screening platform. Its assessments do not constitute formal legal counsel or advocate-client representation before the Patent Office, NBA, or judicial courts.
             </div>
           </div>
         </div>
@@ -8896,62 +8923,79 @@ function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, f
 /* ============================================================
    SOURCES DIRECTORY PAGE
    ============================================================ */
-function SourcesPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize }) {
+function SourcesPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize, setPrefillPrompt }) {
   const { t } = useLanguage()
-  const SOURCES = [
+
+  // Primary 4 Authoritative Sources showcased in 2x2 institutional editorial layout with provided logos
+  const PRIMARY_SOURCES = [
     {
-      icon: <IconGovt size={24} />,
-      name: 'India Code statutory archive',
-      tag: 'Statute Corpus',
-      desc: 'Official repository of Indian legislation including Patents Act 1970, Biological Diversity Act 2002, and Drugs & Cosmetics Act 1940.',
+      id: 'india-code',
+      name: 'India Code Statutory Archive',
+      authority: 'Ministry of Law & Justice · Govt. of India',
+      tag: 'Statute Corpus · Primary Legislation',
+      desc: 'The official digital repository of Indian Central and State legislation, encompassing the Patents Act 1970, Biological Diversity Act 2002, and Drugs & Cosmetics Act 1940.',
+      logo: '/sources/india-code.png',
       url: 'https://indiacode.nic.in/',
     },
     {
-      icon: <IconTag size={24} />,
-      name: 'IP India Patent & Design Office',
-      tag: 'Patent Office',
-      desc: 'Official portal of the Controller General of Patents, Designs & Trade Marks (CGPDTM) detailing examination guidelines.',
-      url: 'https://ipindia.gov.in/',
-    },
-    {
-      icon: <IconBook size={24} />,
+      id: 'tkdl',
       name: 'TKDL (Traditional Knowledge Digital Library)',
-      tag: 'Prior Art DB',
-      desc: 'Joint initiative of CSIR and Ministry of AYUSH mapping traditional formulas to prevent international biopiracy.',
+      authority: 'CSIR & Ministry of AYUSH · Govt. of India',
+      tag: 'Prior Art DB · 2.5L+ Formulations',
+      desc: 'Pioneering Indian prior-art archive translating classical Sanskrit, Arabic, Persian, and Tamil formulations to prevent wrongful international biopiracy and patent grants.',
+      logo: '/sources/tkdl.png',
       url: 'https://www.tkdl.res.in/',
     },
     {
-      icon: <IconGlobe size={24} />,
+      id: 'wipo',
       name: 'WIPO Patentscope',
-      tag: 'Patent Database',
-      desc: 'WIPO’s global patent search service for published PCT applications and international patent documents.',
+      authority: 'World Intellectual Property Organization',
+      tag: 'Global Patent Search · PCT Gazette',
+      desc: 'Multilateral patent intelligence portal providing cross-border access to international Patent Cooperation Treaty (PCT) applications and global national patent disclosures.',
+      logo: '/sources/wipo.png',
       url: 'https://patentscope.wipo.int/search/en/search.jsf',
     },
     {
-      icon: <IconGlobe size={24} />,
+      id: 'grtk',
       name: 'WIPO GRATK Treaty (2024)',
-      tag: 'International Law',
-      desc: 'WIPO Treaty on Intellectual Property, Genetic Resources and Associated Traditional Knowledge establishing disclosure rules.',
+      authority: 'Diplomatic Conference on Genetic Resources & TK',
+      tag: 'International Law · Mandatory Origin Disclosure',
+      desc: 'Landmark global treaty requiring patent applicants worldwide to disclose the sovereign origin of genetic resources and indigenous traditional knowledge utilized in inventions.',
+      logo: '/sources/grtk.png',
       url: 'https://www.wipo.int/',
     },
+  ]
+
+  // Complementary official portals & treaties preserved from original project metadata
+  const SECONDARY_SOURCES = [
     {
-      icon: <IconFileText size={24} />,
+      icon: <IconGovt size={20} />,
+      name: 'IP India Patent & Design Office',
+      authority: 'CGPDTM · Ministry of Commerce & Industry',
+      tag: 'Patent Office · Examination Guidelines',
+      desc: 'Official portal of the Controller General of Patents, Designs & Trade Marks detailing ASU patent examination guidelines and manual of patent practice.',
+      url: 'https://ipindia.gov.in/',
+    },
+    {
+      icon: <IconGlobe size={20} />,
       name: 'Nagoya Protocol on ABS',
-      tag: 'Treaty Corpus',
-      desc: 'Global treaty under the Convention on Biological Diversity governing fair access and equitable benefit-sharing.',
+      authority: 'Convention on Biological Diversity (CBD)',
+      tag: 'Treaty Corpus · Access & Benefit Sharing',
+      desc: 'Global framework under the CBD governing fair and equitable sharing of benefits arising from the utilization of genetic resources across sovereign borders.',
       url: 'https://www.cbd.int/abs/',
     },
     {
-      icon: <IconLeaf size={24} />,
+      icon: <IconLeaf size={20} />,
       name: 'Ministry of AYUSH Regulatory Portal',
-      tag: 'AYUSH Rules',
-      desc: 'Official AYUSH guidelines including Rule 158-B licensing parameters and Ayurveda Aahar regulations.',
+      authority: 'Ministry of AYUSH · Govt. of India',
+      tag: 'AYUSH Rules · ASU Licensing Standards',
+      desc: 'Official governance portal outlining Rule 158-B licensing parameters, Ayurvedic Pharmacopoeia monographs, and Ayurveda Aahar safety protocols.',
       url: 'https://ayush.gov.in/',
     },
   ]
 
   return (
-    <div className="page-container">
+    <div className="page-container sources-page-container">
       <Navbar
         onOpenAbout={onOpenAbout}
         onOpenWizard={onOpenWizard}
@@ -8959,34 +9003,107 @@ function SourcesPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, 
         toggleTheme={toggleTheme}
         fontSize={fontSize}
         setFontSize={setFontSize}
+        setPrefillPrompt={setPrefillPrompt}
       />
 
-      <header className="page-header">
-        <span className="chip" style={{ background: 'rgba(217, 119, 6, 0.2)', color: 'var(--primary-light)', marginBottom: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-          <IconBook size={14} /> {t('sourcesChipLabel')}
-        </span>
-        <h1 className="page-title">{t('sourcesPageTitle')}</h1>
-        <p className="page-subtitle">{t('sourcesPageSubtitle')}</p>
+      <header className="page-header sources-hero-header">
+        <div className="sources-kicker-badge" aria-label="Authoritative Sources Section">
+          <IconShieldCheck size={14} aria-hidden="true" />
+          <span>{t('sourcesChipLabel') || 'AUTHORITATIVE SOURCES'}</span>
+        </div>
+        <h1 className="page-title sources-main-title">
+          {t('sourcesPageTitle') || 'Grounded in Trusted Legal & Knowledge Databases'}
+        </h1>
+        <p className="page-subtitle sources-main-subtitle">
+          {t('sourcesPageSubtitle') || 'IP-SAKTI Sahayak synthesizes citations directly from verified statutory archives, traditional knowledge digital registries, and multilateral intellectual property treaties.'}
+        </p>
       </header>
 
-      <main className="sources-grid">
-        {SOURCES.map(s => (
-          <a key={s.name} href={s.url} target="_blank" rel="noopener noreferrer" className="source-card">
-            <div className="source-header">
-              <span className="source-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{s.icon}</span>
-              <div>
-                <div className="source-title">{s.name}</div>
-                <span className="source-tag">{s.tag}</span>
+      <main className="sources-institutional-section">
+        {/* 2x2 Editorial Institutional Showcase */}
+        <div className="sources-pillar-grid">
+          {PRIMARY_SOURCES.map((source) => (
+            <article key={source.id} className="source-institution-card">
+              <div className="source-card-top">
+                <div className="source-emblem-plate">
+                  <img
+                    src={source.logo}
+                    alt={`${source.name} logo`}
+                    className="source-emblem-img"
+                    loading="eager"
+                  />
+                </div>
+                <div className="source-identity-wrap">
+                  <span className="source-authority-badge">{source.authority}</span>
+                  <h2 className="source-institution-name">{source.name}</h2>
+                  <span className="source-domain-tag">{source.tag}</span>
+                </div>
               </div>
-            </div>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6 }}>
-              {s.desc}
+
+              <p className="source-editorial-desc">{source.desc}</p>
+
+              <div className="source-card-footer">
+                <a
+                  href={source.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="source-explore-link"
+                  aria-label={`Explore official repository for ${source.name} (opens in a new tab)`}
+                >
+                  <span>Explore Official Source</span>
+                  <IconExternalLink size={14} aria-hidden="true" />
+                </a>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        {/* Complementary Statutory & Regulatory Portals */}
+        <section className="sources-secondary-section" aria-labelledby="secondary-sources-heading">
+          <div className="sources-secondary-header">
+            <h3 id="secondary-sources-heading" className="sources-secondary-title">
+              Complementary Statutory &amp; Regulatory Portals
+            </h3>
+            <p className="sources-secondary-subtitle">
+              Official governance and treaty portals integrated into the IP-SAKTI statutory intelligence workflow.
             </p>
-            <span style={{ fontSize: '0.78rem', color: 'var(--primary-light)', fontWeight: 500 }}>
-              Visit Official Source ↗
-            </span>
-          </a>
-        ))}
+          </div>
+
+          <div className="sources-secondary-grid">
+            {SECONDARY_SOURCES.map((source) => (
+              <a
+                key={source.name}
+                href={source.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="source-portal-card"
+                aria-label={`Visit ${source.name} (opens in a new tab)`}
+              >
+                <div className="source-portal-icon-wrap" aria-hidden="true">
+                  {source.icon}
+                </div>
+                <div className="source-portal-content">
+                  <div className="source-portal-header-row">
+                    <h4 className="source-portal-name">{source.name}</h4>
+                    <IconExternalLink size={13} className="source-portal-arrow" aria-hidden="true" />
+                  </div>
+                  <span className="source-portal-tag">{source.tag}</span>
+                  <p className="source-portal-desc">{source.desc}</p>
+                </div>
+              </a>
+            ))}
+          </div>
+        </section>
+
+        {/* Institutional Verification Guarantee Banner */}
+        <div className="sources-verification-banner" role="note" aria-label="Statutory grounding guarantee">
+          <div className="sources-verification-icon-wrap" aria-hidden="true">
+            <IconShieldCheck size={22} />
+          </div>
+          <div className="sources-verification-text">
+            <strong>Statutory Grounding Protocol:</strong> Every legal reference, Section 3(p) prior art check, and ABS regulatory guidance emitted by IP-SAKTI Sahayak is cross-verified against these primary statutory archives and ratified treaties with strict citations and zero hallucination.
+          </div>
+        </div>
       </main>
     </div>
   )
