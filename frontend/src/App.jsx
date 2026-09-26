@@ -15,6 +15,8 @@ import AccessibilityPanel from './components/AccessibilityPanel'
 import ExpertConnect from './components/ExpertConnect'
 import PricingPage from './components/PricingPage'
 import PatentabilityAssessment from './components/PatentabilityAssessment'
+import UserProfileMenu from './components/UserProfileMenu'
+import EditProfileModal from './components/EditProfileModal'
 import ToolIntro from './components/ToolIntro'
 import { TOOL_INTRO_CONFIGS } from './data/toolIntroConfigs'
 import {
@@ -4224,8 +4226,29 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout 
   const [toolsDropdownOpen, setToolsDropdownOpen] = useState(false)
   const [servicesDropdownOpen, setServicesDropdownOpen] = useState(false)
   const [tourRun, setTourRun] = useState(false)
+  const [editProfileOpen, setEditProfileOpen] = useState(false)
   const toolsDropdownRef = useRef(null)
   const servicesDropdownRef = useRef(null)
+
+  const authLoggedIn = isLoggedIn !== undefined
+    ? Boolean(isLoggedIn)
+    : (typeof window !== 'undefined' && localStorage.getItem('ip_sakti_logged_in') === 'true')
+
+  const authUserName = userName || (typeof window !== 'undefined' ? localStorage.getItem('ip_sakti_user_name') : '') || ''
+
+  const effectiveLogout = () => {
+    if (onLogout) {
+      onLogout()
+    } else {
+      localStorage.removeItem('ip_sakti_logged_in')
+      localStorage.removeItem('ip_sakti_user_name')
+      localStorage.removeItem('ip_sakti_access_token')
+      localStorage.removeItem('ip_sakti_refresh_token')
+      localStorage.removeItem('ip_sakti_user')
+      window.dispatchEvent(new CustomEvent('ip-sakti-user-updated', { detail: null }))
+      window.location.reload()
+    }
+  }
 
   const handleSeeDemo = (e) => {
     if (e) e.preventDefault()
@@ -4437,12 +4460,6 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout 
               <span>Sources</span>
             </Link>
           </li>
-          <li>
-            <Link to="/pricing" className="gov-nav-link" onClick={() => setMobileMenuOpen(false)}>
-              <IconTag size={15} />
-              <span>Pricing</span>
-            </Link>
-          </li>
           <li className="gov-nav-item-secondary">
             <button
               type="button"
@@ -4473,37 +4490,77 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout 
 
           {/* Mobile-Only Actions inside Hamburger Menu */}
           <li className="gov-nav-mobile-actions">
-            {isLoggedIn ? (
-              <div className="gov-nav-mobile-user-box">
-                <div className="gov-nav-welcome-badge mobile-user-badge">
-                  <div className="welcome-avatar">
-                    {(userName || 'U').charAt(0).toUpperCase()}
+            {authLoggedIn ? (
+              <div className="gov-nav-mobile-profile-card">
+                <div className="gov-nav-mobile-profile-header">
+                  <div className="gov-profile-avatar-circle">
+                    <span className="gov-profile-avatar-initial">
+                      {(authUserName || 'U').charAt(0).toUpperCase()}
+                    </span>
                   </div>
                   <div className="welcome-text">
                     <span className="welcome-label">Signed in as</span>
-                    <span className="welcome-name">{userName || 'Innovator'}</span>
+                    <span className="welcome-name">{authUserName || 'Innovator'}</span>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  className="gov-nav-logout-btn mobile-logout-btn"
-                  onClick={() => {
-                    setMobileMenuOpen(false)
-                    onLogout()
-                  }}
-                >
-                  {t('logout')}
-                </button>
+
+                <div className="gov-nav-mobile-profile-actions">
+                  <button
+                    type="button"
+                    className="gov-nav-mobile-profile-action-btn"
+                    onClick={() => {
+                      setMobileMenuOpen(false)
+                      setEditProfileOpen(true)
+                    }}
+                  >
+                    <span>✎ Edit Profile</span>
+                  </button>
+                  <Link
+                    to="/chat"
+                    className="gov-nav-mobile-profile-action-btn"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <span>◉ My Consultations</span>
+                  </Link>
+                  <Link
+                    to="/pricing"
+                    className="gov-nav-mobile-profile-action-btn gov-nav-mobile-pro-btn"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <span>⭐ Upgrade to Pro</span>
+                    <span className="gov-profile-pro-badge">PRO</span>
+                  </Link>
+                  <button
+                    type="button"
+                    className="gov-nav-mobile-profile-action-btn gov-nav-mobile-logout-btn"
+                    onClick={() => {
+                      setMobileMenuOpen(false)
+                      effectiveLogout()
+                    }}
+                  >
+                    <span>Logout</span>
+                  </button>
+                </div>
               </div>
             ) : (
-              <Link
-                to="/login"
-                className="gov-nav-mobile-login-btn"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <IconUser size={16} />
-                <span>{t('loginOrRegister')}</span>
-              </Link>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '8px' }}>
+                <Link
+                  to="/login"
+                  className="gov-nav-mobile-login-btn"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <IconUser size={16} />
+                  <span>Login</span>
+                </Link>
+                <Link
+                  to="/login?mode=register"
+                  state={{ register: true }}
+                  className="gov-nav-mobile-register-btn"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <span>Register</span>
+                </Link>
+              </div>
             )}
             <Link
               to="/chat"
@@ -4520,30 +4577,26 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout 
         <div className="gov-nav-actions">
           {/* Desktop User/Guest Groups */}
           <div className="gov-nav-desktop-actions">
-            {isLoggedIn ? (
+            {authLoggedIn ? (
               <div className="gov-nav-user-group">
-                <div className="gov-nav-welcome-badge">
-                  <div className="welcome-avatar">
-                    {(userName || 'U').charAt(0).toUpperCase()}
-                  </div>
-                  <div className="welcome-text">
-                    <span className="welcome-label">Welcome back,</span>
-                    <span className="welcome-name">{userName || 'Innovator'}</span>
-                  </div>
-                </div>
-                <button className="gov-nav-logout-btn" onClick={onLogout}>
-                  {t('logout')}
-                </button>
                 <Link to="/chat" className="gov-nav-cta" id="gov-nav-consult-btn">
                   <span>RagVyn AI</span>
                   <IconArrowRight size={14} />
                 </Link>
+                <UserProfileMenu
+                  userName={authUserName}
+                  onLogout={effectiveLogout}
+                  onOpenEditProfile={() => setEditProfileOpen(true)}
+                />
               </div>
             ) : (
               <div className="gov-nav-guest-group">
-                <Link to="/login" className="gov-nav-login-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <Link to="/login" className="gov-nav-login-btn">
                   <IconUser size={14} />
-                  <span>{t('loginOrRegister')}</span>
+                  <span>Login</span>
+                </Link>
+                <Link to="/login?mode=register" state={{ register: true }} className="gov-nav-register-btn">
+                  <span>Register</span>
                 </Link>
                 <Link to="/chat" className="gov-nav-cta" id="gov-nav-consult-btn">
                   <span>RagVyn AI</span>
@@ -4552,6 +4605,18 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout 
               </div>
             )}
           </div>
+
+          {/* Mobile Profile Avatar Trigger (When logged in) */}
+          {authLoggedIn && (
+            <div className="gov-nav-mobile-profile-wrap">
+              <UserProfileMenu
+                compact={true}
+                userName={authUserName}
+                onLogout={effectiveLogout}
+                onOpenEditProfile={() => setEditProfileOpen(true)}
+              />
+            </div>
+          )}
 
           {/* Mobile Quick Action Pill */}
           <Link to="/chat" className="gov-nav-mobile-quick-cta" aria-label="RagVyn AI">
@@ -4579,6 +4644,10 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout 
         />
       )}
     </nav>
+    <EditProfileModal
+      isOpen={editProfileOpen}
+      onClose={() => setEditProfileOpen(false)}
+    />
     <OnboardingTour
       run={tourRun}
       onClose={() => setTourRun(false)}
@@ -9577,7 +9646,25 @@ function AuthCallbackPage({ onLogin }) {
 function LoginPage({ theme, toggleTheme, fontSize, setFontSize, onLogin }) {
   const { t } = useLanguage()
   const navigate = useNavigate()
-  const [isRegister, setIsRegister] = useState(false)
+  const location = useLocation()
+  const [isRegister, setIsRegister] = useState(() => {
+    try {
+      const params = new URLSearchParams(window.location.search)
+      return params.get('mode') === 'register' || params.get('register') === 'true'
+    } catch {
+      return false
+    }
+  })
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    if (params.get('mode') === 'register' || params.get('register') === 'true' || location.state?.register === true) {
+      setIsRegister(true)
+    } else if (params.get('mode') === 'login' || location.state?.register === false) {
+      setIsRegister(false)
+    }
+  }, [location.search, location.state])
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')

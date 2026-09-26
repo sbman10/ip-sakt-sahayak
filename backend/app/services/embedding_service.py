@@ -140,11 +140,16 @@ class CanonicalEmbeddingService:
             except Exception as exc:
                 last_error = exc
                 err_str = str(exc).lower()
+<<<<<<< HEAD
+                if "402" in err_str or "payment required" in err_str or "depleted" in err_str:
+                    log.warning("HuggingFace credits depleted (402). Skipping retries to use local model directly.")
+=======
 
                 # If 402 Payment Required or depleted credits, mark remote depleted and immediately fall back
                 if "402" in err_str or "payment required" in err_str or "depleted" in err_str:
                     self._remote_depleted = True
                     log.warning("HF inference credits depleted (HTTP 402). Falling back to local SentenceTransformer BGE-M3.")
+>>>>>>> 5e5afc1298b21462660c5487c696cdbf3e8afd66
                     break
 
                 wait_time = self.backoff_factor ** attempt
