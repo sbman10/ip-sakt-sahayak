@@ -1,0 +1,1145 @@
+/* ============================================================
+   STATUTORY DOCUMENT PREPARATION ASSISTANT - LEGAL-TECH WORKSPACE
+   Primary Reference: Matter Workspace Visual Language
+   ============================================================ */
+
+:root {
+  --dg-purple: #7c3aed;
+  --dg-purple-hover: #6d28d9;
+  --dg-purple-light: #f5f3ff;
+  --dg-purple-border: #ddd6fe;
+  --dg-purple-ring: rgba(124, 58, 237, 0.2);
+
+  --dg-bg: #f8fafc;
+  --dg-card-bg: #ffffff;
+  --dg-card-border: #e2e8f0;
+  --dg-card-hover-border: #cbd5e1;
+
+  --dg-text-main: #0f172a;
+  --dg-text-body: #334155;
+  --dg-text-muted: #64748b;
+  --dg-text-subtle: #94a3b8;
+
+  --dg-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.05);
+  --dg-shadow-md: 0 4px 14px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+  --dg-shadow-lg: 0 16px 36px -4px rgba(15, 23, 42, 0.12), 0 4px 12px -2px rgba(15, 23, 42, 0.06);
+  --dg-shadow-purple: 0 4px 16px rgba(124, 58, 237, 0.28);
+}
+
+[data-theme="dark"] {
+  --dg-purple: #9333ea;
+  --dg-purple-hover: #a855f7;
+  --dg-purple-light: rgba(147, 51, 234, 0.15);
+  --dg-purple-border: rgba(168, 85, 247, 0.35);
+  --dg-purple-ring: rgba(168, 85, 247, 0.3);
+
+  --dg-bg: #090d14;
+  --dg-card-bg: #111827;
+  --dg-card-border: #1f2937;
+  --dg-card-hover-border: #374151;
+
+  --dg-text-main: #f8fafc;
+  --dg-text-body: #e2e8f0;
+  --dg-text-muted: #94a3b8;
+  --dg-text-subtle: #64748b;
+
+  --dg-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --dg-shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
+  --dg-shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.6);
+  --dg-shadow-purple: 0 4px 20px rgba(147, 51, 234, 0.35);
+}
+
+/* ------------------------------------------------------------
+   WORKSPACE WRAPPER
+   ------------------------------------------------------------ */
+.dg-container {
+  min-height: 100vh;
+  background-color: var(--dg-bg);
+  color: var(--dg-text-body);
+  font-family: var(--font-body, system-ui, -apple-system, sans-serif);
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Top utility navigation strip */
+.dg-top-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px clamp(16px, 4vw, 40px);
+  background-color: var(--dg-card-bg);
+  border-bottom: 1px solid var(--dg-card-border);
+  font-size: 13px;
+}
+
+.dg-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--dg-text-muted);
+}
+
+.dg-breadcrumb-link {
+  color: var(--dg-text-muted);
+  text-decoration: none;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: color 0.15s ease;
+}
+
+.dg-breadcrumb-link:hover {
+  color: var(--dg-purple);
+}
+
+.dg-breadcrumb-sep {
+  opacity: 0.4;
+}
+
+.dg-breadcrumb-active {
+  color: var(--dg-text-main);
+  font-weight: 600;
+}
+
+.dg-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dg-portal-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--dg-text-muted);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.dg-portal-link:hover {
+  color: var(--dg-purple);
+  background-color: var(--dg-purple-light);
+}
+
+/* Main inner content area */
+.dg-content {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 28px clamp(16px, 4vw, 40px) 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* ------------------------------------------------------------
+   1. TOP PAGE HEADER
+   ------------------------------------------------------------ */
+.dg-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.dg-header-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.dg-header-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--dg-purple-light);
+  border: 1px solid var(--dg-purple-border);
+  color: var(--dg-purple);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: var(--dg-shadow-sm);
+}
+
+.dg-header-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dg-category-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: var(--dg-purple-light);
+  color: var(--dg-purple);
+  border: 1px solid var(--dg-purple-border);
+  width: fit-content;
+}
+
+.dg-header-titles h1 {
+  margin: 0;
+  font-size: clamp(24px, 3vw, 28px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--dg-text-main);
+  line-height: 1.25;
+}
+
+.dg-header-subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: var(--dg-text-muted);
+  max-width: 680px;
+  line-height: 1.5;
+}
+
+.dg-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.dg-est-time-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--dg-card-bg);
+  border: 1px solid var(--dg-card-border);
+  color: var(--dg-text-muted);
+  box-shadow: var(--dg-shadow-sm);
+}
+
+.dg-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--dg-card-border);
+  background: var(--dg-card-bg);
+  color: var(--dg-text-main);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: var(--dg-shadow-sm);
+}
+
+.dg-btn-secondary:hover {
+  background: var(--dg-purple-light);
+  border-color: var(--dg-purple-border);
+  color: var(--dg-purple);
+}
+
+/* ------------------------------------------------------------
+   2. HERO / TOOL INTRO CARD
+   ------------------------------------------------------------ */
+.dg-hero-card {
+  background: var(--dg-card-bg);
+  border: 1px solid var(--dg-card-border);
+  border-radius: 16px;
+  padding: 24px 28px;
+  box-shadow: var(--dg-shadow-sm);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 24px;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.dg-hero-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 260px;
+  height: 100%;
+  background: radial-gradient(circle at top right, var(--dg-purple-light) 0%, transparent 70%);
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+.dg-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: var(--dg-purple-light);
+  color: var(--dg-purple);
+  border: 1px solid var(--dg-purple-border);
+  margin-bottom: 8px;
+}
+
+.dg-hero-heading {
+  margin: 0 0 6px;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--dg-text-main);
+  letter-spacing: -0.015em;
+}
+
+.dg-hero-desc {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: var(--dg-text-body);
+  line-height: 1.5;
+  max-width: 780px;
+}
+
+.dg-hero-highlights {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.dg-hero-highlight-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dg-text-main);
+}
+
+.dg-hero-highlight-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--dg-purple-light);
+  color: var(--dg-purple);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+
+.dg-hero-illustration {
+  width: 96px;
+  height: 96px;
+  border-radius: 20px;
+  background: var(--dg-purple-light);
+  border: 1px solid var(--dg-purple-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 42px;
+  box-shadow: var(--dg-shadow-sm);
+  flex-shrink: 0;
+}
+
+/* ------------------------------------------------------------
+   3. STEP-BY-STEP WORKFLOW COMPONENT
+   ------------------------------------------------------------ */
+.dg-stepper-card {
+  background: var(--dg-card-bg);
+  border: 1px solid var(--dg-card-border);
+  border-radius: 16px;
+  padding: 18px 24px;
+  box-shadow: var(--dg-shadow-sm);
+}
+
+.dg-stepper-track {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  position: relative;
+  gap: 16px;
+}
+
+.dg-step-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  position: relative;
+}
+
+.dg-step-item:hover {
+  background: var(--dg-bg);
+}
+
+.dg-step-item.active {
+  background: var(--dg-purple-light);
+  border-color: var(--dg-purple-border);
+}
+
+.dg-step-item.completed {
+  border-color: rgba(22, 163, 74, 0.2);
+}
+
+.dg-step-number-box {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  background: var(--dg-bg);
+  border: 1px solid var(--dg-card-border);
+  color: var(--dg-text-muted);
+}
+
+.dg-step-item.active .dg-step-number-box {
+  background: var(--dg-purple);
+  color: #ffffff;
+  border-color: var(--dg-purple);
+  box-shadow: 0 4px 10px rgba(124, 58, 237, 0.35);
+}
+
+.dg-step-item.completed .dg-step-number-box {
+  background: #16a34a;
+  color: #ffffff;
+  border-color: #16a34a;
+}
+
+.dg-step-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.dg-step-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--dg-text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dg-step-desc {
+  font-size: 12px;
+  color: var(--dg-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ------------------------------------------------------------
+   4. DOCUMENT TEMPLATE SELECTION
+   ------------------------------------------------------------ */
+.dg-section-card {
+  background: var(--dg-card-bg);
+  border: 1px solid var(--dg-card-border);
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: var(--dg-shadow-sm);
+}
+
+.dg-section-header {
+  margin-bottom: 22px;
+}
+
+.dg-section-title {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--dg-text-main);
+  letter-spacing: -0.01em;
+}
+
+.dg-section-subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: var(--dg-text-muted);
+  line-height: 1.4;
+}
+
+.dg-templates-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.dg-template-card {
+  border: 1.5px solid var(--dg-card-border);
+  background: var(--dg-card-bg);
+  border-radius: 14px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  text-align: left;
+}
+
+.dg-template-card:hover {
+  border-color: var(--dg-card-hover-border);
+  transform: translateY(-2px);
+  box-shadow: var(--dg-shadow-md);
+}
+
+.dg-template-card.selected {
+  border-color: var(--dg-purple);
+  background: var(--dg-purple-light);
+  box-shadow: 0 4px 18px rgba(124, 58, 237, 0.12);
+}
+
+.dg-template-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.dg-template-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--dg-bg);
+  border: 1px solid var(--dg-card-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: var(--dg-purple);
+  transition: all 0.2s ease;
+}
+
+.dg-template-card.selected .dg-template-icon-wrap {
+  background: #ffffff;
+  border-color: var(--dg-purple-border);
+}
+
+.dg-template-radio {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--dg-text-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.dg-template-card.selected .dg-template-radio {
+  border-color: var(--dg-purple);
+  background: var(--dg-purple);
+}
+
+.dg-template-radio-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffffff;
+}
+
+.dg-template-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--dg-purple);
+  margin-bottom: 4px;
+}
+
+.dg-template-name {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--dg-text-main);
+  line-height: 1.35;
+}
+
+.dg-template-ref {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--dg-text-muted);
+  font-family: var(--font-mono, monospace);
+  background: rgba(0, 0, 0, 0.03);
+  padding: 3px 6px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.dg-template-desc {
+  margin: 0;
+  font-size: 13px;
+  color: var(--dg-text-body);
+  line-height: 1.45;
+}
+
+/* ------------------------------------------------------------
+   5. ENTITY & INNOVATION DETAILS (FORM)
+   ------------------------------------------------------------ */
+.dg-form-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.dg-form-group-card {
+  border: 1px solid var(--dg-card-border);
+  border-radius: 12px;
+  padding: 20px;
+  background: var(--dg-bg);
+}
+
+.dg-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.dg-group-badge {
+  font-size: 14px;
+}
+
+.dg-group-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--dg-text-main);
+}
+
+.dg-form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.dg-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.dg-form-field.full-width {
+  grid-column: 1 / -1;
+}
+
+.dg-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dg-text-main);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dg-req-star {
+  color: #dc2626;
+}
+
+.dg-input,
+.dg-select,
+.dg-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--dg-card-border);
+  background: var(--dg-card-bg);
+  color: var(--dg-text-main);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.dg-input:focus,
+.dg-select:focus,
+.dg-textarea:focus {
+  border-color: var(--dg-purple);
+  box-shadow: 0 0 0 3px var(--dg-purple-ring);
+}
+
+.dg-input::placeholder,
+.dg-textarea::placeholder {
+  color: var(--dg-text-subtle);
+}
+
+.dg-field-hint {
+  font-size: 11px;
+  color: var(--dg-text-muted);
+  line-height: 1.35;
+  margin-top: 2px;
+}
+
+/* ------------------------------------------------------------
+   6. DELIVERABLES SECTION ("What you'll receive")
+   ------------------------------------------------------------ */
+.dg-deliverables-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.dg-deliverable-card {
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--dg-purple-light);
+  border: 1px solid var(--dg-purple-border);
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  transition: transform 0.15s ease;
+}
+
+.dg-deliverable-card:hover {
+  transform: translateY(-2px);
+}
+
+.dg-deliverable-icon-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--dg-purple);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+  box-shadow: var(--dg-shadow-sm);
+}
+
+.dg-deliverable-content h4 {
+  margin: 0 0 3px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--dg-text-main);
+}
+
+.dg-deliverable-content p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--dg-text-body);
+  line-height: 1.4;
+}
+
+/* ------------------------------------------------------------
+   7. DOCUMENT PREVIEW PANEL
+   ------------------------------------------------------------ */
+.dg-preview-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.dg-preview-controls-card {
+  background: var(--dg-card-bg);
+  border: 1px solid var(--dg-card-border);
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  box-shadow: var(--dg-shadow-sm);
+  position: sticky;
+  top: 24px;
+}
+
+.dg-preview-meta-top h3 {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--dg-text-main);
+}
+
+.dg-preview-meta-top p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--dg-text-muted);
+}
+
+.dg-preview-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 12px;
+  background: var(--dg-bg);
+  border-radius: 10px;
+  border: 1px solid var(--dg-card-border);
+}
+
+.dg-stat-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.dg-stat-num {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--dg-purple);
+}
+
+.dg-stat-label {
+  font-size: 11px;
+  color: var(--dg-text-muted);
+}
+
+.dg-preview-btn-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dg-btn-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid var(--dg-card-border);
+  background: var(--dg-card-bg);
+  color: var(--dg-text-main);
+}
+
+.dg-btn-action:hover {
+  background: var(--dg-bg);
+  border-color: var(--dg-card-hover-border);
+}
+
+.dg-btn-action.primary-action {
+  background: var(--dg-purple);
+  color: #ffffff;
+  border-color: var(--dg-purple);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
+}
+
+.dg-btn-action.primary-action:hover {
+  background: var(--dg-purple-hover);
+}
+
+.dg-btn-action.copied {
+  background: #16a34a;
+  color: #ffffff;
+  border-color: #16a34a;
+}
+
+.dg-checklist-box {
+  background: var(--dg-purple-light);
+  border: 1px solid var(--dg-purple-border);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.dg-checklist-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--dg-purple);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.dg-checklist-box ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 11px;
+  color: var(--dg-text-body);
+  line-height: 1.5;
+}
+
+/* Document Paper Sheet */
+.dg-paper-sheet {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 40px 48px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  color: #0f172a;
+  position: relative;
+  font-family: 'Times New Roman', Times, Georgia, serif;
+  line-height: 1.6;
+}
+
+[data-theme="dark"] .dg-paper-sheet {
+  background: #0f172a;
+  color: #f8fafc;
+  border-color: #334155;
+}
+
+.dg-sheet-header {
+  text-align: center;
+  border-bottom: 2px solid #0f172a;
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+}
+
+[data-theme="dark"] .dg-sheet-header {
+  border-color: #f8fafc;
+}
+
+.dg-sheet-emblem {
+  font-size: 28px;
+  margin-bottom: 6px;
+}
+
+.dg-sheet-gov {
+  font-size: 14px;
+  font-weight: bold;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.dg-sheet-title {
+  font-size: 18px;
+  font-weight: 800;
+  margin: 6px 0;
+  letter-spacing: 0.02em;
+}
+
+.dg-sheet-ref {
+  font-size: 12px;
+  font-style: italic;
+  opacity: 0.85;
+}
+
+.dg-sheet-page-indicator {
+  position: absolute;
+  top: 16px;
+  right: 24px;
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  opacity: 0.6;
+}
+
+.dg-sheet-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.dg-sheet-section-heading {
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 1px dashed rgba(0, 0, 0, 0.2);
+  padding-bottom: 4px;
+  margin-bottom: 8px;
+  color: #0f172a;
+}
+
+[data-theme="dark"] .dg-sheet-section-heading {
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #f8fafc;
+}
+
+.dg-sheet-section-body {
+  font-size: 13.5px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.65;
+  margin: 0;
+}
+
+.dg-sheet-verification {
+  margin-top: 32px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(0, 0, 0, 0.15);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+[data-theme="dark"] .dg-sheet-verification {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.dg-sig-line {
+  width: 220px;
+  border-top: 1px solid currentColor;
+  text-align: center;
+  font-size: 11px;
+  padding-top: 4px;
+}
+
+/* ------------------------------------------------------------
+   8. PRIMARY CTA & FOOTER
+   ------------------------------------------------------------ */
+.dg-cta-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.dg-btn-generate {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 13px 32px;
+  border-radius: 10px;
+  border: none;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  background: var(--dg-purple);
+  color: #ffffff;
+  box-shadow: var(--dg-shadow-purple);
+  transition: all 0.2s ease;
+}
+
+.dg-btn-generate:hover:not(:disabled) {
+  background: var(--dg-purple-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.35);
+}
+
+.dg-btn-generate:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.dg-btn-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: dg-spin 0.6s linear infinite;
+}
+
+@keyframes dg-spin {
+  to { transform: rotate(360deg); }
+}
+
+.dg-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  font-size: 13px;
+  font-weight: 500;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ------------------------------------------------------------
+   9. LEGAL DISCLAIMER
+   ------------------------------------------------------------ */
+.dg-disclaimer {
+  text-align: center;
+  font-size: 12px;
+  color: var(--dg-text-muted);
+  line-height: 1.5;
+  padding-top: 8px;
+}
+
+/* ------------------------------------------------------------
+   RESPONSIVE DESIGN
+   ------------------------------------------------------------ */
+@media (max-width: 960px) {
+  .dg-preview-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .dg-preview-controls-card {
+    position: static;
+  }
+
+  .dg-hero-card {
+    grid-template-columns: 1fr;
+  }
+
+  .dg-hero-illustration {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .dg-stepper-track {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .dg-form-grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .dg-paper-sheet {
+    padding: 24px 20px;
+  }
+
+  .dg-cta-bar {
+    align-items: stretch;
+  }
+
+  .dg-btn-generate {
+    width: 100%;
+  }
+}
+
+/* Print view optimization */
+@media print {
+  .dg-top-strip,
+  .dg-header,
+  .dg-hero-card,
+  .dg-stepper-card,
+  .dg-section-card,
+  .dg-preview-controls-card,
+  .dg-cta-bar,
+  .dg-disclaimer {
+    display: none !important;
+  }
+
+  .dg-preview-layout {
+    display: block !important;
+  }
+
+  .dg-paper-sheet {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+}

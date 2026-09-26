@@ -7548,10 +7548,10 @@ function DocumentsPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize
 }
 
 function DraftsPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize }) {
-  const [showIntro, setShowIntro] = useState(true)
+  const navigate = useNavigate()
 
   return (
-    <div className="page-container calc-page">
+    <div style={{ minHeight: '100vh', background: 'var(--dg-bg, #f8fafc)' }}>
       <Navbar
         onOpenAbout={onOpenAbout}
         onOpenWizard={onOpenWizard}
@@ -7560,51 +7560,7 @@ function DraftsPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, s
         fontSize={fontSize}
         setFontSize={setFontSize}
       />
-
-      {showIntro ? (
-        <ToolIntro
-          config={TOOL_INTRO_CONFIGS['draft-generator']}
-          icon={<IconFileText size={28} />}
-          onStart={() => setShowIntro(false)}
-          backTo="/"
-          backLabel="Back to Portal"
-        />
-      ) : (
-        <>
-          <header className="page-header" style={{ position: 'relative' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '0.75rem' }}>
-              <span
-                className="chip"
-                style={{
-                  background: 'var(--color-primary-light, #eaf2ed)',
-                  color: 'var(--color-primary, #143D30)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                }}
-              >
-                <IconFileText size={14} /> Draft Generation
-              </span>
-              <button
-                type="button"
-                className="tool-guide-return-btn"
-                onClick={() => setShowIntro(true)}
-                title="View tool overview & instructions"
-              >
-                <IconInfo size={14} />
-                <span>Tool Overview & Guide</span>
-              </button>
-            </div>
-            <h1 className="page-title">IP Document Draft Generator</h1>
-            <p className="page-subtitle">
-              Auto-generate a structured draft of a Patent Form-1, an NBA application, or a
-              Section 3(p) opposition petition. Review with a registered patent agent before filing.
-            </p>
-          </header>
-
-          <DraftGenerator />
-        </>
-      )}
+      <DraftGenerator onBack={() => navigate('/')} />
     </div>
   )
 }
