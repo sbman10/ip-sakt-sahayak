@@ -3,10 +3,12 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   IconPlus,
   IconSearch,
-  IconBot,
-  IconSettings,
-  IconActivity,
-  IconGrid,
+  IconFlask,
+  IconLeaf,
+  IconCalculator,
+  IconBook,
+  IconCalendar,
+  IconInfo,
   IconMenu,
   IconZap,
   IconUser,
@@ -26,6 +28,7 @@ import { getApiBase } from '../api/config'
  *   onNewChat    — () => void — starts a fresh chat/task
  *   activeSessionId — current active conversation ID (from ChatPage or null)
  *   onSelectSession — (id) => void — load a past conversation
+ *   onOpenAbout  — () => void — open about IP-SAKTI modal
  */
 export default function RagvynSidebar({
   isLoggedIn,
@@ -33,6 +36,7 @@ export default function RagvynSidebar({
   onNewChat,
   activeSessionId,
   onSelectSession,
+  onOpenAbout,
 }) {
   const location = useLocation()
   const navigate = useNavigate()
@@ -180,7 +184,7 @@ export default function RagvynSidebar({
       icon: <IconPlus size={20} />,
       action: () => {
         if (onNewChat) onNewChat()
-        navigate('/chat')
+        navigate('/chat', { state: { newChat: true } })
       },
       isAction: true,
     },
@@ -192,28 +196,46 @@ export default function RagvynSidebar({
       isAction: true,
     },
     {
-      id: 'agent',
-      label: 'Agent',
-      icon: <IconBot size={20} />,
-      path: '/agent',
+      id: 'formulation-wizard',
+      label: 'Formulation Wizard',
+      icon: <IconFlask size={20} />,
+      path: '/formulation-wizard',
     },
     {
-      id: 'customize',
-      label: 'Customize',
-      icon: <IconSettings size={20} />,
-      path: '/customize',
+      id: 'abs-checker',
+      label: 'ABS Checker',
+      icon: <IconLeaf size={20} />,
+      path: '/abs-checker',
     },
     {
-      id: 'pulse',
-      label: 'Pulse',
-      icon: <IconActivity size={20} />,
-      path: '/pulse',
+      id: 'ip-calculator',
+      label: 'IP Calculator',
+      icon: <IconCalculator size={20} />,
+      path: '/ip-calculator',
     },
     {
-      id: 'gallery',
-      label: 'Gallery',
-      icon: <IconGrid size={20} />,
-      path: '/gallery',
+      id: 'sources',
+      label: 'Official Data Corpora',
+      icon: <IconBook size={20} />,
+      path: '/sources',
+    },
+  ]
+
+  const secondaryNav = [
+    {
+      id: 'deadline-calculator',
+      label: 'Deadline Calculator',
+      icon: <IconCalendar size={18} />,
+      path: '/deadline-calculator',
+    },
+    {
+      id: 'about-ip-sakti',
+      label: 'About IP-SAKTI',
+      icon: <IconInfo size={18} />,
+      action: () => {
+        if (onOpenAbout) onOpenAbout()
+      },
+      isAction: true,
     },
   ]
 
@@ -424,6 +446,50 @@ export default function RagvynSidebar({
         {/* ---- Spacer ---- */}
         <div className="ragvyn-sidebar__spacer" />
 
+        {/* ---- Lower Navigation Section ---- */}
+        <div className="ragvyn-sidebar__secondary-nav">
+          <ul className="ragvyn-sidebar__nav-list" role="list">
+            {secondaryNav.map(item => {
+              const isActive = item.path && location.pathname === item.path
+
+              if (item.isAction) {
+                return (
+                  <li key={item.id} className="ragvyn-sidebar__nav-item">
+                    <button
+                      className="ragvyn-sidebar__nav-btn"
+                      onClick={() => handleNavAction(item)}
+                      title={collapsed && !isMobile() ? item.label : undefined}
+                      aria-label={item.label}
+                    >
+                      <span className="ragvyn-sidebar__nav-icon">{item.icon}</span>
+                      {isExpanded && <span className="ragvyn-sidebar__nav-label">{item.label}</span>}
+                    </button>
+                  </li>
+                )
+              }
+
+              return (
+                <li key={item.id} className="ragvyn-sidebar__nav-item">
+                  <Link
+                    to={item.path}
+                    className={[
+                      'ragvyn-sidebar__nav-btn',
+                      isActive ? 'ragvyn-sidebar__nav-btn--active' : '',
+                    ].filter(Boolean).join(' ')}
+                    title={collapsed && !isMobile() ? item.label : undefined}
+                    aria-label={item.label}
+                    aria-current={isActive ? 'page' : undefined}
+                    onClick={() => { if (isMobile()) closeMobile() }}
+                  >
+                    <span className="ragvyn-sidebar__nav-icon">{item.icon}</span>
+                    {isExpanded && <span className="ragvyn-sidebar__nav-label">{item.label}</span>}
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+
         {/* ---- Bottom Section ---- */}
         <div className="ragvyn-sidebar__bottom">
           {/* Upgrade button */}
@@ -432,6 +498,7 @@ export default function RagvynSidebar({
             className="ragvyn-sidebar__upgrade-btn"
             title={!isExpanded ? 'Upgrade' : undefined}
             aria-label="Upgrade subscription"
+            onClick={() => { if (isMobile()) closeMobile() }}
           >
             <IconZap size={16} />
             {isExpanded && <span>Upgrade</span>}
@@ -439,7 +506,7 @@ export default function RagvynSidebar({
 
           {/* Bottom icons row */}
           <div className="ragvyn-sidebar__bottom-row">
-            {/* User avatar */}
+            {/* User avatar / login */}
             {isLoggedIn && userName ? (
               <div
                 className="ragvyn-sidebar__user-avatar"
@@ -462,22 +529,11 @@ export default function RagvynSidebar({
                 className="ragvyn-sidebar__bottom-icon-btn"
                 title={!isExpanded ? 'Sign in' : undefined}
                 aria-label="Sign in"
+                onClick={() => { if (isMobile()) closeMobile() }}
               >
                 <IconUser size={18} />
                 {isExpanded && <span>Sign in</span>}
               </Link>
-            )}
-
-            {/* App grid placeholder */}
-            {isExpanded && (
-              <button
-                className="ragvyn-sidebar__bottom-icon-btn"
-                title="Applications"
-                aria-label="Applications"
-                onClick={() => {/* placeholder */}}
-              >
-                <IconGrid size={16} />
-              </button>
             )}
 
             {/* Help */}
@@ -485,7 +541,10 @@ export default function RagvynSidebar({
               className="ragvyn-sidebar__bottom-icon-btn"
               title={!isExpanded ? 'Help' : 'Help & Support'}
               aria-label="Help & Support"
-              onClick={() => {/* placeholder */}}
+              onClick={() => {
+                if (onOpenAbout) onOpenAbout()
+                if (isMobile()) closeMobile()
+              }}
             >
               <IconHelpCircle size={18} />
             </button>

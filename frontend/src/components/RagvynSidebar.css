@@ -393,6 +393,17 @@
   min-height: 0;
 }
 
+/* ---------- Lower Navigation Section ---------- */
+.ragvyn-sidebar__secondary-nav {
+  padding: 4px 10px;
+  flex-shrink: 0;
+  border-top: 1px solid var(--rs-border);
+}
+
+.ragvyn-sidebar--collapsed .ragvyn-sidebar__secondary-nav {
+  padding: 4px 6px;
+}
+
 /* ---------- Bottom Section ---------- */
 .ragvyn-sidebar__bottom {
   padding: 8px 10px 14px;
@@ -710,4 +721,25 @@
 
 [data-theme="dark"] .ragvyn-placeholder-page__desc {
   color: var(--text-muted, #9aa3b0);
+}
+
+/* ---------- App Content Layout Offset ---------- */
+.ragvyn-app-content {
+  min-height: 100vh;
+  transition: margin-left var(--rs-transition, 220ms cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+.ragvyn-app-content--sidebar-expanded {
+  margin-left: var(--rs-width-expanded, 260px);
+}
+
+.ragvyn-app-content--sidebar-collapsed {
+  margin-left: var(--rs-width-collapsed, 64px);
+}
+
+@media (max-width: 768px) {
+  .ragvyn-app-content--sidebar-expanded,
+  .ragvyn-app-content--sidebar-collapsed {
+    margin-left: 0 !important;
+  }
 }

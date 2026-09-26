@@ -1,6 +1,8 @@
 import { useEffect, useState, useRef, createContext, useContext, useCallback, useMemo } from 'react'
-import { BrowserRouter, Routes, Route, useNavigate, Link, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useNavigate, Link, useLocation, Navigate } from 'react-router-dom'
 import './index.css'
+import './components/RagvynSidebar.css'
+import RagvynSidebar from './components/RagvynSidebar'
 import MatterWorkspace from './components/MatterWorkspace'
 import DocumentUpload from './components/DocumentUpload'
 import IPChecklist from './components/IPChecklist'
@@ -2682,33 +2684,6 @@ function ChatSidebar({ collapsed, onClose, activeId, onSelectSession, onNewChat,
             )}
           </div>
         ))}
-      </div>
-
-      <div className="sidebar-footer">
-        <button className="sidebar-link-btn" onClick={() => handleNavClick(onOpenWizard)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <IconFlask size={16} />
-          <span>{t('formulationWizard')}</span>
-        </button>
-        <Link to="/abs-checker" className="sidebar-link-btn" onClick={() => handleNavClick()} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <IconLeaf size={16} />
-          <span>{t('absChecker')}</span>
-        </Link>
-        <Link to="/ip-calculator" className="sidebar-link-btn" onClick={() => handleNavClick()} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <IconCalculator size={16} />
-          <span>{t('ipCalculator')}</span>
-        </Link>
-        <Link to="/deadline-calculator" className="sidebar-link-btn" onClick={() => handleNavClick()} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <IconCalendar size={16} />
-          <span>{t('deadlineCalc')}</span>
-        </Link>
-        <Link to="/sources" className="sidebar-link-btn" onClick={() => handleNavClick()} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <IconBook size={16} />
-          <span>{t('officialDataCorpora')}</span>
-        </Link>
-        <button className="sidebar-link-btn" onClick={() => handleNavClick(onOpenAbout)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <IconInfo size={16} />
-          <span>{t('aboutIpSakti')}</span>
-        </button>
       </div>
 
       {!collapsed && (
@@ -6214,43 +6189,6 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
 
   const { isListening, isSupported: voiceSupported, interimText, error: voiceError, confidence: voiceConfidence, startListening, stopListening } = useVoiceInput(handleVoiceResult, voiceLang)
 
-  // Handle incoming prefill or pre-computed assessment from Innovation Assessment flow
-  useEffect(() => {
-    if (location.state?.assessmentResult) {
-      const { prompt, result: assessmentData } = location.state.assessmentResult
-      const userMsg = {
-        id: Date.now() - 500,
-        role: 'user',
-        text: prompt,
-        timestamp: Date.now() - 500,
-      }
-      const aiMsg = {
-        id: Date.now(),
-        role: 'ai',
-        text: assessmentData.answer,
-        sections: assessmentData.sections || [],
-        citations: assessmentData.citations || [],
-        confidence: assessmentData.confidence || { score: 78, label: 'High', reason: 'Diagnostic grounded in statutory knowledge corpus.' },
-        followUpQuestions: assessmentData.follow_up_questions || [
-          'What are the Section 3(p) prior art criteria for this formulation?',
-          'How do I obtain NBA Form III approval for commercialization?',
-          'What are the ASU Rule 158-B licensing requirements?'
-        ],
-        status: 'answered',
-        showDisclaimer: true,
-        timestamp: Date.now(),
-      }
-      setMessages([userMsg, aiMsg])
-      if (assessmentData.conversation_id) {
-        setConversationId(assessmentData.conversation_id)
-        setActiveSessionId(assessmentData.conversation_id)
-      }
-      window.history.replaceState({}, document.title)
-    } else if (prefillPrompt) {
-      setInput(prefillPrompt)
-      setPrefillPrompt('')
-    }
-  }, [location.state, prefillPrompt, setPrefillPrompt])
 
   // ----- Conversation persistence helpers -----
   const formatSessionDate = useCallback((iso) => {
@@ -6321,6 +6259,55 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
       console.warn('[Conversations] Could not load conversation:', err.message)
     }
   }, [API_BASE])
+
+  // Handle incoming prefill, pre-computed assessment, and sidebar navigation
+  useEffect(() => {
+    if (location.state?.assessmentResult) {
+      const { prompt, result: assessmentData } = location.state.assessmentResult
+      const userMsg = {
+        id: Date.now() - 500,
+        role: 'user',
+        text: prompt,
+        timestamp: Date.now() - 500,
+      }
+      const aiMsg = {
+        id: Date.now(),
+        role: 'ai',
+        text: assessmentData.answer,
+        sections: assessmentData.sections || [],
+        citations: assessmentData.citations || [],
+        confidence: assessmentData.confidence || { score: 78, label: 'High', reason: 'Diagnostic grounded in statutory knowledge corpus.' },
+        followUpQuestions: assessmentData.follow_up_questions || [
+          'What are the Section 3(p) prior art criteria for this formulation?',
+          'How do I obtain NBA Form III approval for commercialization?',
+          'What are the ASU Rule 158-B licensing requirements?'
+        ],
+        status: 'answered',
+        showDisclaimer: true,
+        timestamp: Date.now(),
+      }
+      setMessages([userMsg, aiMsg])
+      if (assessmentData.conversation_id) {
+        setConversationId(assessmentData.conversation_id)
+        setActiveSessionId(assessmentData.conversation_id)
+      }
+      window.history.replaceState({}, document.title)
+    } else if (location.state?.newChat) {
+      // Triggered from RagvynSidebar "New Task"
+      setMessages([])
+      setInput('')
+      setActiveSessionId(null)
+      setConversationId(null)
+      window.history.replaceState({}, document.title)
+    } else if (location.state?.loadSessionId) {
+      // Triggered from RagvynSidebar "Recents" click
+      loadConversation(location.state.loadSessionId)
+      window.history.replaceState({}, document.title)
+    } else if (prefillPrompt) {
+      setInput(prefillPrompt)
+      setPrefillPrompt('')
+    }
+  }, [location.state, prefillPrompt, setPrefillPrompt, loadConversation])
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -7131,6 +7118,378 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
           />
         </div>
       </div>
+    </div>
+  )
+}
+
+/* ============================================================
+   FORMULATION WIZARD PAGE
+   ============================================================ */
+function FormulationWizardPage({
+  onOpenAbout,
+  onOpenWizard,
+  theme,
+  toggleTheme,
+  fontSize,
+  setFontSize,
+  setPrefillPrompt,
+}) {
+  const { t } = useLanguage()
+  const navigate = useNavigate()
+  const [showIntro, setShowIntro] = useState(false)
+  const [step, setStep] = useState(1)
+  const [answers, setAnswers] = useState({ q1: null, q2: null, q3: null })
+
+  const resetWizard = () => {
+    setStep(1)
+    setAnswers({ q1: null, q2: null, q3: null })
+    setShowIntro(false)
+  }
+
+  const handleSelectOption = (questionKey, optionValue) => {
+    setAnswers(prev => ({ ...prev, [questionKey]: optionValue }))
+  }
+
+  const calculateResult = () => {
+    if (answers.q1 === 'classical') {
+      return {
+        type: 'Classical / Generic Ayurvedic Medicine (Shastriya)',
+        cls: 'classical',
+        badge: 'Patent Barred (Sec 3(p))',
+        summary: 'Your formulation uses traditional ingredients and preparation methods documented in 1st Schedule texts of the Drugs & Cosmetics Act (e.g. Charaka Samhita, Sushruta Samhita).',
+        legalAction: [
+          'Barred from patenting in India under Patents Act 1970 §3(p).',
+          'Protected against foreign biopiracy via TKDL (Traditional Knowledge Digital Library).',
+          'Requires Rule 158-B(1) drug manufacturing license from State AYUSH Licensing Authority.',
+          'Consider Trademark and unique packaging Design registration for brand protection.',
+        ],
+        prompt: 'How do I protect my brand for a classical Charaka Samhita formulation using Trademarks and GI tags?',
+      }
+    }
+    if (answers.q1 === 'nutra') {
+      return {
+        type: 'Ayurveda-Aahar / Nutraceutical Supplement',
+        cls: 'nutra',
+        badge: 'FSSAI / AYUSH Food Regime',
+        summary: 'Your product contains herbal ingredients intended for health wellness, dietary supplementation, or functional food consumption.',
+        legalAction: [
+          'Regulated primarily under FSSAI (Ayurveda Aahar) Regulations 2022.',
+          'Cannot make therapeutic or disease-curing medicinal claims on labels.',
+          'Patent eligibility limited unless novel extraction technology is involved.',
+          'Primary IP protection strategy: Brand Trademark, Proprietary Blend Trade Secret, & Packaging Design.',
+        ],
+        prompt: 'What are the trademark and labelling guidelines for an Ayurveda-Aahar herbal health drink?',
+      }
+    }
+    return {
+      type: 'Patent / Proprietary Ayurvedic Medicine (Anubhavasiddha)',
+      cls: 'proprietary',
+      badge: 'Potentially Patentable (Sec 2(1)(j))',
+      summary: 'Your formulation modifies traditional ingredients with a novel delivery mechanism, synergistic extract ratio, or proven unexpected therapeutic efficacy.',
+      legalAction: [
+        'Eligible for patent protection under Patents Act 1970 §2(1)(j) if novel and non-obvious.',
+        'Must demonstrate synergism or enhanced efficacy beyond simple admixture (Section 3(e) bar).',
+        'Requires ABS clearance under Biological Diversity Act 2002 before commercial filing.',
+        'Requires Rule 158-B(2) AYUSH manufacturing license with safety/efficacy trial data.',
+      ],
+      prompt: 'What clinical data and ABS approvals do I need to file a patent for a novel Ayurvedic herbal extract combo?',
+    }
+  }
+
+  const outcome = step === 4 ? calculateResult() : null
+
+  const handleAskChat = (prompt) => {
+    if (setPrefillPrompt) setPrefillPrompt(prompt)
+    navigate('/chat', { state: { prefillPrompt: prompt } })
+  }
+
+  return (
+    <div className="page-container">
+      <Navbar
+        onOpenAbout={onOpenAbout}
+        onOpenWizard={onOpenWizard}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        fontSize={fontSize}
+        setFontSize={setFontSize}
+      />
+
+      <header className="page-header">
+        <span
+          className="chip"
+          style={{
+            background: 'rgba(217, 119, 6, 0.2)',
+            color: 'var(--primary-light)',
+            marginBottom: '0.75rem',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+          }}
+        >
+          <IconFlask size={14} /> Guided Intake & Classification
+        </span>
+        <h1 className="page-title">{t('wizardTitle') || 'Formulation Wizard'}</h1>
+        <p className="page-subtitle">
+          {t('wizardSubtitle') || 'Classify your Ayurvedic formulation and evaluate patent eligibility, TKDL prior art bars, and regulatory pathway.'}
+        </p>
+      </header>
+
+      <main style={{ maxWidth: '840px', margin: '0 auto', padding: '0 1rem 3rem', width: '100%', boxSizing: 'border-box' }}>
+        {showIntro ? (
+          <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--bg-border)', borderRadius: 'var(--radius-lg)', padding: '1.5rem' }}>
+            <ToolIntro
+              config={TOOL_INTRO_CONFIGS['formulation-wizard']}
+              icon={<IconFlask size={28} />}
+              onStart={() => setShowIntro(false)}
+              backTo="/chat"
+              backLabel="Return to Chat"
+            />
+          </div>
+        ) : (
+          <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--bg-border)', borderRadius: 'var(--radius-lg)', padding: '2rem' }}>
+            {/* Progress Bar */}
+            <div className="wizard-progress">
+              {[1, 2, 3, 4].map(s => (
+                <div
+                  key={s}
+                  className={`wizard-progress-step ${step === s ? 'active' : step > s ? 'completed' : ''}`}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  {step > s ? <IconCheck size={14} /> : s}
+                </div>
+              ))}
+            </div>
+
+            {/* STEP 1 */}
+            {step === 1 && (
+              <div>
+                <h3 className="wizard-question-title">{t('wizardStep1Title')}</h3>
+                <p className="wizard-question-desc">{t('wizardStep1Desc')}</p>
+
+                <div className="wizard-options-grid">
+                  {[
+                    {
+                      id: 'classical',
+                      icon: <IconScroll size={22} />,
+                      title: 'Ancient Authoritative Text (First Schedule)',
+                      desc: 'Recipe taken directly from Charaka Samhita, Sushruta Samhita, Sahasrayogam, or Bhaishajya Ratnavali.',
+                    },
+                    {
+                      id: 'proprietary',
+                      icon: <IconMicroscope size={22} />,
+                      title: 'Modified / Novel Herbal Blend',
+                      desc: 'Unique combination, novel extract ratio, or new delivery mechanism developed by your R&D team.',
+                    },
+                    {
+                      id: 'nutra',
+                      icon: <IconLeaf size={22} />,
+                      title: 'Functional Dietary Supplement / Food',
+                      desc: 'Herbal beverage, tonic, or dietary pill meant for daily health maintenance (Ayurveda Aahar).',
+                    },
+                  ].map(opt => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      className={`wizard-option-btn ${answers.q1 === opt.id ? 'selected' : ''}`}
+                      onClick={() => handleSelectOption('q1', opt.id)}
+                    >
+                      <span className="option-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {opt.icon}
+                      </span>
+                      <div>
+                        <div className="option-title">{opt.title}</div>
+                        <div className="option-desc">{opt.desc}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    disabled={!answers.q1}
+                    onClick={() => setStep(2)}
+                    style={{ opacity: answers.q1 ? 1 : 0.5, cursor: answers.q1 ? 'pointer' : 'not-allowed' }}
+                  >
+                    Next Step →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 2 */}
+            {step === 2 && (
+              <div>
+                <h3 className="wizard-question-title">Step 2: How is the formulation processed or prepared?</h3>
+                <p className="wizard-question-desc">Select the manufacturing method used for production.</p>
+
+                <div className="wizard-options-grid">
+                  {[
+                    {
+                      id: 'traditional_proc',
+                      icon: <IconFlask size={22} />,
+                      title: 'Traditional Ayurvedic Processing Methods',
+                      desc: 'Standard Kwatha (decoction), Asava-Arishta (fermentation), Bhasma, or Churna preparation.',
+                    },
+                    {
+                      id: 'novel_proc',
+                      icon: <IconMicroscope size={22} />,
+                      title: 'Modern Extraction or Nanotechnology',
+                      desc: 'Supercritical CO2 extraction, targeted liposomal delivery, or standardized marker compound enrichment.',
+                    },
+                  ].map(opt => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      className={`wizard-option-btn ${answers.q2 === opt.id ? 'selected' : ''}`}
+                      onClick={() => handleSelectOption('q2', opt.id)}
+                    >
+                      <span className="option-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {opt.icon}
+                      </span>
+                      <div>
+                        <div className="option-title">{opt.title}</div>
+                        <div className="option-desc">{opt.desc}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' }}>
+                  <button type="button" className="btn-secondary" onClick={() => setStep(1)}>
+                    ← Back
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    disabled={!answers.q2}
+                    onClick={() => setStep(3)}
+                    style={{ opacity: answers.q2 ? 1 : 0.5, cursor: answers.q2 ? 'pointer' : 'not-allowed' }}
+                  >
+                    Next Step →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 3 */}
+            {step === 3 && (
+              <div>
+                <h3 className="wizard-question-title">Step 3: What is the primary intended use and claim?</h3>
+                <p className="wizard-question-desc">Select the marketing and therapeutic positioning of the product.</p>
+
+                <div className="wizard-options-grid">
+                  {[
+                    {
+                      id: 'therapeutic',
+                      icon: <IconShieldCheck size={22} />,
+                      title: 'Specific Disease Treatment or Cure',
+                      desc: 'Claiming clinical cure or management for conditions like Arthritis, Diabetes, or Hypertension.',
+                    },
+                    {
+                      id: 'wellness',
+                      icon: <IconLeaf size={22} />,
+                      title: 'General Immunity & Wellness',
+                      desc: 'Promoting overall vitality, digestion, or stress relief without disease-specific claims.',
+                    },
+                  ].map(opt => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      className={`wizard-option-btn ${answers.q3 === opt.id ? 'selected' : ''}`}
+                      onClick={() => handleSelectOption('q3', opt.id)}
+                    >
+                      <span className="option-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {opt.icon}
+                      </span>
+                      <div>
+                        <div className="option-title">{opt.title}</div>
+                        <div className="option-desc">{opt.desc}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' }}>
+                  <button type="button" className="btn-secondary" onClick={() => setStep(2)}>
+                    ← Back
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    disabled={!answers.q3}
+                    onClick={() => setStep(4)}
+                    style={{ opacity: answers.q3 ? 1 : 0.5, cursor: answers.q3 ? 'pointer' : 'not-allowed' }}
+                  >
+                    Generate IP Assessment →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 4: OUTCOME */}
+            {step === 4 && outcome && (
+              <div className="wizard-outcome-box">
+                <div className={`outcome-badge ${outcome.cls}`}>
+                  {outcome.badge}
+                </div>
+
+                <h3 style={{ fontSize: '1.2rem', color: 'var(--text-primary)', margin: 0 }}>
+                  Classification: {outcome.type}
+                </h3>
+
+                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6 }}>
+                  {outcome.summary}
+                </p>
+
+                <div style={{ background: 'var(--bg-elevated)', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--bg-border)' }}>
+                  <h4 style={{ fontSize: '0.88rem', color: 'var(--primary-light)', marginBottom: '0.5rem' }}>
+                    Recommended IP & Licensing Actions:
+                  </h4>
+                  <ul style={{ paddingLeft: '1.2rem', fontSize: '0.83rem', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    {outcome.legalAction.map((action, idx) => (
+                      <li key={idx}>{action}</li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={() => handleAskChat(outcome.prompt)}
+                  >
+                    {t('askIpSaktiDetailed') || 'Ask Ragvyn AI Detailed Consultation'} →
+                  </button>
+                  <Link
+                    to="/ip-calculator"
+                    className="btn-secondary"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    <IconCalculator size={16} /> Estimate Filing Fees
+                  </Link>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={resetWizard}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    <IconRotate size={16} /> {t('retestFormulation') || 'Retest Formulation'}
+                  </button>
+                  <Link
+                    to="/chat"
+                    className="btn-secondary"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    Return to Chat
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </main>
     </div>
   )
 }
@@ -9627,6 +9986,80 @@ function ProtectedRoute({ children, isLoggedIn }) {
 }
 
 /* ============================================================
+   APP SHELL — Sidebar + Content Layout
+   ============================================================ */
+function AppShell({ children, isLoggedIn, userName, onOpenAbout }) {
+  const location = useLocation()
+  const navigate = useNavigate()
+
+  // Track sidebar collapsed state to offset content (synced with RagvynSidebar)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return false
+    if (window.innerWidth <= 768) return true
+    const saved = localStorage.getItem('ragvyn_nav_collapsed')
+    return saved === 'true'
+  })
+
+  // Listen for sidebar collapse changes (synced via localStorage)
+  useEffect(() => {
+    const handleStorage = (e) => {
+      if (e.key === 'ragvyn_nav_collapsed') {
+        setSidebarCollapsed(e.newValue === 'true')
+      }
+    }
+    window.addEventListener('storage', handleStorage)
+
+    // Also poll for same-tab changes
+    const interval = setInterval(() => {
+      const current = localStorage.getItem('ragvyn_nav_collapsed') === 'true'
+      setSidebarCollapsed(prev => {
+        if (prev !== current) return current
+        return prev
+      })
+    }, 300)
+
+    return () => {
+      window.removeEventListener('storage', handleStorage)
+      clearInterval(interval)
+    }
+  }, [])
+
+  // Hide sidebar on landing page and login page for a cleaner experience
+  const hideSidebar = location.pathname === '/' || location.pathname === '/login' || location.pathname === '/auth/callback'
+  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768
+
+  const handleNewChat = () => {
+    navigate('/chat', { state: { newChat: true } })
+  }
+
+  return (
+    <>
+      {!hideSidebar && (
+        <RagvynSidebar
+          isLoggedIn={isLoggedIn}
+          userName={userName}
+          onNewChat={handleNewChat}
+          activeSessionId={null}
+          onSelectSession={(id) => {
+            navigate('/chat', { state: { loadSessionId: id } })
+          }}
+          onOpenAbout={onOpenAbout}
+        />
+      )}
+      <div
+        className={[
+          'ragvyn-app-content',
+          !hideSidebar && !isMobile && !sidebarCollapsed ? 'ragvyn-app-content--sidebar-expanded' : '',
+          !hideSidebar && !isMobile && sidebarCollapsed ? 'ragvyn-app-content--sidebar-collapsed' : '',
+        ].filter(Boolean).join(' ')}
+      >
+        {children}
+      </div>
+    </>
+  )
+}
+
+/* ============================================================
    MAIN APP ROUTER
    ============================================================ */
 export default function App() {
@@ -9679,7 +10112,12 @@ export default function App() {
           onAskChat={handleAskChatFromWizard}
         />
 
-        <Routes>
+        <AppShell
+          isLoggedIn={isLoggedIn}
+          userName={userName}
+          onOpenAbout={() => setIsAboutOpen(true)}
+        >
+          <Routes>
           <Route
             path="/"
             element={
@@ -9903,8 +10341,28 @@ export default function App() {
               <PricingPage />
             }
           />
+          <Route
+            path="/formulation-wizard"
+            element={
+              <FormulationWizardPage
+                onOpenAbout={() => setIsAboutOpen(true)}
+                onOpenWizard={() => setIsWizardOpen(true)}
+                theme={theme}
+                toggleTheme={toggleTheme}
+                fontSize={fontSize}
+                setFontSize={setFontSize}
+                setPrefillPrompt={setPrefillPrompt}
+              />
+            }
+          />
+          {/* Legacy route redirects */}
+          <Route path="/agent" element={<Navigate to="/formulation-wizard" replace />} />
+          <Route path="/customize" element={<Navigate to="/abs-checker" replace />} />
+          <Route path="/pulse" element={<Navigate to="/ip-calculator" replace />} />
+          <Route path="/gallery" element={<Navigate to="/sources" replace />} />
         </Routes>
-      </BrowserRouter>
-    </LanguageProvider>
-  )
+      </AppShell>
+    </BrowserRouter>
+  </LanguageProvider>
+)
 }
