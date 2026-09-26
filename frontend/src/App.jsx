@@ -303,6 +303,7 @@ const UI_TRANSLATIONS = {
     faqReadIn: 'Read in:',
     moreQuestions: 'Have more questions? Ask RagVyn AI!',
     askIpSakti: 'Ask IP-SAKTI',
+    askRagvynAi: 'Ask RagVyn AI',
 
     // Footer
     footerDesc: 'AI-powered IP guidance for Ayurveda',
@@ -801,6 +802,7 @@ const UI_TRANSLATIONS = {
     faqReadIn: 'इसमें पढ़ें:',
     moreQuestions: 'क्या आपके पास और प्रश्न हैं? RagVyn AI से पूछें!',
     askIpSakti: 'IP-SAKTI से पूछें',
+    askRagvynAi: 'RagVyn AI से पूछें',
 
     // Footer
     footerDesc: 'आयुर्वेद के लिए AI-संचालित IP मार्गदर्शन',
@@ -1920,14 +1922,16 @@ function DemoPreview() {
       </Reveal>
 
       <Reveal delay={250}>
-        <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+        <div className="demo-try-container">
           <Link
             to="/chat"
-            className="btn-primary demo-try-btn"
+            className="demo-try-btn"
+            id="demo-try-it-btn"
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            aria-label={`${t('demoTryIt')} - Open RagVyn AI Chatbot`}
           >
-            {t('demoTryIt')}
-            <IconArrowRight size={17} className="btn-arrow" />
+            <span className="demo-try-text">{t('demoTryIt')}</span>
+            <IconArrowRight size={18} className="btn-arrow" />
           </Link>
         </div>
       </Reveal>
@@ -4133,11 +4137,19 @@ function FAQSection() {
 
       {/* CTA to Chat */}
       <div className="faq-cta">
-        <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+        <p className="faq-cta-prompt">
           {t('moreQuestions')}
         </p>
-        <Link to="/chat" className="btn-primary">
-          {t('askIpSakti')} →
+        <Link
+          to="/chat"
+          className="faq-ask-ragvyn-btn"
+          id="faq-ask-ragvyn-btn"
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          aria-label={`${t('askRagvynAi')} - Open RagVyn AI Chatbot`}
+        >
+          <IconSparkles size={18} className="btn-sparkle" />
+          <span className="faq-ask-ragvyn-text">{t('askRagvynAi')}</span>
+          <IconArrowRight size={18} className="btn-arrow" />
         </Link>
       </div>
     </section>
@@ -7511,9 +7523,9 @@ import {
    Computes key Indian patent deadlines from a filing / priority
    date, with a timeline visualization + urgency alerts.
    ============================================================ */
-function DocumentsPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize }) {
+function DocumentsPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize, isLoggedIn, userName, onLogout }) {
   return (
-    <div className="page-container calc-page">
+    <div style={{ minHeight: '100vh', background: 'var(--doc-bg, #f8fafc)' }}>
       <Navbar
         onOpenAbout={onOpenAbout}
         onOpenWizard={onOpenWizard}
@@ -7521,40 +7533,20 @@ function DocumentsPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize
         toggleTheme={toggleTheme}
         fontSize={fontSize}
         setFontSize={setFontSize}
+        isLoggedIn={isLoggedIn}
+        userName={userName}
+        onLogout={onLogout}
       />
-
-      <header className="page-header">
-        <span
-          className="chip"
-          style={{
-            background: 'var(--color-primary-light, #eaf2ed)',
-            color: 'var(--color-primary, #143D30)',
-            marginBottom: '0.75rem',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-          }}
-        >
-          <IconFileText size={14} /> Document Library
-        </span>
-        <h1 className="page-title">My Documents</h1>
-        <p className="page-subtitle">
-          Upload your own PDFs — case files, prior-art references, notes — to make them
-          searchable inside your AI consultations. Files are parsed, chunked and indexed
-          into a private knowledge collection scoped to your account.
-        </p>
-      </header>
-
       <DocumentUpload />
     </div>
   )
 }
 
-function DraftsPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize }) {
-  const [showIntro, setShowIntro] = useState(true)
+function DraftsPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize, isLoggedIn, userName, onLogout }) {
+  const navigate = useNavigate()
 
   return (
-    <div className="page-container calc-page">
+    <div style={{ minHeight: '100vh', background: 'var(--dg-bg, #f8fafc)' }}>
       <Navbar
         onOpenAbout={onOpenAbout}
         onOpenWizard={onOpenWizard}
@@ -7562,52 +7554,49 @@ function DraftsPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, s
         toggleTheme={toggleTheme}
         fontSize={fontSize}
         setFontSize={setFontSize}
+        isLoggedIn={isLoggedIn}
+        userName={userName}
+        onLogout={onLogout}
       />
+      <DraftGenerator onBack={() => navigate('/')} />
+    </div>
+  )
+}
 
-      {showIntro ? (
-        <ToolIntro
-          config={TOOL_INTRO_CONFIGS['draft-generator']}
-          icon={<IconFileText size={28} />}
-          onStart={() => setShowIntro(false)}
-          backTo="/"
-          backLabel="Back to Portal"
-        />
-      ) : (
-        <>
-          <header className="page-header" style={{ position: 'relative' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '0.75rem' }}>
-              <span
-                className="chip"
-                style={{
-                  background: 'var(--color-primary-light, #eaf2ed)',
-                  color: 'var(--color-primary, #143D30)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                }}
-              >
-                <IconFileText size={14} /> Draft Generation
-              </span>
-              <button
-                type="button"
-                className="tool-guide-return-btn"
-                onClick={() => setShowIntro(true)}
-                title="View tool overview & instructions"
-              >
-                <IconInfo size={14} />
-                <span>Tool Overview & Guide</span>
-              </button>
-            </div>
-            <h1 className="page-title">IP Document Draft Generator</h1>
-            <p className="page-subtitle">
-              Auto-generate a structured draft of a Patent Form-1, an NBA application, or a
-              Section 3(p) opposition petition. Review with a registered patent agent before filing.
-            </p>
-          </header>
+function WorkspacePage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize, isLoggedIn, userName, onLogout }) {
+  return (
+    <div style={{ minHeight: '100vh', background: 'var(--mw-bg, #f8fafc)' }}>
+      <Navbar
+        onOpenAbout={onOpenAbout}
+        onOpenWizard={onOpenWizard}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        fontSize={fontSize}
+        setFontSize={setFontSize}
+        isLoggedIn={isLoggedIn}
+        userName={userName}
+        onLogout={onLogout}
+      />
+      <MatterWorkspace />
+    </div>
+  )
+}
 
-          <DraftGenerator />
-        </>
-      )}
+function ExpertConnectPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize, isLoggedIn, userName, onLogout }) {
+  return (
+    <div style={{ minHeight: '100vh', background: 'var(--ec-bg, #f8fafc)' }}>
+      <Navbar
+        onOpenAbout={onOpenAbout}
+        onOpenWizard={onOpenWizard}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        fontSize={fontSize}
+        setFontSize={setFontSize}
+        isLoggedIn={isLoggedIn}
+        userName={userName}
+        onLogout={onLogout}
+      />
+      <ExpertConnect />
     </div>
   )
 }
@@ -8879,6 +8868,13 @@ function SourcesPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, 
     },
     {
       icon: <IconGlobe size={24} />,
+      name: 'WIPO Patentscope',
+      tag: 'Patent Database',
+      desc: 'WIPO’s global patent search service for published PCT applications and international patent documents.',
+      url: 'https://patentscope.wipo.int/search/en/search.jsf',
+    },
+    {
+      icon: <IconGlobe size={24} />,
       name: 'WIPO GRATK Treaty (2024)',
       tag: 'International Law',
       desc: 'WIPO Treaty on Intellectual Property, Genetic Resources and Associated Traditional Knowledge establishing disclosure rules.',
@@ -9820,164 +9816,199 @@ export default function App() {
                   setFontSize={setFontSize}
                   setPrefillPrompt={setPrefillPrompt}
                 />
-              }
-            />
-            <Route
-              path="/sources"
-              element={
-                <SourcesPage
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/abs-checker"
+            element={
+              <ABSCheckerPage
+                onOpenAbout={() => setIsAboutOpen(true)}
+                onOpenWizard={() => setIsWizardOpen(true)}
+                theme={theme}
+                toggleTheme={toggleTheme}
+                fontSize={fontSize}
+                setFontSize={setFontSize}
+                setPrefillPrompt={setPrefillPrompt}
+              />
+            }
+          />
+          <Route
+            path="/sources"
+            element={
+              <SourcesPage
+                onOpenAbout={() => setIsAboutOpen(true)}
+                onOpenWizard={() => setIsWizardOpen(true)}
+                theme={theme}
+                toggleTheme={toggleTheme}
+                fontSize={fontSize}
+                setFontSize={setFontSize}
+                setPrefillPrompt={setPrefillPrompt}
+              />
+            }
+          />
+          <Route
+            path="/privacy"
+            element={
+              <PrivacyPolicyPage
+                onOpenAbout={() => setIsAboutOpen(true)}
+                onOpenWizard={() => setIsWizardOpen(true)}
+                theme={theme}
+                toggleTheme={toggleTheme}
+                fontSize={fontSize}
+                setFontSize={setFontSize}
+              />
+            }
+          />
+          <Route
+            path="/ip-calculator"
+            element={
+              <IPCostCalculatorPage
+                onOpenAbout={() => setIsAboutOpen(true)}
+                onOpenWizard={() => setIsWizardOpen(true)}
+                theme={theme}
+                toggleTheme={toggleTheme}
+                fontSize={fontSize}
+                setFontSize={setFontSize}
+              />
+            }
+          />
+          <Route
+            path="/deadline-calculator"
+            element={
+              <DeadlineCalculatorPage
+                onOpenAbout={() => setIsAboutOpen(true)}
+                onOpenWizard={() => setIsWizardOpen(true)}
+                theme={theme}
+                toggleTheme={toggleTheme}
+                fontSize={fontSize}
+                setFontSize={setFontSize}
+              />
+            }
+          />
+          <Route
+            path="/drafts"
+            element={
+              <DraftsPage
+                onOpenAbout={() => setIsAboutOpen(true)}
+                onOpenWizard={() => setIsWizardOpen(true)}
+                theme={theme}
+                toggleTheme={toggleTheme}
+                fontSize={fontSize}
+                setFontSize={setFontSize}
+                isLoggedIn={isLoggedIn}
+                userName={userName}
+                onLogout={handleLogout}
+              />
+            }
+          />
+          <Route
+            path="/login"
+            element={
+              <LoginPage
+                theme={theme}
+                toggleTheme={toggleTheme}
+                fontSize={fontSize}
+                setFontSize={setFontSize}
+                onLogin={handleLogin}
+              />
+            }
+          />
+          <Route
+            path="/workspace"
+            element={
+              <ProtectedRoute isLoggedIn={isLoggedIn}>
+                <WorkspacePage
                   onOpenAbout={() => setIsAboutOpen(true)}
                   onOpenWizard={() => setIsWizardOpen(true)}
                   theme={theme}
                   toggleTheme={toggleTheme}
                   fontSize={fontSize}
                   setFontSize={setFontSize}
-                  setPrefillPrompt={setPrefillPrompt}
+                  isLoggedIn={isLoggedIn}
+                  userName={userName}
+                  onLogout={handleLogout}
                 />
-              }
-            />
-            <Route
-              path="/privacy"
-              element={
-                <PrivacyPolicyPage
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/documents"
+            element={
+              <ProtectedRoute isLoggedIn={isLoggedIn}>
+                <DocumentsPage
                   onOpenAbout={() => setIsAboutOpen(true)}
                   onOpenWizard={() => setIsWizardOpen(true)}
                   theme={theme}
                   toggleTheme={toggleTheme}
                   fontSize={fontSize}
                   setFontSize={setFontSize}
+                  isLoggedIn={isLoggedIn}
+                  userName={userName}
+                  onLogout={handleLogout}
                 />
-              }
-            />
-            <Route
-              path="/ip-calculator"
-              element={
-                <IPCostCalculatorPage
-                  onOpenAbout={() => setIsAboutOpen(true)}
-                  onOpenWizard={() => setIsWizardOpen(true)}
-                  theme={theme}
-                  toggleTheme={toggleTheme}
-                  fontSize={fontSize}
-                  setFontSize={setFontSize}
-                />
-              }
-            />
-            <Route
-              path="/deadline-calculator"
-              element={
-                <DeadlineCalculatorPage
-                  onOpenAbout={() => setIsAboutOpen(true)}
-                  onOpenWizard={() => setIsWizardOpen(true)}
-                  theme={theme}
-                  toggleTheme={toggleTheme}
-                  fontSize={fontSize}
-                  setFontSize={setFontSize}
-                />
-              }
-            />
-            <Route
-              path="/drafts"
-              element={
-                <DraftsPage
-                  onOpenAbout={() => setIsAboutOpen(true)}
-                  onOpenWizard={() => setIsWizardOpen(true)}
-                  theme={theme}
-                  toggleTheme={toggleTheme}
-                  fontSize={fontSize}
-                  setFontSize={setFontSize}
-                />
-              }
-            />
-            <Route
-              path="/login"
-              element={
-                <LoginPage
-                  theme={theme}
-                  toggleTheme={toggleTheme}
-                  fontSize={fontSize}
-                  setFontSize={setFontSize}
-                  onLogin={handleLogin}
-                />
-              }
-            />
-            <Route
-              path="/workspace"
-              element={
-                <ProtectedRoute isLoggedIn={isLoggedIn}>
-                  <MatterWorkspace />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/documents"
-              element={
-                <ProtectedRoute isLoggedIn={isLoggedIn}>
-                  <DocumentsPage
-                    onOpenAbout={() => setIsAboutOpen(true)}
-                    onOpenWizard={() => setIsWizardOpen(true)}
-                    theme={theme}
-                    toggleTheme={toggleTheme}
-                    fontSize={fontSize}
-                    setFontSize={setFontSize}
-                  />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/auth/callback"
-              element={
-                <AuthCallbackPage onLogin={handleLogin} />
-              }
-            />
-            <Route
-              path="/patentability"
-              element={
-                <PatentabilityAssessment />
-              }
-            />
-            <Route
-              path="/verdict"
-              element={
-                <VerdictEngine />
-              }
-            />
-            <Route
-              path="/roadmap"
-              element={
-                <IPJourneyRoadmap />
-              }
-            />
-            <Route
-              path="/guardian"
-              element={
-                <DualUseGuardian />
-              }
-            />
-            <Route
-              path="/checklists"
-              element={
-                <IPChecklist />
-              }
-            />
-            <Route
-              path="/experts"
-              element={
-                <ExpertConnect />
-              }
-            />
-            <Route
-              path="/pricing"
-              element={
-                <PricingPage />
-              }
-            />
-            {/* Placeholder routes for future features */}
-            <Route path="/agent" element={<AgentPage />} />
-            <Route path="/customize" element={<CustomizePage />} />
-            <Route path="/pulse" element={<PulsePage />} />
-            <Route path="/gallery" element={<GalleryPage />} />
-          </Routes>
-        </AppShell>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/auth/callback"
+            element={
+              <AuthCallbackPage onLogin={handleLogin} />
+            }
+          />
+          <Route
+            path="/patentability"
+            element={
+              <PatentabilityAssessment />
+            }
+          />
+          <Route
+            path="/verdict"
+            element={
+              <VerdictEngine />
+            }
+          />
+          <Route
+            path="/roadmap"
+            element={
+              <IPJourneyRoadmap />
+            }
+          />
+          <Route
+            path="/guardian"
+            element={
+              <DualUseGuardian />
+            }
+          />
+          <Route
+            path="/checklists"
+            element={
+              <IPChecklist />
+            }
+          />
+          <Route
+            path="/experts"
+            element={
+              <ExpertConnectPage
+                onOpenAbout={() => setIsAboutOpen(true)}
+                onOpenWizard={() => setIsWizardOpen(true)}
+                theme={theme}
+                toggleTheme={toggleTheme}
+                fontSize={fontSize}
+                setFontSize={setFontSize}
+                isLoggedIn={isLoggedIn}
+                userName={userName}
+                onLogout={handleLogout}
+              />
+            }
+          />
+          <Route
+            path="/pricing"
+            element={
+              <PricingPage />
+            }
+          />
+        </Routes>
       </BrowserRouter>
     </LanguageProvider>
   )

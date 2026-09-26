@@ -1,0 +1,467 @@
+Source- https://iclg.com/practice-areas/trade-marks-laws-and-regulations/usa
+USA - Trade Mark Laws and Regulations 2026
+Trade Mark Laws and Regulations 2026 covers common issues in trade mark laws and regulations – including legislation, application, refusal, opposition and registration – in 25 jurisdictions.
+
+Published on:
+
+13/04/2026
+Areas of law covered include
+1
+Relevant Authorities and Legislation
+2
+Application for a Trade Mark
+3
+Absolute Grounds for Refusal
+4
+Relative Grounds for Refusal
+5
+Opposition
+6
+Registration
+7
+Registrable Transactions
+8
+Revocation
+9
+Invalidity
+10
+Trade Mark Enforcement
+11
+Defences to Infringement
+12
+Relief
+13
+Appeal
+14
+Border Control Measures
+15
+Other Related Rights
+16
+Domain Names
+17
+Current Developments
+1. Relevant Authorities and Legislation
+1.1 What is the relevant trade mark authority in your jurisdiction?
+
+The United States Patent and Trademark Office (“USPTO”).
+
+1.2 What is the relevant trade mark legislation in your jurisdiction?
+
+The primary federal trade mark statute is the Lanham Act of 1946, also known as the U.S. Trademark Act, 15 U.S.C. § 1051 et seq.  Trade marks are also governed by state law and common law.
+
+2. Application for a Trade Mark
+2.1 What can be registered as a trade mark?
+
+Any word, name, symbol, or device that distinguishes the goods and/or services of one source from those of others may be registered as a trade mark.  The majority of registered trade marks consist of words or logos, but non-traditional marks are also registrable if they are non-functional and, usually, if they have acquired distinctiveness.  See further information at question 2.7.
+
+2.2 What cannot be registered as a trade mark?
+
+The following are statutorily barred from registration under the Lanham Act without exception:
+
+flag, coat-of-arms, or other insignia of a governmental agency or foreign nation;
+name, portrait, or signature identifying a particular living individual without written consent;
+a mark that so resembles a registered mark, or a mark previously used in the U.S. by another and not abandoned, as to be likely, when used on or in connection with the goods/services of the applicant, to cause confusion, or to cause mistake, or to deceive;
+primarily geographically deceptively misdescriptive marks; and
+functional matter.
+The following marks are statutorily barred from registration on the Principal Register absent acquired distinctiveness, but may be registered on the Supplemental Register, the register of lesser protection:
+
+merely descriptive or deceptively misdescriptive;
+primarily geographically descriptive; and
+primarily merely a surname.
+The USPTO also refuses registration to:
+
+matter that is incapable of functioning as a mark, such as generic terms;
+titles of single artistic works; and
+trade names.
+2.3 What information is needed to register a trade mark?
+
+Minimum filing requirements:
+
+applicant’s name, domicile address, and email address;
+whether the applicant is a natural person or juristic person (if the latter, the legal entity type);
+applicant’s citizenship;
+a clear drawing of the mark;
+identification of goods and/or services; and
+filing fee for at least one class.
+In an application based on use “in commerce”, the dates of first use anywhere and in U.S. commerce must be stated, and at least one specimen showing current use of the mark in the U.S. must be submitted for each class.  The applicant must verify that the mark is in use in the U.S. for all the claimed goods/services as of the filing date.
+
+In an application based on intent to use, home-country registration, or an extension of protection under the Madrid System, the applicant must verify that it has a bona fide intent to use the mark in the U.S. for all the claimed goods/services as of the filing date.
+
+Colour must be specifically claimed by submitting a colour drawing of the mark, a claim that colour is a feature of the mark, and a colour location statement.
+
+For non-English marks, a statement providing the English translation of the words or that the mark has no meaning in English is required.
+
+See question 2.17 for priority claims.
+
+2.4 What is the general procedure for trade mark registration?
+
+The USPTO assigns a serial number to applications that meet the minimum filing requirements (see question 2.3).  About six months later, an examining attorney reviews the application on absolute and relative grounds.  For minor technical or procedural issues, the examining attorney may email or telephone the applicant to resolve the issues by Examiner’s Amendment.  For substantive issues, the examining attorney generally issues an Office action.  For national applications, the response deadline was recently shortened from six to three months, extendible by three months for a US$125 official fee.  For extensions of protection under the Madrid Protocol, the response deadline remains six months.
+
+If no objections are raised or all objections are overcome, the application is approved for publication.  Any party that believes that it may be damaged by registration of the mark has 30 days to oppose or request an extension of time to oppose.  If there are no such filings, applications based on use or home-country registrations, or extensions of protection under the Madrid System, are approved for registration.  Registration certificates issue about two to three months after publication.
+
+For intent-to-use applications, a Notice of Allowance issues about two months after publication.  The applicant then has six months to submit a Statement of Use or request a six-month extension of time to file a Statement of Use.  Five extension requests are permitted.  About two to three months after the Statement of Use is approved, the registration certificate issues.
+
+2.5 How is a trade mark adequately represented?
+
+Words and 2D designs
+
+One clear drawing of the mark must be submitted, whether the mark is in standard characters or a special form, such as stylised and design marks.  If colour is claimed, the drawing must reflect the colour(s); if not, the drawing must be in black and white.
+
+3D marks
+
+The drawing can consist of an illustration or photograph showing a single rendition of the mark in three dimensions, with disclaimed matter delineated in dotted lines.
+
+Non-visual marks
+
+Instead of drawings, detailed descriptions are required.  For sound marks, audio files are submitted to supplement and clarify the description of the mark.  For scent and flavour marks, a specimen that contains the scent or flavour is submitted.
+
+2.6 How are goods and services described?
+
+The U.S. classification system is mostly consistent with the Nice Classification.  U.S. applications usually cannot cover whole class headings because all claimed goods/services must meet the use or bona fide intent-to-use requirement.  Identifications must also meet the USPTO’s specificity requirements.  The USPTO’s Manual of Acceptable Identifications at https://idm-tmng.uspto.gov/id-master-list-public.html provides examples of approved identifications.
+
+2.7 To the extent ‘exotic’ or unusual trade marks can be filed in your jurisdiction, are there any special measures required to file them with the relevant trade mark authority?
+
+The following non-traditional marks may be registered:
+
+product packaging (e.g. Coca-Cola bottle, Reg. 1057884);
+three-dimensional product design (e.g. Hermès Birkin bag, Reg. 3936105);
+repeating patterns (e.g. Burberry plaid, Reg. 3529814);
+single colour or combination of colours (e.g. Tiffany’s robin’s-egg blue, Reg. 2359351);
+sounds (e.g. Tarzan yell, Reg. 2210506);
+scent (e.g. cherry scent for vehicle lubricants, Reg. 2463044);
+texture (e.g. velvet texture on wine bottle, now-cancelled Reg. 3155702);
+motion marks (e.g. 20th Century Fox Films’ floodlights, Reg. 1928424);
+holograms (e.g. hologram on American Express credit cards, Reg. 3045251); and
+design and layout of a store (e.g. Apple store, Reg. 4277914).
+For all the above except product packaging, a showing of acquired distinctiveness is required to achieve registration.  Such a showing may also be required for product packaging that is deemed to lack inherent distinctiveness.
+
+See question 2.11 for further information on showing acquired distinctiveness.
+
+2.8 Is proof of use required for trade mark registrations and/or renewal purposes?
+
+Proof of use is required to register marks when the application is based on use in U.S. commerce or intent to use, but not for applications based on home-country registration or extensions of protection under the Madrid System.  Proof of use is always required to maintain or renew a registration, regardless of the basis of the original application.
+
+2.9 What territories (including dependents, colonies, etc.) are or can be covered by a trade mark in your jurisdiction?
+
+All 50 states, Washington, D.C., Guam, Puerto Rico, American Samoa, and the U.S. Virgin Islands.  No separate application or fee is required.
+
+2.10 Who can own a trade mark in your jurisdiction?
+
+Natural persons and juristic persons such as corporations, partnerships, joint ventures, unions, associations, and any other entities capable of suing and being sued in a court of law.
+
+2.11 Can a trade mark acquire distinctive character through use?
+
+Marks that are not inherently distinctive may be registered by showing acquired distinctiveness.  This showing may be made by a declaration that the mark has been in substantially exclusive and continuous use in U.S. commerce for at least the preceding five years.  If the examiner does not consider a declaration sufficient (e.g. for highly descriptive or non-traditional marks), actual evidence such as nationwide sales and advertising figures, media and third-party commentary, and survey evidence may be required.
+
+2.12 How long on average does registration take?
+
+If there are no or only very minor objections raised, registration issues on average about 12 months after filing.
+
+2.13 What is the average cost of obtaining a trade mark in your jurisdiction?
+
+The filing fee is US$350 per class.  A reasonable budget for a relatively smooth application in one class is about US$3,000 from filing to registration, including USPTO and professional fees.
+
+2.14 Is there more than one route to obtaining a registration in your jurisdiction?
+
+National filings may be based on use or intent to use.  Additionally, applicants may base an application on a foreign registration by claiming a home-country registration basis or through a Madrid extension.  For such applications, use of the mark in the U.S. is not required for registration, but the applicant must state that it has a bona fide intent to use the mark in the U.S. for all the claimed goods/services.
+
+2.15 Is a Power of Attorney needed?
+
+No Power of Attorney is required, but a signed application must be submitted at filing or later as a Voluntary Amendment or in response to an Office action.
+
+2.16 If so, does a Power of Attorney require notarisation and/or legalisation?
+
+This is not applicable.
+
+2.17 How is priority claimed?
+
+In a national application filed within six months of the first-filed foreign application, priority is claimed by selecting a Section 44(d) filing basis and providing the number and date of the foreign application.  No priority document or extra fee is required.
+
+2.18 Does your jurisdiction recognise Collective or Certification marks?
+
+Both Collective and Certification marks are recognised and registrable.
+
+3. Absolute Grounds for Refusal
+3.1 What are the absolute grounds for refusal of registration?
+
+See question 2.2.
+
+3.2 What are the ways to overcome an absolute grounds objection?
+
+The applicant can argue, with appropriate supporting evidence, that the absolute ground is inapplicable.  Refusals on the grounds of descriptiveness, deceptive misdescriptiveness, primarily geographic descriptiveness, or that the mark is primarily merely a surname, may be overcome by showing that the mark has acquired distinctiveness for the claimed goods/services.
+
+3.3 What is the right of appeal from a decision of refusal of registration from the Intellectual Property Office?
+
+Refusals of registration may be appealed to the Trademark Trial and Appeal Board (“TTAB”) of the USPTO.
+
+3.4 What is the route of appeal?
+
+The applicant must file a timely Notice of Appeal with the TTAB followed by a brief within 60 days.  An unfavourable TTAB decision may be appealed to the U.S. Court of Appeals for the Federal Circuit or to a federal district court.  Federal Circuit review is based on the TTAB record; federal district court review is de novo and additional evidence and discovery is possible.  A Federal Circuit decision may be appealed to the U.S. Supreme Court.  A federal district court decision may be appealed to the U.S. Court of Appeals in that Federal Judicial Circuit, and thereafter to the Supreme Court.
+
+4. Relative Grounds for Refusal
+4.1 What are the relative grounds for refusal of registration?
+
+A prior application or registration for a confusingly similar mark for the same or related goods/services.
+
+4.2 Are there ways to overcome a relative grounds objection?
+
+The applicant may argue, with appropriate supporting evidence, that confusion is not likely.  Alternatively, the applicant may submit a co-existence agreement obtained from the owner of the blocking mark.  The agreement should state why the parties believe that confusion is not likely and specify that they will cooperate to take steps to avoid confusion in the unlikely event that confusion arises.
+
+4.3 What is the right of appeal from a decision of refusal of registration from the Intellectual Property Office?
+
+See question 3.3.
+
+4.4 What is the route of appeal?
+
+See question 3.4.
+
+5. Opposition
+5.1 On what grounds can a trade mark be opposed?
+
+Any of the grounds set forth in question 2.2 above, as well as dilution, fraud, lack of use in commerce, and (for intent-to-use applications) lack of a bona fide intention to use the mark in the U.S.
+
+5.2 Who can oppose the registration of a trade mark in your jurisdiction?
+
+Any person who believes that he or she would be damaged by a registration may oppose.  Ownership of a prior registration is the easiest way to satisfy this requirement, but the opposer need not own a registration.
+
+5.3 What is the procedure for opposition?
+
+An opposer has 30 days from publication to file an opposition or request an extension of time.  Total extensions of time cannot exceed 180 days from publication.  A notice of opposition setting forth the bases for opposing must be filed with the TTAB with the required filing fee (currently US$600 per class).  The TTAB then issues a scheduling order giving the applicant 60 days to answer and setting deadlines for discovery and trial.  About six months are allowed for discovery, including document requests, interrogatories, depositions, requests for admissions, and expert reports.  The trial phase of about four months begins after discovery.  During trial, each party may file testimony, usually in the form of written trial declarations of its witnesses, and submit evidence such as website printouts and other evidence.  Each party then submits a trial brief making legal and factual arguments.  Oral argument is also available.  The TTAB’s written decision is usually issued many months later.
+
+6. Registration
+6.1 What happens when a trade mark is granted registration?
+
+When registration is granted, the USPTO automatically sends an electronic certificate of registration to the applicant without payment of further fees.
+
+6.2 From which date following application do an applicant’s trade mark rights commence?
+
+An applicant’s right to oppose a third-party application commences from its filing date or its date of first use of the mark in U.S. commerce, whichever is earlier.  An applicant’s right to sue for infringement commences after registration has issued (but dates back to its filing date) or from its date of first use of the mark in U.S. commerce, whichever is earlier.
+
+6.3 What is the term of a trade mark?
+
+The registration term is 10 years.  A declaration of use (supported by at least one specimen of use for each class), or excusable non-use, must be filed between the fifth and sixth year after registration, or within the six-month grace period after expiration of the sixth year, to keep the registration in force for the remainder of the first 10-year term.
+
+6.4 How is a trade mark renewed?
+
+A declaration of use (supported by at least one specimen of use for each class), or excusable non-use, and a renewal application must be filed within one year before the end of every 10-year period after the registration date, or within the six-month grace period thereafter.
+
+7. Registrable Transactions
+7.1 Can an individual register the assignment of a trade mark?
+
+Trade mark assignments may be recorded with the USPTO by completing the appropriate cover sheet and submitting a copy of the assignment deed.
+
+7.2 Are there different types of assignment?
+
+Both partial assignments for only certain goods/services in a registration, and assignments of entire applications or registrations, are possible, but assignments must be with the goodwill of the assigned mark.  Changes of name of a business and mergers of businesses are also regularly recorded as they affect the chain of title.
+
+Intent-to-use applications may not be assigned in whole or in part before the applicant files a Statement of Use, except to a successor to the applicant’s business, or portion of the business to which the mark pertains, if that business is ongoing and existing.
+
+7.3 Can an individual register the licensing of a trade mark?
+
+Yes, but recordation of a licence is not necessary or customary.
+
+7.4 Are there different types of licence?
+
+The U.S. recognises non-exclusive and exclusive licences, free and royalty-bearing licences, and licences for a term of years or indefinite terms.
+
+7.5 Can a trade mark licensee sue for infringement?
+
+Only an exclusive licensee may sue for infringement, but a non-exclusive licensee may sue for unfair competition.
+
+7.6 Are quality control clauses necessary in a licence?
+
+Licences must include quality control clauses, and the licensee must exercise quality control.  Licences without quality control are “naked” licences, and may result in a finding that the owner has abandoned its rights in the mark.
+
+7.7 Can an individual register a security interest under a trade mark?
+
+Security interests in a trade mark may be recorded with the USPTO by completing the appropriate cover sheet and submitting a copy of the underlying instrument.
+
+7.8 Are there different types of security interest?
+
+Security interests are not differentiated for purposes of recordation with the USPTO.
+
+8. Revocation
+8.1 What are the grounds for revocation of a trade mark?
+
+Cancellation proceedings instituted within five years after registration may be based on any of the grounds listed in question 5.1 above.  For registrations more than five years old, cancellation grounds are limited to: (i) genericness; (ii) functionality; (iii) abandonment; (iv) fraud; (v) a mark that falsely suggests a connection with someone living or dead or with an institution or national symbol; (vi) geographic deceptiveness; (vii) a mark that consists of a flag or coat of arms; or (viii) a mark that consists of the name or signature of a living individual without consent.  Moreover, pursuant to a new cancellation ground created by the Trademark Modernization Act of 2020, a registration that is more than three years old can be cancelled in whole or in part based on a finding that the mark has never been used in U.S. commerce in connection with some or all of the products or services covered by the registration.
+
+8.2 What is the procedure for revocation of a trade mark?
+
+A cancellation petition must be filed with the TTAB with the filing fee (currently US$600 per class).  Cancellation procedures are similar to those described for oppositions in question 5.3 above.
+
+8.3 Who can commence revocation proceedings?
+
+Any person who believes that he or she would be damaged by the continued registration of a mark may file a cancellation.
+
+8.4 What grounds of defence can be raised to a revocation action?
+
+Defences include no likelihood of confusion or dilution, and equitable defences such as laches, acquiescence, equitable estoppel, and unclean hands.
+
+8.5 What is the route of appeal from a decision of revocation?
+
+See question 3.4.
+
+9. Invalidity
+9.1 What are the grounds for invalidity of a trade mark?
+
+See question 8.1.
+
+9.2 What is the procedure for invalidation of a trade mark?
+
+See question 8.2.
+
+9.3 Who can commence invalidation proceedings?
+
+See question 8.3.
+
+9.4 What grounds of defence can be raised to an invalidation action?
+
+See question 8.4.
+
+9.5 What is the route of appeal from a decision of invalidity?
+
+See question 8.5.
+
+10. Trade Mark Enforcement
+10.1 How and before what tribunals can a trade mark be enforced against an infringer?
+
+A civil action under the Lanham Act for trade mark infringement can be brought in federal district court.  State courts have concurrent jurisdiction over such actions, but defendants can remove actions brought in state court to federal court.
+
+10.2 What are the key pre-trial procedural stages and how long does it generally take for proceedings to reach trial from commencement?
+
+Once a plaintiff files a complaint for trade mark infringement in federal district court, generally a four- to eight-month discovery phase begins where the parties can request documents, ask interrogatories, and conduct depositions.  Trial generally commences within 12–15 months after the filing of the complaint, but may be much later if the parties stipulate to extend discovery or engage in summary judgment practice.
+
+10.3 Are (i) preliminary, and (ii) final injunctions available and if so, on what basis in each case?
+
+Both are available.  To obtain a preliminary injunction, a party must show: (1) a likelihood of success on the merits of its claim; (2) that it will suffer irreparable harm in the absence of the injunction; (3) that any hardship on the non-moving party by granting the injunction is outweighed by the hardship on the moving party if the injunction is not granted; and (4) that the public interest is not disserved by the issuance of an injunction.  Once a party prevails at trial, that party can obtain a permanent injunction if it can demonstrate factors (2)–(4) listed above.  There is a rebuttable presumption of irreparable harm when infringement has been shown.
+
+10.4 Can a party be compelled to provide disclosure of relevant documents or materials to its adversary and if so, how?
+
+As part of discovery, a party must produce relevant, non-privileged documents to its adversary, if properly requested.  A party can be compelled to comply by court order.
+
+10.5 Are submissions or evidence presented in writing or orally and is there any potential for cross-examination of witnesses?
+
+During discovery, witness statements can be taken orally by way of a deposition, which is transcribed.  At trial, witnesses are normally required to appear in court and testify orally.  A witness can be cross-examined at both a deposition and at trial.
+
+10.6 Can infringement proceedings be stayed pending resolution of validity in another court or the Intellectual Property Office?
+
+An infringement action in federal court is unlikely to be stayed pending resolution of an opposition or cancellation proceeding before the TTAB.  However, the TTAB routinely stays opposition and cancellation proceedings pending civil actions in federal court involving the same parties and marks.  An infringement action proceeding pending in one court may, in certain circumstances, be stayed pending resolution of another prior-filed infringement action pending before another court if the case involves the same parties and issues.
+
+10.7 After what period is a claim for trade mark infringement time-barred?
+
+The Lanham Act contains no statute of limitations to bring an infringement action.  However, courts apply the most analogous statute of limitation from the state in which the federal court sits to determine whether the plaintiff’s infringement action is possibly time-barred by laches.
+
+10.8 Are there criminal liabilities for trade mark infringement?
+
+Criminal liability can only attach to someone who intentionally produces or traffics in counterfeit goods/services.
+
+10.9 If so, who can pursue a criminal prosecution?
+
+Only the U.S. government can pursue a criminal prosecution.
+
+10.10 What, if any, are the provisions for unauthorised threats of trade mark infringement?
+
+There is no provision for unauthorised threats of trade mark infringement in the Lanham Act.
+
+11. Defences to Infringement
+11.1 What grounds of defence can be raised by way of non-infringement to a claim of trade mark infringement?
+
+Non-infringement defences include: (i) no likelihood of confusion; (ii) abandonment; (iii) genericness; (iv) plaintiff’s mark is descriptive and lacks acquired distinctiveness; (v) plaintiff lacks priority of right in the mark; (vi) fair use (classic and nominative); and (vii) functionality.  Certain of these defences may be precluded if the plaintiff’s trade mark is incontestable.
+
+11.2 What grounds of defence can be raised in addition to non-infringement?
+
+Additional defences include: (i) laches; (ii) acquiescence; (iii) equitable estoppel; (iv) unclean hands; (v) fraud; and (vi) First Amendment protection if the plaintiff’s mark is used by the defendant in connection with news reporting or an artistic work.
+
+12. Relief
+12.1 What remedies are available for trade mark infringement?
+
+Remedies under the Lanham Act include injunctive relief, recovery of defendant’s profits, and recovery of actual damages (with the court having discretion to treble actual damages and enhance profits as circumstances require).  In counterfeiting cases, a plaintiff may elect to recover statutory damages instead of actual damages and profits.
+
+12.2 Are costs recoverable from the losing party and if so, how are they determined and what proportion of the costs can usually be recovered?
+
+A prevailing plaintiff may recover its reasonable costs associated with litigating the action.  However, such costs do not automatically include attorneys’ fees, since a court may award a prevailing party its “reasonable” attorneys’ fees only in “exceptional” cases.  Wilful infringement, bad faith, or other misconduct in litigating the case are typically present when a case is deemed “exceptional”.  If a court finds a case to be “exceptional” and awards fees, it has discretion to determine whether the fees charged to the prevailing party are “reasonable”, and it may award an amount less than the amount requested by the prevailing party.
+
+13. Appeal
+13.1 What is the right of appeal from a first instance judgment and is it only on a point of law?
+
+A losing party can appeal a final judgment of a district court and all underlying adverse rulings to the applicable Court of Appeals.  The losing party on appeal may petition the U.S. Supreme Court to review the case, and the Supreme Court has complete discretion as to whether it wants to review a case.  Interlocutory appeals (i.e. appeals of district court rulings that are not final judgments) are typically not permitted.  However, a district court’s grant or denial of a preliminary injunction is immediately appealable.
+
+13.2 In what circumstances can new evidence be added at the appeal stage?
+
+New evidence cannot be added on appeal.
+
+14. Border Control Measures
+14.1 Is there a mechanism for seizing or preventing the importation of infringing goods or services and if so, how quickly are such measures resolved?
+
+The United States Customs and Border Protection (“CBP”) may detain goods at borders, ports, or airports on suspicion that they are counterfeit (identical marks on identical goods) or infringing (similar marks on similar goods).  Only marks that have been registered on the USPTO’s Principal Register may be recorded with the CBP for such action.  After the CBP detains the goods, it notifies the importer, who has 30 days to deny that the goods are counterfeit or infringing.  Absent a timely denial, the goods are subject to seizure and forfeiture.
+
+After seizure, the CBP must disclose to the trade mark owner the importation date, port of entry, a description of the goods, and the importer and exporter’s names and addresses.  The owner may obtain a sample of the goods and packaging on satisfaction of bond and indemnity requirements, and has 30 days from the seizure notification to consent to the importation of the goods.  Absent consent, the CBP disposes of the goods.
+
+Trade mark owners may also submit allegations of infringing shipments or conduct to the CBP online.  The CBP may then target these activities and refer cases for criminal investigation.
+
+15. Other Related Rights
+15.1 To what extent are unregistered trade mark rights enforceable in your jurisdiction?
+
+Trade mark rights in the U.S. are based on use of the mark in commerce and, thus, unregistered marks are enforceable under Lanham Act Section 43(a) and the common law.
+
+15.2 To what extent does a company name offer protection from use by a third party?
+
+Company names are considered unregistrable “trade names” in the USPTO unless they are also used as trade marks, but may be protected from infringement under Lanham Act Section 43(a) and the common law.  The protection accorded to company names is therefore analogous to that for trade marks generally.
+
+15.3 Are there any other rights that confer IP protection, for instance book title and film title rights?
+
+A single book title, film title, or song title is not protectable as a trade mark unless it has acquired distinctiveness.  However, trade mark rights can be claimed in a television series title or in a series of books and movie titles.
+
+16. Domain Names
+16.1 Who can own a domain name?
+
+Any individual or entity may own a domain name in the U.S.
+
+16.2 How is a domain name registered?
+
+Domain names are registered by applying through an accredited registrar.
+
+16.3 What protection does a domain name afford per se?
+
+Mere ownership of a domain name does not create trade mark rights in the domain name in whole or in part.  However, trade mark rights arise in domain names used as source identifiers.
+
+16.4 What types of country code top-level domain names (ccTLDs) are available in your jurisdiction?
+
+.US is the official ccTLD for the U.S.
+
+16.5 Are there any dispute resolution procedures for ccTLDs in your jurisdiction and if so, who is responsible for these procedures?
+
+There are three different dispute procedures available for .US registrations, each of which can be brought before the Forum: (1) the usDRP, which is similar in many regards to the UDRP procedure; (2) the usRS, which is similar in many regards to the URS procedure; and (3) the usNDP, which is an action that can be brought if the registrant lacks a sufficient nexus to the U.S. to be eligible to register a .US domain name.
+
+17. Current Developments
+17.1 What have been the significant developments in relation to trade marks in the last year?
+
+The USPTO continues to issue orders removing thousands of fraudulent applications filed by persons without the requisite authorisation to represent others before the USPTO.  A database of these orders can be found at https://developer.uspto.gov/tm-decisions/search/administrative
+
+“Deep fakes” continue to be in the news as AI-created images and videos appear daily.  The U.S. Congress has before it the NO FAKES Act, which would protect the voice and visual likeness of all individuals from unauthorised computer-generated recreations from generative AI and other technologies.  This has implications for trade marks, copyright and rights of publicity.  However, no action has been taken on the passage of the Act.
+
+Trade mark scams continue to plague trade mark owners and practitioners.  A scam that involved telephone calls from persons claiming to be from the USPTO, telling trade mark owners that they owe fees, continues.  Trade mark owners are advised not to provide telephone numbers in trade mark filings.
+
+More recently, scams involving an exact duplicate of well-known brands online stores have cropped up, offering drastic price reductions.  The duplicate website does not actually sell any products.  When consumers try to order products and submit their credit card information, they are told the credit card was declined.  But the website now has their credit card information and can use it to buy goods.
+
+The USPTO continues to upgrade its technology, particularly in the TTAB, making filings easier.
+
+17.2 Please list three important judgments in the trade marks and brands sphere that have been issued within the last 18 months.
+
+In a unanimous decision, the U.S. Supreme Court held that a plaintiff’s recovery of the “defendant’s profits” under Lanham Act Section 1117(a) is limited to the profits of the named defendant.  The plaintiff could not recover the profits of corporate affiliates of the named defendant who were not themselves defendants.  Dewberry Grp., Inc. v. Dewberry Eng’rs Inc., 604 U.S. 321, 145 S. Ct. 681, 221 L. Ed. 2d 156 (2025).
+
+Stone Brewing Co. owns the “STONE” trade mark for beer.  Molson Coors rebranded its Keystone Light products as “Stone”, resulting in finding of infringement and a US$56 million trial verdict for Stone Brewing Co.  The Court of Appeals for the Ninth Circuit affirmed.  Stone Brewing Co., LLC v. Molson Coors Beverage Co. USA LLC, No. 23-3142, 2024 WL 5244556 (9th Cir. Dec. 30, 2024).
+
+Lance Hara (a drag queen professionally known Vicky Vox) sued Netflix for false endorsement/trade mark infringement, alleging that an animated likeness of her appeared in the Netflix animated series Q-Force.  The District Court dismissed the case, saying the animated likeness was protected expressive content and not actionable as source-identifying trade mark use.  The Court of Appeals for the Ninth Circuit affirmed.  Hara v. Netflix, Inc., 146 F.4th 872 (9th Cir. 2025).
+
+17.3 Are there any significant developments expected in the next year?
+
+The U.S. 2nd Circuit Court of Appeals heard arguments in the appeal of a jury verdict in the U.S. District Court for the Southern District of New York in Hermès International v. Rothschild, No. 22-cv-384 (JSR) (SDNY February 2, 2023).  The District Court held that a series of non-fungible tokens (“NFTs”) entitled “MetaBirkins” – images of fur-covered handbags that resemble Hermès Birkin bags – were expressive works that could be subject to First Amendment protection.  However, the Court did not dismiss the case.  Instead, it held that a jury trial was necessary to determine whether the MetaBirkins name was artistically relevant to the designs, and whether the title was explicitly misleading as to the source, sponsorship, or affiliation of the NFTs.  The jury found that the MetaBirkins name infringed the Hermès mark and awarded over US$100,000 in damages.
+
+We expect litigation arising from the Supreme Court’s new rules on foreign trade mark infringement in Abitron Austria GmbH v. Hetronic International, Inc.  At least two cases involving the application of Abitron (in addition to the remanded Abitron case itself) are working their way through the Court of Appeals.
+
+Litigation arising from the Supreme Court’s decision in Jack Daniel’s Properties, Inc. v. VIP Products LLC continues, including remand from the Supreme Court in the Jack Daniel’s case itself.  The cases, like the Hara decision above, involve use of trade marks in “expressive works”.
+
+17.4 Are there any general practice or enforcement trends that have become apparent in your jurisdiction over the last year or so?
+
+Emerging technologies continue to present novel trade mark questions.  AI, and in particular generative AI, which produces new content, is an important new technology, raising not just copyright but also trade mark issues.  For example, what if the AI-generated content (text or image) includes a registered trade mark or trade dress without the registrant’s consent?  With so many deep fakes appearing, can and should consumers trust that celebrity endorsers are genuine?  As another example, consumers will soon rely on AI to order groceries.  What if the AI substitutes one brand for another, leading to confusion of the consumer?

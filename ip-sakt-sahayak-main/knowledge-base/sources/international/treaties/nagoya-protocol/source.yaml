@@ -1,0 +1,24 @@
+# Source Package: Nagoya Protocol
+source_id: "nagoya-protocol"
+title: "Nagoya Protocol on Access to Genetic Resources and the Fair and Equitable Sharing of Benefits Arising from their Utilization"
+short_title: "Nagoya Protocol"
+source_type: "treaty"
+jurisdiction: "international"
+issuing_authority: "Convention on Biological Diversity / United Nations Environment Programme"
+country: null  # Multilateral treaty
+language: "en"
+publication_date: "2010-10-29"
+effective_date: "2014-10-12"
+official_url: "https://www.cbd.int/abs/doc/protocol/nagoya-protocol-en.pdf"
+access_date: "2026-09-13"
+checksum_sha256: "cdbd496bd361317d3b7237124177974bebac4cc800cf1974896bc19234cce856"
+status: "current"
+supersedes: null
+superseded_by: null
+verification_status: "pending-review"
+verified_by: null
+verification_date: null
+citation_format: "Nagoya Protocol, Article {article}"
+notes: >
+  Core treaty for Access and Benefit Sharing (ABS). India ratified in 2012.
+  Migrated from corpus/data/raw/international/nagoya_protocol.pdf.

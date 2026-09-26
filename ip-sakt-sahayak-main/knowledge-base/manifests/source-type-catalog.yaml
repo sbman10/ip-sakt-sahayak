@@ -1,0 +1,68 @@
+# Source Type Taxonomy & Verification Requirements Catalog
+
+manifest_version: 1.0.0
+source_types:
+  statute:
+    description: Primary legislative enactment by sovereign parliament or legislative
+      assembly.
+    required_fields:
+    - source_id
+    - title
+    - jurisdiction
+    - issuing_authority
+    - official_url
+    - checksum_sha256
+    verification_requirement: Official Gazette publication copy or official parliamentary/ministry
+      portal copy.
+  rule:
+    description: Subordinate legislation, rules, regulations, or statutory orders
+      made under an Act.
+    required_fields:
+    - source_id
+    - title
+    - jurisdiction
+    - issuing_authority
+    - parent_statute_id
+    - official_url
+    verification_requirement: Official Gazette notification with G.S.R. / S.O. number
+      and gazette date.
+  treaty:
+    description: International agreement, protocol, convention, or multilateral treaty.
+    required_fields:
+    - source_id
+    - title
+    - jurisdiction
+    - issuing_authority
+    - official_url
+    verification_requirement: Official text from UN Treaty Series, WIPO, WTO, or depositary.
+  pharmacopoeial-standard:
+    description: Official pharmacopoeia monograph, formulary, or quality standard.
+    required_fields:
+    - source_id
+    - title
+    - jurisdiction
+    - issuing_authority
+    - edition
+    verification_requirement: Official pharmacopoeia commission publication.
+  registry-record:
+    description: Official administrative registry entry, patent grant, TKDL entry,
+      or ABS approval.
+    required_fields:
+    - source_id
+    - title
+    - jurisdiction
+    - issuing_authority
+    - registry_name
+    - record_id
+    verification_requirement: Official registry entry or patent office journal publication.
+  case-law:
+    description: Judicial decision or tribunal ruling.
+    required_fields:
+    - source_id
+    - title
+    - jurisdiction
+    - court
+    - citation
+    - decision_date
+    - official_url
+    verification_requirement: Certified judgment copy or official court portal record.

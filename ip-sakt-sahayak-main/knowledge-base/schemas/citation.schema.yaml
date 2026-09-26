@@ -1,0 +1,66 @@
+# Citation Schema
+# Defines how derived chunks and extracted text are linked back
+# to their authoritative source document and specific page/section locations.
+
+schema_version: "1.0.0"
+
+fields:
+  source_id:
+    type: string
+    required: true
+    description: "source_id of the authoritative source this citation references."
+
+  version_label:
+    type: string
+    required: true
+    description: "Version label within the source package."
+
+  chunk_id:
+    type: string
+    required: false
+    description: "Identifier of the derived chunk, if applicable."
+
+  page_start:
+    type: integer
+    required: false
+    description: "Starting page number (1-indexed) in the original document."
+
+  page_end:
+    type: integer
+    required: false
+    description: "Ending page number (1-indexed) in the original document."
+
+  section:
+    type: string
+    required: false
+    description: >
+      Section or article reference within the source
+      (e.g., "Section 3(p)", "Article 15", "Rule 158-B").
+
+  paragraph:
+    type: string
+    required: false
+    description: "Paragraph or sub-section reference if applicable."
+
+  text_excerpt:
+    type: string
+    required: false
+    description: "Short excerpt of the cited text (max 500 characters) for verification."
+
+  citation_string:
+    type: string
+    required: false
+    description: >
+      Formatted citation string for display.
+      Example: "Patents Act, 1970, § 3(p), pp. 42-43"
+
+validation_rules:
+  - rule: "traceability"
+    description: >
+      Every derived chunk or extracted text record MUST have a citation
+      linking it back to a valid source_id and version_label.
+    check: "citation.source_id exists in source-catalog.yaml"
+
+  - rule: "page_range_valid"
+    description: "page_end must be >= page_start when both are specified."
+    check: "if citation.page_start and citation.page_end then citation.page_end >= citation.page_start"

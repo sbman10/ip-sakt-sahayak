@@ -1,0 +1,16 @@
+# Version metadata for patents-rules-2003 / 2003-original
+source_id: "patents-rules-2003"
+version_label: "2003-original"
+version_type: "original"
+publication_date: "2003-05-02"
+effective_date: "2003-05-20"
+gazette_reference: null
+amendment_act: null
+changes_summary: null
+original_filename: "patents-rules-2003.pdf"
+checksum_sha256: "42ffa9be3ea6b1b1f7031ceb9456fb60569b3f7ae6cde7ae3136a07f04ffeb3b"
+page_count: null  # Requires human verification
+ocr_required: false
+extraction_method: "pymupdf-text"
+extracted_filename: null  # Text extraction is a derived step
+notes: "Procedural rules under the Patents Act 1970. Multiple amendments since 2003."
