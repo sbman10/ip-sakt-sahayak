@@ -1,18 +1,18 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 const CASE_TYPES = [
   { value: 'patent', label: '⚙️ Patent' },
   { value: 'trademark', label: '™️ Trademark' },
   { value: 'copyright', label: '©️ Copyright' },
-  { value: 'gi', label: '🌿 GI (Geographical Indication)' },
+  { value: 'gi', label: '🌿 Geographical Indication (GI)' },
 ]
 
 const STATUSES = [
   { value: 'draft', label: 'Draft' },
   { value: 'filed', label: 'Filed' },
-  { value: 'examination', label: 'Examination' },
+  { value: 'examination', label: 'Under Examination' },
   { value: 'granted', label: 'Granted' },
-  { value: 'rejected', label: 'Rejected' },
+  { value: 'rejected', label: 'Rejected / Abandoned' },
 ]
 
 function toDateInput(value) {
@@ -20,40 +20,33 @@ function toDateInput(value) {
   try { return new Date(value).toISOString().slice(0, 10) } catch { return '' }
 }
 
-/**
- * Modal to create or edit a matter.
- * Props:
- *   isOpen, onClose, onSubmit(payload), matter (optional, edit mode), saving
- */
-export default function AddMatterModal({ isOpen, onClose, onSubmit, matter = null, saving = false }) {
+function AddMatterModalContent({ onClose, onSubmit, matter, saving, externalError }) {
   const editing = !!matter
   const [form, setForm] = useState({
-    title: '', case_type: 'patent', application_number: '',
-    filing_date: '', status: 'draft', notes: '',
+    title: matter?.title || '',
+    case_type: matter?.case_type || 'patent',
+    application_number: matter?.application_number || '',
+    filing_date: toDateInput(matter?.filing_date),
+    status: matter?.status || 'draft',
+    notes: matter?.notes || '',
   })
   const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
-    if (isOpen) {
-      setError('')
-      setForm({
-        title: matter?.title || '',
-        case_type: matter?.case_type || 'patent',
-        application_number: matter?.application_number || '',
-        filing_date: toDateInput(matter?.filing_date),
-        status: matter?.status || 'draft',
-        notes: matter?.notes || '',
-      })
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose?.()
     }
-  }, [isOpen, matter])
-
-  if (!isOpen) return null
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!form.title.trim()) { setError('Title is required.'); return }
+    if (!form.title.trim()) { setError('Patent / Matter title is required.'); return }
+    setError('')
     const payload = {
       title: form.title.trim(),
       case_type: form.case_type,
@@ -62,47 +55,68 @@ export default function AddMatterModal({ isOpen, onClose, onSubmit, matter = nul
       status: form.status,
       notes: form.notes.trim() || null,
     }
-    onSubmit?.(payload)
+    setSubmitting(true)
+    try {
+      await onSubmit?.(payload)
+    } catch (err) {
+      setError(err?.message || 'Failed to save matter. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
     <div
       onClick={onClose}
       style={{
-        position: 'fixed', inset: 0, zIndex: 1000, display: 'flex',
+        position: 'fixed', inset: 0, zIndex: 1050, display: 'flex',
         alignItems: 'center', justifyContent: 'center', padding: 16,
-        background: 'rgba(2,6,23,0.6)', backdropFilter: 'blur(6px)',
+        background: 'rgba(15, 23, 42, 0.55)', backdropFilter: 'blur(4px)',
+        WebkitBackdropFilter: 'blur(4px)',
       }}
     >
       <form
         onClick={(e) => e.stopPropagation()}
         onSubmit={handleSubmit}
         style={{
-          width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto',
-          background: 'rgba(15,23,42,0.85)', backdropFilter: 'blur(24px)',
-          border: '1px solid rgba(255,255,255,0.14)', borderRadius: 20,
-          padding: 24, boxShadow: '0 24px 70px rgba(0,0,0,0.5)', color: '#e2e8f0',
+          width: '100%', maxWidth: 540, maxHeight: '90vh', overflowY: 'auto',
+          background: 'var(--mw-card-bg, #ffffff)',
+          border: '1px solid var(--mw-card-border, #e2e8f0)',
+          borderRadius: 16, padding: '24px 28px',
+          boxShadow: '0 20px 50px rgba(0,0,0,0.15)',
+          color: 'var(--mw-text-main, #0f172a)',
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
-          <h3 style={{ margin: 0, fontSize: 19, fontWeight: 800 }}>
-            {editing ? 'Edit Matter' : 'New Matter'}
-          </h3>
-          <button type="button" onClick={onClose} style={closeBtn}>✕</button>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: 'var(--mw-text-main, #0f172a)' }}>
+              {editing ? 'Edit Patent Matter' : 'New Patent Matter'}
+            </h3>
+            <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--mw-text-muted, #64748b)' }}>
+              {editing ? 'Update application metadata, status and details.' : 'Create a new patent or IP case to track filings and statutory deadlines.'}
+            </p>
+          </div>
+          <button type="button" onClick={onClose} style={closeBtn} title="Close">✕</button>
         </div>
 
-        <label style={lbl}>Title *</label>
-        <input value={form.title} onChange={set('title')} placeholder="e.g. Ashwagandha Extract Process" style={inp} autoFocus />
+        <label style={lbl}>Patent / Matter Title *</label>
+        <input
+          value={form.title}
+          onChange={set('title')}
+          placeholder="e.g. Optimized Curcumin Extract Nanoparticles"
+          style={inp}
+          autoFocus
+        />
 
         <div style={{ display: 'flex', gap: 12 }}>
           <div style={{ flex: 1 }}>
-            <label style={lbl}>Case Type *</label>
+            <label style={lbl}>IP Category *</label>
             <select value={form.case_type} onChange={set('case_type')} style={inp}>
               {CASE_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
           </div>
           <div style={{ flex: 1 }}>
-            <label style={lbl}>Status</label>
+            <label style={lbl}>Current Status</label>
             <select value={form.status} onChange={set('status')} style={inp}>
               {STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
@@ -112,7 +126,12 @@ export default function AddMatterModal({ isOpen, onClose, onSubmit, matter = nul
         <div style={{ display: 'flex', gap: 12 }}>
           <div style={{ flex: 1 }}>
             <label style={lbl}>Application Number</label>
-            <input value={form.application_number} onChange={set('application_number')} placeholder="Optional" style={inp} />
+            <input
+              value={form.application_number}
+              onChange={set('application_number')}
+              placeholder="e.g. IN202441012345"
+              style={{ ...inp, fontFamily: 'var(--font-mono, monospace)' }}
+            />
           </div>
           <div style={{ flex: 1 }}>
             <label style={lbl}>Filing Date</label>
@@ -120,15 +139,37 @@ export default function AddMatterModal({ isOpen, onClose, onSubmit, matter = nul
           </div>
         </div>
 
-        <label style={lbl}>Notes</label>
-        <textarea value={form.notes} onChange={set('notes')} rows={4} placeholder="Case notes, strategy, references…" style={{ ...inp, resize: 'vertical' }} />
+        <label style={lbl}>Strategy & Case Notes</label>
+        <textarea
+          value={form.notes}
+          onChange={set('notes')}
+          rows={3}
+          placeholder="Prior art references, attorney assignment, Section 3(p) TKDL notes, clinical data status..."
+          style={{ ...inp, resize: 'vertical' }}
+        />
 
-        {error && <div style={{ color: '#f87171', fontSize: 13, marginBottom: 10 }}>{error}</div>}
+        {(error || externalError) && (
+          <div style={{
+            color: '#dc2626',
+            background: '#fee2e2',
+            padding: '8px 12px',
+            borderRadius: 8,
+            fontSize: 13,
+            marginBottom: 12,
+            border: '1px solid #fecaca',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+          }}>
+            <span>⚠️</span>
+            <span>{error || externalError}</span>
+          </div>
+        )}
 
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 16 }}>
           <button type="button" onClick={onClose} style={ghostBtn}>Cancel</button>
-          <button type="submit" disabled={saving} style={primaryBtn}>
-            {saving ? 'Saving…' : editing ? 'Save Changes' : 'Create Matter'}
+          <button type="submit" disabled={saving || submitting} style={primaryBtn}>
+            {(saving || submitting) ? 'Saving…' : editing ? 'Save Changes' : 'Create Matter'}
           </button>
         </div>
       </form>
@@ -136,19 +177,74 @@ export default function AddMatterModal({ isOpen, onClose, onSubmit, matter = nul
   )
 }
 
-const lbl = { display: 'block', fontSize: 12, fontWeight: 600, opacity: 0.8, margin: '12px 0 5px' }
+/**
+ * Modal to create or edit a matter in the patent workspace.
+ * Props:
+ *   isOpen, onClose, onSubmit(payload), matter (optional, edit mode), saving, error
+ */
+export default function AddMatterModal({ isOpen, onClose, onSubmit, matter = null, saving = false, error = '' }) {
+  if (!isOpen) return null
+  return (
+    <AddMatterModalContent
+      onClose={onClose}
+      onSubmit={onSubmit}
+      matter={matter}
+      saving={saving}
+      externalError={error}
+    />
+  )
+}
+
+const lbl = {
+  display: 'block',
+  fontSize: 12,
+  fontWeight: 600,
+  color: 'var(--mw-text-main, #0f172a)',
+  margin: '14px 0 5px',
+}
+
 const inp = {
-  width: '100%', boxSizing: 'border-box', padding: '10px 12px', borderRadius: 10,
-  background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)',
-  color: '#e2e8f0', fontSize: 14, outline: 'none',
+  width: '100%',
+  boxSizing: 'border-box',
+  padding: '9px 12px',
+  borderRadius: 8,
+  background: 'var(--mw-bg, #f8fafc)',
+  border: '1px solid var(--mw-card-border, #e2e8f0)',
+  color: 'var(--mw-text-main, #0f172a)',
+  fontSize: 13,
+  outline: 'none',
+  transition: 'border-color 0.15s ease',
 }
-const closeBtn = { background: 'transparent', border: 'none', color: '#94a3b8', fontSize: 18, cursor: 'pointer' }
+
+const closeBtn = {
+  background: 'transparent',
+  border: 'none',
+  color: 'var(--mw-text-muted, #64748b)',
+  fontSize: 16,
+  cursor: 'pointer',
+  padding: 4,
+  borderRadius: 4,
+}
+
 const ghostBtn = {
-  padding: '10px 18px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.18)',
-  background: 'transparent', color: '#e2e8f0', cursor: 'pointer', fontWeight: 600, fontSize: 14,
+  padding: '9px 18px',
+  borderRadius: 8,
+  border: '1px solid var(--mw-card-border, #e2e8f0)',
+  background: 'transparent',
+  color: 'var(--mw-text-body, #334155)',
+  cursor: 'pointer',
+  fontWeight: 600,
+  fontSize: 13,
 }
+
 const primaryBtn = {
-  padding: '10px 22px', borderRadius: 10, border: 'none', cursor: 'pointer',
-  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff',
-  fontWeight: 700, fontSize: 14,
+  padding: '9px 22px',
+  borderRadius: 8,
+  border: 'none',
+  cursor: 'pointer',
+  background: 'var(--mw-purple, #7c3aed)',
+  color: '#ffffff',
+  fontWeight: 600,
+  fontSize: 13,
+  boxShadow: '0 4px 14px rgba(124, 58, 237, 0.28)',
 }
