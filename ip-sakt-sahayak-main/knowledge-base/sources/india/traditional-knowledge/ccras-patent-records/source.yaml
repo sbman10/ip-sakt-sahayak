@@ -1,0 +1,25 @@
+# Source Package: CCRAS Patent Granted — 28 January 2025
+source_id: "ccras-patent-granted-2025"
+title: "CCRAS Patent Granted — 28 January 2025"
+short_title: "CCRAS Patent Grant"
+source_type: "registry-record"
+jurisdiction: "india"
+issuing_authority: "Central Council for Research in Ayurvedic Sciences (CCRAS)"
+country: "IN"
+language: "en"
+publication_date: "2025-01-28"
+effective_date: "2025-01-28"
+official_url: "https://ccras.nic.in/"
+access_date: "2026-09-13"
+checksum_sha256: "06551681535a409f266968bfcfca2cbc101e52f2a9d2dc0863e6dbd59c70ca06"
+status: "current"
+supersedes: null
+superseded_by: null
+verification_status: "pending-review"
+verified_by: null
+verification_date: null
+citation_format: "CCRAS Patent Grant, {date}"
+notes: >
+  Patent grant record from CCRAS.
+  Official URL needs verification — specific page URL not yet confirmed.
+  Migrated from corpus/data/raw/india/28012025-CCRAS-Patent-Granted.pdf.

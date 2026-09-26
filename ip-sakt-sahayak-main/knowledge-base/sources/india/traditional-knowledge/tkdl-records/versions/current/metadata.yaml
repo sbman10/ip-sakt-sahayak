@@ -1,0 +1,16 @@
+# Version metadata for tkdl-overview / current
+source_id: "tkdl-overview"
+version_label: "current"
+version_type: "original"
+publication_date: null  # Requires human verification
+effective_date: null  # Requires human verification
+gazette_reference: null
+amendment_act: null
+changes_summary: null
+original_filename: "tkdl-overview.pdf"
+checksum_sha256: "393a99688961fb098ba487760bbf72fe2e5d74af298d9c84d7599f4950745bc6"
+page_count: null  # Requires human verification
+ocr_required: false
+extraction_method: "pymupdf-text"
+extracted_filename: null  # Text extraction is a derived step
+notes: "This may be a guidance/overview document rather than an official registry record. Classification as registry-record is provisional pending human verification."

@@ -8864,13 +8864,6 @@ function SourcesPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, 
     },
     {
       icon: <IconGlobe size={24} />,
-      name: 'WIPO Patentscope',
-      tag: 'Patent Database',
-      desc: 'WIPO’s global patent search service for published PCT applications and international patent documents.',
-      url: 'https://patentscope.wipo.int/search/en/search.jsf',
-    },
-    {
-      icon: <IconGlobe size={24} />,
       name: 'WIPO GRATK Treaty (2024)',
       tag: 'International Law',
       desc: 'WIPO Treaty on Intellectual Property, Genetic Resources and Associated Traditional Knowledge establishing disclosure rules.',

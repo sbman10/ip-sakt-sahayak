@@ -1,0 +1,37 @@
+{
+  "id": "/",
+  "name": "IP-SAKTI Sahayak",
+  "short_name": "IP-SAKTI",
+  "description": "Smart Ayurveda IP & Regulatory Assistance Portal - Ministry of AYUSH, Government of India",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0F172A",
+  "theme_color": "#1D4ED8",
+  "orientation": "any",
+  "scope": "/",
+  "lang": "en",
+  "categories": ["government", "legal", "education", "health"],
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Start Consultation",
+      "short_name": "Chat",
+      "description": "Open AI IP consultation",
+      "url": "/chat"
+    },
+    {
+      "name": "ABS Checker",
+      "short_name": "ABS",
+      "description": "Check ABS compliance",
+      "url": "/abs-checker"
+    }
+  ],
+  "prefer_related_applications": false
+}

@@ -1,0 +1,406 @@
+Source- https://iclg.com/practice-areas/trade-marks-laws-and-regulations/india
+India - Trade Mark Laws and Regulations 2026
+Trade Mark Laws and Regulations 2026 covers common issues in trade mark laws and regulations – including legislation, application, refusal, opposition and registration – in 25 jurisdictions.
+
+Published on:
+
+13/04/2026
+Areas of law covered include
+1
+Relevant Authorities and Legislation
+2
+Application for a Trade Mark
+3
+Absolute Grounds for Refusal
+4
+Relative Grounds for Refusal
+5
+Opposition
+6
+Registration
+7
+Registrable Transactions
+8
+Revocation
+9
+Invalidity
+10
+Trade Mark Enforcement
+11
+Defences to Infringement
+12
+Relief
+13
+Appeal
+14
+Border Control Measures
+15
+Other Related Rights
+16
+Domain Names
+17
+Current Developments
+1. Relevant Authorities and Legislation
+1.1 What is the relevant trade mark authority in your jurisdiction?
+
+The relevant authority is the Trade Marks Registry (TMR), which has offices in Mumbai, New Delhi, Kolkata, Chennai, and Ahmedabad.  The TMR functions under the Office of the Controller General of Patents, Designs and Trade Marks (CGPDTM), which works under the aegis of the Department for Promotion of Industry and Internal Trade, Ministry of Commerce and Industry, Government of India.
+
+1.2 What is the relevant trade mark legislation in your jurisdiction?
+
+The relevant pieces of legislation are the Trade Marks Act, 1999 (Act) and the Trade Marks Rules, 2017 (Rules).  In addition, official guidelines issued by CGPDTM and decisions of the court govern certain aspects of trade mark law.
+
+There are also ancillary laws that impact trade marks, such as: the (Indian) Companies Act, 2013 (for company names, which are governed by the Act); the Intellectual Property Rights (Imported Goods) Enforcement Rules, 2007 (under the Indian Customs Act, 1962); the .IN Domain Name Dispute Resolution Policy (INDRP) (for .IN domain disputes); the Emblems and Names (Prevention of Improper Use) Act, 1950; the Code of Civil Procedure, 1908 (governing certain jurisdiction aspects for trade mark disputes with civil remedies); the Commercial Courts Act, 2015 (since all intellectual property disputes are considered commercial disputes); the Bharatiya Nyaya Sanhita (BNS), 2023 (for criminal remedies under the Act); the Arbitration and Conciliation Act, 1996 (for trade mark disputes governed by arbitration clauses); the Information Technology Act, 2000 (for aspects such as intermediary liabilities and immunities in case of trade mark disputes); the Specific Relief Act, 1963; the Drugs and Cosmetics Act, 1940 (covering aspects of misbranded and spurious drugs); and the Central Excise Act, 1944 (for registration of labels, particularly for alcoholic beverages).  India is also signatory to the Paris Convention for the Protection of Industrial Property, 1883 and the World Intellectual Property Organization (WIPO) Protocol Relating to the Madrid Agreement Concerning the International Registration of Marks, 1989 (Madrid Protocol), which governs international registration of trade marks in foreign countries.
+
+2. Application for a Trade Mark
+2.1 What can be registered as a trade mark?
+
+At the outset, under the Act, a trade mark means:
+
+a mark that is capable of being represented graphically, distinguishing the goods/services of one person from those of others; and
+a mark used or proposed to be used in relation to goods or services to indicate a connection in the course of trade between the goods or services and a person having the right, either as proprietor or by way of permitted user, to use the mark.
+The Act protects conventional trade marks (such as device, brand, heading, label, ticket, name, signature, word, letter, numeral, certification marks, and collective marks) as well as non-conventional trade marks (such as shape marks, three-dimensional (3D) marks, sound marks, smell marks, motion marks, packaging, and combinations of colours).  Furthermore, well-known trade marks (including those with cross-border reputation) are protected in India, and it is also possible to request the TMR to include such marks as well-known marks in the TMR records.
+
+2.2 What cannot be registered as a trade mark?
+
+Marks that cannot be registered include those that are devoid of distinctive character, such as descriptive or generic terms (unless they have acquired secondary meaning), marks likely to deceive the public or offend religious sentiments, marks containing scandalous or obscene matter, marks prohibited under the Emblems and Names (Prevention of Improper Use) Act, 1950, functional shapes, words that are the commonly used and accepted names of any single chemical element or compound, international non-proprietary names, and marks identical or similar to earlier or well-known trade marks.  The TMR also maintains a separate list of prohibited marks, which includes marks such as Mahatma Gandhi, UNO, and WIPO.
+
+2.3 What information is needed to register a trade mark?
+
+The required information to register a trade mark includes details of the proprietor (name, address, type – individual, partnership firm, company, government organisation, trust, Hindu undivided family, certification organisation, collective organisation, etc.), a clear representation and description of the mark, colour claim (if any), date of first use or an intent to use claim, class and specification of goods/services, multiple representations in case of 3D or shape marks, priority claim under the Paris Convention (if any) along with a certified copy of the convention country application, and regulations in case of certification or collective marks.  Where a trade mark application is filed on the basis of prior use of the trade mark, a notarised affidavit with supporting documentary evidence is also required.
+
+2.4 What is the general procedure for trade mark registration?
+
+A separate class or a multi-class trade mark application can be filed in relation to goods/services as classified under the Nice Classification, either directly in India or through the Madrid Protocol.
+
+The application is required to set out whether the mark has been used prior to the date of application or is intended to be used.  Priority can also be claimed under the Paris Convention when the application is filed.
+
+Thereafter, the application is examined by the TMR, which will either accept it or raise objections.  After the objections are replied to, the application may be accepted, or a hearing may be fixed to satisfy the objections raised.
+
+In the event of acceptance, the same is advertised in the TMR Journal and is open to opposition.  If there are no oppositions filed, the application proceeds to registration.  A registered trade mark can be cancelled for non-use or on the grounds available for opposition.
+
+A prior availability search on the records of the TMR and in the market (depending on the timelines for launch of the brand) is recommended before adoption of the trade mark.
+
+2.5 How is a trade mark adequately represented?
+
+A trade mark must be represented clearly and precisely so that the subject matter of protection is identifiable from the Register of Trade Marks (Register).  Word marks are filed in plain text, while device or logo marks require a clear graphical reproduction in JPEG format to be filed.  Non-traditional marks such as sound or 3D marks or olfactory marks must be represented in a manner that clearly conveys their distinctive features and are usually filed with a memory stick containing the details, such as the chemical composition of the smell or the sound recording of the sound along with the musical notations.  Recently, the TMR accepted an application for a smell trade mark where the smell was represented graphically by using a scientific model mapping the smell, which the TMR accepted as a “proper graphical representation” of the mark.
+
+2.6 How are goods and services described?
+
+Goods and services must be classified according to the Nice Classification.  The applicant must specify the class number and provide a precise description of the goods or services sought to be covered.  Certain sections of the TMR’s database (including accepted specification of goods and services) also form part of the European Union Intellectual Property Office’s Harmonised Database, which includes the TMclass tool that allows users to search, verify, and classify goods and services for trade mark applications across participating offices, including the TMR.
+
+2.7 To the extent ‘exotic’ or unusual trade marks can be filed in your jurisdiction, are there any special measures required to file them with the relevant trade mark authority?
+
+“Exotic” or unusual trade marks are registrable under the Act and have special filing requirements, such as: sound marks may be represented by musical notation and an audio file; colour and 3D marks require precise graphical depictions and multiple representations; and olfactory marks may be represented through a clear scientific or descriptive representation of the scent (such as in the recent case of a trade mark being filed for rose-fragranced tyres, where the mark was represented by a scientific model that mapped the fragrance).
+
+2.8 Is proof of use required for trade mark registrations and/or renewal purposes?
+
+Where the applicant claims use of the mark prior to the date of application for registration, a notarised affidavit along with supporting evidence of use is required.  However, for renewal, no proof of use is required.  Only if a third party files a non-use action against a registration in the relevant non-use period is the registrant required to respond to such action by filing documentary evidence to prove use.
+
+2.9 What territories (including dependents, colonies, etc.) are or can be covered by a trade mark in your jurisdiction?
+
+A trade mark registered in India generally confers protection throughout the entire territory of India.  However, in certain circumstances, the Registrar of Trade Marks (Registrar) may impose conditions or limitations on a registration, including territorial limitations related to a particular state of India, thereby restricting the statutory rights arising from the registration to specified regions.  These restrictions are often provided for trade marks that are used by different branches of the same family in different territories of India.  Also, in case of marks that are well known in India, despite their lack of use in India, such marks can be protected in India.  Further, the export of goods/services bearing a trade mark from India to other countries also amounts to use of the mark in India.
+
+2.10 Who can own a trade mark in your jurisdiction?
+
+Any person claiming to be the proprietor of a trade mark may apply for registration, irrespective of whether they are a citizen or resident of India or a foreign national or entity.  This includes individuals, companies incorporated in India or abroad, partnership firms, associations of persons (including certifying or collective organisations), government organisations, statutory bodies, associations, and trusts.
+
+2.11 Can a trade mark acquire distinctive character through use?
+
+Yes, it can.  A mark that is otherwise descriptive or non-distinctive may be registered if it has acquired distinctiveness through extensive use prior to the date of application.  Such acquired distinctiveness must be demonstrated through evidence of actual use.
+
+2.12 How long on average does registration take?
+
+The registration process is largely dependent on the workload of the TMR, and the time taken could vary from 10 months to 24 months for a straightforward registration process.  This process could be expedited by paying additional fees.
+
+2.13 What is the average cost of obtaining a trade mark in your jurisdiction?
+
+In addition to the attorney fees, the official filing fee is INR 4,500 per mark per class for individuals, startups, and registered medium and small-scale enterprises, and INR 9,000 for any other applicants.  It is possible to expedite the process, but this entails additional fees.
+
+2.14 Is there more than one route to obtaining a registration in your jurisdiction?
+
+Yes.  A trade mark may be obtained either by filing a national application directly before the TMR or through the Madrid System by designating India in an international application filed with WIPO.  International registrations designating India are examined by the TMR in accordance with the Act and the Rules.
+
+2.15 Is a Power of Attorney needed?
+
+Where an application is filed by a trade mark agent or an advocate on behalf of an applicant, a Power of Attorney in the nature of a Form of Authorisation must be filed.  Such authorisation must be stamped as per the applicable stamp laws in India.
+
+2.16 If so, does a Power of Attorney require notarisation and/or legalisation?
+
+No.  The Power of Attorney does not require notarisation, apostille, or legalisation.  Only stamping is required as per applicable stamp laws.
+
+2.17 How is priority claimed?
+
+Priority may be claimed within six months of the first filing in a Paris Convention country.  The applicant must specify the priority date, country of first filing, and application number when filing in India, and submit a certified copy of the priority document.
+
+2.18 Does your jurisdiction recognise Collective or Certification marks?
+
+Yes.  Indian law recognises both collective marks and certification marks.
+
+3. Absolute Grounds for Refusal
+3.1 What are the absolute grounds for refusal of registration?
+
+Registration may be refused where (i) the mark lacks distinctiveness, (ii) the mark is descriptive, (iii) the mark is customary in trade, (iv) the mark is likely to deceive the public or cause confusion, (v) the mark contains scandalous or obscene matter, (vi) the mark offends religious views, (vii) the mark consists exclusively of marks or indications that may serve in trade to designate the kind, quality, quantity, intended purpose, values, or geographical origin, (viii) the mark’s use is prohibited under the Emblems and Names (Prevention of Improper Use) Act, 1950, or (ix) the shape of the mark is a result of the nature of the goods themselves or is required for functional use.
+
+3.2 What are the ways to overcome an absolute grounds objection?
+
+An applicant may overcome an absolute grounds objection by responding to the examination report/office action wherein the grounds for refusal have been raised by the TMR and demonstrating that the mark is inherently distinctive or not descriptive.  The objection may also be addressed by submitting evidence of acquired distinctiveness through prior use, or by suitably amending the specification of goods or services.
+
+3.3 What is the right of appeal from a decision of refusal of registration from the Intellectual Property Office?
+
+An appeal from a decision of refusal by the Registrar lies with the High Court having jurisdiction.  The appeal must be filed within three months from receipt of the Registrar’s decision.
+
+3.4 What is the route of appeal?
+
+Previously, an appeal from the Registrar’s decision used to lie before the Intellectual Property Appellate Board (IPAB).  However, in 2021, the IPAB was abolished and its powers were transferred to the High Court having jurisdiction.  A further appeal from a Single Judge of the High Court lies with a Division Bench of the same High Court (intra-court appeal or letters patent appeal), and thereafter an appeal may be pursued before the Supreme Court of India by way of special leave petition.
+
+4. Relative Grounds for Refusal
+4.1 What are the relative grounds for refusal of registration?
+
+Registration may be refused where (i) the mark is identical or similar to an earlier trade mark for identical or similar goods or services and is likely to cause confusion, (ii) the mark conflicts with a well-known mark (even for dissimilar goods and/or services), or (iii) the mark’s use would be prevented by prior rights, including passing off or copyright.
+
+4.2 Are there ways to overcome a relative grounds objection?
+
+A relative grounds objection may be overcome by demonstrating that the marks or the respective goods or services are dissimilar and unlikely to cause confusion.  The applicant may also rely on prior use or honest concurrent use or special circumstances.  In appropriate cases, the Registrar may permit coexistence, including where the proprietor of the earlier mark provides consent.  Further, the objection can also be overcome by removing the conflicting goods or services by way of amendment, securing rectification/cancellation of the earlier trade mark by excluding such goods or services of the same description from the specification of the cited earlier mark, or dividing the multi-class application and allowing the part where there are no objections to proceed further.
+
+4.3 What is the right of appeal from a decision of refusal of registration from the Intellectual Property Office?
+
+An appeal from a decision of refusal by the Registrar lies with the High Court having jurisdiction (as mentioned in question 3.4 above).  The appeal must be filed within three months from the date of receipt of the Registrar’s decision.
+
+4.4 What is the route of appeal?
+
+Appeals from decisions of the Registrar are filed before the jurisdictionally competent High Court (as mentioned in question 3.4 above).  A further appeal from a Single Judge of the High Court lies with a Division Bench of the same Court, and thereafter an appeal may be pursued before the Supreme Court of India by way of special leave petition.
+
+5. Opposition
+5.1 On what grounds can a trade mark be opposed?
+
+Oppositions are usually based on absolute or relative grounds, including lack of distinctiveness, descriptiveness, likelihood of confusion with earlier marks, or conflict with prior rights.  Opposition may also be based on prior use, bad faith, or the applicant’s lack of entitlement to claim proprietorship of the mark.
+
+5.2 Who can oppose the registration of a trade mark in your jurisdiction?
+
+Any person with interest may file an opposition to the registration of a trade mark within the prescribed period following publication of the trade mark application in the TMR Journal.
+
+5.3 What is the procedure for opposition?
+
+Following publication of an application in the TMR Journal, any interested person can file a notice of opposition within the statutory period of four months, which is non-extendible.  After filing of the opposition, the TMR serves the opposition to the applicant and, from the date of receipt of such opposition, the applicant must file a counterstatement within two months.  After the TMR has served the counterstatement to the opponent, the opponent is required to either file evidence in support of opposition within two months from the date of receipt of the counterstatement or file a letter relying on the contents of the opposition.  After that, the applicant is required to either file evidence in support of the application or file a letter relying on the contents of the counterstatement within two months from the date of receipt of the evidence or reliance letter from the opponent.  Thereafter, the opponent may file evidence in reply within one month (not a mandatory step), followed by a hearing and the decision of the Registrar.
+
+6. Registration
+6.1 What happens when a trade mark is granted registration?
+
+Subject to the provisions of the Act, upon registration, the trade mark is entered into the Register and an e-certificate of registration is issued.  The registration confers exclusive statutory rights to use the mark in relation to the registered goods or services, and enables the proprietor to enforce statutory rights such as trade mark infringement actions against third parties.  The exclusive right granted in the foregoing is also subject to any conditions or limitations imposed by the Registrar at the time of granting registration.
+
+6.2 From which date following application do an applicant’s trade mark rights commence?
+
+Although registration is granted later, it takes effect from the date of filing of the application.  Accordingly, the proprietor’s statutory rights are deemed to commence from the filing date of the trade mark application with the TMR, after the mark secures registration.
+
+6.3 What is the term of a trade mark?
+
+A trade mark registration in India is valid for 10 years from the date of filing of the application.  It may thereafter be renewed for successive periods of 10 years, each upon payment of the prescribed renewal fee.
+
+6.4 How is a trade mark renewed?
+
+An application for renewal must be filed with the prescribed renewal fee before the expiry of the existing registration.  The maximum grace period for renewal is one year, which can be utilised by paying additional fees.
+
+7. Registrable Transactions
+7.1 Can an individual register the assignment of a trade mark?
+
+Yes.  An individual who becomes entitled to an applied-for or registered trade mark by way of an assignment may apply to have the assignment recorded within the records of the TMR.  The assignee must file the prescribed application with the TMR together with the assignment document and pay the prescribed fees.  Having said that, there are restrictions in case an assignment leads to multiple exclusive rights.  In case of marks that are not applied for registration, the process of recording assignment with the TMR is not possible.
+
+7.2 Are there different types of assignment?
+
+Assignments of trade marks may be made with or without goodwill.  The assignment may also be partial, be limited to certain goods or services within the registration, or relate to the entire registration or application.  Briefly put, where the assignment of a trade mark is without goodwill of the business, it does not take effect unless the assignor has followed the process as laid down in the Act (such as directions from the Registrar and publication of the assignment in local newspapers).
+
+7.3 Can an individual register the licensing of a trade mark?
+
+Yes.  An individual may register the licensing of a trade mark by applying to record the licensee as a “registered user” with the TMR in the prescribed form, supported by the relevant licence agreement and required particulars.  Registered users can file infringement suits on behalf of the licensor (proprietor of the trade mark) under specific conditions; however, permitted users (unregistered licensees) often cannot initiate legal proceedings for infringement.  Recording such licence is not mandatory and such process is only available for registered trade marks.
+
+7.4 Are there different types of licence?
+
+Yes.  Indian law recognises licensing through the concepts of “registered users” and “permitted users”.  A licence may also be structured commercially as exclusive, non-exclusive or sole, depending on the rights granted under the licence agreement.
+
+7.5 Can a trade mark licensee sue for infringement?
+
+A licensee recorded as a registered user in case of a registered trade mark may institute infringement proceedings with the consent of the registered proprietor.
+
+7.6 Are quality control clauses necessary in a licence?
+
+Yes.  Quality control provisions are recommended in trade mark licences to ensure that the proprietor maintains control over the nature and quality of goods or services offered under the licensed mark.  Such control is important to maintain the licensed mark’s distinctiveness.  Having said that, in case of intra-group licensing arrangements, quality control clauses are often lean.
+
+7.7 Can an individual register a security interest under a trade mark?
+
+Yes.  A trade mark may be the subject of a security interest, such as a mortgage, charge or hypothecation.  Although it is recommended for the creditor to record the security interest with the TMR in order to create a constructive notice for the public at large, there is no specific form provided under the Act or the Rules to record such security interest with the TMR.
+
+7.8 Are there different types of security interest?
+
+Yes.  Security interests in trade marks may take various forms under general commercial law, including mortgages, charges, pledges, hypothecations, etc.
+
+8. Revocation
+8.1 What are the grounds for revocation of a trade mark?
+
+A revocation action (referred to as rectifications) can be initiated against a registered trade mark by an aggrieved person either before the TMR or the applicable High Court.  Persons aggrieved are generally persons who are in one way or another aggrieved by the entry made in respect of the registered trade mark.  Unlike an opposition, which can be filed by any person, a revocation petition can only be filed by an aggrieved person and therefore requires a statement of case establishing the reason behind the revocation petition.  Revocations include non-use actions as well as invalidity actions (as they are known in certain jurisdictions).
+
+A revocation petition can be filed on the following grounds: (i) the registered trade mark being registered without sufficient cause; (ii) the registered trade mark wrongly remaining on the Register; (iii) non-use of the registered trade mark; (iv) no bona fide intention to use the registered trade mark at the time of registration and with no use thereafter; (v) the registered trade mark is used in such a way that causes deception or confusion to the public; or (vi) violation of conditions mentioned in the Register.
+
+8.2 What is the procedure for revocation of a trade mark?
+
+An application for revocation may be filed before the Registrar or the jurisdictional High Court in the prescribed form.  The registered proprietor is given an opportunity to file a counterstatement, after which both parties submit evidence by way of affidavit, followed by a hearing and a decision, broadly following a procedure similar to opposition proceedings.
+
+8.3 Who can commence revocation proceedings?
+
+Any person aggrieved by the continued presence of a registered trade mark on the Register may commence revocation or removal proceedings.  Please see our response to question 8.1 above.
+
+8.4 What grounds of defence can be raised to a revocation action?
+
+A registered proprietor may defend a revocation action by demonstrating bona fide use of the mark, or by showing special circumstances that justify non-use.  The proprietor may also challenge the applicant’s standing as a “person aggrieved” or otherwise contest the factual and legal basis of the revocation claim.  Defences to invalidity actions are referred to below.
+
+8.5 What is the route of appeal from a decision of revocation?
+
+If revocation proceedings are decided by the Registrar, an appeal lies with the jurisdictional High Court.  Where the matter is decided by a Single Judge of the High Court, a further appeal lies with a Division Bench of the same Court, and thereafter to the Supreme Court of India by special leave petition.
+
+9. Invalidity
+9.1 What are the grounds for invalidity of a trade mark?
+
+Invalidity broadly arises where a mark is wrongly entered (due to absolute or relative grounds for refusal) or wrongly remains on the Register due to a change in circumstances after registration (see question 8.1).
+
+9.2 What is the procedure for invalidation of a trade mark?
+
+The procedure for invalidation broadly follows the same process described for revocation proceedings (see question 8.2).
+
+9.3 Who can commence invalidation proceedings?
+
+Invalidation proceedings may be commenced by any person aggrieved, similar to revocation proceedings (see question 8.3).
+
+9.4 What grounds of defence can be raised to an invalidation action?
+
+Defences broadly mirror those available in revocation proceedings, including demonstrating validity of the registration or challenging the applicant’s standing (see question 8.4).
+
+9.5 What is the route of appeal from a decision of invalidity?
+
+The route of appeal is the same as described for revocation proceedings (see question 8.5).
+
+10. Trade Mark Enforcement
+10.1 How and before what tribunals can a trade mark be enforced against an infringer?
+
+Trade mark rights can be enforced through civil proceedings before District Courts or High Courts (where there is original jurisdiction of such Courts to entertain trade mark matters, or the damages claim is above a monetary threshold) seeking, among other reliefs, injunctions, damages or account of profits, delivery up and destruction of violating goods, recovery of costs of the proceedings, and any other relief granted by the court.  Further, criminal proceedings can be initiated before Magistrates’ Courts or by complaints filed before police authorities for offences under the Act, and administrative action through customs authorities to prevent importation of infringing goods.
+
+10.2 What are the key pre-trial procedural stages and how long does it generally take for proceedings to reach trial from commencement?
+
+Civil infringement proceedings typically begin with filing of a plaint before the competent court, hearing for interlocutory relief, service of summons, filing of a written statement by the defendant and counterclaim (if any), discovery and inspection of documents, framing of issues, and evidence by affidavit with cross-examination.  While interim relief may be granted earlier, full trials often take several years in practice.  Mediation prior to filing civil suits is also possible.
+
+10.3 Are (i) preliminary, and (ii) final injunctions available and if so, on what basis in each case?
+
+Yes.  Courts may grant interim (preliminary) injunctions where the plaintiff establishes a prima facie case, balance of convenience, and likelihood of irreparable harm.  Final/permanent injunctions may be granted upon successful determination of the suit, permanently restraining the defendant from infringing use of the trade mark.
+
+10.4 Can a party be compelled to provide disclosure of relevant documents or materials to its adversary and if so, how?
+
+Yes.  In civil proceedings, parties may be required to disclose and produce relevant documents through discovery and inspection mechanisms under the Code of Civil Procedure, 1908.  Courts may also direct the production of specific documents or information where necessary for the fair adjudication of the dispute.
+
+10.5 Are submissions or evidence presented in writing or orally and is there any potential for cross-examination of witnesses?
+
+Yes.  Evidence is primarily submitted by way of affidavit, and witnesses may be cross-examined before the court.  Submissions may be made both in writing and orally during hearings.
+
+10.6 Can infringement proceedings be stayed pending resolution of validity in another court or the Intellectual Property Office?
+
+Yes, that is possible.
+
+10.7 After what period is a claim for trade mark infringement time-barred?
+
+A continuing act of trade mark infringement is not barred under the (Indian) Limitation Act, 1963, but delaying in taking action could impact the grant of interlocutory relief pending trial.
+
+10.8 Are there criminal liabilities for trade mark infringement?
+
+Yes, there are criminal liabilities as the Act provides for criminal offences (which are cognisable offences) in cases of falsifying or falsely applying a trade mark, selling or possessing goods bearing such marks (counterfeiting activities), or possessing instruments for their falsification.  These offences attract imprisonment and/or fines, with penalties prescribed under the Act.  The imprisonment might range from six months to three years, with a fine ranging from INR 50,000 to INR 200,000.  There are enhanced penalties for repeat offenders.  Civil and criminal remedies can be pursued simultaneously.
+
+10.9 If so, who can pursue a criminal prosecution?
+
+Criminal prosecution can be initiated by the registered proprietor by filing a complaint with the police or with an appropriate Magistrates’ Court.
+
+10.10 What, if any, are the provisions for unauthorised threats of trade mark infringement?
+
+The law provides protection against unjustified threats of trade mark infringement proceedings.  A person aggrieved by such threats may bring an action before a court seeking a declaration that the threats are unjustified, along with an injunction against their continuance and damages, where appropriate.
+
+11. Defences to Infringement
+11.1 What grounds of defence can be raised by way of non-infringement to a claim of trade mark infringement?
+
+A defendant may raise non-infringement by demonstrating absence of likelihood of confusion, differences between the marks, or dissimilarity of goods or services.  Defences may also include prior use, honest concurrent use, descriptive or non-trade mark manner of use of the registered trade mark, or use consistent with honest commercial practices.  Additionally, defences such as delay and laches, acquiescence, the nature of the goods/services, sophistication of customers, pricing, etc. can also be taken in an infringement suit.
+
+11.2 What grounds of defence can be raised in addition to non-infringement?
+
+In addition to non-infringement, a defendant may challenge the validity of the registered mark by seeking rectification of the registration.  The other defences are detailed above.
+
+12. Relief
+12.1 What remedies are available for trade mark infringement?
+
+Remedies for trade mark infringement include injunctions, thereby restraining further use of the infringing mark, damages or an account of profits, delivery up or destruction of infringing goods and materials, and recovery of litigation costs.  Newer forms of relief such as John Doe actions and Dynamic injunctions are also possible.
+
+12.2 Are costs recoverable from the losing party and if so, how are they determined and what proportion of the costs can usually be recovered?
+
+Yes.  Courts may award costs to the successful party in accordance with the Code of Civil Procedure, 1908, subject to judicial discretion.  The courts have increasingly started awarding realistic or compensatory costs, although the proportion recovered ultimately depends on the facts and conduct of the parties.
+
+13. Appeal
+13.1 What is the right of appeal from a first instance judgment and is it only on a point of law?
+
+A judgment of a District Court is appealable to the High Court as a first appeal.  Where the matter is decided by a Single Judge of the High Court exercising original jurisdiction, an appeal lies with a Division Bench of the same High Court.  A further appeal may be pursued before the Supreme Court of India by way of special leave petition.
+
+13.2 In what circumstances can new evidence be added at the appeal stage?
+
+Additional evidence at the appellate stage may be permitted where the Appellate Court considers it necessary for a just decision, where the evidence could not have been produced despite due diligence, or where the lower court refused to admit material evidence.  Such admission is governed primarily by the Code of Civil Procedure, 1908 and the Evidence Act, 1972.
+
+14. Border Control Measures
+14.1 Is there a mechanism for seizing or preventing the importation of infringing goods or services and if so, how quickly are such measures resolved?
+
+Yes.  Rights holders can seek border enforcement through Indian customs authorities by recording their registered trade marks under the Intellectual Property Rights (Imported Goods) Enforcement Rules, 2007 read with the Customs Act, 1962.  Once recorded, customs authorities can monitor imports and suspend clearance or detain suspected infringing goods, typically requiring prompt confirmation and further action by the rights holder.  This remedy is only possible for imports.
+
+15. Other Related Rights
+15.1 To what extent are unregistered trade mark rights enforceable in your jurisdiction?
+
+Unregistered trade marks are protected in India through the common law action of passing off.
+
+15.2 To what extent does a company name offer protection from use by a third party?
+
+A company name may receive protection where it functions as a trade name identifying the source of goods or services.  The Act and Indian courts recognise that a trade name operates as a trade mark, and its unauthorised use by third parties may be restrained under trade mark infringement or passing-off principles.
+
+15.3 Are there any other rights that confer IP protection, for instance book title and film title rights?
+
+Yes.  Distinctive film titles and titles of books are considered trade marks provided they fulfil the criteria of registrability.  In fact, a significant number of films produced in India have obtained statutory trade mark protection in respect of their titles.
+
+16. Domain Names
+16.1 Who can own a domain name?
+
+Any natural or legal person can register a domain name, subject to compliance with the policies of the relevant domain name registrar and registry, including those administered by the Internet Corporation for Assigned Names and Numbers (ICANN) and the .IN Registry operated by the National Internet Exchange of India (NIXI).
+
+16.2 How is a domain name registered?
+
+Domain names are registered through accredited registrars on a first-come, first-served basis.  Registrations are governed by ICANN policies and by the .IN Registry policies administered by NIXI for Indian country code domain names.
+
+16.3 What protection does a domain name afford per se?
+
+A domain name functions as a business identifier and also receives protection as a trade mark if it is distinctive.  Indian courts have recognised domain names as valuable commercial identifiers capable of protection against deceptive or confusingly similar use.  In Satyam Infoway Ltd. v. Sifynet Solutions Pvt. Ltd. (AIR 2004 SCC 3540), the Supreme Court of India affirmed that domain names are not merely internet addresses but are valuable corporate assets entitled to protection equivalent to trade marks.  Indian courts have also consistently favoured prior users of a brand name in domain disputes.
+
+16.4 What types of country code top-level domain names (ccTLDs) are available in your jurisdiction?
+
+India’s primary country code top-level domain is .in, administered by the .IN Registry under NIXI.  Various second-level domains are available, including .co.in, .org.in, .net.in, .ac.in, and .gov.in, among others.
+
+16.5 Are there any dispute resolution procedures for ccTLDs in your jurisdiction and if so, who is responsible for these procedures?
+
+Yes.  Disputes relating to .in (top- or second-level) domain names are resolved under the INDRP administered by NIXI.  For generic domains, disputes may be resolved under the Uniform Domain Name Dispute Resolution Policy framework administered through ICANN-approved dispute resolution providers.
+
+17. Current Developments
+17.1 What have been the significant developments in relation to trade marks in the last year?
+
+Recent developments include greater judicial focus on online infringement and platform liability, growing jurisprudence on personality rights and deepfakes, and recognition of non-traditional marks such as sound and olfactory marks.  Courts have also continued to strengthen the protection of well-known marks in the digital environment.  In addition, Indian courts have started awarding high-value damages against infringers inclusive of cost of proceedings.
+
+17.2 Please list three important judgments in the trade marks and brands sphere that have been issued within the last 18 months.
+
+The following decisions from the past 18 months have materially shaped Indian trade mark jurisprudence:
+
+India’s first olfactory trade mark: In a landmark decision in November 2025, the TMR accepted for advertisement the country’s first olfactory trade mark, which is a floral fragrance reminiscent of roses as applied to tyres filed by Sumitomo Rubber Industries Ltd.  The order passed by the TMR held that this rose-like scent meets the strict statutory requirements under Section 2(1)(zb) of the Act, especially for distinctiveness and graphical representation.  Given the novel nature of smell marks, the TMR appointed an amicus curiae, who submitted scientific analysis, including a seven-dimensional smell model created by researchers at IIIT Allahabad, to explain how a smell can be graphically represented.  The scientific model maps the rose fragrance onto seven smell dimensions – floral, fruity, woody, nutty, pungent, sweet, and minty – using vector representation.  The TMR found this representation to be clear, precise, self-contained, intelligible, objective, and durable.
+Hermès International v. Macky Lifestyle (P) Ltd. (Delhi High Court, November 2025): In this case, the Court declared the 3D shape of the Hermès Birkin bag as a “well-known trade mark” under Section 2(1)(zg) of the Act, marking a rare judicial recognition of product shape as a well-known mark in India and opening the door for non-traditional trade mark protection.
+Under Armour Inc. v. Anish Agarwal & Anr (Delhi High Court, May 2025): In this case, a Division Bench affirmed the doctrine of initial interest confusion, holding that even momentary or transient confusion at the point of first encounter in an online marketplace constitutes infringement.  The Court also clarified that the anti-dissection rule does not bar courts from identifying the dominant element of a composite mark, providing important guidance for assessing similarity in digital commerce contexts.
+Lacoste v. Crocodile International (Delhi High Court, March 2026): In a landmark ruling concluding a 20-year trade mark battle, the Court upheld a permanent injunction restraining Crocodile International from using a crocodile device mark that infringed Lacoste’s trade mark and copyright, finding their mirror-image logo confusingly similar.  The Court ordered Crocodile International to account for profits earned since 1998, but rejected Lacoste’s passing-off claim for lack of sufficient goodwill evidence in India.
+17.3 Are there any significant developments expected in the next year?
+
+Key developments expected include increased examination and registration of non-traditional marks such as sound, shape, and olfactory marks and related jurisprudence.
+
+17.4 Are there any general practice or enforcement trends that have become apparent in your jurisdiction over the last year or so?
+
+Indian courts have increasingly taken a proactive approach toward digital infringement, including rogue websites and online platforms, which has also led to the grant of Dynamic injunctions in relation to trade marks.  Furthermore, liability assessments now often focus on the degree of digital platform control and response to infringement.

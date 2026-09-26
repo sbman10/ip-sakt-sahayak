@@ -1,0 +1,28 @@
+# Source Package: The Patents Act, 1970
+# Jurisdiction: India | Type: Statute
+
+source_id: "patents-act-1970"
+title: "The Patents Act, 1970"
+short_title: "Patents Act"
+source_type: "statute"
+jurisdiction: "india"
+issuing_authority: "Parliament of India"
+country: "IN"
+language: "en"
+publication_date: "1970-09-19"
+effective_date: "1972-04-20"
+official_url: "https://ipindia.gov.in/writereaddata/Portal/ev/sections/ps-act-1970-11march2015.pdf"
+access_date: "2026-09-13"
+checksum_sha256: "d57084888c69d70b16ed6a52a612363a526994203effa58880a26faaaa6e0678"
+status: "amended"
+supersedes: null
+superseded_by: null
+verification_status: "pending-review"
+verified_by: null
+verification_date: null
+citation_format: "The Patents Act, 1970 (Act No. 39 of 1970), § {section}"
+notes: >
+  Migrated from corpus/data/raw/india/patents_act_1970.pdf.
+  Multiple amendments exist (2002, 2005). The PDF version in this package
+  needs human verification to confirm which consolidated version it represents.
+  Official URL points to the IP India portal.

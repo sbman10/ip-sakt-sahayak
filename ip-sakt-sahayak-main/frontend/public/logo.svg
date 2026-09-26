@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1D4ED8"/>
+      <stop offset="100%" style="stop-color:#1E40AF"/>
+    </linearGradient>
+    <linearGradient id="leafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10B981"/>
+      <stop offset="100%" style="stop-color:#059669"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Shield Background -->
+  <path d="M256 32L64 96v160c0 106 82.7 175.5 192 224 109.3-48.5 192-118 192-224V96L256 32z" 
+        fill="url(#shieldGrad)" opacity="0.15"/>
+  
+  <!-- Shield Border -->
+  <path d="M256 48L80 106v150c0 97.2 75.4 161.8 176 207.8 100.6-46 176-110.6 176-207.8V106L256 48z" 
+        fill="none" stroke="url(#shieldGrad)" stroke-width="12" stroke-linejoin="round"/>
+  
+  <!-- Central Leaf -->
+  <g transform="translate(256, 260)">
+    <!-- Main Leaf Shape -->
+    <path d="M0-120 C60-80 80-20 60 40 C40 80 20 100 0 120 C-20 100 -40 80 -60 40 C-80-20 -60-80 0-120z" 
+          fill="url(#leafGrad)"/>
+    <!-- Leaf Vein -->
+    <path d="M0-100 L0 100" stroke="#fff" stroke-width="3" opacity="0.6"/>
+    <path d="M0-60 L-25-40 M0-60 L25-40" stroke="#fff" stroke-width="2" opacity="0.5"/>
+    <path d="M0-20 L-30 0 M0-20 L30 0" stroke="#fff" stroke-width="2" opacity="0.5"/>
+    <path d="M0 20 L-25 35 M0 20 L25 35" stroke="#fff" stroke-width="2" opacity="0.5"/>
+  </g>
+  
+  <!-- Three Dosha Dots (Vata, Pitta, Kapha) -->
+  <circle cx="180" cy="400" r="16" fill="#F59E0B"/>
+  <circle cx="256" cy="420" r="16" fill="#EF4444"/>
+  <circle cx="332" cy="400" r="16" fill="#3B82F6"/>
+  
+  <!-- IP Text -->
+  <text x="256" y="180" text-anchor="middle" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="#1D4ED8">IP</text>
+</svg>
