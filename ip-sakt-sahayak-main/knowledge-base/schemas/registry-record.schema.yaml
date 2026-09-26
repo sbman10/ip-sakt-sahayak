@@ -1,0 +1,105 @@
+# Registry Record Schema
+# Metadata schema for patent grants, TKDL records, NBA records,
+# WIPO records, and other administrative registry entries.
+
+schema_version: "1.0.0"
+
+fields:
+  source_id:
+    type: string
+    required: true
+    description: "Unique kebab-case identifier."
+
+  record_type:
+    type: string
+    required: true
+    enum:
+      - patent-grant
+      - patent-application
+      - tkdl-entry
+      - nba-approval
+      - nba-guideline
+      - gi-registration
+      - trademark-registration
+      - wipo-record
+      - plant-variety-registration
+    description: "Type of registry record."
+
+  registry_authority:
+    type: string
+    required: true
+    description: >
+      The office or authority maintaining the registry.
+      Examples: "Indian Patent Office", "Controller General of Patents, Designs and Trade Marks",
+      "TKDL", "National Biodiversity Authority", "WIPO".
+
+  jurisdiction:
+    type: string
+    required: true
+    enum:
+      - india
+      - international
+
+  registration_number:
+    type: string
+    required: false
+    description: "Official registration, patent, or application number."
+
+  filing_date:
+    type: date
+    required: false
+    format: "YYYY-MM-DD"
+
+  grant_date:
+    type: date
+    required: false
+    format: "YYYY-MM-DD"
+
+  expiry_date:
+    type: date
+    required: false
+    format: "YYYY-MM-DD"
+
+  applicant:
+    type: string
+    required: false
+    description: "Name of the applicant or registrant."
+
+  title:
+    type: string
+    required: true
+    description: "Title or subject of the registry record."
+
+  classification:
+    type: string
+    required: false
+    description: "IPC, Nice, Locarno, or other classification code."
+
+  official_url:
+    type: string
+    required: true
+    format: uri
+    description: "URL to the official registry entry."
+
+  source_document:
+    type: string
+    required: false
+    description: "Filename of the associated document."
+
+  checksum_sha256:
+    type: string
+    required: false
+    pattern: "^[a-f0-9]{64}$"
+
+  verification_status:
+    type: string
+    required: true
+    enum:
+      - verified
+      - pending-review
+      - incomplete
+      - rejected
+
+  notes:
+    type: string
+    required: false

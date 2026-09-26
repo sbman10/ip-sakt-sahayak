@@ -1,0 +1,101 @@
+# Master Verification Status Manifest
+# Tracks the authoritative validation state of all knowledge-base items.
+
+manifest_version: 1.0.0
+last_updated: '2026-09-14'
+summary:
+  verified: 0
+  pending_review: 9
+  quarantined: 1
+sources:
+- source_id: ccras-patent-granted-2025
+  title: CCRAS Patent Granted — 28 January 2025
+  jurisdiction: india
+  source_type: registry-record
+  status: pending-review
+  verified_by: unverified
+  verified_date: null
+  evidence_notes: Migrated from initial raw corpus; pending authoritative verification.
+- source_id: tkdl-overview
+  title: Traditional Knowledge Digital Library — Overview
+  jurisdiction: india
+  source_type: registry-record
+  status: pending-review
+  verified_by: unverified
+  verified_date: null
+  evidence_notes: Migrated from initial raw corpus; pending authoritative verification.
+- source_id: nba-abs-guidelines
+  title: NBA Guidelines on Access and Benefit Sharing
+  jurisdiction: india
+  source_type: rule
+  status: pending-review
+  verified_by: unverified
+  verified_date: null
+  evidence_notes: Migrated from initial raw corpus; pending authoritative verification.
+- source_id: patents-rules-2003
+  title: The Patents Rules, 2003
+  jurisdiction: india
+  source_type: rule
+  status: pending-review
+  verified_by: unverified
+  verified_date: null
+  evidence_notes: Migrated from initial raw corpus; pending authoritative verification.
+- source_id: biological-diversity-act-2002
+  title: The Biological Diversity Act, 2002
+  jurisdiction: india
+  source_type: statute
+  status: pending-review
+  verified_by: unverified
+  verified_date: null
+  evidence_notes: Migrated from initial raw corpus; pending authoritative verification.
+- source_id: drugs-and-cosmetics-act-1940
+  title: The Drugs and Cosmetics Act, 1940
+  jurisdiction: india
+  source_type: statute
+  status: pending-review
+  verified_by: unverified
+  verified_date: null
+  evidence_notes: Migrated from initial raw corpus; pending authoritative verification.
+- source_id: patents-act-1970
+  title: The Patents Act, 1970
+  jurisdiction: india
+  source_type: statute
+  status: pending-review
+  verified_by: unverified
+  verified_date: null
+  evidence_notes: Migrated from initial raw corpus; pending authoritative verification.
+- source_id: nagoya-protocol
+  title: Nagoya Protocol on Access to Genetic Resources and the Fair and Equitable
+    Sharing of Benefits Arising from their Utilization
+  jurisdiction: international
+  source_type: treaty
+  status: pending-review
+  verified_by: unverified
+  verified_date: null
+  evidence_notes: Migrated from initial raw corpus; pending authoritative verification.
+- source_id: trips-agreement
+  title: Agreement on Trade-Related Aspects of Intellectual Property Rights (TRIPS)
+  jurisdiction: international
+  source_type: treaty
+  status: pending-review
+  verified_by: unverified
+  verified_date: null
+  evidence_notes: Migrated from initial raw corpus; pending authoritative verification.
+quarantined_items:
+- item_name: wipo_patent_basics.pdf
+  location: quarantine/pending-verification/wipo-patent-basics.pdf
+  reason: Educational/guidance publication, not a binding international treaty or
+    standard.
+  status: pending-classification
+- item_name: curated_jsonl_corpus
+  location: quarantine/secondary-material/
+  total_files: 47
+  reason: Authored summaries and FAQs without attached primary gazette/statutory source
+    records.
+  status: secondary-material
+- item_name: incomplete_case_law
+  location: quarantine/incomplete-case-law/
+  total_files: 3
+  reason: Narrative case summaries missing formal docket numbers, court identifiers,
+    and official judgment links.
+  status: incomplete-records

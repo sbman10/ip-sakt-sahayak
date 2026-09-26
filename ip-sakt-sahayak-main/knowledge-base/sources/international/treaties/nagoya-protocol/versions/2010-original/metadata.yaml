@@ -1,0 +1,16 @@
+# Version metadata for nagoya-protocol / 2010-original
+source_id: "nagoya-protocol"
+version_label: "2010-original"
+version_type: "original"
+publication_date: "2010-10-29"
+effective_date: "2014-10-12"
+gazette_reference: null
+amendment_act: null
+changes_summary: null
+original_filename: "nagoya-protocol.pdf"
+checksum_sha256: "cdbd496bd361317d3b7237124177974bebac4cc800cf1974896bc19234cce856"
+page_count: null  # Requires human verification
+ocr_required: false
+extraction_method: "pymupdf-text"
+extracted_filename: null  # Text extraction is a derived step
+notes: "Core treaty for Access and Benefit Sharing (ABS). India ratified in 2012."

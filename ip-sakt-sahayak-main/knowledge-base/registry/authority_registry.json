@@ -1,0 +1,118 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2026-09-21",
+  "authorities": [
+    {
+      "id": "parliament-of-india",
+      "name": "Parliament of India",
+      "short_name": "Parliament of India",
+      "jurisdiction": "India",
+      "type": "legislature",
+      "mandate": "Supreme legislative body of the Republic of India; enacts primary statutory acts including The Patents Act, 1970, The Biological Diversity Act, 2002, The Drugs and Cosmetics Act, 1940, and The Drugs and Magic Remedies Act, 1954.",
+      "website": "https://sansad.in"
+    },
+    {
+      "id": "cgpdtm-ipo",
+      "name": "Office of the Controller General of Patents, Designs and Trade Marks (IP India)",
+      "short_name": "CGPDTM / IP India",
+      "jurisdiction": "India",
+      "type": "statutory-regulator",
+      "parent_ministry": "Department for Promotion of Industry and Internal Trade (DPIIT), Ministry of Commerce and Industry",
+      "mandate": "Administers patent administration, trademark registration, designs, and geographical indications across India; promulgates procedural statutory rules and guidelines including The Patents Rules, 2003.",
+      "website": "https://ipindia.gov.in"
+    },
+    {
+      "id": "ministry-of-ayush",
+      "name": "Ministry of Ayush, Government of India",
+      "short_name": "Ministry of Ayush",
+      "jurisdiction": "India",
+      "type": "executive-ministry",
+      "mandate": "Nodal Union Ministry developing education, research, quality standards, and intellectual property protection for traditional systems of medicine (Ayurveda, Yoga & Naturopathy, Unani, Siddha, and Homoeopathy).",
+      "website": "https://ayush.gov.in"
+    },
+    {
+      "id": "nba-india",
+      "name": "National Biodiversity Authority",
+      "short_name": "NBA",
+      "jurisdiction": "India",
+      "type": "statutory-authority",
+      "parent_ministry": "Ministry of Environment, Forest and Climate Change (MoEFCC)",
+      "mandate": "Autonomous statutory body implementing the Biological Diversity Act, 2002; regulates access to biological resources, advises Union and State governments on conservation and sustainable use, and grants approvals for IP rights and Access and Benefit Sharing (ABS).",
+      "website": "http://nbaindia.org"
+    },
+    {
+      "id": "fssai",
+      "name": "Food Safety and Standards Authority of India",
+      "short_name": "FSSAI",
+      "jurisdiction": "India",
+      "type": "statutory-authority",
+      "parent_ministry": "Ministry of Health and Family Welfare (MoHFW)",
+      "mandate": "Autonomous statutory authority under the Food Safety and Standards Act, 2006; regulates food product standards, Ayurveda Aahara regulations, health supplements, labeling, display, packaging, and advertising claims.",
+      "website": "https://www.fssai.gov.in"
+    },
+    {
+      "id": "mohfw",
+      "name": "Ministry of Health and Family Welfare, Government of India",
+      "short_name": "MoHFW",
+      "jurisdiction": "India",
+      "type": "executive-ministry",
+      "mandate": "Union Ministry responsible for national health policy, Central Drugs Standard Control Organisation (CDSCO), drug safety, cosmetics rules, and pharmacopoeial standards under the Drugs and Cosmetics Act, 1940.",
+      "website": "https://mohfw.gov.in"
+    },
+    {
+      "id": "csir",
+      "name": "Council of Scientific and Industrial Research",
+      "short_name": "CSIR",
+      "jurisdiction": "India",
+      "type": "autonomous-research-body",
+      "mandate": "India's premier industrial R&D organization; co-developed and manages the Traditional Knowledge Digital Library (TKDL) database with the Ministry of Ayush for defensive IP protection worldwide.",
+      "website": "https://www.csir.res.in"
+    },
+    {
+      "id": "ccras",
+      "name": "Central Council for Research in Ayurvedic Sciences",
+      "short_name": "CCRAS",
+      "jurisdiction": "India",
+      "type": "autonomous-research-council",
+      "parent_ministry": "Ministry of Ayush",
+      "mandate": "Apex autonomous body for formulation, coordination, and development of scientific research in Ayurveda; holds patents for validated traditional Ayurvedic medical formulations and processes.",
+      "website": "http://ccras.nic.in"
+    },
+    {
+      "id": "wto",
+      "name": "World Trade Organization",
+      "short_name": "WTO",
+      "jurisdiction": "International",
+      "type": "intergovernmental-organization",
+      "mandate": "Multilateral international organization dealing with the global rules of trade between nations; administers the Agreement on Trade-Related Aspects of Intellectual Property Rights (TRIPS) and Doha Declaration.",
+      "website": "https://www.wto.org"
+    },
+    {
+      "id": "wipo",
+      "name": "World Intellectual Property Organization",
+      "short_name": "WIPO",
+      "jurisdiction": "International",
+      "type": "specialized-un-agency",
+      "mandate": "Specialized UN agency serving as the global forum for intellectual property services, policy, and cooperation; administers international treaties including the PCT, Madrid, Lisbon systems, and the WIPO GRATK Treaty (2024).",
+      "website": "https://www.wipo.int"
+    },
+    {
+      "id": "unep-cbd",
+      "name": "Secretariat of the Convention on Biological Diversity (UNEP/CBD)",
+      "short_name": "CBD Secretariat",
+      "jurisdiction": "International",
+      "type": "treaty-secretariat",
+      "mandate": "Administers the multilateral treaty framework of the Convention on Biological Diversity (1992) and the Nagoya Protocol on Access and Benefit-Sharing (2010).",
+      "website": "https://www.cbd.int"
+    },
+    {
+      "id": "uspto",
+      "name": "United States Patent and Trademark Office / US Congress",
+      "short_name": "USPTO",
+      "jurisdiction": "International",
+      "type": "foreign-national-authority",
+      "mandate": "Federal agency of the United States Department of Commerce administering patent and trademark laws (The Lanham Act, 15 U.S.C.).",
+      "website": "https://www.uspto.gov"
+    }
+  ]
+}

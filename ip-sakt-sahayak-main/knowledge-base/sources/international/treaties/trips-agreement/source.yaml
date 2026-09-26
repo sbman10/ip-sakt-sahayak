@@ -1,0 +1,24 @@
+# Source Package: TRIPS Agreement
+source_id: "trips-agreement"
+title: "Agreement on Trade-Related Aspects of Intellectual Property Rights (TRIPS)"
+short_title: "TRIPS Agreement"
+source_type: "treaty"
+jurisdiction: "international"
+issuing_authority: "World Trade Organization (WTO)"
+country: null  # Multilateral treaty
+language: "en"
+publication_date: "1994-04-15"
+effective_date: "1995-01-01"
+official_url: "https://www.wto.org/english/docs_e/legal_e/27-trips_01_e.htm"
+access_date: "2026-09-13"
+checksum_sha256: "baa5beb7dda530e57dcf126779e4a0a53571460e19ed72a8aeb6e90500af5540"
+status: "current"
+supersedes: null
+superseded_by: null
+verification_status: "pending-review"
+verified_by: null
+verification_date: null
+citation_format: "TRIPS Agreement, Article {article}"
+notes: >
+  WTO agreement on minimum IP protection standards. India fully compliant since 2005.
+  Migrated from corpus/data/raw/international/trips_agreement.pdf.
