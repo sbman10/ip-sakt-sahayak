@@ -1,0 +1,713 @@
+/* ============================================================
+   RAGVYN Sidebar — Blue Eureka-Style Navigation
+   ============================================================
+   BEM naming: .ragvyn-sidebar__*
+   Uses project design tokens where applicable.
+   Self-contained — does not override existing .chat-sidebar styles.
+   ============================================================ */
+
+/* ---------- CSS Variables (RAGVYN blue theme) ---------- */
+.ragvyn-sidebar {
+  --rs-bg: #1a5cff;
+  --rs-bg-dark: #1249d6;
+  --rs-bg-hover: rgba(255, 255, 255, 0.12);
+  --rs-bg-active: rgba(255, 255, 255, 0.20);
+  --rs-text: rgba(255, 255, 255, 0.92);
+  --rs-text-muted: rgba(255, 255, 255, 0.55);
+  --rs-text-heading: rgba(255, 255, 255, 0.50);
+  --rs-border: rgba(255, 255, 255, 0.10);
+  --rs-width-expanded: 260px;
+  --rs-width-collapsed: 64px;
+  --rs-transition: 220ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ---------- Base Sidebar ---------- */
+.ragvyn-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  background: var(--rs-bg);
+  color: var(--rs-text);
+  overflow: hidden;
+  transition: width var(--rs-transition);
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+.ragvyn-sidebar--expanded {
+  width: var(--rs-width-expanded);
+}
+
+.ragvyn-sidebar--collapsed {
+  width: var(--rs-width-collapsed);
+}
+
+/* ---------- Header ---------- */
+.ragvyn-sidebar__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 12px 12px;
+  min-height: 56px;
+  flex-shrink: 0;
+}
+
+.ragvyn-sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.ragvyn-sidebar__logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.ragvyn-sidebar__brand-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ragvyn-sidebar__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--rs-text);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 150ms;
+}
+
+.ragvyn-sidebar__toggle:hover {
+  background: var(--rs-bg-hover);
+}
+
+.ragvyn-sidebar__toggle:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: -2px;
+}
+
+/* Collapsed: center the brand logo */
+.ragvyn-sidebar--collapsed .ragvyn-sidebar__header {
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 8px 10px;
+  align-items: center;
+}
+
+.ragvyn-sidebar--collapsed .ragvyn-sidebar__brand {
+  justify-content: center;
+}
+
+/* ---------- Navigation ---------- */
+.ragvyn-sidebar__nav {
+  padding: 4px 10px;
+  flex-shrink: 0;
+}
+
+.ragvyn-sidebar__nav-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ragvyn-sidebar__nav-item {
+  display: flex;
+}
+
+.ragvyn-sidebar__nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--rs-text);
+  cursor: pointer;
+  font-size: 0.92rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 150ms, color 150ms;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  position: relative;
+  font-family: inherit;
+}
+
+.ragvyn-sidebar__nav-btn:hover {
+  background: var(--rs-bg-hover);
+}
+
+.ragvyn-sidebar__nav-btn--active {
+  background: var(--rs-bg-active);
+  font-weight: 600;
+}
+
+.ragvyn-sidebar__nav-btn:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: -2px;
+}
+
+.ragvyn-sidebar__nav-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+}
+
+.ragvyn-sidebar__nav-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Collapsed: center icons */
+.ragvyn-sidebar--collapsed .ragvyn-sidebar__nav {
+  padding: 4px 6px;
+}
+
+.ragvyn-sidebar--collapsed .ragvyn-sidebar__nav-btn {
+  justify-content: center;
+  padding: 10px 8px;
+}
+
+/* ---------- Search Panel ---------- */
+.ragvyn-sidebar__search-panel {
+  padding: 6px 12px 8px;
+  flex-shrink: 0;
+}
+
+.ragvyn-sidebar__search-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 0.85rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 150ms, background 150ms;
+  box-sizing: border-box;
+}
+
+.ragvyn-sidebar__search-input::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.ragvyn-sidebar__search-input:focus {
+  border-color: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.14);
+}
+
+/* ---------- Recents ---------- */
+.ragvyn-sidebar__recents {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 4px 0 0;
+  overflow: hidden;
+}
+
+.ragvyn-sidebar__recents-heading {
+  padding: 10px 22px 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--rs-text-heading);
+  flex-shrink: 0;
+}
+
+.ragvyn-sidebar__recents-list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 10px 8px;
+}
+
+/* Subtle scrollbar for recents */
+.ragvyn-sidebar__recents-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.ragvyn-sidebar__recents-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ragvyn-sidebar__recents-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 4px;
+}
+
+.ragvyn-sidebar__recents-empty {
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  color: var(--rs-text-muted);
+}
+
+.ragvyn-sidebar__recent-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--rs-text);
+  cursor: pointer;
+  font-size: 0.84rem;
+  font-family: inherit;
+  text-align: left;
+  transition: background 150ms;
+  margin-bottom: 1px;
+}
+
+.ragvyn-sidebar__recent-item:hover {
+  background: var(--rs-bg-hover);
+}
+
+.ragvyn-sidebar__recent-item--active {
+  background: var(--rs-bg-active);
+  font-weight: 600;
+}
+
+.ragvyn-sidebar__recent-item:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: -2px;
+}
+
+.ragvyn-sidebar__recent-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  opacity: 0.65;
+}
+
+.ragvyn-sidebar__recent-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* ---------- Collapsed Recents (icon mode) ---------- */
+.ragvyn-sidebar__recents-collapsed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 0 4px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.ragvyn-sidebar__recents-heading-collapsed {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 0 6px;
+  color: var(--rs-text-heading);
+}
+
+.ragvyn-sidebar__recent-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--rs-text);
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 600;
+  transition: background 150ms;
+  position: relative;
+  font-family: inherit;
+}
+
+.ragvyn-sidebar__recent-dot:hover {
+  background: var(--rs-bg-hover);
+}
+
+.ragvyn-sidebar__recent-dot--active {
+  background: var(--rs-bg-active);
+}
+
+.ragvyn-sidebar__recent-dot:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: -2px;
+}
+
+.ragvyn-sidebar__recent-dot-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---------- Spacer ---------- */
+.ragvyn-sidebar__spacer {
+  flex: 1;
+  min-height: 8px;
+}
+
+/* (When recents is shown, spacer is hidden because recents has flex:1) */
+.ragvyn-sidebar--expanded .ragvyn-sidebar__spacer {
+  flex: 0;
+  min-height: 0;
+}
+
+/* ---------- Bottom Section ---------- */
+.ragvyn-sidebar__bottom {
+  padding: 8px 10px 14px;
+  flex-shrink: 0;
+  border-top: 1px solid var(--rs-border);
+}
+
+.ragvyn-sidebar__upgrade-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 180ms;
+  margin-bottom: 10px;
+  font-family: inherit;
+}
+
+.ragvyn-sidebar__upgrade-btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.ragvyn-sidebar__upgrade-btn:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: -2px;
+}
+
+/* Collapsed: icon-only upgrade */
+.ragvyn-sidebar--collapsed .ragvyn-sidebar__upgrade-btn {
+  padding: 10px;
+}
+
+/* ---------- Bottom Row ---------- */
+.ragvyn-sidebar__bottom-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ragvyn-sidebar__user-avatar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.ragvyn-sidebar__avatar-circle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #0fa68e;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+.ragvyn-sidebar__user-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.ragvyn-sidebar__user-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ragvyn-sidebar__user-role {
+  font-size: 0.7rem;
+  color: var(--rs-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ragvyn-sidebar__bottom-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--rs-text);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 150ms;
+  text-decoration: none;
+  font-family: inherit;
+  font-size: 0.82rem;
+}
+
+.ragvyn-sidebar__bottom-icon-btn:hover {
+  background: var(--rs-bg-hover);
+}
+
+.ragvyn-sidebar__bottom-icon-btn:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: -2px;
+}
+
+/* Sign-in expanded mode */
+.ragvyn-sidebar--expanded .ragvyn-sidebar__bottom-icon-btn {
+  width: auto;
+  padding: 6px 8px;
+}
+
+/* Collapsed bottom row */
+.ragvyn-sidebar--collapsed .ragvyn-sidebar__bottom-row {
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.ragvyn-sidebar--collapsed .ragvyn-sidebar__bottom {
+  padding: 8px 6px 14px;
+}
+
+/* ---------- Mobile Trigger ---------- */
+.ragvyn-sidebar-mobile-trigger {
+  display: none;
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 1090;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 10px;
+  background: var(--rs-bg, #1a5cff);
+  color: #fff;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
+  transition: background 150ms;
+}
+
+.ragvyn-sidebar-mobile-trigger:hover {
+  background: var(--rs-bg-dark, #1249d6);
+}
+
+.ragvyn-sidebar-mobile-trigger:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: 2px;
+}
+
+/* ---------- Mobile Backdrop ---------- */
+.ragvyn-sidebar-backdrop {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1099;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+}
+
+/* ---------- Content offset ---------- */
+/* Push main content right when sidebar is visible (desktop/tablet) */
+.ragvyn-app-content {
+  transition: margin-left var(--rs-transition, 220ms cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+.ragvyn-app-content--sidebar-expanded {
+  margin-left: var(--rs-width-expanded, 260px);
+}
+
+.ragvyn-app-content--sidebar-collapsed {
+  margin-left: var(--rs-width-collapsed, 64px);
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+/* Tablet (769px – 1024px) */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .ragvyn-sidebar--expanded {
+    width: var(--rs-width-expanded);
+  }
+
+  .ragvyn-sidebar--collapsed {
+    width: var(--rs-width-collapsed);
+  }
+}
+
+/* Mobile (<=768px) */
+@media (max-width: 768px) {
+  .ragvyn-sidebar-mobile-trigger {
+    display: flex;
+  }
+
+  .ragvyn-sidebar-backdrop {
+    display: block;
+  }
+
+  .ragvyn-sidebar--mobile-hidden {
+    width: 0;
+    transform: translateX(-100%);
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .ragvyn-sidebar--mobile-open {
+    width: 280px;
+    transform: translateX(0);
+    visibility: visible;
+    pointer-events: auto;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25);
+  }
+
+  /* On mobile, no margin offset — sidebar is an overlay */
+  .ragvyn-app-content--sidebar-expanded,
+  .ragvyn-app-content--sidebar-collapsed {
+    margin-left: 0;
+  }
+}
+
+/* ============================================================
+   PLACEHOLDER PAGES (Agent, Customize, Pulse, Gallery)
+   ============================================================ */
+.ragvyn-placeholder-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 2rem;
+  text-align: center;
+}
+
+.ragvyn-placeholder-page__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: rgba(26, 92, 255, 0.08);
+  color: #1a5cff;
+  margin-bottom: 1.25rem;
+}
+
+.ragvyn-placeholder-page__title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text-primary, #181E24);
+  margin: 0 0 0.5rem;
+}
+
+.ragvyn-placeholder-page__desc {
+  font-size: 0.95rem;
+  color: var(--text-muted, #64748B);
+  max-width: 360px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.ragvyn-placeholder-page__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 1rem;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: rgba(26, 92, 255, 0.06);
+  color: #1a5cff;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .ragvyn-sidebar {
+  --rs-bg: #0f3fc2;
+  --rs-bg-dark: #0b2f9a;
+}
+
+[data-theme="dark"] .ragvyn-placeholder-page__icon {
+  background: rgba(26, 92, 255, 0.15);
+}
+
+[data-theme="dark"] .ragvyn-placeholder-page__badge {
+  background: rgba(26, 92, 255, 0.12);
+}
+
+[data-theme="dark"] .ragvyn-placeholder-page__title {
+  color: var(--text-primary, #e8e8e8);
+}
+
+[data-theme="dark"] .ragvyn-placeholder-page__desc {
+  color: var(--text-muted, #9aa3b0);
+}

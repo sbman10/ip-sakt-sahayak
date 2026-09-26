@@ -1,6 +1,9 @@
 import { useEffect, useState, useRef, createContext, useContext, useCallback, useMemo } from 'react'
 import { BrowserRouter, Routes, Route, useNavigate, Link, useLocation } from 'react-router-dom'
 import './index.css'
+import './components/RagvynSidebar.css'
+import RagvynSidebar from './components/RagvynSidebar'
+import { AgentPage, CustomizePage, PulsePage, GalleryPage } from './components/PlaceholderPages'
 import MatterWorkspace from './components/MatterWorkspace'
 import DocumentUpload from './components/DocumentUpload'
 import IPChecklist from './components/IPChecklist'
@@ -6203,6 +6206,7 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
   const { isListening, isSupported: voiceSupported, interimText, error: voiceError, confidence: voiceConfidence, startListening, stopListening } = useVoiceInput(handleVoiceResult, voiceLang)
 
   // Handle incoming prefill or pre-computed assessment from Innovation Assessment flow
+  // Also handles sidebar navigation: newChat and loadSessionId
   useEffect(() => {
     if (location.state?.assessmentResult) {
       const { prompt, result: assessmentData } = location.state.assessmentResult
@@ -6234,11 +6238,22 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
         setActiveSessionId(assessmentData.conversation_id)
       }
       window.history.replaceState({}, document.title)
+    } else if (location.state?.newChat) {
+      // Triggered from RagvynSidebar "New Task"
+      setMessages([])
+      setInput('')
+      setActiveSessionId(null)
+      setConversationId(null)
+      window.history.replaceState({}, document.title)
+    } else if (location.state?.loadSessionId) {
+      // Triggered from RagvynSidebar "Recents" click
+      loadConversation(location.state.loadSessionId)
+      window.history.replaceState({}, document.title)
     } else if (prefillPrompt) {
       setInput(prefillPrompt)
       setPrefillPrompt('')
     }
-  }, [location.state, prefillPrompt, setPrefillPrompt])
+  }, [location.state, prefillPrompt, setPrefillPrompt, loadConversation])
 
   // ----- Conversation persistence helpers -----
   const formatSessionDate = useCallback((iso) => {
@@ -9631,6 +9646,80 @@ function ProtectedRoute({ children, isLoggedIn }) {
 }
 
 /* ============================================================
+   APP SHELL — Sidebar + Content Layout
+   ============================================================ */
+function AppShell({ children, isLoggedIn, userName }) {
+  const location = useLocation()
+  const navigate = useNavigate()
+
+  // Track sidebar collapsed state to offset content (synced with RagvynSidebar)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return false
+    if (window.innerWidth <= 768) return true
+    const saved = localStorage.getItem('ragvyn_nav_collapsed')
+    return saved === 'true'
+  })
+
+  // Listen for sidebar collapse changes (synced via localStorage)
+  useEffect(() => {
+    const handleStorage = (e) => {
+      if (e.key === 'ragvyn_nav_collapsed') {
+        setSidebarCollapsed(e.newValue === 'true')
+      }
+    }
+    window.addEventListener('storage', handleStorage)
+
+    // Also poll for same-tab changes
+    const interval = setInterval(() => {
+      const current = localStorage.getItem('ragvyn_nav_collapsed') === 'true'
+      setSidebarCollapsed(prev => {
+        if (prev !== current) return current
+        return prev
+      })
+    }, 300)
+
+    return () => {
+      window.removeEventListener('storage', handleStorage)
+      clearInterval(interval)
+    }
+  }, [])
+
+  // Hide sidebar on landing page and login page for a cleaner experience
+  const hideSidebar = location.pathname === '/' || location.pathname === '/login' || location.pathname === '/auth/callback'
+  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768
+
+  const handleNewChat = () => {
+    // Navigate to /chat which will trigger a new chat state
+    navigate('/chat', { state: { newChat: true } })
+  }
+
+  return (
+    <>
+      {!hideSidebar && (
+        <RagvynSidebar
+          isLoggedIn={isLoggedIn}
+          userName={userName}
+          onNewChat={handleNewChat}
+          activeSessionId={null}
+          onSelectSession={(id) => {
+            navigate('/chat', { state: { loadSessionId: id } })
+          }}
+        />
+      )}
+      <div
+        className={[
+          'ragvyn-app-content',
+          !hideSidebar && !isMobile && !sidebarCollapsed ? 'ragvyn-app-content--sidebar-expanded' : '',
+          !hideSidebar && !isMobile && sidebarCollapsed ? 'ragvyn-app-content--sidebar-collapsed' : '',
+        ].filter(Boolean).join(' ')}
+      >
+        {children}
+      </div>
+    </>
+  )
+}
+
+/* ============================================================
    MAIN APP ROUTER
    ============================================================ */
 export default function App() {
@@ -9683,146 +9772,74 @@ export default function App() {
           onAskChat={handleAskChatFromWizard}
         />
 
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <LandingPage
-                onOpenAbout={() => setIsAboutOpen(true)}
-                onOpenWizard={() => setIsWizardOpen(true)}
-                theme={theme}
-                toggleTheme={toggleTheme}
-                fontSize={fontSize}
-                setFontSize={setFontSize}
-                setPrefillPrompt={setPrefillPrompt}
-                isLoggedIn={isLoggedIn}
-                userName={userName}
-                onLogout={handleLogout}
-              />
-            }
-          />
-          <Route
-            path="/chat"
-            element={
-              <ProtectedRoute isLoggedIn={isLoggedIn}>
-                <ChatPage
+        <AppShell isLoggedIn={isLoggedIn} userName={userName}>
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <LandingPage
                   onOpenAbout={() => setIsAboutOpen(true)}
                   onOpenWizard={() => setIsWizardOpen(true)}
-                  prefillPrompt={prefillPrompt}
+                  theme={theme}
+                  toggleTheme={toggleTheme}
+                  fontSize={fontSize}
+                  setFontSize={setFontSize}
                   setPrefillPrompt={setPrefillPrompt}
+                  isLoggedIn={isLoggedIn}
+                  userName={userName}
+                  onLogout={handleLogout}
+                />
+              }
+            />
+            <Route
+              path="/chat"
+              element={
+                <ProtectedRoute isLoggedIn={isLoggedIn}>
+                  <ChatPage
+                    onOpenAbout={() => setIsAboutOpen(true)}
+                    onOpenWizard={() => setIsWizardOpen(true)}
+                    prefillPrompt={prefillPrompt}
+                    setPrefillPrompt={setPrefillPrompt}
+                    theme={theme}
+                    toggleTheme={toggleTheme}
+                    fontSize={fontSize}
+                    setFontSize={setFontSize}
+                  />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/abs-checker"
+              element={
+                <ABSCheckerPage
+                  onOpenAbout={() => setIsAboutOpen(true)}
+                  onOpenWizard={() => setIsWizardOpen(true)}
                   theme={theme}
                   toggleTheme={toggleTheme}
                   fontSize={fontSize}
                   setFontSize={setFontSize}
+                  setPrefillPrompt={setPrefillPrompt}
                 />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/abs-checker"
-            element={
-              <ABSCheckerPage
-                onOpenAbout={() => setIsAboutOpen(true)}
-                onOpenWizard={() => setIsWizardOpen(true)}
-                theme={theme}
-                toggleTheme={toggleTheme}
-                fontSize={fontSize}
-                setFontSize={setFontSize}
-                setPrefillPrompt={setPrefillPrompt}
-              />
-            }
-          />
-          <Route
-            path="/sources"
-            element={
-              <SourcesPage
-                onOpenAbout={() => setIsAboutOpen(true)}
-                onOpenWizard={() => setIsWizardOpen(true)}
-                theme={theme}
-                toggleTheme={toggleTheme}
-                fontSize={fontSize}
-                setFontSize={setFontSize}
-                setPrefillPrompt={setPrefillPrompt}
-              />
-            }
-          />
-          <Route
-            path="/privacy"
-            element={
-              <PrivacyPolicyPage
-                onOpenAbout={() => setIsAboutOpen(true)}
-                onOpenWizard={() => setIsWizardOpen(true)}
-                theme={theme}
-                toggleTheme={toggleTheme}
-                fontSize={fontSize}
-                setFontSize={setFontSize}
-              />
-            }
-          />
-          <Route
-            path="/ip-calculator"
-            element={
-              <IPCostCalculatorPage
-                onOpenAbout={() => setIsAboutOpen(true)}
-                onOpenWizard={() => setIsWizardOpen(true)}
-                theme={theme}
-                toggleTheme={toggleTheme}
-                fontSize={fontSize}
-                setFontSize={setFontSize}
-              />
-            }
-          />
-          <Route
-            path="/deadline-calculator"
-            element={
-              <DeadlineCalculatorPage
-                onOpenAbout={() => setIsAboutOpen(true)}
-                onOpenWizard={() => setIsWizardOpen(true)}
-                theme={theme}
-                toggleTheme={toggleTheme}
-                fontSize={fontSize}
-                setFontSize={setFontSize}
-              />
-            }
-          />
-          <Route
-            path="/drafts"
-            element={
-              <DraftsPage
-                onOpenAbout={() => setIsAboutOpen(true)}
-                onOpenWizard={() => setIsWizardOpen(true)}
-                theme={theme}
-                toggleTheme={toggleTheme}
-                fontSize={fontSize}
-                setFontSize={setFontSize}
-              />
-            }
-          />
-          <Route
-            path="/login"
-            element={
-              <LoginPage
-                theme={theme}
-                toggleTheme={toggleTheme}
-                fontSize={fontSize}
-                setFontSize={setFontSize}
-                onLogin={handleLogin}
-              />
-            }
-          />
-          <Route
-            path="/workspace"
-            element={
-              <ProtectedRoute isLoggedIn={isLoggedIn}>
-                <MatterWorkspace />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/documents"
-            element={
-              <ProtectedRoute isLoggedIn={isLoggedIn}>
-                <DocumentsPage
+              }
+            />
+            <Route
+              path="/sources"
+              element={
+                <SourcesPage
+                  onOpenAbout={() => setIsAboutOpen(true)}
+                  onOpenWizard={() => setIsWizardOpen(true)}
+                  theme={theme}
+                  toggleTheme={toggleTheme}
+                  fontSize={fontSize}
+                  setFontSize={setFontSize}
+                  setPrefillPrompt={setPrefillPrompt}
+                />
+              }
+            />
+            <Route
+              path="/privacy"
+              element={
+                <PrivacyPolicyPage
                   onOpenAbout={() => setIsAboutOpen(true)}
                   onOpenWizard={() => setIsWizardOpen(true)}
                   theme={theme}
@@ -9830,58 +9847,137 @@ export default function App() {
                   fontSize={fontSize}
                   setFontSize={setFontSize}
                 />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/auth/callback"
-            element={
-              <AuthCallbackPage onLogin={handleLogin} />
-            }
-          />
-          <Route
-            path="/patentability"
-            element={
-              <PatentabilityAssessment />
-            }
-          />
-          <Route
-            path="/verdict"
-            element={
-              <VerdictEngine />
-            }
-          />
-          <Route
-            path="/roadmap"
-            element={
-              <IPJourneyRoadmap />
-            }
-          />
-          <Route
-            path="/guardian"
-            element={
-              <DualUseGuardian />
-            }
-          />
-          <Route
-            path="/checklists"
-            element={
-              <IPChecklist />
-            }
-          />
-          <Route
-            path="/experts"
-            element={
-              <ExpertConnect />
-            }
-          />
-          <Route
-            path="/pricing"
-            element={
-              <PricingPage />
-            }
-          />
-        </Routes>
+              }
+            />
+            <Route
+              path="/ip-calculator"
+              element={
+                <IPCostCalculatorPage
+                  onOpenAbout={() => setIsAboutOpen(true)}
+                  onOpenWizard={() => setIsWizardOpen(true)}
+                  theme={theme}
+                  toggleTheme={toggleTheme}
+                  fontSize={fontSize}
+                  setFontSize={setFontSize}
+                />
+              }
+            />
+            <Route
+              path="/deadline-calculator"
+              element={
+                <DeadlineCalculatorPage
+                  onOpenAbout={() => setIsAboutOpen(true)}
+                  onOpenWizard={() => setIsWizardOpen(true)}
+                  theme={theme}
+                  toggleTheme={toggleTheme}
+                  fontSize={fontSize}
+                  setFontSize={setFontSize}
+                />
+              }
+            />
+            <Route
+              path="/drafts"
+              element={
+                <DraftsPage
+                  onOpenAbout={() => setIsAboutOpen(true)}
+                  onOpenWizard={() => setIsWizardOpen(true)}
+                  theme={theme}
+                  toggleTheme={toggleTheme}
+                  fontSize={fontSize}
+                  setFontSize={setFontSize}
+                />
+              }
+            />
+            <Route
+              path="/login"
+              element={
+                <LoginPage
+                  theme={theme}
+                  toggleTheme={toggleTheme}
+                  fontSize={fontSize}
+                  setFontSize={setFontSize}
+                  onLogin={handleLogin}
+                />
+              }
+            />
+            <Route
+              path="/workspace"
+              element={
+                <ProtectedRoute isLoggedIn={isLoggedIn}>
+                  <MatterWorkspace />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/documents"
+              element={
+                <ProtectedRoute isLoggedIn={isLoggedIn}>
+                  <DocumentsPage
+                    onOpenAbout={() => setIsAboutOpen(true)}
+                    onOpenWizard={() => setIsWizardOpen(true)}
+                    theme={theme}
+                    toggleTheme={toggleTheme}
+                    fontSize={fontSize}
+                    setFontSize={setFontSize}
+                  />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/auth/callback"
+              element={
+                <AuthCallbackPage onLogin={handleLogin} />
+              }
+            />
+            <Route
+              path="/patentability"
+              element={
+                <PatentabilityAssessment />
+              }
+            />
+            <Route
+              path="/verdict"
+              element={
+                <VerdictEngine />
+              }
+            />
+            <Route
+              path="/roadmap"
+              element={
+                <IPJourneyRoadmap />
+              }
+            />
+            <Route
+              path="/guardian"
+              element={
+                <DualUseGuardian />
+              }
+            />
+            <Route
+              path="/checklists"
+              element={
+                <IPChecklist />
+              }
+            />
+            <Route
+              path="/experts"
+              element={
+                <ExpertConnect />
+              }
+            />
+            <Route
+              path="/pricing"
+              element={
+                <PricingPage />
+              }
+            />
+            {/* Placeholder routes for future features */}
+            <Route path="/agent" element={<AgentPage />} />
+            <Route path="/customize" element={<CustomizePage />} />
+            <Route path="/pulse" element={<PulsePage />} />
+            <Route path="/gallery" element={<GalleryPage />} />
+          </Routes>
+        </AppShell>
       </BrowserRouter>
     </LanguageProvider>
   )
