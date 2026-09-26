@@ -300,6 +300,7 @@ const UI_TRANSLATIONS = {
     faqReadIn: 'Read in:',
     moreQuestions: 'Have more questions? Ask RagVyn AI!',
     askIpSakti: 'Ask IP-SAKTI',
+    askRagvynAi: 'Ask RagVyn AI',
 
     // Footer
     footerDesc: 'AI-powered IP guidance for Ayurveda',
@@ -798,6 +799,7 @@ const UI_TRANSLATIONS = {
     faqReadIn: 'इसमें पढ़ें:',
     moreQuestions: 'क्या आपके पास और प्रश्न हैं? RagVyn AI से पूछें!',
     askIpSakti: 'IP-SAKTI से पूछें',
+    askRagvynAi: 'RagVyn AI से पूछें',
 
     // Footer
     footerDesc: 'आयुर्वेद के लिए AI-संचालित IP मार्गदर्शन',
@@ -1917,14 +1919,16 @@ function DemoPreview() {
       </Reveal>
 
       <Reveal delay={250}>
-        <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+        <div className="demo-try-container">
           <Link
             to="/chat"
-            className="btn-primary demo-try-btn"
+            className="demo-try-btn"
+            id="demo-try-it-btn"
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            aria-label={`${t('demoTryIt')} - Open RagVyn AI Chatbot`}
           >
-            {t('demoTryIt')}
-            <IconArrowRight size={17} className="btn-arrow" />
+            <span className="demo-try-text">{t('demoTryIt')}</span>
+            <IconArrowRight size={18} className="btn-arrow" />
           </Link>
         </div>
       </Reveal>
@@ -4130,11 +4134,19 @@ function FAQSection() {
 
       {/* CTA to Chat */}
       <div className="faq-cta">
-        <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+        <p className="faq-cta-prompt">
           {t('moreQuestions')}
         </p>
-        <Link to="/chat" className="btn-primary">
-          {t('askIpSakti')} →
+        <Link
+          to="/chat"
+          className="faq-ask-ragvyn-btn"
+          id="faq-ask-ragvyn-btn"
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          aria-label={`${t('askRagvynAi')} - Open RagVyn AI Chatbot`}
+        >
+          <IconSparkles size={18} className="btn-sparkle" />
+          <span className="faq-ask-ragvyn-text">{t('askRagvynAi')}</span>
+          <IconArrowRight size={18} className="btn-arrow" />
         </Link>
       </div>
     </section>
