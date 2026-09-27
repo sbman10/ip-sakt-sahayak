@@ -460,6 +460,7 @@ class QdrantHybridStore:
         domain: Optional[str] = None,
         language: Optional[str] = None,
         document_id: Optional[str] = None,
+        document_ids: Optional[List[str]] = None,  # Support multiple document IDs
         section: Optional[str] = None,
     ) -> Optional[qmodels.Filter]:
         """Construct a Qdrant Filter from optional metadata constraints."""
@@ -484,7 +485,13 @@ class QdrantHybridStore:
             must_conditions.append(
                 qmodels.FieldCondition(key="language", match=qmodels.MatchValue(value=language.strip()))
             )
-        if document_id and document_id.strip():
+        # Support both single document_id and list of document_ids
+        if document_ids and len(document_ids) > 0:
+            # Use MatchAny for multiple document IDs
+            must_conditions.append(
+                qmodels.FieldCondition(key="document_id", match=qmodels.MatchAny(any=[str(d).strip() for d in document_ids if d]))
+            )
+        elif document_id and document_id.strip():
             must_conditions.append(
                 qmodels.FieldCondition(key="document_id", match=qmodels.MatchValue(value=document_id.strip()))
             )
@@ -510,6 +517,7 @@ class QdrantHybridStore:
         domain: Optional[str] = None,
         language: Optional[str] = None,
         document_id: Optional[str] = None,
+        document_ids: Optional[List[str]] = None,  # Support scoping to multiple docs
         section: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """
@@ -543,6 +551,7 @@ class QdrantHybridStore:
             domain=domain,
             language=language,
             document_id=document_id,
+            document_ids=document_ids,
             section=section,
         )
 

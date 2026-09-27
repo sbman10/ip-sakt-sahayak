@@ -88,6 +88,7 @@ def hybrid_rrf_search(
     top_k: int = 5,
     rrf_k: int = 60,
     user_id: Optional[str] = None,
+    document_ids: Optional[list[str]] = None,
 ) -> list[dict]:
     """
     Combines dense semantic vector search (Qdrant Cloud with ChromaDB fallback)
@@ -106,6 +107,9 @@ def hybrid_rrf_search(
         RRF smoothing constant (default: 60).
     user_id : Optional[str]
         Optional user identifier to include authorized user-uploaded documents.
+    document_ids : Optional[list[str]]
+        Optional list of specific document IDs to scope retrieval to (user-uploaded docs).
+        When provided, ONLY searches the user_uploads collection filtered by these doc IDs.
 
     Returns
     -------
@@ -116,24 +120,34 @@ def hybrid_rrf_search(
         return []
 
     _chroma_t_start = time.perf_counter()
-    # 1. Route to the correct ChromaDB collection(s) based on jurisdiction.
 
-    #    'India' -> india_statutes, 'International' -> international_treaties,
-    #    'Both' -> query BOTH collections and fuse the combined candidate pool.
-    jur_clean = jurisdiction.strip().lower()
-    if jur_clean == "both":
-        collection_specs = [
-            (settings.QDRANT_INDIA_COLLECTION, "India"),
-            (settings.QDRANT_INTERNATIONAL_COLLECTION, "International"),
-        ]
-    elif "international" in jur_clean:
-        collection_specs = [(settings.QDRANT_INTERNATIONAL_COLLECTION, "International")]
+    # SPECIAL CASE: When document_ids provided, ONLY search user_uploads collection
+    # This enables "ask about my uploaded document" feature
+    if document_ids and len(document_ids) > 0:
+        log.info(
+            "Document-scoped search: query='%s' scoped to document_ids=%s",
+            query[:50],
+            document_ids,
+        )
+        collection_specs = [(settings.QDRANT_USER_UPLOADS_COLLECTION, "User")]
     else:
-        collection_specs = [(settings.QDRANT_INDIA_COLLECTION, "India")]
+        # 1. Route to the correct ChromaDB collection(s) based on jurisdiction.
+        #    'India' -> india_statutes, 'International' -> international_treaties,
+        #    'Both' -> query BOTH collections and fuse the combined candidate pool.
+        jur_clean = jurisdiction.strip().lower()
+        if jur_clean == "both":
+            collection_specs = [
+                (settings.QDRANT_INDIA_COLLECTION, "India"),
+                (settings.QDRANT_INTERNATIONAL_COLLECTION, "International"),
+            ]
+        elif "international" in jur_clean:
+            collection_specs = [(settings.QDRANT_INTERNATIONAL_COLLECTION, "International")]
+        else:
+            collection_specs = [(settings.QDRANT_INDIA_COLLECTION, "India")]
 
-    # If user_id provided, also query user uploads
-    if user_id:
-        collection_specs.append((settings.QDRANT_USER_UPLOADS_COLLECTION, "User"))
+        # If user_id provided, also query user uploads
+        if user_id:
+            collection_specs.append((settings.QDRANT_USER_UPLOADS_COLLECTION, "User"))
 
     collection_names = [c[0] for c in collection_specs]
 
@@ -162,11 +176,14 @@ def hybrid_rrf_search(
             total_qdrant_hits = 0
             for collection_name, col_jur in collection_specs:
                 target_user = user_id if collection_name == settings.QDRANT_USER_UPLOADS_COLLECTION else None
+                # Pass document_ids filter for user_uploads collection
+                target_doc_ids = document_ids if collection_name == settings.QDRANT_USER_UPLOADS_COLLECTION else None
                 q_hits = qdrant_service.search(
                     collection_name=collection_name,
                     query_vector=query_vector,
                     limit=top_k * 2,
                     user_id=target_user,
+                    document_ids=target_doc_ids,
                 )
                 if q_hits:
                     total_qdrant_hits += len(q_hits)

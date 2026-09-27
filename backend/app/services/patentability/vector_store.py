@@ -17,7 +17,7 @@ from __future__ import annotations
 import logging
 import os
 import re
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import chromadb
 from qdrant_client import QdrantClient
@@ -121,6 +121,14 @@ class UnifiedVectorStore:
 
     def _seed_authoritative_statutes(self):
         """Seed foundational Indian Patents Act 1970 sections and TKDL prior-art anchors."""
+        try:
+            cnt = self.qdrant.count(collection_name=QDRANT_COLLECTION_NAME).count
+            if cnt > 0:
+                log.info("Patentability vector store already seeded (%d chunks). Skipping re-embedding.", cnt)
+                return
+        except Exception:
+            pass
+
         seeds = [
             {
                 "chunk_id": "IN-PAT-1970-SEC-03P",
