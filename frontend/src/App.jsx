@@ -2851,31 +2851,46 @@ function formatSourceName(source) {
     .trim()
 }
 
-function CitationCard({ citation, isExpanded, onToggle }) {
+function CitationCard({ citation, isExpanded, onToggle, isUserDocument }) {
   // Backend sends: source (document name), section (page/section), text (chunk content)
   const displayTitle = formatSourceName(citation.source || citation.title || '')
   const sectionLabel = citation.section || ''
   const snippetText = citation.text || ''
+  const originalFilename = citation.original_filename || ''
   
   return (
-    <div className={`citation-card ${isExpanded ? 'expanded' : ''}`}>
+    <div className={`citation-card ${isExpanded ? 'expanded' : ''} ${isUserDocument ? 'user-doc-citation' : ''}`}>
       <button
         className="citation-header"
         onClick={onToggle}
         aria-expanded={isExpanded}
       >
-        <span className="citation-icon" aria-hidden="true">{getSourceIcon(citation.source)}</span>
-        <span className="citation-title">{displayTitle}{sectionLabel && ` — ${sectionLabel}`}</span>
+        <span className="citation-icon" aria-hidden="true">
+          {isUserDocument ? <IconFileText size={14} /> : getSourceIcon(citation.source)}
+        </span>
+        <span className="citation-title">
+          {isUserDocument && <span className="user-doc-badge">User Document</span>}
+          {displayTitle}{sectionLabel && ` — ${sectionLabel}`}
+        </span>
         <span className={`citation-chevron ${isExpanded ? 'expanded' : ''}`} aria-hidden="true">
           <IconChevronDown size={14} />
         </span>
       </button>
       {isExpanded && (
         <div className="citation-content">
+          {isUserDocument && originalFilename && (
+            <p className="citation-filename">
+              <strong>File:</strong> {originalFilename}
+            </p>
+          )}
           {snippetText ? (
             <p className="citation-snippet">{snippetText.length > 300 ? snippetText.slice(0, 300) + '…' : snippetText}</p>
           ) : (
-            <p className="citation-snippet" style={{ opacity: 0.7 }}>Source document retrieved from verified legal corpus.</p>
+            <p className="citation-snippet" style={{ opacity: 0.7 }}>
+              {isUserDocument 
+                ? 'Content from your uploaded document.' 
+                : 'Source document retrieved from verified legal corpus.'}
+            </p>
           )}
           {citation.url && (
             <a
@@ -2914,12 +2929,42 @@ function CollapsibleCitations({ citations }) {
 
   if (!citations?.length) return null
 
+  // Separate official sources from user-uploaded documents
+  const officialSources = citations.filter(c => !c.is_user_document)
+  const userSources = citations.filter(c => c.is_user_document)
+
+  const renderCitationGroup = (groupCitations, startIdx, label, icon, isUserGroup) => {
+    if (!groupCitations.length) return null
+    return (
+      <div className={`citations-group ${isUserGroup ? 'user-sources' : 'official-sources'}`}>
+        <div className="citations-group-header">
+          <span className="citations-group-icon">{icon}</span>
+          <span className="citations-group-label">{label} ({groupCitations.length})</span>
+        </div>
+        <div className="citation-list">
+          {groupCitations.map((c, i) => {
+            const globalIdx = startIdx + i
+            return (
+              <CitationCard
+                key={globalIdx}
+                citation={c}
+                isExpanded={allExpanded || expandedIndex === globalIdx}
+                onToggle={() => toggleSingle(globalIdx)}
+                isUserDocument={isUserGroup}
+              />
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="citations-container">
       <div className="citations-header">
         <span className="citations-label">
           <IconScroll size={14} style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: 4 }} />
-          SUPPORTED BY ({citations.length} STATUTORY SOURCES)
+          SOURCES ({citations.length})
         </span>
         <button
           className="citations-toggle-all"
@@ -2928,16 +2973,24 @@ function CollapsibleCitations({ citations }) {
           {allExpanded ? 'Collapse' : 'Expand details'}
         </button>
       </div>
-      <div className="citation-list">
-        {citations.map((c, i) => (
-          <CitationCard
-            key={i}
-            citation={c}
-            isExpanded={allExpanded || expandedIndex === i}
-            onToggle={() => toggleSingle(i)}
-          />
-        ))}
-      </div>
+      
+      {/* Official Sources Section */}
+      {renderCitationGroup(
+        officialSources, 
+        0, 
+        'Official Statutory Sources',
+        <IconScroll size={12} />,
+        false
+      )}
+      
+      {/* User Documents Section */}
+      {renderCitationGroup(
+        userSources, 
+        officialSources.length, 
+        'User-Provided Documents',
+        <IconFileText size={12} />,
+        true
+      )}
     </div>
   )
 }
@@ -3602,6 +3655,13 @@ function MessageBubble({ msg, onFollowUp, onRegenerate, onFeedback, isLatestAI, 
           <div className="user-bubble-sender-row">
             <span className="user-sender-name">You</span>
           </div>
+          {/* Show attached document badge if present */}
+          {msg.attachedDocument && (
+            <div className="attached-doc-badge">
+              <IconFileText size={12} />
+              <span>{msg.attachedDocument.name}</span>
+            </div>
+          )}
           <div className="bubble user-bubble">{msg.text}</div>
           <span className="message-timestamp">{formatTimestamp(timestamp)}</span>
         </div>
@@ -6083,6 +6143,7 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [jurisdiction, setJurisdiction] = useState('india')
+  const [searchMode, setSearchMode] = useState('ayurvedic') // 'ayurvedic' | 'novelty'
   const [typing, setTyping] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     return typeof window !== 'undefined' ? window.innerWidth <= 768 : false
@@ -6102,6 +6163,10 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
   
   // File attachment state
   const [attachedFile, setAttachedFile] = useState(null)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadError, setUploadError] = useState(null)
+  const [documentProcessingState, setDocumentProcessingState] = useState(null) // null | 'uploading' | 'processing' | 'indexing' | 'ready' | 'failed'
 
   // New state for scroll management
   const [showScrollBtn, setShowScrollBtn] = useState(false)
@@ -6269,7 +6334,10 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
   const refreshSessions = useCallback(async () => {
     setLoadingSessions(true)
     try {
-      const res = await fetch(`${API_BASE}/api/conversations?limit=50`)
+      const token = localStorage.getItem('ip_sakti_access_token')
+      const res = await fetch(`${API_BASE}/api/conversations?limit=50`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
       setSessions(data.map(c => ({
@@ -6292,7 +6360,10 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
 
   const loadConversation = useCallback(async (id) => {
     try {
-      const res = await fetch(`${API_BASE}/api/conversations/${id}`)
+      const token = localStorage.getItem('ip_sakti_access_token')
+      const res = await fetch(`${API_BASE}/api/conversations/${id}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
       const loaded = (data.messages || []).map(m => {
@@ -6390,26 +6461,152 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
   }
 
   // Handle feedback
-  // File upload handler
-  const handleFileSelect = (e) => {
+  // File upload handler with real backend upload
+  const handleFileSelect = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
     
-    // Validate file type
+    // Validate file type (PDF for RAG ingestion, others for chat attachment)
     const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword', 'text/plain', 'image/png', 'image/jpeg']
-    if (!allowedTypes.includes(file.type)) {
-      alert('File type not supported. Please upload PDF, Word, Text, or Image files.')
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
+    
+    if (!allowedTypes.includes(file.type) && !isPdf) {
+      setUploadError('File type not supported. Please upload PDF, Word, Text, or Image files.')
       return
     }
     
-    // Validate file size (10MB max)
-    if (file.size > 10 * 1024 * 1024) {
-      alert('File too large. Maximum size is 10MB.')
+    // Validate file size (5MB max per spec)
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError('File too large. Maximum size is 5MB.')
       return
     }
     
-    setAttachedFile(file)
-    e.target.value = '' // Reset input
+    // Clear previous errors
+    setUploadError(null)
+    setIsUploading(true)
+    setUploadProgress(0)
+    setDocumentProcessingState('uploading')
+    
+    // Get auth token
+    const token = localStorage.getItem('ip_sakti_access_token')
+    
+    // Use XHR for progress tracking
+    const xhr = new XMLHttpRequest()
+    const formData = new FormData()
+    formData.append('file', file)
+    if (conversationId) {
+      formData.append('conversation_id', conversationId)
+    }
+    
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const percent = Math.round((event.loaded / event.total) * 100)
+        setUploadProgress(percent)
+      }
+    }
+    
+    xhr.onload = () => {
+      setIsUploading(false)
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const response = JSON.parse(xhr.responseText)
+          const docId = response.id || response.document_id
+          const processingStatus = response.processing_status || 'pending'
+          
+          setAttachedFile({
+            ...file,
+            id: docId,
+            uploaded: true,
+            serverPath: response.storage_path,
+            processingStatus: processingStatus,
+            chunkCount: response.chunk_count || 0,
+          })
+          setUploadProgress(100)
+          
+          // If PDF was uploaded for RAG ingestion, track processing state
+          if (isPdf && processingStatus === 'processing') {
+            setDocumentProcessingState('processing')
+            // Poll for processing completion
+            pollDocumentStatus(docId, token)
+          } else if (processingStatus === 'completed') {
+            setDocumentProcessingState('ready')
+          } else {
+            setDocumentProcessingState('ready') // Non-PDF files are ready immediately
+          }
+        } catch {
+          setAttachedFile(file)
+          setDocumentProcessingState('ready')
+        }
+      } else {
+        let errorMsg = 'Upload failed'
+        try {
+          const errData = JSON.parse(xhr.responseText)
+          errorMsg = errData.detail || errorMsg
+        } catch {}
+        setUploadError(errorMsg)
+        setAttachedFile(null)
+        setDocumentProcessingState('failed')
+      }
+    }
+    
+    xhr.onerror = () => {
+      setIsUploading(false)
+      setUploadError('Network error during upload. Please try again.')
+      setAttachedFile(null)
+      setDocumentProcessingState('failed')
+    }
+    
+    // Use /api/documents/upload for PDFs (RAG ingestion), /api/upload for others
+    const uploadEndpoint = isPdf ? `${API_BASE}/api/documents/upload` : `${API_BASE}/api/upload`
+    xhr.open('POST', uploadEndpoint)
+    if (token) {
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+    }
+    xhr.send(formData)
+    
+    e.target.value = '' // Reset input for re-selection
+  }
+
+  // Poll document processing status for PDFs
+  const pollDocumentStatus = async (docId, token) => {
+    let attempts = 0
+    const maxAttempts = 30 // 30 * 2s = 60s max
+    
+    const checkStatus = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/documents`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        })
+        if (res.ok) {
+          const docs = await res.json()
+          const doc = docs.find(d => d.id === docId)
+          if (doc) {
+            if (doc.processing_status === 'completed') {
+              setDocumentProcessingState('ready')
+              setAttachedFile(prev => prev ? { ...prev, processingStatus: 'completed', chunkCount: doc.chunk_count } : prev)
+              return
+            } else if (doc.processing_status === 'failed') {
+              setDocumentProcessingState('failed')
+              setUploadError('Document processing failed. The file may be unreadable.')
+              return
+            }
+            // Still processing
+            if (doc.processing_status === 'processing') {
+              setDocumentProcessingState(attempts < 10 ? 'processing' : 'indexing')
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to check document status:', err)
+      }
+      
+      attempts++
+      if (attempts < maxAttempts && documentProcessingState !== 'ready' && documentProcessingState !== 'failed') {
+        setTimeout(checkStatus, 2000)
+      }
+    }
+    
+    setTimeout(checkStatus, 2000)
   }
 
   const handleFeedback = (msgId, type) => {
@@ -6423,8 +6620,24 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
   const handleSend = async () => {
     const trimmed = input.trim()
     if (!trimmed) return
+    
+    // Warn if document is still processing
+    if (attachedFile && documentProcessingState === 'processing') {
+      setUploadError('Document is still being processed. Please wait until indexing is complete.')
+      return
+    }
 
-    const userMsg = { id: Date.now(), role: 'user', text: trimmed, timestamp: Date.now() }
+    const userMsg = {
+      id: Date.now(),
+      role: 'user',
+      text: trimmed,
+      timestamp: Date.now(),
+      // Include attached document metadata for display in chat
+      attachedDocument: attachedFile ? {
+        name: attachedFile.name,
+        documentId: attachedFile.documentId,
+      } : null,
+    }
     setMessages(prev => [...prev, userMsg])
     setInput('')
     setTyping(true)
@@ -6441,6 +6654,8 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
       jurisdiction: jurisdiction.charAt(0).toUpperCase() + jurisdiction.slice(1),
       language: lang.toUpperCase(),
       conversation_id: conversationId,
+      // Include attached document if present (for RAG retrieval scoping)
+      ...(attachedFile?.documentId ? { document_ids: [attachedFile.documentId] } : {}),
     }
 
     // Stable id for the streaming AI message so we can patch it as tokens arrive.
@@ -6450,11 +6665,16 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
     // Returns true on success, false if the caller should fall back to /api/chat.
     const tryStream = async () => {
       let response
+      const token = localStorage.getItem('ip_sakti_access_token')
       try {
         setRetrievalState('Reviewing relevant documents...')
         response = await fetch(`${apiBase}/api/chat/stream`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'text/event-stream',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
           body: JSON.stringify(requestBody),
         })
       } catch (err) {
@@ -6602,9 +6822,13 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
     const fallbackNonStreaming = async () => {
       try {
         setRetrievalState('Preparing cited answer...')
+        const token = localStorage.getItem('ip_sakti_access_token')
         const response = await fetch(`${apiBase}/api/chat`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
           body: JSON.stringify(requestBody),
         })
 
@@ -6685,7 +6909,11 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
   const handleDeleteSession = async (id) => {
     if (!window.confirm('Delete this conversation? This cannot be undone.')) return
     try {
-      const res = await fetch(`${API_BASE}/api/conversations/${id}`, { method: 'DELETE' })
+      const token = localStorage.getItem('ip_sakti_access_token')
+      const res = await fetch(`${API_BASE}/api/conversations/${id}`, {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       setSessions(prev => prev.filter(s => s.id !== id))
       // If the deleted conversation is the active one, reset to a fresh chat
@@ -6702,9 +6930,13 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
 
   const handleRenameSession = async (id, title) => {
     try {
+      const token = localStorage.getItem('ip_sakti_access_token')
       const res = await fetch(`${API_BASE}/api/conversations/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ title }),
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -6975,29 +7207,49 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
                   </div>
                 )}
 
-                {/* Jurisdiction selector — lives beside the chat composer */}
-                <div className="chat-jurisdiction-row">
-                  <label htmlFor="chat-jurisdiction-select" className="chat-jurisdiction-label">
-                    {t('chooseJurisdiction') || 'Choose Jurisdiction'}
-                  </label>
-                  <select
-                    id="chat-jurisdiction-select"
-                    className="chat-jurisdiction-select"
-                    value={jurisdiction}
-                    onChange={e => setJurisdiction(e.target.value)}
-                    aria-label={t('chooseJurisdiction') || 'Choose Jurisdiction'}
-                  >
-                    <option value="india">{t('jurisdictionIndia') || 'India'}</option>
-                    <option value="international">{t('jurisdictionInternational') || 'International'}</option>
-                    <option value="both">{t('jurisdictionBoth') || 'Both'}</option>
-                  </select>
-                  <span className="chat-jurisdiction-current">
-                    {jurisdiction === 'both'
-                      ? (t('jurisdictionBoth') || 'Both')
-                      : jurisdiction === 'international'
-                        ? (t('jurisdictionInternational') || 'International')
-                        : (t('jurisdictionIndia') || 'India')}
-                  </span>
+                {/* Search Mode Tabs + Jurisdiction - Clean header row */}
+                <div className="chat-controls-row">
+                  {/* Search Mode Tabs */}
+                  <div className="search-mode-tabs" role="tablist" aria-label="Search Mode">
+                    <button
+                      role="tab"
+                      aria-selected={searchMode === 'ayurvedic'}
+                      className={`search-mode-tab ${searchMode === 'ayurvedic' ? 'active' : ''}`}
+                      onClick={() => setSearchMode('ayurvedic')}
+                    >
+                      <IconLeaf size={14} />
+                      <span>Ayurvedic Legal Search</span>
+                    </button>
+                    <button
+                      role="tab"
+                      aria-selected={searchMode === 'novelty'}
+                      className={`search-mode-tab ${searchMode === 'novelty' ? 'active' : ''}`}
+                      onClick={() => setSearchMode('novelty')}
+                    >
+                      <IconSearch size={14} />
+                      <span>Novelty Search</span>
+                    </button>
+                  </div>
+
+                  {/* Jurisdiction Pills */}
+                  <div className="jurisdiction-pills" role="radiogroup" aria-label={t('chooseJurisdiction') || 'Choose Jurisdiction'}>
+                    {[
+                      { value: 'india', label: t('jurisdictionIndia') || 'India', icon: '🇮🇳' },
+                      { value: 'international', label: t('jurisdictionInternational') || 'International', icon: '🌐' },
+                      { value: 'both', label: t('jurisdictionBoth') || 'Both', icon: '⚖️' },
+                    ].map(opt => (
+                      <button
+                        key={opt.value}
+                        role="radio"
+                        aria-checked={jurisdiction === opt.value}
+                        className={`jurisdiction-pill ${jurisdiction === opt.value ? 'active' : ''}`}
+                        onClick={() => setJurisdiction(opt.value)}
+                      >
+                        <span className="jurisdiction-icon">{opt.icon}</span>
+                        <span>{opt.label}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="input-row">
@@ -7009,7 +7261,12 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
                       value={input}
                       onChange={handleInputChange}
                       onKeyDown={handleKeyDown}
-                      placeholder={isListening ? t('voiceListening') : "Ask about Patents Act, ABS clearance, BD Act, TKDL, trademarks... (e.g., 'Can I patent my Ayurvedic formulation?')"}
+                      placeholder={isListening 
+                        ? t('voiceListening') 
+                        : searchMode === 'novelty'
+                          ? "Describe your invention for prior art search... (e.g., 'Polyherbal formulation with Ashwagandha and Tulsi for stress relief')"
+                          : "Ask about Patents Act, ABS clearance, BD Act, TKDL, trademarks... (e.g., 'Can I patent my Ayurvedic formulation?')"
+                      }
                       rows={1}
                       aria-label={t('typeYourQuestion')}
                     />
@@ -7070,22 +7327,77 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
                   </button>
                 </div>
 
-                {/* Attached file preview */}
-                {attachedFile && (
-                  <div className="attached-file-preview">
+                {/* Upload error display */}
+                {uploadError && (
+                  <div className="upload-error-banner" role="alert">
+                    <IconAlertTriangle size={14} />
+                    <span>{uploadError}</span>
+                    <button type="button" onClick={() => setUploadError(null)} aria-label="Dismiss">
+                      <IconClose size={12} />
+                    </button>
+                  </div>
+                )}
+
+                {/* Attached file preview with upload/processing states */}
+                {(attachedFile || isUploading) && (
+                  <div className={`attached-file-preview ${isUploading ? 'uploading' : ''} ${documentProcessingState === 'processing' || documentProcessingState === 'indexing' ? 'processing' : ''}`}>
                     <div className="attached-file-info">
                       <IconFileText size={16} />
-                      <span className="attached-file-name">{attachedFile.name}</span>
-                      <span className="attached-file-size">({(attachedFile.size / 1024).toFixed(1)} KB)</span>
+                      <span className="attached-file-name">{attachedFile?.name || 'Uploading...'}</span>
+                      {attachedFile && !isUploading && (
+                        <span className="attached-file-size">({(attachedFile.size / 1024).toFixed(1)} KB)</span>
+                      )}
+                      {/* Processing state badges */}
+                      {documentProcessingState === 'uploading' && (
+                        <span className="processing-badge uploading">⬆️ Uploading</span>
+                      )}
+                      {documentProcessingState === 'processing' && (
+                        <span className="processing-badge processing">⏳ Processing</span>
+                      )}
+                      {documentProcessingState === 'indexing' && (
+                        <span className="processing-badge indexing">🔍 Indexing</span>
+                      )}
+                      {documentProcessingState === 'ready' && (
+                        <span className="processing-badge ready">✓ Ready</span>
+                      )}
+                      {documentProcessingState === 'failed' && (
+                        <span className="processing-badge failed">✗ Failed</span>
+                      )}
                     </div>
-                    <button
-                      type="button"
-                      className="remove-file-btn"
-                      onClick={() => setAttachedFile(null)}
-                      aria-label="Remove file"
-                    >
-                      <IconClose size={14} />
-                    </button>
+                    {/* Upload progress bar */}
+                    {isUploading && (
+                      <div className="upload-progress-bar">
+                        <div className="upload-progress-fill" style={{ width: `${uploadProgress}%` }} />
+                      </div>
+                    )}
+                    {/* Processing indicator */}
+                    {(documentProcessingState === 'processing' || documentProcessingState === 'indexing') && !isUploading && (
+                      <div className="processing-indicator">
+                        <span className="processing-spinner"></span>
+                        <span className="processing-text">
+                          {documentProcessingState === 'processing' ? 'Extracting text & creating embeddings...' : 'Indexing for search...'}
+                        </span>
+                      </div>
+                    )}
+                    {/* Document not ready warning */}
+                    {(documentProcessingState === 'processing' || documentProcessingState === 'indexing') && (
+                      <div className="document-not-ready-warning">
+                        ⚠️ This document is still being indexed. You can search it after processing is complete.
+                      </div>
+                    )}
+                    {!isUploading && documentProcessingState !== 'processing' && documentProcessingState !== 'indexing' && (
+                      <button
+                        type="button"
+                        className="remove-file-btn"
+                        onClick={() => {
+                          setAttachedFile(null)
+                          setDocumentProcessingState(null)
+                        }}
+                        aria-label="Remove file"
+                      >
+                        <IconClose size={14} />
+                      </button>
+                    )}
                   </div>
                 )}
 
@@ -7096,6 +7408,37 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
                   </span>
                   <span className="input-hint">Press Enter to send, Shift+Enter for new line</span>
                 </div>
+
+                {/* Suggested Prompts - shown when input is empty */}
+                {!input.trim() && messages.length === 0 && (
+                  <div className="suggested-prompts">
+                    <span className="suggested-prompts-label">Try asking:</span>
+                    <div className="suggested-prompts-grid">
+                      {(searchMode === 'novelty' ? [
+                        { text: 'Prior art search for Ashwagandha-based adaptogen formulation', icon: '🔍' },
+                        { text: 'Is my polyherbal digestive formulation novel under Section 3(p)?', icon: '📋' },
+                        { text: 'TKDL citations for turmeric in wound healing', icon: '📚' },
+                      ] : [
+                        { text: 'Can I patent my Ayurvedic formulation under Patents Act 1970?', icon: '⚖️' },
+                        { text: 'What NBA approvals do I need for commercial use of neem extract?', icon: '🌿' },
+                        { text: 'How to register a GI tag for a traditional herbal product?', icon: '🏷️' },
+                      ]).map((prompt, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          className="suggested-prompt-card"
+                          onClick={() => {
+                            setInput(prompt.text)
+                            if (textareaRef.current) textareaRef.current.focus()
+                          }}
+                        >
+                          <span className="suggested-prompt-icon">{prompt.icon}</span>
+                          <span className="suggested-prompt-text">{prompt.text}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div className="input-actions">
                   <DPDPProtectionBadge />

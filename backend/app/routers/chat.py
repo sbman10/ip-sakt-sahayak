@@ -22,7 +22,8 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.models.database import Conversation, Message, get_db
+from app.models.database import Conversation, Message, User, get_db
+from app.routers.auth import get_current_user
 from app.schemas.chat import (
     ChatRequest,
     ChatResponse,
@@ -89,6 +90,7 @@ def _resolve_source_filters(jurisdiction: str) -> list[str]:
 async def chat_endpoint(
     request: ChatRequest,
     db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user),
 ) -> ChatResponse:
     """
     Main dialogue turn endpoint executing intent-routed RAG pipeline.
@@ -217,6 +219,7 @@ async def chat_endpoint(
             query=retrieval_query,
             jurisdiction=jurisdiction,
             top_k=8,
+            document_ids=request.document_ids,  # Scope to user-uploaded docs if provided
         )
     except Exception as e:
         log.error("Hybrid retrieval failed: %s", e, exc_info=True)
@@ -282,6 +285,18 @@ async def chat_endpoint(
         source_id = chunk.get("source_id") or f"SRC-{idx:03d}"
         source_name = chunk.get("source", "Legal Statute")
         section_name = chunk.get("section", "General")
+        
+        # Detect if this is a user-uploaded document
+        # User docs have jurisdiction="User Document" or have user_id in metadata
+        chunk_meta = chunk.get("metadata", {})
+        is_user_doc = (
+            chunk.get("jurisdiction") == "User Document" or
+            chunk_meta.get("jurisdiction") == "User Document" or
+            bool(chunk_meta.get("user_id")) or
+            bool(chunk.get("user_id"))
+        )
+        original_filename = chunk_meta.get("original_filename") or chunk.get("original_filename")
+        
         citations.append(
             CitationItem(
                 source_id=source_id,
@@ -289,6 +304,8 @@ async def chat_endpoint(
                 section=section_name,
                 text=chunk.get("text", ""),
                 relevance=f"[{source_id}] Grounded in {source_name} ({section_name}).",
+                is_user_document=is_user_doc,
+                original_filename=original_filename if is_user_doc else None,
             )
         )
 
@@ -393,7 +410,7 @@ async def chat_endpoint(
     except Exception as audit_err:
         log.warning("Audit log error: %s", audit_err)
 
-    # Persist conversation turn to DB
+    # Persist conversation turn to DB (both user question AND assistant answer)
     conv_id = request.conversation_id
     try:
         if not conv_id:
@@ -401,12 +418,26 @@ async def chat_endpoint(
                 id=str(uuid.uuid4()),
                 title=raw_query[:50] + ("..." if len(raw_query) > 50 else ""),
                 jurisdiction=jurisdiction,
+                user_id=current_user.id if current_user else None,
             )
             db.add(conv)
             db.commit()
             conv_id = conv.id
 
-        msg = Message(
+        # Save user's question first
+        user_msg = Message(
+            conversation_id=conv_id,
+            role="user",
+            content=raw_query,
+            confidence=None,
+            citations_json=None,
+            latency_ms=None,
+        )
+        db.add(user_msg)
+        db.commit()
+
+        # Save assistant's answer
+        assistant_msg = Message(
             conversation_id=conv_id,
             role="assistant",
             content=answer,
@@ -414,7 +445,7 @@ async def chat_endpoint(
             citations_json=json.dumps([c.model_dump() for c in citations]),
             latency_ms=elapsed_ms,
         )
-        db.add(msg)
+        db.add(assistant_msg)
         db.commit()
     except Exception as db_err:
         log.warning("Could not persist conversation turn to DB: %s", db_err)
@@ -442,6 +473,8 @@ async def chat_endpoint(
 )
 async def chat_stream_endpoint(
     request: ChatRequest,
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user),
 ):
     """
     Streaming SSE endpoint with full intent-routing parity.
@@ -454,6 +487,34 @@ async def chat_stream_endpoint(
     source_filters = _resolve_source_filters(jurisdiction)
 
     scrubbed_query = scrub_pii(raw_query)
+
+    # ── Persist conversation and user message at start ──────────
+    conv_id = request.conversation_id
+    try:
+        if not conv_id:
+            conv = Conversation(
+                id=str(uuid.uuid4()),
+                title=raw_query[:50] + ("..." if len(raw_query) > 50 else ""),
+                jurisdiction=jurisdiction,
+                user_id=current_user.id if current_user else None,
+            )
+            db.add(conv)
+            db.commit()
+            conv_id = conv.id
+
+        # Save user's question
+        user_msg = Message(
+            conversation_id=conv_id,
+            role="user",
+            content=raw_query,
+            confidence=None,
+            citations_json=None,
+            latency_ms=None,
+        )
+        db.add(user_msg)
+        db.commit()
+    except Exception as db_err:
+        log.warning("Could not persist user message to DB: %s", db_err)
 
     # Context profile extraction
     ctx_dict = request.context if isinstance(request.context, dict) else {}
@@ -506,7 +567,7 @@ async def chat_stream_endpoint(
             yield f"data: {json.dumps({'type': 'meta', 'intent': 'CHITCHAT', 'jurisdiction': jurisdiction, 'source_filters': source_filters})}\n\n"
             yield f"data: {json.dumps({'type': 'citations', 'citations': []})}\n\n"
             yield f"data: {json.dumps({'type': 'token', 'token': resp.answer})}\n\n"
-            yield f"data: {json.dumps({'type': 'done', 'done': True, 'status': 'answered', 'completed': True})}\n\n"
+            yield f"data: {json.dumps({'type': 'done', 'done': True, 'status': 'answered', 'completed': True, 'conversation_id': conv_id})}\n\n"
 
         return StreamingResponse(_stream_chitchat(), media_type="text/event-stream")
 
@@ -522,7 +583,7 @@ async def chat_stream_endpoint(
             yield f"data: {json.dumps({'type': 'meta', 'intent': 'CLARIFICATION_NEEDED', 'jurisdiction': jurisdiction, 'source_filters': source_filters})}\n\n"
             yield f"data: {json.dumps({'type': 'citations', 'citations': []})}\n\n"
             yield f"data: {json.dumps({'type': 'token', 'token': resp.answer})}\n\n"
-            yield f"data: {json.dumps({'type': 'done', 'done': True, 'status': 'answered', 'completed': True})}\n\n"
+            yield f"data: {json.dumps({'type': 'done', 'done': True, 'status': 'answered', 'completed': True, 'conversation_id': conv_id})}\n\n"
 
         return StreamingResponse(_stream_clarification(), media_type="text/event-stream")
 
@@ -538,7 +599,7 @@ async def chat_stream_endpoint(
             yield f"data: {json.dumps({'type': 'meta', 'intent': 'OUT_OF_SCOPE', 'jurisdiction': jurisdiction, 'source_filters': source_filters})}\n\n"
             yield f"data: {json.dumps({'type': 'citations', 'citations': []})}\n\n"
             yield f"data: {json.dumps({'type': 'token', 'token': resp.answer})}\n\n"
-            yield f"data: {json.dumps({'type': 'done', 'done': True, 'status': 'answered', 'completed': True})}\n\n"
+            yield f"data: {json.dumps({'type': 'done', 'done': True, 'status': 'answered', 'completed': True, 'conversation_id': conv_id})}\n\n"
 
         return StreamingResponse(_stream_out_of_scope(), media_type="text/event-stream")
 
@@ -554,7 +615,7 @@ async def chat_stream_endpoint(
             yield f"data: {json.dumps({'type': 'meta', 'intent': 'UNSAFE_OR_DISALLOWED', 'jurisdiction': jurisdiction, 'source_filters': source_filters})}\n\n"
             yield f"data: {json.dumps({'type': 'citations', 'citations': []})}\n\n"
             yield f"data: {json.dumps({'type': 'token', 'token': resp.answer})}\n\n"
-            yield f"data: {json.dumps({'type': 'done', 'done': True, 'status': 'answered', 'completed': True})}\n\n"
+            yield f"data: {json.dumps({'type': 'done', 'done': True, 'status': 'answered', 'completed': True, 'conversation_id': conv_id})}\n\n"
 
         return StreamingResponse(_stream_unsafe(), media_type="text/event-stream")
 
@@ -567,6 +628,7 @@ async def chat_stream_endpoint(
             query=retrieval_query,
             jurisdiction=jurisdiction,
             top_k=5,
+            document_ids=request.document_ids,  # Scope to user-uploaded docs if provided
         )
     except Exception:
         candidates = []
@@ -583,7 +645,7 @@ async def chat_stream_endpoint(
             yield f"data: {json.dumps({'type': 'meta', 'intent': 'KNOWLEDGE_SEEK', 'jurisdiction': jurisdiction, 'source_filters': source_filters})}\n\n"
             yield f"data: {json.dumps({'type': 'citations', 'citations': []})}\n\n"
             yield f"data: {json.dumps({'type': 'token', 'token': abstention['answer']})}\n\n"
-            yield f"data: {json.dumps({'type': 'done', 'done': True, 'status': 'no_data', 'completed': True})}\n\n"
+            yield f"data: {json.dumps({'type': 'done', 'done': True, 'status': 'no_data', 'completed': True, 'conversation_id': conv_id})}\n\n"
 
         return StreamingResponse(_stream_abstention(), media_type="text/event-stream")
 
@@ -639,6 +701,6 @@ async def chat_stream_endpoint(
             yield f"data: {json.dumps({'type': 'error', 'message': str(stream_err), 'status': 'degraded'})}\n\n"
 
         if not had_error:
-            yield f"data: {json.dumps({'type': 'done', 'done': True, 'status': 'answered', 'completed': True})}\n\n"
+            yield f"data: {json.dumps({'type': 'done', 'done': True, 'status': 'answered', 'completed': True, 'conversation_id': conv_id})}\n\n"
 
     return StreamingResponse(_generate_stream(), media_type="text/event-stream")

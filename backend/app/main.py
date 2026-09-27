@@ -35,6 +35,9 @@ from app.models.db import Base as AuditBase, AuditLog  # noqa: F401
 # BM25 preloading
 from app.services.bm25_service import load_bm25_index_on_startup
 
+# Qdrant collection initialization
+from app.services.qdrant_service import qdrant_service
+
 # Routers
 from app.routers import (
     analytics as analytics_router,
@@ -102,6 +105,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         log.info("[PID %s] Database tables initialized successfully.", pid)
     except Exception as e:
         log.error("[PID %s] Database initialization error: %s", pid, e, exc_info=True)
+
+    # 1.5 Ensure Qdrant collections exist (india_statutes, international_treaties, user_uploads)
+    try:
+        collection_status = qdrant_service.ensure_collections()
+        for col_name, col_status in collection_status.items():
+            log.info("[PID %s] Qdrant collection '%s': %s", pid, col_name, col_status)
+    except Exception as e:
+        log.warning("[PID %s] Qdrant collection initialization warning: %s", pid, e)
 
     # 2. Rebuild the legacy in-process BM25 index only when the legacy
     # Chroma/BM25 backend is active. Qdrant-native hybrid retrieval already

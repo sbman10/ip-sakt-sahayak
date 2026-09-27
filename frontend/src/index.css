@@ -3071,13 +3071,245 @@ html, body {
   color: var(--text-primary);
 }
 
-/* Chat Composer Jurisdiction Selector */
-.chat-jurisdiction-row {
+/* ============================================================
+   CLEAN CHAT CONTROLS - Search Mode Tabs + Jurisdiction Pills
+   ============================================================ */
+.chat-controls-row {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0;
   flex-wrap: wrap;
-  padding: 0.35rem 0.25rem 0.5rem;
+}
+
+/* Search Mode Tabs - Rounded Segmented Control */
+.search-mode-tabs {
+  display: flex;
+  background: var(--bg-elevated, #f4f6f8);
+  border-radius: 12px;
+  padding: 4px;
+  gap: 2px;
+}
+
+.search-mode-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-secondary, #64748b);
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.search-mode-tab:hover {
+  color: var(--text-primary, #1e293b);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.search-mode-tab.active {
+  color: var(--primary, #1a7f5a);
+  background: var(--bg-surface, #fff);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  font-weight: 600;
+}
+
+.search-mode-tab svg {
+  flex-shrink: 0;
+}
+
+/* Jurisdiction Pills */
+.jurisdiction-pills {
+  display: flex;
+  gap: 6px;
+}
+
+.jurisdiction-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-secondary, #64748b);
+  background: var(--bg-elevated, #f4f6f8);
+  border: 1px solid transparent;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.jurisdiction-pill:hover {
+  background: var(--bg-surface, #fff);
+  border-color: var(--bg-border, #e2e8f0);
+}
+
+.jurisdiction-pill.active {
+  color: var(--primary, #1a7f5a);
+  background: rgba(26, 127, 90, 0.1);
+  border-color: var(--primary, #1a7f5a);
+  font-weight: 600;
+}
+
+.jurisdiction-icon {
+  font-size: 0.9rem;
+}
+
+/* Suggested Prompts */
+.suggested-prompts {
+  padding: 0.75rem 0;
+}
+
+.suggested-prompts-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted, #94a3b8);
+  margin-bottom: 0.5rem;
+}
+
+.suggested-prompts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+}
+
+.suggested-prompt-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--bg-elevated, #f8fafc);
+  border: 1px solid var(--bg-border, #e2e8f0);
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.suggested-prompt-card:hover {
+  background: var(--bg-surface, #fff);
+  border-color: var(--primary, #1a7f5a);
+  box-shadow: 0 2px 8px rgba(26, 127, 90, 0.1);
+  transform: translateY(-1px);
+}
+
+.suggested-prompt-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.suggested-prompt-text {
+  font-size: 0.82rem;
+  color: var(--text-primary, #1e293b);
+  line-height: 1.4;
+}
+
+/* Upload Progress Bar */
+.upload-progress-bar {
+  height: 4px;
+  background: var(--bg-elevated, #e2e8f0);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.upload-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary, #1a7f5a), var(--secondary, #065f46));
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.attached-file-preview.uploading {
+  opacity: 0.85;
+}
+
+.upload-success-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--secondary, #065f46);
+  background: rgba(6, 95, 70, 0.1);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+/* Upload Error Banner */
+.upload-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  color: #dc2626;
+  font-size: 0.82rem;
+  margin-bottom: 8px;
+}
+
+.upload-error-banner button {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .chat-controls-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+  
+  .search-mode-tabs {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .search-mode-tab {
+    flex: 1;
+    justify-content: center;
+    padding: 10px 12px;
+  }
+  
+  .jurisdiction-pills {
+    justify-content: center;
+  }
+  
+  .suggested-prompts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .search-mode-tab span:not(.search-mode-tab svg) {
+    font-size: 0.75rem;
+  }
+  
+  .jurisdiction-pill {
+    padding: 5px 10px;
+    font-size: 0.72rem;
+  }
+}
+
+/* Legacy fallback - keep old class for compatibility */
+.chat-jurisdiction-row {
+  display: none; /* Hidden, replaced by .chat-controls-row */
 }
 .chat-jurisdiction-label {
   font-size: 0.72rem;
@@ -3849,6 +4081,37 @@ html, body {
   gap: var(--space-2);
 }
 
+/* Citation Groups - Official vs User Sources */
+.citations-group {
+  margin-bottom: 12px;
+}
+.citations-group:last-child {
+  margin-bottom: 0;
+}
+.citations-group-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  padding: 6px 0;
+  border-bottom: 1px solid var(--bg-border);
+  margin-bottom: 8px;
+}
+.citations-group-icon {
+  display: inline-flex;
+  color: var(--secondary);
+}
+.citations-group.user-sources .citations-group-icon {
+  color: var(--primary);
+}
+.citations-group.user-sources .citations-group-header {
+  color: var(--primary);
+}
+
 .citation-card {
   background: var(--bg-surface);
   border: 1px solid var(--bg-border);
@@ -3857,6 +4120,37 @@ html, body {
   overflow: hidden;
   box-shadow: var(--shadow-sm);
   transition: all var(--transition-fast);
+}
+
+/* User document citation styling */
+.citation-card.user-doc-citation {
+  border-left-color: var(--primary);
+  background: rgba(26, 127, 90, 0.03);
+}
+.citation-card.user-doc-citation .citation-icon {
+  color: var(--primary);
+}
+
+/* User document badge */
+.user-doc-badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 2px 6px;
+  background: rgba(26, 127, 90, 0.15);
+  color: var(--primary);
+  border-radius: 4px;
+  margin-right: 6px;
+}
+
+.citation-filename {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed var(--bg-border);
 }
 
 .citation-card.expanded {
@@ -3924,6 +4218,72 @@ html, body {
   color: var(--secondary);
   text-decoration: none;
   word-break: break-all;
+}
+
+/* Document Processing States */
+.processing-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: 8px;
+}
+.processing-badge.uploading {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+.processing-badge.processing {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+.processing-badge.indexing {
+  background: rgba(139, 92, 246, 0.15);
+  color: #8b5cf6;
+}
+.processing-badge.ready {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+.processing-badge.failed {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.processing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  margin-top: 4px;
+}
+.processing-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--bg-border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.processing-text {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.document-not-ready-warning {
+  font-size: 0.72rem;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin-top: 6px;
+}
+
+.attached-file-preview.processing {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.05);
 }
 
 .citation-link:hover {
@@ -7900,6 +8260,53 @@ button[type="submit"].login-submit-btn:disabled {
   background:
     radial-gradient(circle at 50% -5%, rgba(94, 234, 212, 0.05) 0%, transparent 40%),
     var(--bg-primary);
+}
+
+/* Dark mode for new chat controls */
+[data-theme="dark"] .search-mode-tabs {
+  background: rgba(30, 41, 59, 0.8);
+}
+[data-theme="dark"] .search-mode-tab {
+  color: #94a3b8;
+}
+[data-theme="dark"] .search-mode-tab:hover {
+  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.05);
+}
+[data-theme="dark"] .search-mode-tab.active {
+  color: var(--secondary-light, #5eead4);
+  background: rgba(94, 234, 212, 0.1);
+}
+[data-theme="dark"] .jurisdiction-pill {
+  background: rgba(30, 41, 59, 0.8);
+  color: #94a3b8;
+}
+[data-theme="dark"] .jurisdiction-pill:hover {
+  background: rgba(51, 65, 85, 0.8);
+  border-color: #475569;
+}
+[data-theme="dark"] .jurisdiction-pill.active {
+  color: var(--secondary-light, #5eead4);
+  background: rgba(94, 234, 212, 0.15);
+  border-color: var(--secondary-light, #5eead4);
+}
+[data-theme="dark"] .suggested-prompt-card {
+  background: rgba(30, 41, 59, 0.6);
+  border-color: #334155;
+}
+[data-theme="dark"] .suggested-prompt-card:hover {
+  background: rgba(51, 65, 85, 0.8);
+  border-color: var(--secondary-light, #5eead4);
+}
+[data-theme="dark"] .suggested-prompt-text {
+  color: #e2e8f0;
+}
+[data-theme="dark"] .suggested-prompts-label {
+  color: #64748b;
+}
+[data-theme="dark"] .upload-error-banner {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
 }
 
 /* Topbar depth */
@@ -14761,4 +15168,101 @@ button[type="submit"].login-submit-btn:disabled {
   .sources-panel {
     max-height: 60vh !important;
   }
+}
+
+
+/* ============================================================
+   ATTACHED DOCUMENT BADGE IN USER MESSAGE
+   ============================================================ */
+.attached-doc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: linear-gradient(135deg, rgba(29, 78, 216, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%);
+  border: 1px solid rgba(29, 78, 216, 0.2);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  color: var(--primary);
+  margin-bottom: 6px;
+  max-width: 100%;
+}
+
+.attached-doc-badge span {
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ============================================================
+   CHAT INPUT BUTTONS - PROPER SPACING
+   ============================================================ */
+.chat-file-upload {
+  display: flex;
+  align-items: center;
+  margin-right: 8px;
+}
+
+.voice-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 4px;
+}
+
+.file-upload-btn,
+.voice-btn {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+}
+
+/* Ensure buttons don't overlap */
+.chat-input-wrap {
+  position: relative;
+}
+
+.chat-input-wrap .chat-input {
+  padding-right: 100px; /* Space for file + voice buttons */
+}
+
+/* ============================================================
+   SEARCH MODE TABS - ENHANCED VISIBILITY
+   ============================================================ */
+.chat-controls-row {
+  margin-bottom: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--bg-border);
+}
+
+.search-mode-tabs {
+  background: var(--bg-surface);
+  border: 1px solid var(--bg-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.search-mode-tab.active {
+  background: var(--primary);
+  color: #fff;
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .attached-doc-badge {
+  background: linear-gradient(135deg, rgba(29, 78, 216, 0.2) 0%, rgba(16, 185, 129, 0.2) 100%);
+  border-color: rgba(29, 78, 216, 0.3);
+}
+
+[data-theme="dark"] .search-mode-tabs {
+  background: var(--bg-elevated);
+  border-color: var(--bg-border);
+}
+
+[data-theme="dark"] .search-mode-tab.active {
+  background: var(--primary);
+  color: #fff;
 }
