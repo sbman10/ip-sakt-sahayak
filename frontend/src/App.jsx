@@ -10011,6 +10011,9 @@ function AppShell({ children, isLoggedIn, userName, onOpenAbout, onLogout }) {
   const { lang, setLang, languages } = useLanguage()
   const location = useLocation()
   const navigate = useNavigate()
+  const [isMobile, setIsMobile] = useState(() => (
+    typeof window !== 'undefined' && window.innerWidth <= 768
+  ))
 
   // Track sidebar hidden state (synced with RagvynSidebar via custom event)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -10038,10 +10041,17 @@ function AppShell({ children, isLoggedIn, userName, onOpenAbout, onLogout }) {
     }
   }, [])
 
+  // Keep shell layout and the desktop toggle in sync when the viewport changes.
+  useEffect(() => {
+    const updateViewport = () => setIsMobile(window.innerWidth <= 768)
+    updateViewport()
+    window.addEventListener('resize', updateViewport)
+    return () => window.removeEventListener('resize', updateViewport)
+  }, [])
+
   // Keep the application shell available on the landing page as well.
   // Login and auth callback remain distraction-free and outside the app shell.
   const hideSidebar = location.pathname === '/login' || location.pathname === '/auth/callback'
-  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768
 
   const handleNewChat = () => {
     navigate('/chat', { state: { newChat: true } })

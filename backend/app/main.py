@@ -417,8 +417,8 @@ async def readiness_check(response: Response) -> dict[str, Any]:
     from app.services.llm import get_llm_diagnostics
     llm_diag = get_llm_diagnostics()
     checks["llm_providers"] = llm_diag
-    # If neither provider is available, mark readiness as not ready
-    if not (llm_diag["cerebras_key_present"] or llm_diag["gemini_key_present"]):
+    # If no provider is available, mark readiness as not ready
+    if not (llm_diag.get("groq_key_present") or llm_diag.get("cerebras_key_present") or llm_diag.get("gemini_key_present")):
         checks["llm_configured"] = False
     else:
         checks["llm_configured"] = True

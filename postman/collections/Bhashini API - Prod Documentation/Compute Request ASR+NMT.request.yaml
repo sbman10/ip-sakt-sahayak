@@ -1,0 +1,44 @@
+$kind: http-request
+url: "{{callback_url}}"
+method: POST
+headers:
+  Accept: " */*"
+  User-Agent: " Thunder Client (https://www.thunderclient.com)"
+  "{{compute_call_authorization_key}}": "{{compute_call_authorization_value}}"
+body:
+  type: json
+  content: |-
+    {
+        "pipelineTasks": [
+            {
+                "taskType": "asr",
+                "config": {
+                    "language": {
+                        "sourceLanguage": "{{source_language}}"
+                    },
+                    "serviceId": "{{asr_service_id}}",
+                    "audioFormat": "flac",
+                    "samplingRate": 16000
+                }
+            },
+            {
+                "taskType": "translation",
+                "config": {
+                    "language": {
+                        "sourceLanguage": "{{source_language}}",
+                        "targetLanguage": "{{target_language}}"
+                    },
+                    "serviceId": "{{nmt_service_id}}"
+                }
+            }
+        ],
+        "inputData": {
+            "audio": [
+                {
+                    "audioContent": "{{base64}}"
+                }
+            ]
+        }
+    }
+settings: {}
+order: 9000

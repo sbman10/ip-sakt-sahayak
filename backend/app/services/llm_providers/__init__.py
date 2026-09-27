@@ -16,6 +16,7 @@ from app.services.llm_providers.base import (
 )
 from app.services.llm_providers.cerebras_provider import CerebrasProvider
 from app.services.llm_providers.gemini_provider import GeminiProvider
+from app.services.llm_providers.groq_provider import GroqProvider
 from app.services.llm_providers.orchestrator import (
     DualProviderOrchestrator,
     llm_orchestrator,
@@ -31,6 +32,7 @@ __all__ = [
     "ProviderTimeoutError",
     "ProviderConfigError",
     "ProviderAuthError",
+    "GroqProvider",
     "CerebrasProvider",
     "GeminiProvider",
     "DualProviderOrchestrator",

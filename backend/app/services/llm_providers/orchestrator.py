@@ -24,6 +24,7 @@ from app.services.llm_providers.base import (
 )
 from app.services.llm_providers.cerebras_provider import CerebrasProvider
 from app.services.llm_providers.gemini_provider import GeminiProvider
+from app.services.llm_providers.groq_provider import GroqProvider
 
 log = logging.getLogger("app.services.llm_providers.orchestrator")
 
@@ -47,25 +48,29 @@ def _trim_to_sentence_boundary(text: str) -> str:
 class DualProviderOrchestrator:
     """
     Orchestrates LLM generation across primary and fallback providers.
-    Supports Cerebras and Google Gemini with failover on quota (429),
+    Supports Groq, Cerebras, and Google Gemini with failover on quota (429),
     transient errors (500/503), timeouts, and missing credentials.
     """
 
     def __init__(
         self,
+        groq_provider: Optional[BaseLLMProvider] = None,
         cerebras_provider: Optional[BaseLLMProvider] = None,
         gemini_provider: Optional[BaseLLMProvider] = None,
     ) -> None:
+        self._groq = groq_provider or GroqProvider()
         self._cerebras = cerebras_provider or CerebrasProvider()
         self._gemini = gemini_provider or GeminiProvider()
 
     def get_provider(self, name: str) -> BaseLLMProvider:
         normalized = name.strip().lower()
+        if normalized == "groq":
+            return self._groq
         if normalized == "cerebras":
             return self._cerebras
         if normalized == "gemini":
             return self._gemini
-        raise ProviderConfigError(f"Unknown LLM provider: '{name}'. Must be 'cerebras' or 'gemini'.")
+        raise ProviderConfigError(f"Unknown LLM provider: '{name}'. Must be 'groq', 'cerebras', or 'gemini'.")
 
     def _resolve_candidate_order(self) -> List[Tuple[str, BaseLLMProvider]]:
         """
@@ -247,8 +252,10 @@ class DualProviderOrchestrator:
             "fallback_provider": fallback_name,
             "primary_available": primary_p.is_available,
             "fallback_available": fallback_p.is_available,
+            "groq_key_present": self._groq.is_available,
             "cerebras_key_present": self._cerebras.is_available,
             "gemini_key_present": self._gemini.is_available,
+            "groq_model": getattr(settings, "GROQ_MODEL", "openai/gpt-oss-120b"),
             "cerebras_model": settings.CEREBRAS_MODEL,
             "gemini_model": getattr(settings, "GEMINI_MODEL", settings.PRIMARY_MODEL),
             "retrieval_backend": settings.RETRIEVAL_BACKEND,

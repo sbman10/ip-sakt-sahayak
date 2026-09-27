@@ -56,8 +56,14 @@ services:
         value: "false"
       - key: QDRANT_TRAFFIC_PERCENT
         value: "0"
-      - key: GEMINI_API_KEY
-        sync: false # Set in Render Dashboard
+      - key: GROQ_API_KEY
+        sync: false # Set in Render Dashboard: https://console.groq.com/keys
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-120b
+      - key: LLM_PRIMARY_PROVIDER
+        value: groq
+      - key: LLM_FALLBACK_PROVIDER
+        value: groq
       - key: DATABASE_URL
         sync: false # Set in Render Dashboard: postgresql+psycopg://postgres.[ref]:[pwd]@aws-0-[region].pooler.supabase.com:6543/postgres
       - key: SUPABASE_URL

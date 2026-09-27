@@ -1,0 +1,35 @@
+$kind: http-request
+url: "{{callback_url}}"
+method: POST
+headers:
+  Accept: " */*"
+  User-Agent: " Thunder Client (https://www.thunderclient.com)"
+  "{{compute_call_authorization_key}}": "{{compute_call_authorization_value}}"
+body:
+  type: json
+  content: |-
+    {
+        "pipelineTasks": [
+            {
+                "taskType": "transliteration",
+                "config": {
+                    "language": {
+                        "sourceLanguage": "en",
+                        "targetLanguage": "hi"
+                    },
+                    "serviceId": "{{trans_service_id}}",
+                    "isSentence": false,
+                    "numSuggestions": 7
+                }
+            }
+        ],
+        "inputData": {
+            "input": [
+                {
+                    "source": "ki"
+                }
+            ]
+        }
+    }
+settings: {}
+order: 8000

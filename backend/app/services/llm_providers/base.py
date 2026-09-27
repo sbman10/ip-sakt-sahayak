@@ -69,7 +69,7 @@ class BaseLLMProvider(ABC):
     @property
     @abstractmethod
     def name(self) -> str:
-        """Provider identifier ('cerebras' or 'gemini')."""
+        """Provider identifier ('groq', 'cerebras', or 'gemini')."""
         pass
 
     @property

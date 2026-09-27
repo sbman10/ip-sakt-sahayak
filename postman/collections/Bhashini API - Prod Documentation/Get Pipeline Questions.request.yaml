@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{ulca_base_url}}{{questions_endpoint}}"
+method: POST
+body:
+  type: json
+  content: |-
+    {
+        "feedbackLanguage" : "hi",
+        "supportedTasks" : [
+            "translation"
+        ]
+    }
+settings: {}
+order: 12000

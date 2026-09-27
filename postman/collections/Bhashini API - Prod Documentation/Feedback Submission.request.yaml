@@ -1,0 +1,122 @@
+$kind: http-request
+url: "{{callback_url_feedback}}"
+method: POST
+headers:
+  Authorization: gQNj-sTUJjdkac_hsmJLRlj9DeJzO6Q2qzW5SrshxQAwU635MyHXyAajtExDykfZ
+body:
+  type: json
+  content: "{\r
+
+    \    \"feedbackTimeStamp\": 0,\r
+
+    \    \"feedbackLanguage\": \"en\",\r
+
+    \    \"pipelineInput\": {{inference_input_payload}},\r
+
+    \    \"pipelineOutput\": {{inference_output_payload}},\r
+
+    \    \"suggestedPipelineOutput\": {{suggested_inference_output_payload}},\r
+
+    \    \"pipelineFeedback\": {\r
+
+    \        \"commonFeedback\": [\r
+
+    \            {\r
+
+    \                \"question\": \"Are you satisfied with the pipeline response?\",\r
+
+    \                \"feedbackType\": \"rating\",\r
+
+    \                \"rating\": 4\r
+
+    \            }\r
+
+    \        ]\r
+
+    \    },\r
+
+    \    \"taskFeedback\": [\r
+
+    \        {\r
+
+    \            \"taskType\": \"asr\",\r
+
+    \            \"commonFeedback\": [\r
+
+    \                {\r
+
+    \                    \"question\": \"Are you satisfied with the ASR response?\",\r
+
+    \                    \"feedbackType\": \"rating\",\r
+
+    \                    \"rating\": 4\r
+
+    \                }\r
+
+    \            ],\r
+
+    \            \"granularFeedback\": [\r
+
+    \                {\r
+
+    \                    \"question\": \"Was the speech accurately recognised?\",\r
+
+    \                    \"feedbackType\": \"thumbs\",\r
+
+    \                    \"isLiked\": true\r
+
+    \                },\r
+
+    \                {\r
+
+    \                    \"question\": \"Which are the areas that ASR can improve upon?\",\r
+
+    \                    \"feedbackType\": \"checkbox-list\",\r
+
+    \                    \"checkboxList\": [\r
+
+    \                        {\r
+
+    \                            \"parameterName\": \"names\",\r
+
+    \                            \"isSelected\": true\r
+
+    \                        },\r
+
+    \                        {\r
+
+    \                            \"parameterName\": \"places\",\r
+
+    \                            \"isSelected\": false\r
+
+    \                        },\r
+
+    \                        {\r
+
+    \                            \"parameterName\": \"numbers\",\r
+
+    \                            \"isSelected\": true\r
+
+    \                        },\r
+
+    \                        {\r
+
+    \                            \"parameterName\": \"dates\",\r
+
+    \                            \"isSelected\": true\r
+
+    \                        }\r
+
+    \                    ]\r
+
+    \                }\r
+
+    \            ]\r
+
+    \        }\r
+
+    \    ]\r
+
+    }"
+settings: {}
+order: 13000

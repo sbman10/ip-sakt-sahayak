@@ -11,8 +11,7 @@ if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
 from app.schemas.chat import ChatResponse, ConfidenceScore
-from app.services.llm_providers.base import ProviderConfigError
-from app.services.llm_providers.cerebras_provider import CerebrasProvider
+from app.services.llm_providers.base import ProviderAuthError, ProviderConfigError, ProviderQuotaError
 
 
 def test_degraded_chat_response_is_valid_api_schema():
@@ -29,16 +28,37 @@ def test_degraded_chat_response_is_valid_api_schema():
     assert response.status == "degraded"
 
 
-def test_cerebras_billing_error_is_configuration_error_and_not_transient():
-    provider = CerebrasProvider(api_key="test-key")
+def test_groq_billing_or_quota_error_is_quota_error():
+    from app.services.llm_providers.groq_provider import GroqProvider
+    provider = GroqProvider(api_key="test-key")
     response = MagicMock()
-    response.status_code = 402
-    response.text = "payment required"
-    response.json.return_value = {"error": "payment required"}
+    response.status_code = 429
+    response.text = "rate limit reached"
+    response.json.return_value = {"error": {"message": "Rate limit reached"}}
 
-    with pytest.raises(ProviderConfigError) as exc_info:
+    with pytest.raises(ProviderQuotaError) as exc_info:
         provider._handle_http_error(response)
 
-    assert exc_info.value.status_code == 402
-    assert exc_info.value.provider == "cerebras"
+    assert exc_info.value.status_code == 429
+    assert exc_info.value.provider == "groq"
+
+
+def test_groq_auth_and_quota_errors():
+    from app.services.llm_providers.groq_provider import GroqProvider
+    from app.services.llm_providers.base import ProviderAuthError, ProviderQuotaError
+    provider = GroqProvider(api_key="test-key")
+
+    resp_401 = MagicMock()
+    resp_401.status_code = 401
+    resp_401.text = "invalid api key"
+    resp_401.json.return_value = {"error": {"message": "Invalid API Key"}}
+    with pytest.raises(ProviderAuthError):
+        provider._handle_http_error(resp_401)
+
+    resp_429 = MagicMock()
+    resp_429.status_code = 429
+    resp_429.text = "rate limit exceeded"
+    resp_429.json.return_value = {"error": {"message": "Rate limit reached"}}
+    with pytest.raises(ProviderQuotaError):
+        provider._handle_http_error(resp_429)
 

@@ -817,7 +817,7 @@
   position: fixed;
   top: 12px;
   left: 12px;
-  z-index: 1090;
+  z-index: 1101;
   width: 40px;
   height: 40px;
   border: 1px solid rgba(52, 211, 153, 0.3);
@@ -891,10 +891,9 @@
   -webkit-backdrop-filter: blur(6px);
 }
 
-/* When sidebar is expanded, shift toggle to the right of the sidebar */
-.ragvyn-app-content--sidebar-expanded ~ .ragvyn-sidebar-restore-toggle,
+/* Keep the desktop control just outside the visible sidebar, never over its brand. */
 .ragvyn-sidebar--expanded ~ .ragvyn-sidebar-restore-toggle {
-  left: 14px;
+  left: 272px;
 }
 
 .ragvyn-sidebar-restore-toggle:hover {

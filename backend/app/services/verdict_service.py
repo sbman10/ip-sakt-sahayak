@@ -185,24 +185,54 @@ async def generate_verdict(
     """
     _VALID = {"RED", "YELLOW", "GREEN", "UNKNOWN"}
 
+    jur_norm = (jurisdiction or "India").strip().lower()
+    selected_jurisdiction = (
+        "both" if jur_norm == "both"
+        else "international" if "international" in jur_norm
+        else "india"
+    )
+
+    user_content = (
+        f"selected_jurisdiction: {selected_jurisdiction}\n\n"
+        f"--- RETRIEVED LEGAL / TKDL CONTEXT ---\n"
+        f"{context_str if context_str.strip() else '[No relevant passages retrieved]'}\n"
+        f"--- END CONTEXT ---\n\n"
+        f"FORMULATION TO SCREEN:\n{formulation}\n\n"
+        f"INTENDED USE / CLAIMED NOVELTY:\n{intended_use.strip() or '[not provided]'}\n\n"
+        f"Return ONLY the JSON verdict object as specified. Ground every field in the "
+        f"retrieved context above."
+    )
+
     try:
-        raw = await execute_with_retry_and_fallback(
-            _build_verdict_call,
-            formulation=formulation,
-            intended_use=intended_use,
-            context_str=context_str,
-            jurisdiction=jurisdiction,
+        from app.services.llm_providers import llm_orchestrator
+        resp = await llm_orchestrator.generate_answer(
+            system_prompt=_VERDICT_SYSTEM_PROMPT,
+            user_prompt=user_content,
+            max_output_tokens=900,
+            temperature=0.1,
+            raise_on_failure=True,
         )
-    except ResourceExhaustedError:
-        log.error("All Gemini keys exhausted during verdict generation.")
-        return _unknown_verdict(
-            "The screening service is temporarily rate-limited. Please try again shortly."
-        )
+        raw = resp.text
     except Exception as e:
-        log.error("Verdict generation failed: %s", e, exc_info=True)
-        return _unknown_verdict(
-            "The screening engine could not be reached right now. Please try again."
-        )
+        log.warning("llm_orchestrator verdict call failed or fallback needed: %s", e)
+        try:
+            raw = await execute_with_retry_and_fallback(
+                _build_verdict_call,
+                formulation=formulation,
+                intended_use=intended_use,
+                context_str=context_str,
+                jurisdiction=jurisdiction,
+            )
+        except ResourceExhaustedError:
+            log.error("All LLM keys exhausted during verdict generation.")
+            return _unknown_verdict(
+                "The screening service is temporarily rate-limited. Please try again shortly."
+            )
+        except Exception as e2:
+            log.error("Verdict generation failed: %s", e2, exc_info=True)
+            return _unknown_verdict(
+                "The screening engine could not be reached right now. Please try again."
+            )
 
     data = _safe_parse_verdict_json(raw)
     if not data:

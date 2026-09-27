@@ -168,24 +168,54 @@ async def generate_guardian(
     """
     _VALID_APPLIC = {"required", "likely", "conditional", "not_applicable", "unknown"}
 
+    jur_norm = (jurisdiction or "India").strip().lower()
+    selected_jurisdiction = (
+        "both" if jur_norm == "both"
+        else "international" if "international" in jur_norm
+        else "india"
+    )
+
+    user_content = (
+        f"selected_jurisdiction: {selected_jurisdiction}\n\n"
+        f"--- RETRIEVED LEGAL / COMPLIANCE CONTEXT ---\n"
+        f"{context_str if context_str.strip() else '[No relevant passages retrieved]'}\n"
+        f"--- END CONTEXT ---\n\n"
+        f"PRODUCT DESCRIPTION:\n{product}\n\n"
+        f"POSITIONING / HOW IT IS SOLD:\n{positioning.strip() or '[not provided]'}\n\n"
+        f"Return ONLY the JSON compliance guardian object as specified. Ground every "
+        f"obligation and reference in the retrieved context above."
+    )
+
     try:
-        raw = await execute_with_retry_and_fallback(
-            _build_guardian_call,
-            product=product,
-            positioning=positioning,
-            context_str=context_str,
-            jurisdiction=jurisdiction,
+        from app.services.llm_providers import llm_orchestrator
+        resp = await llm_orchestrator.generate_answer(
+            system_prompt=_GUARDIAN_SYSTEM_PROMPT,
+            user_prompt=user_content,
+            max_output_tokens=2000,
+            temperature=0.15,
+            raise_on_failure=True,
         )
-    except ResourceExhaustedError:
-        log.error("All Gemini keys exhausted during guardian generation.")
-        return _empty_matrix(
-            "The compliance service is temporarily rate-limited. Please try again shortly."
-        )
+        raw = resp.text
     except Exception as e:
-        log.error("Guardian generation failed: %s", e, exc_info=True)
-        return _empty_matrix(
-            "The compliance engine could not be reached right now. Please try again."
-        )
+        log.warning("llm_orchestrator guardian call failed or fallback needed: %s", e)
+        try:
+            raw = await execute_with_retry_and_fallback(
+                _build_guardian_call,
+                product=product,
+                positioning=positioning,
+                context_str=context_str,
+                jurisdiction=jurisdiction,
+            )
+        except ResourceExhaustedError:
+            log.error("All LLM keys exhausted during guardian generation.")
+            return _empty_matrix(
+                "The compliance service is temporarily rate-limited. Please try again shortly."
+            )
+        except Exception as e2:
+            log.error("Guardian generation failed: %s", e2, exc_info=True)
+            return _empty_matrix(
+                "The compliance engine could not be reached right now. Please try again."
+            )
 
     data = _safe_parse_json(raw)
     if not data:
