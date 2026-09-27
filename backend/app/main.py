@@ -130,22 +130,25 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     else:
         log.info("[PID %s] Skipping legacy BM25 rebuild; Qdrant native sparse retrieval is active.", pid)
 
-    # 3. Preload SentenceTransformer and CrossEncoder asynchronously
-    try:
-        log.info("[PID %s] Preloading ML models...", pid)
-        await asyncio.to_thread(
-            model_registry.load_models,
-            settings.EMBEDDING_MODEL_NAME,
-        )
-        # 4. Preload and warm up FastEmbed sparse BM25 tokenizer
+    # 3. Preload SentenceTransformer and CrossEncoder in background so server starts immediately
+    async def _preload_ml_models():
         try:
-            from app.services.sparse_embedding_service import sparse_embedder
-            await asyncio.to_thread(sparse_embedder.embed_query, "Ayurvedic patent inquiry")
-            log.info("[PID %s] FastEmbed BM25 sparse tokenizer preloaded and warmed up.", pid)
+            log.info("[PID %s] Preloading ML models in background...", pid)
+            await asyncio.to_thread(
+                model_registry.load_models,
+                settings.EMBEDDING_MODEL_NAME,
+            )
+            try:
+                from app.services.sparse_embedding_service import sparse_embedder
+                await asyncio.to_thread(sparse_embedder.embed_query, "Ayurvedic patent inquiry")
+                log.info("[PID %s] FastEmbed BM25 sparse tokenizer preloaded and warmed up.", pid)
+            except Exception as e:
+                log.warning("[PID %s] FastEmbed BM25 warmup note: %s", pid, e)
+            log.info("[PID %s] Background ML model preloading complete.", pid)
         except Exception as e:
-            log.warning("[PID %s] FastEmbed BM25 warmup note: %s", pid, e)
-    except Exception as e:
-        log.error("[PID %s] Failed model preloading during startup: %s", pid, e, exc_info=True)
+            log.error("[PID %s] Failed background model preloading: %s", pid, e, exc_info=True)
+
+    asyncio.create_task(_preload_ml_models())
 
     log.info("[PID %s] Startup sequence completed. Application ready to accept requests.", pid)
     log.info("Swagger UI:  http://127.0.0.1:8000/docs")
