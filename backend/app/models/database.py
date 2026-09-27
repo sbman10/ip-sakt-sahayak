@@ -108,7 +108,7 @@ class User(Base):
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     email = Column(String(255), unique=True, nullable=False, index=True)
-    password_hash = Column(String(255), nullable=False)
+    password_hash = Column(String(255), nullable=True, default="")
     full_name = Column(String(255), nullable=False)
     organization = Column(String(255), nullable=True)
     role = Column(String(50), default="user")

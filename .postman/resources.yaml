@@ -2,6 +2,8 @@
 workspace:
   id: d74ab9ac-3ddf-4b4a-af95-32421b8f9090
 
+# Each entry here maps a local resource to one or more corresponding objects in Postman Cloud
+
 cloudResources:
   collections:
     ../postman/collections/Bhashini API - Prod Documentation: c3a63c37-75ed-4958-b407-5b75ecb03e4c

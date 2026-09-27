@@ -31,6 +31,15 @@ const IconLogout = ({ size = 16 }) => (
   </svg>
 )
 
+const IconSwitchAccount = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+    <circle cx="9" cy="7" r="4" />
+    <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+  </svg>
+)
+
 const IconChevronDown = ({ size = 12, className = '' }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
     <polyline points="6 9 12 15 18 9" />
@@ -39,7 +48,9 @@ const IconChevronDown = ({ size = 12, className = '' }) => (
 
 export default function UserProfileMenu({
   userName,
+  userEmail,
   onLogout,
+  onSwitchAccount,
   onOpenEditProfile,
   compact = false,
 }) {
@@ -123,7 +134,7 @@ export default function UserProfileMenu({
   }, [isOpen])
 
   const displayName = userProfile?.full_name || userName || 'Innovator'
-  const displayEmail = userProfile?.email || userProfile?.organization || 'Account'
+  const displayEmail = userProfile?.email || userEmail || userProfile?.organization || 'Account'
   const avatarUrl = userProfile?.avatar_url
   const initial = (displayName.trim() || 'U').charAt(0).toUpperCase()
 
@@ -148,10 +159,20 @@ export default function UserProfileMenu({
     navigate('/pricing')
   }
 
-  const handleLogoutAction = () => {
+  const handleSwitchAccountAction = async () => {
+    setIsOpen(false)
+    if (onSwitchAccount) {
+      await onSwitchAccount()
+    } else if (onLogout) {
+      await onLogout()
+    }
+    navigate('/login')
+  }
+
+  const handleLogoutAction = async () => {
     setIsOpen(false)
     if (onLogout) {
-      onLogout()
+      await onLogout()
     }
   }
 
@@ -273,8 +294,20 @@ export default function UserProfileMenu({
 
           <div className="gov-profile-menu-divider" />
 
-          {/* Logout Action */}
+          {/* Account Actions */}
           <div className="gov-profile-menu-footer">
+            <button
+              type="button"
+              role="menuitem"
+              className="gov-profile-menu-item"
+              onClick={handleSwitchAccountAction}
+              style={{ marginBottom: '4px' }}
+            >
+              <span className="gov-profile-item-icon">
+                <IconSwitchAccount size={16} />
+              </span>
+              <span className="gov-profile-item-label">Switch Account</span>
+            </button>
             <button
               type="button"
               role="menuitem"
@@ -284,7 +317,7 @@ export default function UserProfileMenu({
               <span className="gov-profile-item-icon">
                 <IconLogout size={16} />
               </span>
-              <span className="gov-profile-item-label">Logout</span>
+              <span className="gov-profile-item-label">Sign Out</span>
             </button>
           </div>
         </div>

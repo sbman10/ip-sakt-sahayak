@@ -800,3 +800,17 @@ export function IconRefreshCw({ className = '', size = 18 }) {
 }
 
 export const IconScale = IconScales
+
+export function IpSaktiLogo({ className = '', size = 36 }) {
+  return (
+    <img
+      src="/logo.png"
+      alt="IP-SAKTI Sahayak Logo"
+      className={className}
+      width={size}
+      height={size}
+      style={{ objectFit: 'contain' }}
+    />
+  )
+}
+
