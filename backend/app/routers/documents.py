@@ -34,15 +34,18 @@ import sys
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.dependencies import TenantContext, get_tenant_context, require_permission
+from app.core.permissions import Permission
 from app.models.database import UploadedDocument, User, get_db
 from app.routers.auth import require_auth
+from app.services.audit_service import log_admin_action
 from app.services.embedding_service import canonical_embedder
 from app.services.storage_service import build_storage_key, storage_service
 from app.services.qdrant_service import qdrant_service
@@ -89,11 +92,14 @@ except Exception:
 class DocumentIngestResponse(BaseModel):
     """Returned after a successful PDF ingest."""
     document_id: str
+    id: Optional[str] = None
     original_filename: str
     file_size: int
     chunk_count: int
     processing_status: str
     message: str
+    user_id: Optional[str] = None
+    organisation_id: Optional[str] = None
 
 
 class UploadedDocumentOut(BaseModel):
@@ -192,12 +198,12 @@ def _chunk_pages(
 )
 async def upload_and_ingest_document(
     file: UploadFile = File(...),
-    user: User = Depends(require_auth),
+    tenant: TenantContext = Depends(require_permission(Permission.DOCUMENT_CREATE)),
     db: Session = Depends(get_db),
 ) -> DocumentIngestResponse:
     """
     Upload a PDF, parse + chunk it, and index the chunks into the
-    ``user_uploads`` Qdrant collection for retrieval.
+    ``user_uploads`` Qdrant collection scoped strictly to the caller's tenant.
 
     - Only ``.pdf`` accepted.
     - Max size 10MB.
@@ -231,9 +237,15 @@ async def upload_and_ingest_document(
 
     document_id = str(uuid.uuid4())
 
-    # Build Supabase Storage object key and filename
-    stored_filename = f"{user.id}_{document_id}.pdf"
-    storage_key = build_storage_key(user.id, document_id, original_name)
+    # Build Supabase Storage object key with hierarchical tenant isolation:
+    # organisations/{org_id}/users/{user_id}/documents/{doc_id}/{filename}
+    stored_filename = f"{tenant.user_id}_{document_id}.pdf"
+    storage_key = build_storage_key(
+        user_id=tenant.user_id,
+        document_id=document_id,
+        filename=original_name,
+        organisation_id=tenant.organisation_id,
+    )
 
     # 1. Upload original PDF directly to Supabase Storage (Stateless)
     try:
@@ -249,10 +261,11 @@ async def upload_and_ingest_document(
             detail="Failed to save the uploaded file to cloud storage.",
         )
 
-    # 2. Persist Document record to Supabase PostgreSQL
+    # 2. Persist Document record to Supabase PostgreSQL scoped by user and organisation
     doc = UploadedDocument(
         id=document_id,
-        user_id=user.id,
+        user_id=tenant.user_id,
+        organisation_id=tenant.organisation_id,
         filename=stored_filename,
         original_filename=original_name,
         file_type="pdf",
@@ -292,10 +305,12 @@ async def upload_and_ingest_document(
             {
                 "source": c["source_title"],
                 "section": c["section"],
-                "user_id": user.id,
+                "user_id": tenant.user_id,
+                "organisation_id": tenant.organisation_id,
                 "document_id": document_id,
                 "original_filename": original_name,
                 "jurisdiction": "User Document",
+                "visibility": "private",
             }
             for c in chunks
         ]
@@ -354,7 +369,7 @@ async def upload_and_ingest_document(
 
         log.info(
             "Ingested document %s (%d chunks) for user %s",
-            document_id, len(chunks), user.email,
+            document_id, len(chunks), tenant.user.email,
         )
 
     except HTTPException:
@@ -371,24 +386,27 @@ async def upload_and_ingest_document(
 
     return DocumentIngestResponse(
         document_id=document_id,
+        id=document_id,
         original_filename=original_name,
         file_size=file_size,
         chunk_count=doc.chunk_count,
         processing_status=doc.processing_status,
         message=f"Document ingested successfully ({doc.chunk_count} chunks indexed).",
+        user_id=tenant.user_id,
+        organisation_id=tenant.organisation_id,
     )
 
 
 @router.get("", response_model=list[UploadedDocumentOut], tags=["Documents"], operation_id="list_rag_documents")
 def list_documents(
-    user: User = Depends(require_auth),
+    tenant: TenantContext = Depends(require_permission(Permission.DOCUMENT_READ)),
     db: Session = Depends(get_db),
 ) -> list[UploadedDocumentOut]:
-    """List the current user's ingested documents, newest first."""
+    """List the current tenant's ingested documents, newest first."""
     docs = (
         db.query(UploadedDocument)
         .filter(
-            UploadedDocument.user_id == user.id,
+            UploadedDocument.organisation_id == tenant.organisation_id,
             UploadedDocument.file_type == "pdf",
         )
         .order_by(UploadedDocument.created_at.desc())
@@ -400,7 +418,7 @@ def list_documents(
 @router.delete("/{document_id}", tags=["Documents"], operation_id="delete_rag_document")
 def delete_document(
     document_id: str,
-    user: User = Depends(require_auth),
+    tenant: TenantContext = Depends(require_permission(Permission.DOCUMENT_DELETE)),
     db: Session = Depends(get_db),
 ) -> dict:
     """Delete an ingested document: its Qdrant chunks, the file, and the row."""
@@ -408,7 +426,7 @@ def delete_document(
         db.query(UploadedDocument)
         .filter(
             UploadedDocument.id == document_id,
-            UploadedDocument.user_id == user.id,
+            UploadedDocument.organisation_id == tenant.organisation_id,
         )
         .first()
     )
@@ -451,8 +469,20 @@ def delete_document(
     except Exception as exc:  # pragma: no cover
         log.warning("Failed to delete local file for %s: %s", document_id, exc)
 
+    filename_deleted = doc.original_filename
     db.delete(doc)
     db.commit()
-    log.info("Deleted document %s for user %s", document_id, user.email)
+
+    # Phase 5: Audit sensitive administrative action
+    log_admin_action(
+        action=Permission.DOCUMENT_DELETE.value,
+        actor_user_id=tenant.user_id,
+        organisation_id=tenant.organisation_id,
+        details=f"Deleted document {document_id} ({filename_deleted})",
+        db=db,
+    )
+
+    log.info("Deleted document %s for user %s", document_id, tenant.user.email)
 
     return {"message": "Document deleted successfully", "id": document_id}
+

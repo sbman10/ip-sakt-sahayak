@@ -125,14 +125,91 @@ class User(Base):
     conversations = relationship("Conversation", back_populates="user", cascade="all, delete-orphan")
     matters = relationship("MatterWorkspace", back_populates="user", cascade="all, delete-orphan")
     uploaded_documents = relationship("UploadedDocument", back_populates="user", cascade="all, delete-orphan")
+    # ADDED: Phase 3 Identity & Multi-tenant relationships
+    profile = relationship("Profile", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    created_organisations = relationship("Organisation", back_populates="creator", cascade="all, delete-orphan")
+    organisation_memberships = relationship("OrganisationMember", back_populates="user", cascade="all, delete-orphan")
+
+
+# ADDED: Phase 3 Models (Profile, Organisation, OrganisationMember)
+
+class Profile(Base):
+    """
+    User profile metadata linked 1:1 to auth user.
+    """
+    __tablename__ = "profiles"
+
+    id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    full_name = Column(String(255), nullable=True)
+    avatar_url = Column(String(500), nullable=True)
+    preferred_language = Column(String(20), nullable=True, default="en")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    user = relationship("User", back_populates="profile")
+
+    @property
+    def email(self) -> str:
+        """Convenience property for Pydantic serialization."""
+        return self.user.email if self.user else ""
+
+
+class Organisation(Base):
+    """
+    Multi-tenant organisation entity.
+    """
+    __tablename__ = "organisations"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    name = Column(String(255), nullable=False)
+    slug = Column(String(100), unique=True, index=True, nullable=False)
+    created_by = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    creator = relationship("User", back_populates="created_organisations")
+    members = relationship("OrganisationMember", back_populates="organisation", cascade="all, delete-orphan")
+
+
+class OrganisationMember(Base):
+    """
+    Membership association between users and organisations with strict RBAC roles.
+    Allowed roles: 'user', 'organisation_admin', 'reviewer', 'super_admin'
+    """
+    __tablename__ = "organisation_members"
+
+    organisation_id = Column(String(36), ForeignKey("organisations.id", ondelete="CASCADE"), primary_key=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    role = Column(String(50), nullable=False, default="user")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    organisation = relationship("Organisation", back_populates="members")
+    user = relationship("User", back_populates="organisation_memberships")
+
+    @property
+    def email(self) -> Optional[str]:
+        """Convenience property for Pydantic serialization."""
+        return self.user.email if self.user else None
+
+    @property
+    def full_name(self) -> Optional[str]:
+        """Convenience property for Pydantic serialization."""
+        if self.user:
+            return self.user.full_name or (self.user.profile.full_name if self.user.profile else None)
+        return None
+
 
 
 class Conversation(Base):
-    """A multi-turn conversation session."""
+    """A multi-turn conversation session scoped by user and organisation."""
     __tablename__ = "conversations"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(36), ForeignKey("users.id"), nullable=True)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=True, index=True)
+    organisation_id = Column(String(36), ForeignKey("organisations.id", ondelete="CASCADE"), nullable=True, index=True)
     title = Column(String(255), nullable=True)
     jurisdiction = Column(String(50), default="India")
     language = Column(String(10), default="en")
@@ -142,6 +219,7 @@ class Conversation(Base):
 
     # Relationships
     user = relationship("User", back_populates="conversations")
+    organisation = relationship("Organisation")
     messages = relationship("Message", back_populates="conversation", cascade="all, delete-orphan")
 
 
@@ -163,11 +241,12 @@ class Message(Base):
 
 
 class MatterWorkspace(Base):
-    """A single IP case tracked in the Matter Workspace."""
+    """A single IP case tracked in the Matter Workspace scoped by user and organisation."""
     __tablename__ = "matter_workspace"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    organisation_id = Column(String(36), ForeignKey("organisations.id", ondelete="CASCADE"), nullable=True, index=True)
     title = Column(String(255), nullable=False)
     case_type = Column(String(50), nullable=False)
     application_number = Column(String(100), nullable=True)
@@ -179,6 +258,7 @@ class MatterWorkspace(Base):
 
     # Relationships
     user = relationship("User", back_populates="matters")
+    organisation = relationship("Organisation")
     events = relationship(
         "MatterEvent",
         back_populates="matter_workspace",
@@ -214,18 +294,19 @@ class MatterEvent(Base):
 
 
 class UploadedDocument(Base):
-    """User-uploaded documents for chat context and matter workspace."""
+    """User-uploaded documents scoped by user and organisation."""
     __tablename__ = "uploaded_documents"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(36), ForeignKey("users.id"), nullable=False)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    organisation_id = Column(String(36), ForeignKey("organisations.id", ondelete="CASCADE"), nullable=True, index=True)
     matter_id = Column(String(36), ForeignKey("matter_workspace.id"), nullable=True)
     conversation_id = Column(String(36), ForeignKey("conversations.id"), nullable=True)
     filename = Column(String(255), nullable=False)
     original_filename = Column(String(255), nullable=False)
     file_type = Column(String(50), nullable=False)
     file_size = Column(Integer, nullable=False)
-    storage_path = Column(String(500), nullable=False)  # Supabase object key: users/{user_id}/{doc_id}/{filename}
+    storage_path = Column(String(500), nullable=False)  # organisations/{org_id}/users/{user_id}/documents/{doc_id}/{filename}
     bucket_name = Column(String(100), default="legal-documents", nullable=False)
     chunk_count = Column(Integer, default=0)
     is_processed = Column(Boolean, default=False)
@@ -235,6 +316,7 @@ class UploadedDocument(Base):
 
     # Relationships
     user = relationship("User", back_populates="uploaded_documents")
+    organisation = relationship("Organisation")
     matter = relationship("MatterWorkspace", back_populates="documents")
 
 
@@ -243,6 +325,8 @@ class AuditLog(Base):
     __tablename__ = "audit_logs"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    organisation_id = Column(String(36), ForeignKey("organisations.id", ondelete="SET NULL"), nullable=True, index=True)
     query_raw = Column(Text, nullable=True)
     query_scrubbed = Column(Text, nullable=True)
     jurisdiction = Column(String(50), nullable=True)
@@ -250,6 +334,10 @@ class AuditLog(Base):
     confidence_score = Column(Integer, nullable=True)
     latency_ms = Column(Float, nullable=True)
     timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Relationships
+    user = relationship("User")
+    organisation = relationship("Organisation")
 
 
 class DocumentRecord(Base):
@@ -266,11 +354,12 @@ class DocumentRecord(Base):
 
 
 class PatentabilityAssessmentRecord(Base):
-    """Persistent storage for patentability assessments."""
+    """Persistent storage for patentability assessments scoped by tenant."""
     __tablename__ = "patentability_assessments"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(36), ForeignKey("users.id"), nullable=True)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=True, index=True)
+    organisation_id = Column(String(36), ForeignKey("organisations.id", ondelete="CASCADE"), nullable=True, index=True)
     matter_id = Column(String(36), ForeignKey("matter_workspace.id"), nullable=True)
     title = Column(String(255), nullable=False)
     jurisdiction = Column(String(50), default="India")
@@ -283,6 +372,7 @@ class PatentabilityAssessmentRecord(Base):
 
     # Relationships
     user = relationship("User")
+    organisation = relationship("Organisation")
     matter = relationship("MatterWorkspace")
 
 

@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { getApiBase } from '../api/config'
 
 // SVGs for menu items
 const IconEditProfile = ({ size = 16 }) => (
@@ -46,6 +47,20 @@ const IconChevronDown = ({ size = 12, className = '' }) => (
   </svg>
 )
 
+const ROLE_LABELS = {
+  super_admin: 'Super Admin',
+  organisation_admin: 'Org Admin',
+  reviewer: 'Reviewer',
+  user: 'Member',
+}
+
+const ROLE_COLORS = {
+  super_admin: '#fbbf24',
+  organisation_admin: '#38bdf8',
+  reviewer: '#c084fc',
+  user: '#34d399',
+}
+
 export default function UserProfileMenu({
   userName,
   userEmail,
@@ -57,12 +72,41 @@ export default function UserProfileMenu({
   const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(false)
   const [userProfile, setUserProfile] = useState(null)
+  const [identityData, setIdentityData] = useState(null)
   const [imgError, setImgError] = useState(false)
   const menuRef = useRef(null)
   const triggerRef = useRef(null)
 
+  // Fetch verified database-backed identity & organisation overview
+  const fetchProfileIdentity = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('ip_sakti_access_token')
+      if (!token) return
+      const API_BASE = getApiBase()
+      const resp = await fetch(`${API_BASE}/api/profile`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      if (resp.ok) {
+        const data = await resp.json()
+        setIdentityData(data)
+        if (data.profile) {
+          setUserProfile((prev) => ({
+            ...prev,
+            full_name: data.profile.full_name || prev?.full_name,
+            avatar_url: data.profile.avatar_url || prev?.avatar_url,
+            preferred_language: data.profile.preferred_language,
+          }))
+        }
+      }
+    } catch {
+      // Fallback silently to localStorage on network or offline state
+    }
+  }, [])
+
   // Load user data from localStorage
-  const loadUser = () => {
+  const loadUser = useCallback(() => {
     try {
       const raw = localStorage.getItem('ip_sakti_user')
       if (raw) {
@@ -75,11 +119,12 @@ export default function UserProfileMenu({
     }
     const name = localStorage.getItem('ip_sakti_user_name') || userName || ''
     setUserProfile({ full_name: name })
-  }
+  }, [userName])
 
   useEffect(() => {
     loadUser()
-  }, [userName])
+    fetchProfileIdentity()
+  }, [userName, loadUser, fetchProfileIdentity])
 
   // Listen for user updates across components
   useEffect(() => {
@@ -90,6 +135,7 @@ export default function UserProfileMenu({
       } else {
         loadUser()
       }
+      fetchProfileIdentity()
     }
     window.addEventListener('ip-sakti-user-updated', handleUpdate)
     window.addEventListener('storage', handleUpdate)
@@ -97,7 +143,7 @@ export default function UserProfileMenu({
       window.removeEventListener('ip-sakti-user-updated', handleUpdate)
       window.removeEventListener('storage', handleUpdate)
     }
-  }, [])
+  }, [loadUser, fetchProfileIdentity])
 
   // Close when clicking outside
   useEffect(() => {
@@ -133,10 +179,13 @@ export default function UserProfileMenu({
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [isOpen])
 
-  const displayName = userProfile?.full_name || userName || 'Innovator'
-  const displayEmail = userProfile?.email || userEmail || userProfile?.organization || 'Account'
-  const avatarUrl = userProfile?.avatar_url
+  const primaryOrg = identityData?.primary_organisation
+  const verifiedRole = primaryOrg?.my_role
+  const displayName = identityData?.profile?.full_name || userProfile?.full_name || userName || 'Innovator'
+  const displayEmail = identityData?.email || userProfile?.email || userEmail || userProfile?.organization || 'Account'
+  const avatarUrl = identityData?.profile?.avatar_url || userProfile?.avatar_url
   const initial = (displayName.trim() || 'U').charAt(0).toUpperCase()
+
 
   const handleToggle = () => {
     setIsOpen((prev) => !prev)
@@ -238,9 +287,41 @@ export default function UserProfileMenu({
               <span className="gov-profile-dropdown-sub" title={displayEmail}>
                 {displayEmail}
               </span>
-              <span className="gov-profile-status-badge">
-                <span className="status-dot" />
-                <span>Ayurveda Innovator</span>
+              {primaryOrg && (
+                <div
+                  className="gov-profile-org-pill"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    fontSize: '0.70rem',
+                    color: '#94a3b8',
+                    marginTop: '2px',
+                    maxWidth: '180px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                  title={`Organisation: ${primaryOrg.name}`}
+                >
+                  <span style={{ fontSize: '0.75rem' }}>🏛️</span>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{primaryOrg.name}</span>
+                </div>
+              )}
+              <span
+                className="gov-profile-status-badge"
+                style={{
+                  color: ROLE_COLORS[verifiedRole] || '#34d399',
+                }}
+              >
+                <span
+                  className="status-dot"
+                  style={{
+                    background: ROLE_COLORS[verifiedRole] || '#10B981',
+                    boxShadow: `0 0 6px ${ROLE_COLORS[verifiedRole] || '#10B981'}`,
+                  }}
+                />
+                <span>{ROLE_LABELS[verifiedRole] || 'Ayurveda Innovator'}</span>
               </span>
             </div>
           </div>

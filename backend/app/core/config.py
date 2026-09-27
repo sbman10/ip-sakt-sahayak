@@ -11,7 +11,7 @@ import os
 from pathlib import Path
 from typing import List, Optional, Union
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -35,8 +35,8 @@ class Settings(BaseSettings):
     EMBEDDING_PROVIDER: str = "hf_inference"
     HF_TOKEN: str = ""
     HF_EMBEDDING_MODEL: str = "BAAI/bge-m3"
-    HF_INFERENCE_PROVIDER: str = "auto"
-    HF_EMBEDDING_TIMEOUT: float = 60.0
+    HF_INFERENCE_PROVIDER: str = "hf-inference"
+    HF_EMBEDDING_TIMEOUT: float = 90.0
     HF_EMBEDDING_NORMALIZE: bool = True
     LOCAL_BGE_FALLBACK: bool = False
     ENABLE_LOCAL_BGE_PRELOAD: bool = False
@@ -281,6 +281,49 @@ class Settings(BaseSettings):
         if val_clean not in allowed:
             raise ValueError(f"Invalid LLM provider: '{v}'. Must be one of: {sorted(allowed)}")
         return val_clean
+
+    @field_validator("HF_INFERENCE_PROVIDER", mode="after")
+    @classmethod
+    def validate_hf_inference_provider(cls, v: str) -> str:
+        clean = (v or "").strip().lower()
+        if clean != "hf-inference":
+            raise ValueError(
+                f"Invalid HF_INFERENCE_PROVIDER: '{v}'. Must be exactly 'hf-inference' for Hugging Face free serverless inference."
+            )
+        return "hf-inference"
+
+    @field_validator("HF_EMBEDDING_MODEL", mode="after")
+    @classmethod
+    def validate_hf_embedding_model(cls, v: str) -> str:
+        clean = (v or "").strip()
+        if clean != "BAAI/bge-m3":
+            raise ValueError(
+                f"Invalid HF_EMBEDDING_MODEL: '{v}'. Dense model must remain 'BAAI/bge-m3'."
+            )
+        return clean
+
+    @field_validator("EMBEDDING_PROVIDER", mode="after")
+    @classmethod
+    def validate_embedding_provider(cls, v: str) -> str:
+        clean = (v or "").strip().lower()
+        allowed = {"hf_inference", "local"}
+        if clean not in allowed:
+            raise ValueError(
+                f"Invalid EMBEDDING_PROVIDER: '{v}'. Allowed providers are: {sorted(allowed)}."
+            )
+        return clean
+
+    @model_validator(mode="after")
+    def validate_production_hf_contract(self) -> Settings:
+        env = (self.ENVIRONMENT or "").strip().lower()
+        if env == "production":
+            if not self.HF_TOKEN or not self.HF_TOKEN.strip():
+                raise ValueError("Production environment requires a non-empty HF_TOKEN.")
+            if self.HF_EMBEDDING_MODEL != "BAAI/bge-m3":
+                raise ValueError("Production requires HF_EMBEDDING_MODEL='BAAI/bge-m3'.")
+            if self.HF_INFERENCE_PROVIDER != "hf-inference":
+                raise ValueError("Production requires HF_INFERENCE_PROVIDER='hf-inference'.")
+        return self
 
     @property
     def is_groq_configured(self) -> bool:

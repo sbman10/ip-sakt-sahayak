@@ -180,12 +180,11 @@ class QdrantService:
                     vectors_config=VectorParams(size=VECTOR_SIZE, distance=DEFAULT_DISTANCE),
                 )
                 status_map[col_name] = "created"
+                # Ensure payload indexes for filtering on newly created collections
+                self._ensure_payload_indexes(col_name)
             else:
                 log.debug("Qdrant collection '%s' already exists.", col_name)
                 status_map[col_name] = "exists"
-
-            # Ensure payload indexes for filtering
-            self._ensure_payload_indexes(col_name)
 
         return status_map
 
@@ -281,7 +280,15 @@ class QdrantService:
 
     def _ensure_payload_indexes(self, collection_name: str) -> None:
         """Creates payload keyword indexes for fast metadata filtering."""
-        fields = ["jurisdiction", "source", "section", "document_id", "user_id"]
+        fields = [
+            "jurisdiction",
+            "source",
+            "section",
+            "document_id",
+            "user_id",
+            "organisation_id",
+            "visibility",
+        ]
         for field in fields:
             try:
                 self.client.create_payload_index(
@@ -350,8 +357,10 @@ class QdrantService:
         limit: int = 5,
         jurisdiction: Optional[str] = None,
         user_id: Optional[str] = None,
+        organisation_id: Optional[str] = None,
         document_id: Optional[str] = None,
         document_ids: Optional[List[str]] = None,
+        visibility: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """
         Executes dense vector search against a Qdrant collection with payload filtering.
@@ -368,15 +377,29 @@ class QdrantService:
         - 'payload': complete payload
         - 'metadata': complete payload
         """
+        # Security Invariant: NEVER permit unfiltered search on private user uploads
+        if collection_name == settings.QDRANT_USER_UPLOADS_COLLECTION:
+            if not user_id and not organisation_id and not document_ids and not document_id:
+                log.warning("Security: Blocked unfiltered search on private user_uploads collection.")
+                return []
+
         # Build filter conditions
         must_conditions = []
         if jurisdiction and jurisdiction.strip().lower() != "both":
             must_conditions.append(
                 FieldCondition(key="jurisdiction", match=MatchValue(value=jurisdiction.strip()))
             )
+        if organisation_id:
+            must_conditions.append(
+                FieldCondition(key="organisation_id", match=MatchValue(value=str(organisation_id).strip()))
+            )
         if user_id:
             must_conditions.append(
                 FieldCondition(key="user_id", match=MatchValue(value=str(user_id).strip()))
+            )
+        if visibility:
+            must_conditions.append(
+                FieldCondition(key="visibility", match=MatchValue(value=str(visibility).strip()))
             )
         # Support both single document_id and list of document_ids
         if document_ids and len(document_ids) > 0:

@@ -24,7 +24,6 @@ import time
 from typing import Any, Dict, List, Optional
 
 from app.core.config import settings
-from app.core.gemini_pool import gemini_key_pool
 from app.schemas.chat import (
     ChatResponse,
     CitationItem,

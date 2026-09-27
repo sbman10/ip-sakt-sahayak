@@ -70,6 +70,7 @@ def hybrid_rrf_search(
     top_k: int = 5,
     rrf_k: int = 60,
     user_id: Optional[str] = None,
+    organisation_id: Optional[str] = None,
     document_ids: Optional[list[str]] = None,
 ) -> list[dict]:
     """
@@ -89,6 +90,8 @@ def hybrid_rrf_search(
         RRF smoothing constant (default: 60).
     user_id : Optional[str]
         Optional user identifier to include authorized user-uploaded documents.
+    organisation_id : Optional[str]
+        Optional organisation identifier for strict tenant isolation of uploaded documents.
     document_ids : Optional[list[str]]
         Optional list of specific document IDs to scope retrieval to (user-uploaded docs).
         When provided, ONLY searches the user_uploads collection filtered by these doc IDs.
@@ -127,18 +130,19 @@ def hybrid_rrf_search(
         else:
             collection_specs = [(settings.QDRANT_INDIA_COLLECTION, "India")]
 
-        # If user_id provided, also query user uploads
-        if user_id:
+        # If user_id or organisation_id provided, also query user uploads
+        if user_id or organisation_id:
             collection_specs.append((settings.QDRANT_USER_UPLOADS_COLLECTION, "User"))
 
     collection_names = [c[0] for c in collection_specs]
 
     log.info(
-        "Executing hybrid RRF search for query '%s' under jurisdiction '%s' (collections: %s, user: %s)",
+        "Executing hybrid RRF search for query '%s' under jurisdiction '%s' (collections: %s, user: %s, org: %s)",
         query[:50],
         jurisdiction,
         collection_names,
         user_id,
+        organisation_id,
     )
 
     # 2. Dense Vector Search: Qdrant Cloud
@@ -157,6 +161,7 @@ def hybrid_rrf_search(
             total_qdrant_hits = 0
             for collection_name, col_jur in collection_specs:
                 target_user = user_id if collection_name == settings.QDRANT_USER_UPLOADS_COLLECTION else None
+                target_org = organisation_id if collection_name == settings.QDRANT_USER_UPLOADS_COLLECTION else None
                 # Pass document_ids filter for user_uploads collection
                 target_doc_ids = document_ids if collection_name == settings.QDRANT_USER_UPLOADS_COLLECTION else None
                 q_hits = qdrant_service.search(
@@ -164,6 +169,7 @@ def hybrid_rrf_search(
                     query_vector=query_vector,
                     limit=top_k * 2,
                     user_id=target_user,
+                    organisation_id=target_org,
                     document_ids=target_doc_ids,
                 )
                 if q_hits:

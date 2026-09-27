@@ -25,11 +25,13 @@ services:
       - key: HF_EMBEDDING_MODEL
         value: BAAI/bge-m3
       - key: HF_INFERENCE_PROVIDER
-        value: auto
+        value: hf-inference
       - key: HF_EMBEDDING_TIMEOUT
-        value: "60"
+        value: "90"
       - key: HF_EMBEDDING_NORMALIZE
         value: "true"
+      - key: EMBEDDING_PROVIDER
+        value: hf_inference
       - key: LOCAL_BGE_FALLBACK
         value: "false"
       - key: ENABLE_LOCAL_BGE_PRELOAD

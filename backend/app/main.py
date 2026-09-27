@@ -56,6 +56,7 @@ from app.routers import (
     roadmap as roadmap_router,
     guardian as guardian_router,
     patentability as patentability_router,
+    organisations as organisations_router,
 )
 
 # ---------------------------------------------------------------------------
@@ -66,6 +67,10 @@ logging.basicConfig(
     format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
 )
+# Silence verbose third-party HTTP transport logging
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
+
 log = logging.getLogger("app.main")
 
 
@@ -74,21 +79,6 @@ log = logging.getLogger("app.main")
 # ---------------------------------------------------------------------------
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    #Used try block here
-    # try:
-    #     logger.info("Warming up sparse embedder...")
-
-    #     sparse_embedder.embed_query("warmup")
-
-    #     logger.info("Sparse embedder warm-up complete")
-
-    # except Exception as exc:
-    #     logger.warning(
-    #         "Sparse embedder warm-up failed: %s",
-    #         exc,
-    #     )
-
-    # yield
     """
     Application lifespan context manager:
     - Startup: initializes database tables, preloads BM25 index,
@@ -338,8 +328,10 @@ async def readiness_check(response: Response) -> dict[str, Any]:
         is_ready = False
 
     # 2. Dense embeddings configuration
-    hf_configured = bool(settings.HF_TOKEN and settings.HF_EMBEDDING_MODEL)
+    hf_configured = bool(settings.HF_TOKEN and settings.HF_EMBEDDING_MODEL == "BAAI/bge-m3" and settings.HF_INFERENCE_PROVIDER == "hf-inference")
     checks["hf_embedding_configured"] = hf_configured
+    checks["hf_inference_provider"] = settings.HF_INFERENCE_PROVIDER
+    checks["hf_embedding_model"] = settings.HF_EMBEDDING_MODEL
     if not hf_configured:
         is_ready = False
 
@@ -439,3 +431,4 @@ app.include_router(checklists_router.router, tags=["Checklists - Filing Process"
 app.include_router(experts_router.router, tags=["Experts - Consultation"])
 app.include_router(analytics_router.router, tags=["Analytics Dashboard"])
 app.include_router(subscription_router.router, tags=["Subscription & Pricing"])
+app.include_router(organisations_router.router, prefix="/api", tags=["Identity & Organisations"])

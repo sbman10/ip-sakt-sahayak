@@ -203,6 +203,9 @@ async def get_current_user(
         or email.split("@")[0]
     )
 
+    token_role = payload.get("app_metadata", {}).get("role") or payload.get("role")
+    system_role = token_role if token_role in ("super_admin", "admin") else "user"
+
     # Synchronize User model in PostgreSQL
     user = db.query(User).filter((User.id == str(sub)) | (User.email == email)).first()
     if not user:
@@ -211,6 +214,7 @@ async def get_current_user(
                 id=str(sub),
                 email=email,
                 full_name=full_name,
+                role=system_role,
                 is_active=True,
                 is_verified=True,
                 password_hash="",
@@ -221,6 +225,13 @@ async def get_current_user(
         except Exception:
             db.rollback()
             user = db.query(User).filter(User.email == email).first()
+    elif token_role == "super_admin" and user.role != "super_admin":
+        user.role = "super_admin"
+        try:
+            db.commit()
+            db.refresh(user)
+        except Exception:
+            db.rollback()
 
     return user
 
@@ -258,6 +269,9 @@ async def require_auth(
         or email.split("@")[0]
     )
 
+    token_role = payload.get("app_metadata", {}).get("role") or payload.get("role")
+    system_role = token_role if token_role in ("super_admin", "admin") else "user"
+
     user = db.query(User).filter((User.id == str(sub)) | (User.email == email)).first()
     if not user:
         try:
@@ -265,6 +279,7 @@ async def require_auth(
                 id=str(sub),
                 email=email,
                 full_name=full_name,
+                role=system_role,
                 is_active=True,
                 is_verified=True,
                 password_hash="",
@@ -280,6 +295,13 @@ async def require_auth(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail="Failed to synchronize authenticated user profile",
                 )
+    elif token_role == "super_admin" and user.role != "super_admin":
+        user.role = "super_admin"
+        try:
+            db.commit()
+            db.refresh(user)
+        except Exception:
+            db.rollback()
 
     if not user.is_active:
         raise HTTPException(

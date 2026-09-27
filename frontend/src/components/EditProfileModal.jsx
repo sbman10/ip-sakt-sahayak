@@ -89,11 +89,25 @@ export default function EditProfileModal({ isOpen, onClose, onUserUpdated }) {
       }
       localStorage.setItem('ip_sakti_user', JSON.stringify(updatedUser))
 
-      // 2. If access token exists, update backend
+      // 2. If access token exists, update backend profile & user
       const token = localStorage.getItem('ip_sakti_access_token')
       if (token) {
         try {
           const API_BASE = getApiBase()
+          // Update database Profile model
+          await fetch(`${API_BASE}/api/profile`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              full_name: finalName,
+              avatar_url: finalAvatar,
+            }),
+          }).catch(() => {})
+
+          // Update legacy User model for backward compatibility
           await fetch(`${API_BASE}/api/auth/me`, {
             method: 'PATCH',
             headers: {
@@ -106,7 +120,7 @@ export default function EditProfileModal({ isOpen, onClose, onUserUpdated }) {
               organization: finalOrg,
               phone: finalPhone,
             }),
-          })
+          }).catch(() => {})
         } catch (apiErr) {
           console.warn('Backend profile patch failed, saved locally:', apiErr)
         }

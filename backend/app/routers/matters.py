@@ -28,9 +28,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app.core.dependencies import TenantContext, get_tenant_context, require_permission
+from app.core.permissions import Permission
 from app.models.database import User, get_db
 from app.models.matters import MatterWorkspace, MatterEvent
 from app.routers.auth import require_auth
+from app.services.audit_service import log_admin_action
 from app.schemas.matters import (
     MatterCreate,
     MatterDetailResponse,
@@ -50,17 +53,25 @@ router = APIRouter()
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _get_owned_matter(matter_id: str, user: User, db: Session) -> MatterWorkspace:
-    """Fetch a matter owned by ``user`` or raise 404."""
-    matter = (
-        db.query(MatterWorkspace)
-        .filter(MatterWorkspace.id == matter_id, MatterWorkspace.user_id == user.id)
-        .first()
-    )
+def _get_owned_matter(matter_id: str, tenant: TenantContext, db: Session) -> MatterWorkspace:
+    """Fetch a matter owned by caller and scoped to active organisation or raise 404."""
+    query = db.query(MatterWorkspace).filter(MatterWorkspace.id == matter_id)
+    if tenant.organisation_id:
+        query = query.filter(
+            (MatterWorkspace.organisation_id == tenant.organisation_id)
+            | ((MatterWorkspace.organisation_id.is_(None)) & (MatterWorkspace.user_id == tenant.user_id))
+        )
+    else:
+        query = query.filter(MatterWorkspace.user_id == tenant.user_id)
+
+    matter = query.first()
     if not matter:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Matter not found"
         )
+    if not matter.organisation_id and tenant.organisation_id:
+        matter.organisation_id = tenant.organisation_id
+        db.commit()
     return matter
 
 
@@ -94,11 +105,18 @@ def list_matters(
     case_type: Optional[str] = Query(None, description="Filter by case type"),
     status_filter: Optional[str] = Query(None, alias="status", description="Filter by status"),
     q: Optional[str] = Query(None, description="Search in title / application number"),
-    user: User = Depends(require_auth),
+    tenant: TenantContext = Depends(require_permission(Permission.MATTER_READ)),
     db: Session = Depends(get_db),
 ) -> MatterListResponse:
-    """List the current user's matters with pagination, filtering and search."""
-    query = db.query(MatterWorkspace).filter(MatterWorkspace.user_id == user.id)
+    """List the current tenant's matters with pagination, filtering and search."""
+    query = db.query(MatterWorkspace)
+    if tenant.organisation_id:
+        query = query.filter(
+            (MatterWorkspace.organisation_id == tenant.organisation_id)
+            | ((MatterWorkspace.organisation_id.is_(None)) & (MatterWorkspace.user_id == tenant.user_id))
+        )
+    else:
+        query = query.filter(MatterWorkspace.user_id == tenant.user_id)
 
     if case_type:
         query = query.filter(MatterWorkspace.case_type == case_type)
@@ -153,12 +171,13 @@ def list_matters(
 )
 def create_matter(
     payload: MatterCreate,
-    user: User = Depends(require_auth),
+    tenant: TenantContext = Depends(require_permission(Permission.MATTER_CREATE)),
     db: Session = Depends(get_db),
 ) -> MatterDetailResponse:
-    """Create a new matter for the current user."""
+    """Create a new matter for the caller's active organisation and user."""
     matter = MatterWorkspace(
-        user_id=user.id,
+        user_id=tenant.user_id,
+        organisation_id=tenant.organisation_id,
         title=payload.title,
         case_type=payload.case_type,
         application_number=payload.application_number,
@@ -169,7 +188,7 @@ def create_matter(
     db.add(matter)
     db.commit()
     db.refresh(matter)
-    log.info("Matter created: %s by %s", matter.id, user.email)
+    log.info("Matter created: %s by user %s (org: %s)", matter.id, tenant.user_id, tenant.organisation_id)
     return MatterDetailResponse(**_to_response(matter, 0).model_dump(), events=[])
 
 
@@ -185,7 +204,7 @@ def create_matter(
 def upcoming_deadlines(
     days: int = Query(30, ge=1, le=365, description="Look-ahead window in days"),
     include_overdue: bool = Query(True, description="Include past-due reminders"),
-    user: User = Depends(require_auth),
+    tenant: TenantContext = Depends(require_permission(Permission.MATTER_READ)),
     db: Session = Depends(get_db),
 ) -> list[UpcomingDeadline]:
     """Return the user's events whose reminder_date falls within the window."""
@@ -195,10 +214,16 @@ def upcoming_deadlines(
     query = (
         db.query(MatterEvent, MatterWorkspace)
         .join(MatterWorkspace, MatterEvent.matter_id == MatterWorkspace.id)
-        .filter(MatterWorkspace.user_id == user.id)
-        .filter(MatterEvent.reminder_date.isnot(None))
-        .filter(MatterEvent.reminder_date <= horizon)
     )
+    if tenant.organisation_id:
+        query = query.filter(
+            (MatterWorkspace.organisation_id == tenant.organisation_id)
+            | ((MatterWorkspace.organisation_id.is_(None)) & (MatterWorkspace.user_id == tenant.user_id))
+        )
+    else:
+        query = query.filter(MatterWorkspace.user_id == tenant.user_id)
+
+    query = query.filter(MatterEvent.reminder_date.isnot(None)).filter(MatterEvent.reminder_date <= horizon)
     if not include_overdue:
         query = query.filter(MatterEvent.reminder_date >= now)
 
@@ -234,11 +259,11 @@ def upcoming_deadlines(
 )
 def get_matter(
     matter_id: str,
-    user: User = Depends(require_auth),
+    tenant: TenantContext = Depends(require_permission(Permission.MATTER_READ)),
     db: Session = Depends(get_db),
 ) -> MatterDetailResponse:
     """Fetch a single matter and its full event timeline."""
-    matter = _get_owned_matter(matter_id, user, db)
+    matter = _get_owned_matter(matter_id, tenant, db)
     events = [MatterEventResponse.model_validate(e) for e in matter.events]
     return MatterDetailResponse(
         **_to_response(matter, len(events)).model_dump(), events=events
@@ -257,11 +282,11 @@ def get_matter(
 def update_matter(
     matter_id: str,
     payload: MatterUpdate,
-    user: User = Depends(require_auth),
+    tenant: TenantContext = Depends(require_permission(Permission.MATTER_UPDATE)),
     db: Session = Depends(get_db),
 ) -> MatterDetailResponse:
     """Partially update a matter."""
-    matter = _get_owned_matter(matter_id, user, db)
+    matter = _get_owned_matter(matter_id, tenant, db)
 
     data = payload.model_dump(exclude_unset=True)
     for field, value in data.items():
@@ -269,7 +294,7 @@ def update_matter(
 
     db.commit()
     db.refresh(matter)
-    log.info("Matter updated: %s by %s", matter.id, user.email)
+    log.info("Matter updated: %s by user %s", matter.id, tenant.user_id)
 
     events = [MatterEventResponse.model_validate(e) for e in matter.events]
     return MatterDetailResponse(
@@ -284,14 +309,25 @@ def update_matter(
 @router.delete("/matters/{matter_id}", tags=["Matter Workspace"])
 def delete_matter(
     matter_id: str,
-    user: User = Depends(require_auth),
+    tenant: TenantContext = Depends(require_permission(Permission.MATTER_DELETE)),
     db: Session = Depends(get_db),
 ) -> dict:
     """Delete a matter and all its events."""
-    matter = _get_owned_matter(matter_id, user, db)
+    matter = _get_owned_matter(matter_id, tenant, db)
+    matter_title = matter.title
     db.delete(matter)
     db.commit()
-    log.info("Matter deleted: %s by %s", matter_id, user.email)
+
+    # Phase 5: Audit sensitive administrative action
+    log_admin_action(
+        action=Permission.MATTER_DELETE.value,
+        actor_user_id=tenant.user_id,
+        organisation_id=tenant.organisation_id,
+        details=f"Deleted matter {matter_id} ({matter_title})",
+        db=db,
+    )
+
+    log.info("Matter deleted: %s by user %s", matter_id, tenant.user_id)
     return {"message": "Matter deleted successfully", "id": matter_id}
 
 
@@ -308,11 +344,11 @@ def delete_matter(
 def add_event(
     matter_id: str,
     payload: MatterEventCreate,
-    user: User = Depends(require_auth),
+    tenant: TenantContext = Depends(require_permission(Permission.MATTER_UPDATE)),
     db: Session = Depends(get_db),
 ) -> MatterEventResponse:
     """Add a timeline event or reminder to a matter."""
-    matter = _get_owned_matter(matter_id, user, db)
+    matter = _get_owned_matter(matter_id, tenant, db)
 
     event = MatterEvent(
         matter_id=matter.id,
@@ -326,5 +362,5 @@ def add_event(
     matter.updated_at = datetime.utcnow()
     db.commit()
     db.refresh(event)
-    log.info("Event added to matter %s by %s", matter.id, user.email)
+    log.info("Event added to matter %s by user %s", matter.id, tenant.user_id)
     return MatterEventResponse.model_validate(event)
