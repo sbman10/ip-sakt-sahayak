@@ -4,7 +4,7 @@ backend/app/services/qdrant_service.py
 Enterprise Qdrant Vector Service for IP-SAKTI Sahayak.
 Manages Qdrant Cloud connectivity, collection lifecycle (1024-d, Cosine distance),
 deterministic point ID generation, payload indexing, batch upserting,
-dense semantic retrieval, and user upload management with ChromaDB fallback resilience.
+dense semantic retrieval, and user upload management.
 """
 
 from __future__ import annotations
@@ -33,7 +33,7 @@ def to_qdrant_point_id(
     collection_name: Optional[str] = None,
 ) -> Union[str, int]:
     """
-    Deterministically converts an arbitrary string ID (such as a Chroma chunk ID)
+    Deterministically converts an arbitrary string ID (such as a document chunk ID)
     into a valid Qdrant UUID string or positive integer.
     Supports all calling patterns:
       - to_qdrant_point_id(raw_id, collection_name="india_statutes")
@@ -106,14 +106,11 @@ class QdrantService:
 
     def _fallback_to_local(self) -> None:
         """Initializes a local persistent Qdrant client or in-memory fallback."""
-        local_qdrant_dir = os.path.join(settings.CHROMA_DB_DIR, "qdrant_local")
         try:
-            os.makedirs(local_qdrant_dir, exist_ok=True)
-            self._client = QdrantClient(path=local_qdrant_dir)
-            log.info("QdrantService initialized with local storage: %s", local_qdrant_dir)
-        except Exception as e:
-            log.warning("Could not initialize local path Qdrant (%s). Using in-memory client.", e)
             self._client = QdrantClient(":memory:")
+            log.info("QdrantService initialized with in-memory storage fallback.")
+        except Exception as e:
+            log.warning("Could not initialize in-memory Qdrant client (%s).", e)
 
     @property
     def client(self) -> QdrantClient:

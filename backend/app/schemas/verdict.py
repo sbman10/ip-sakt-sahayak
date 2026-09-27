@@ -171,5 +171,5 @@ class VerdictResponse(BaseModel):
     )
     source_filters: list[str] = Field(
         default_factory=list,
-        description="ChromaDB collections queried (observability).",
+        description="Qdrant collections queried (observability).",
     )

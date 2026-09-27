@@ -140,16 +140,18 @@ def compare_retrieval_results(
     query: str,
     jurisdiction_requested: str,
     top_k: int,
-    chroma_results: List[Dict[str, Any]],
-    qdrant_results: List[Dict[str, Any]],
-    chroma_latency_ms: float = 0.0,
+    baseline_results: Optional[List[Dict[str, Any]]] = None,
+    qdrant_results: Optional[List[Dict[str, Any]]] = None,
+    baseline_latency_ms: float = 0.0,
     qdrant_latency_ms: float = 0.0,
     timeout_status: bool = False,
+    chroma_results: Optional[List[Dict[str, Any]]] = None,
+    chroma_latency_ms: float = 0.0,
 ) -> Dict[str, Any]:
     """
     Analyzes and compares two candidate retrieval result sets:
-    - Chroma/BM25 legacy hybrid results
-    - Qdrant Cloud hybrid results (ragvyn_prod_v1)
+    - Baseline / fallback hybrid results
+    - Qdrant Cloud hybrid results (ragvyn_prod_v1 / ragvyn_prod_v2)
 
     Evaluates:
     - top-k document IDs and chunk IDs
@@ -160,14 +162,18 @@ def compare_retrieval_results(
     - payload schema completeness & evidence quality in Qdrant results
     - safe privacy metadata (SHA-256 hashed query ID, zero secrets)
     """
-    # 1. Extract Chroma candidates
+    base_results = baseline_results if baseline_results is not None else (chroma_results or [])
+    base_latency = baseline_latency_ms if baseline_latency_ms > 0 else chroma_latency_ms
+    q_results = qdrant_results or []
+
+    # 1. Extract Baseline candidates
     chroma_top_k: List[Dict[str, Any]] = []
     chroma_chunk_ids: List[str] = []
     chroma_doc_ids: List[str] = []
     chroma_sections: List[str] = []
     chroma_jurisdictions: List[str] = []
 
-    for rank, doc in enumerate(chroma_results, start=1):
+    for rank, doc in enumerate(base_results, start=1):
         meta = doc.get("metadata") or {}
         chunk_id = str(doc.get("id") or doc.get("chunk_id") or meta.get("chunk_id") or "")
         doc_id = str(meta.get("document_id") or doc.get("source") or meta.get("source") or "")
@@ -334,10 +340,14 @@ def log_and_record_shadow_comparison(
     query: str,
     jurisdiction: str,
     top_k: int,
-    chroma_results: List[Dict[str, Any]],
+    baseline_results: Optional[List[Dict[str, Any]]] = None,
     collection_name: Optional[str] = None,
+    baseline_latency_ms: float = 0.0,
+    chroma_results: Optional[List[Dict[str, Any]]] = None,
     chroma_latency_ms: float = 0.0,
 ) -> Optional[Dict[str, Any]]:
+    base_results = baseline_results if baseline_results is not None else (chroma_results or [])
+    base_latency = baseline_latency_ms if baseline_latency_ms > 0 else chroma_latency_ms
     """
     Executes Qdrant shadow retrieval safely:
     1. Validates QDRANT_SHADOW_RETRIEVAL is active.
@@ -447,9 +457,9 @@ def log_and_record_shadow_comparison(
             query=query,
             jurisdiction_requested=jurisdiction,
             top_k=top_k,
-            chroma_results=chroma_results,
+            baseline_results=base_results,
             qdrant_results=qdrant_results,
-            chroma_latency_ms=chroma_latency_ms,
+            baseline_latency_ms=base_latency,
             qdrant_latency_ms=qdrant_latency_ms,
             timeout_status=timeout_status,
         )
@@ -457,13 +467,13 @@ def log_and_record_shadow_comparison(
         report_file = record_shadow_report(comparison)
 
         log.info(
-            "Shadow Retrieval: query_hash=%s | Latency (Chroma: %.1fms, Qdrant: %.1fms) | "
-            "Candidates (Chroma: %d, Qdrant: %d) | Overlap: chunk=%d (%.1f%%), doc=%d | "
+            "Shadow Retrieval: query_hash=%s | Latency (Baseline: %.1fms, Qdrant: %.1fms) | "
+            "Candidates (Baseline: %d, Qdrant: %d) | Overlap: chunk=%d (%.1f%%), doc=%d | "
             "Timeout: %s | Report: %s",
             comparison["query_hash"],
-            chroma_latency_ms,
+            base_latency,
             qdrant_latency_ms,
-            len(chroma_results),
+            len(base_results),
             len(qdrant_results),
             comparison["metrics"]["chunk_id_overlap_count"],
             comparison["metrics"]["chunk_id_overlap_ratio"] * 100,

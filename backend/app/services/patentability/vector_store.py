@@ -1,9 +1,8 @@
 """
 backend/app/services/patentability/vector_store.py
 --------------------------------------------------
-Phase 4: Corpus & Dual Vector Engine (Qdrant + ChromaDB).
+Corpus & Vector Engine (Qdrant).
 Implements a unified vector and lexical retrieval interface:
-- ChromaDB persistent collections
 - Qdrant client with payload indexes for:
   jurisdiction, document_type, authority, publication_date, priority_date, document_id, language
 - Identical chunk_id deduplication and mapping
@@ -19,7 +18,6 @@ import os
 import re
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-import chromadb
 from qdrant_client import QdrantClient
 from qdrant_client.http import models as qmodels
 
@@ -36,7 +34,7 @@ EMBEDDING_DIM = 1024  # BAAI/bge-m3 default dim (1,024 dimensions)
 
 class UnifiedVectorStore:
     """
-    Dual vector store managing ChromaDB and Qdrant with synchronized chunk IDs,
+    Vector store managing Qdrant with synchronized chunk IDs,
     payload metadata indexing, BM25 sparse search, and Reciprocal Rank Fusion.
     """
 
@@ -46,7 +44,7 @@ class UnifiedVectorStore:
             if use_in_memory_qdrant:
                 self.qdrant = QdrantClient(":memory:")
             else:
-                qdrant_path = os.path.join(settings.CHROMA_DB_DIR, "qdrant_data")
+                qdrant_path = os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "qdrant_data")
                 os.makedirs(qdrant_path, exist_ok=True)
                 self.qdrant = QdrantClient(path=qdrant_path)
             self._init_qdrant_collection()
@@ -55,13 +53,13 @@ class UnifiedVectorStore:
             self.qdrant = QdrantClient(":memory:")
             self._init_qdrant_collection()
 
-        # 2. ChromaDB Client
-        self.chroma_path = settings.CHROMA_DB_DIR
-        os.makedirs(self.chroma_path, exist_ok=True)
-        self.chroma = chromadb.PersistentClient(path=self.chroma_path)
+        self._seeded = False
 
-        # Pre-seed essential statutory documents (Patents Act Section 3(p), 3(d), 3(e), BD Act Sec 6, TKDL)
-        self._seed_authoritative_statutes()
+    def _ensure_seeded(self):
+        """Lazily seeds foundational Indian Patents Act 1970 sections and TKDL anchors."""
+        if not self._seeded:
+            self._seeded = True
+            self._seed_authoritative_statutes()
 
     def _init_qdrant_collection(self):
         """Creates Qdrant collection with payload indexes."""
@@ -267,7 +265,7 @@ class UnifiedVectorStore:
         language: str = "en",
         source_access_type: str = "public_statute",
     ) -> None:
-        """Indexes a chunk synchronously in both Qdrant and ChromaDB with identical chunk_id."""
+        """Indexes a chunk into Qdrant with deterministic point ID and metadata payload."""
         emb = self._get_embedding(text)
 
         # 1. Upsert into Qdrant
@@ -302,33 +300,6 @@ class UnifiedVectorStore:
             ],
         )
 
-        # 2. Upsert into ChromaDB
-        coll_name = "india_statutes" if "india" in jurisdiction.lower() else "international_treaties"
-        try:
-            coll = self.chroma.get_or_create_collection(
-                name=coll_name,
-                metadata={"hnsw:space": "cosine"},
-            )
-            coll.upsert(
-                ids=[chunk_id],
-                documents=[text],
-                embeddings=[emb],
-                metadatas=[{
-                    "chunk_id": chunk_id,
-                    "document_id": document_id,
-                    "title": title,
-                    "document_type": document_type,
-                    "authority": authority,
-                    "jurisdiction": jurisdiction,
-                    "publication_date": publication_date or "",
-                    "priority_date": priority_date or "",
-                    "section": section or "",
-                    "page": str(page or ""),
-                }],
-            )
-        except Exception as e:
-            log.warning("Chroma upsert error for %s: %s", chunk_id, e)
-
     def search_qdrant(
         self,
         query: str,
@@ -337,6 +308,7 @@ class UnifiedVectorStore:
         top_k: int = 10,
     ) -> List[Dict[str, Any]]:
         """Dense vector search in Qdrant with payload filtering."""
+        self._ensure_seeded()
         emb = self._get_embedding(query)
         must_filters = []
         if jurisdiction and jurisdiction.lower() != "both":
@@ -384,59 +356,6 @@ class UnifiedVectorStore:
                 "distance": max(0.0, 1.0 - float(p.score)),
             })
         return out
-
-    def search_chroma(
-        self,
-        query: str,
-        jurisdiction: str = "India",
-        top_k: int = 10,
-    ) -> List[Dict[str, Any]]:
-        """Dense vector search in ChromaDB."""
-        emb = self._get_embedding(query)
-        colls_to_search = []
-        jur_clean = (jurisdiction or "India").lower()
-        if jur_clean == "both":
-            colls_to_search = ["india_statutes", "international_treaties"]
-        elif "international" in jur_clean:
-            colls_to_search = ["international_treaties"]
-        else:
-            colls_to_search = ["india_statutes"]
-
-        candidates: List[Dict[str, Any]] = []
-        for cname in colls_to_search:
-            try:
-                coll = self.chroma.get_collection(cname)
-                res = coll.query(
-                    query_embeddings=[emb],
-                    n_results=top_k,
-                    include=["documents", "metadatas", "distances"],
-                )
-                if res and res["ids"] and len(res["ids"][0]) > 0:
-                    for i in range(len(res["ids"][0])):
-                        cid = res["ids"][0][i]
-                        doc = res["documents"][0][i]
-                        meta = res["metadatas"][0][i] if res["metadatas"] else {}
-                        dist = res["distances"][0][i] if res["distances"] else 0.5
-                        candidates.append({
-                            "chunk_id": cid,
-                            "document_id": meta.get("document_id", cid),
-                            "title": meta.get("title", meta.get("source", "Legal Source")),
-                            "document_type": meta.get("document_type", "statute"),
-                            "authority": meta.get("authority", "Indian Patent Office"),
-                            "jurisdiction": meta.get("jurisdiction", "India"),
-                            "publication_date": meta.get("publication_date") or None,
-                            "priority_date": meta.get("priority_date") or None,
-                            "section": meta.get("section", ""),
-                            "page": str(meta.get("page_number", meta.get("page", ""))),
-                            "text": doc,
-                            "score": max(0.0, 1.0 - float(dist)),
-                            "distance": float(dist),
-                        })
-            except Exception as e:
-                log.debug("Chroma query notice for collection %s: %s", cname, e)
-
-        candidates.sort(key=lambda x: x["distance"])
-        return candidates[:top_k]
 
     def search_bm25(
         self,

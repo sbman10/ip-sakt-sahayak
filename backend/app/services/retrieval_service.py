@@ -12,8 +12,6 @@ import os
 import time
 from typing import Any, Dict, List, Optional
 
-import chromadb
-from langchain_chroma import Chroma
 from langchain_core.embeddings import Embeddings
 
 # Accommodate both absolute workspace imports and package relative imports
@@ -66,22 +64,6 @@ class CanonicalBgeM3EmbeddingsAdapter(Embeddings):
 SentenceTransformerEmbeddingsAdapter = CanonicalBgeM3EmbeddingsAdapter
 
 
-def get_chroma_vectorstore(collection_name: str) -> Chroma:
-    """
-    Initializes or returns a LangChain Chroma vector store instance
-    connected to the local persistent database (available as fallback).
-    """
-    chroma_dir = settings.CHROMA_DB_DIR
-    embeddings_adapter = SentenceTransformerEmbeddingsAdapter()
-    client = chromadb.PersistentClient(path=chroma_dir)
-
-    return Chroma(
-        client=client,
-        collection_name=collection_name,
-        embedding_function=embeddings_adapter,
-    )
-
-
 def hybrid_rrf_search(
     query: str,
     jurisdiction: str = "India",
@@ -91,7 +73,7 @@ def hybrid_rrf_search(
     document_ids: Optional[list[str]] = None,
 ) -> list[dict]:
     """
-    Combines dense semantic vector search (Qdrant Cloud with ChromaDB fallback)
+    Combines dense semantic vector search (Qdrant Cloud)
     and sparse lexical search (in-memory BM25) using Reciprocal Rank Fusion (RRF).
 
     Parameters
@@ -119,7 +101,7 @@ def hybrid_rrf_search(
     if not query or not query.strip():
         return []
 
-    _chroma_t_start = time.perf_counter()
+    _t_start = time.perf_counter()
 
     # SPECIAL CASE: When document_ids provided, ONLY search user_uploads collection
     # This enables "ask about my uploaded document" feature
@@ -131,7 +113,7 @@ def hybrid_rrf_search(
         )
         collection_specs = [(settings.QDRANT_USER_UPLOADS_COLLECTION, "User")]
     else:
-        # 1. Route to the correct ChromaDB collection(s) based on jurisdiction.
+        # 1. Route to the correct Qdrant collection(s) based on jurisdiction.
         #    'India' -> india_statutes, 'International' -> international_treaties,
         #    'Both' -> query BOTH collections and fuse the combined candidate pool.
         jur_clean = jurisdiction.strip().lower()
@@ -159,9 +141,8 @@ def hybrid_rrf_search(
         user_id,
     )
 
-    # 2. Dense Vector Search: Try Qdrant Cloud first, falling back to ChromaDB
+    # 2. Dense Vector Search: Qdrant Cloud
     vector_candidates: list[tuple[Any, float, int, str]] = []
-    qdrant_success = False
 
     try:
         if qdrant_service.is_healthy():
@@ -200,30 +181,9 @@ def hybrid_rrf_search(
                         vector_candidates.append((doc_candidate, dist, rank, col_jur))
 
             if total_qdrant_hits > 0:
-                qdrant_success = True
                 log.info("Qdrant retrieval returned %d candidates", total_qdrant_hits)
     except Exception as q_exc:
-        log.warning("Qdrant vector search failed: %s; falling back to ChromaDB", q_exc)
-        qdrant_success = False
-
-    # Fallback to ChromaDB if Qdrant didn't produce candidates
-    if not qdrant_success or len(vector_candidates) == 0:
-        log.info("Using ChromaDB vectorstore fallback for query: '%s'", query[:50])
-        vector_candidates.clear()
-        for collection_name, col_jur in collection_specs:
-            try:
-                vectorstore = get_chroma_vectorstore(collection_name)
-                raw_vector_results = vectorstore.similarity_search_with_score(
-                    query=query,
-                    k=top_k * 2,
-                )
-                for rank, (doc, distance) in enumerate(raw_vector_results, start=1):
-                    vector_candidates.append((doc, float(distance), rank, col_jur))
-            except Exception as e:
-                log.error(
-                    "Vector search query error in ChromaDB collection '%s': %s",
-                    collection_name, e, exc_info=True,
-                )
+        log.warning("Qdrant vector search failed: %s", q_exc)
 
     # 3. Query In-Memory BM25Index for candidates and record (doc, bm25_score).
     bm25_candidates: list[tuple[dict, float, int]] = []
@@ -331,7 +291,7 @@ def hybrid_rrf_search(
         top_results[0]["rrf_score"] if top_results else 0.0,
     )
 
-    _chroma_latency_ms = (time.perf_counter() - _chroma_t_start) * 1000.0
+    _search_latency_ms = (time.perf_counter() - _t_start) * 1000.0
 
     # 6. Optional Shadow Retrieval (non-destructive comparison)
     #    Shadow runs AFTER the user response is fully assembled; no blocking wait.
@@ -343,9 +303,9 @@ def hybrid_rrf_search(
                 query=query,
                 jurisdiction=jurisdiction,
                 top_k=top_k,
-                chroma_results=top_results,
+                baseline_results=top_results,
                 collection_name=getattr(settings, "QDRANT_SHADOW_COLLECTION", None),
-                chroma_latency_ms=_chroma_latency_ms,
+                baseline_latency_ms=_search_latency_ms,
             )
         except Exception as shadow_err:
             log.warning("Shadow retrieval non-blocking error: %s", shadow_err)

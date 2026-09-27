@@ -13,14 +13,14 @@ router turns a user-supplied PDF into a *searchable* knowledge source:
     4.  Chunk with a 500-word sliding window / 50-word overlap — identical to
         ``corpus/parser.py`` so retrieval behaviour matches the base corpus.
     5.  Embed each chunk with the local BAAI/bge-m3 bi-encoder and upsert
-        into a dedicated ChromaDB ``user_uploads`` collection, scoped per user
+        into the Qdrant Cloud ``user_uploads`` collection, scoped per user
         via chunk metadata + id prefix.
 
 Endpoints (mounted under /api/documents by main.py)
 ----------------------------------------------------
   POST   /api/documents/upload      ingest a PDF, return document_id + chunk_count
   GET    /api/documents             list the current user's ingested documents
-  DELETE /api/documents/{id}        remove a document (file + ChromaDB chunks + row)
+  DELETE /api/documents/{id}        remove a document (file + Qdrant chunks + row)
 
 Every route is scoped to the authenticated user (require_auth).
 """
@@ -57,11 +57,6 @@ try:
 except ImportError:  # pragma: no cover
     fitz = None  # type: ignore
 
-try:
-    import chromadb
-except ImportError:  # pragma: no cover
-    chromadb = None  # type: ignore
-
 log = logging.getLogger(__name__)
 router = APIRouter()
 
@@ -71,7 +66,6 @@ router = APIRouter()
 _PROJECT_ROOT = Path(__file__).resolve().parents[3]
 _KB_ROOT = _PROJECT_ROOT / "knowledge-base"
 UPLOAD_DIR = _KB_ROOT / "uploads"
-CHROMA_DB_PATH = settings.CHROMA_DB_DIR
 
 EMBEDDING_MODEL_NAME = settings.EMBEDDING_MODEL_NAME
 USER_UPLOADS_COLLECTION = getattr(settings, "QDRANT_USER_UPLOADS_COLLECTION", "user_uploads")
@@ -86,27 +80,6 @@ try:
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 except Exception:
     pass
-
-
-# ---------------------------------------------------------------------------
-# Lazy singletons — Chroma client initialised once on first ingest request
-# ---------------------------------------------------------------------------
-_chroma_client: Any = None
-
-
-def _get_chroma_collection():
-    global _chroma_client
-    if chromadb is None:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="chromadb not installed on the server.",
-        )
-    if _chroma_client is None:
-        _chroma_client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
-    return _chroma_client.get_or_create_collection(
-        name=USER_UPLOADS_COLLECTION,
-        metadata={"hnsw:space": "cosine"},
-    )
 
 
 # ---------------------------------------------------------------------------
@@ -224,7 +197,7 @@ async def upload_and_ingest_document(
 ) -> DocumentIngestResponse:
     """
     Upload a PDF, parse + chunk it, and index the chunks into the
-    ``user_uploads`` ChromaDB collection for retrieval.
+    ``user_uploads`` Qdrant collection for retrieval.
 
     - Only ``.pdf`` accepted.
     - Max size 10MB.
@@ -310,9 +283,6 @@ async def upload_and_ingest_document(
                     "PDFs are not supported (OCR required)."
                 ),
             )
-
-        collection = _get_chroma_collection()
-
 
         texts = [c["text"] for c in chunks]
         embeddings = canonical_embedder.embed_documents(texts, batch_size=8)
@@ -433,7 +403,7 @@ def delete_document(
     user: User = Depends(require_auth),
     db: Session = Depends(get_db),
 ) -> dict:
-    """Delete an ingested document: its ChromaDB chunks, the file, and the row."""
+    """Delete an ingested document: its Qdrant chunks, the file, and the row."""
     doc = (
         db.query(UploadedDocument)
         .filter(
@@ -464,16 +434,6 @@ def delete_document(
         log.info("Removed %d chunks from in-memory BM25 index for document %s", removed_bm25, document_id)
     except Exception as exc:  # pragma: no cover
         log.warning("Failed to remove chunks from BM25 index for %s: %s", document_id, exc)
-
-    # 3. Remove chunks from ChromaDB (if available)
-    try:
-        collection = _get_chroma_collection()
-        collection.delete(where={"document_id": document_id})
-    except HTTPException:
-        # ChromaDB unavailable — still allow file/row cleanup below
-        log.warning("ChromaDB unavailable during delete of %s", document_id)
-    except Exception as exc:  # pragma: no cover
-        log.warning("Failed to delete ChromaDB chunks for %s: %s", document_id, exc)
 
     # 3. Remove file from Supabase Storage
     try:

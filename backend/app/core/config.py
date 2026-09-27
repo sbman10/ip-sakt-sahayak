@@ -67,7 +67,6 @@ class Settings(BaseSettings):
     QDRANT_CANARY_ENABLED: bool = False
     QDRANT_TRAFFIC_PERCENT: int = 0
 
-    CHROMA_DB_DIR: str = str(_BASE_DIR / "chroma_db")
     BM25_INDEX_PATH: str = str(_BASE_DIR / "bm25_index.pkl")
 
     # API Keys & LLM settings (Multi-Provider Architecture)
@@ -126,9 +125,11 @@ class Settings(BaseSettings):
     # override this in the ignored backend/.env file.
     GOOGLE_REDIRECT_URI: str = "https://ragvyn.onrender.com/api/auth/google/callback"
 
-    # Database URLs
-    DATABASE_URL: str = "sqlite:///./ip_sakti.db"
-    AUDIT_DB_PATH: str = str(_BASE_DIR / "audit.db")
+    # Database URLs (Supabase PostgreSQL)
+    DATABASE_URL: str = (
+        "postgresql+psycopg://postgres.dvutvnmskqcrvsjtufwm:ShinraBanshouMan2809@"
+        "aws-0-ap-northeast-2.pooler.supabase.com:5432/postgres"
+    )
 
     # Supabase PostgreSQL & Storage
     SUPABASE_URL: str = ""
@@ -156,7 +157,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    @field_validator("CHROMA_DB_DIR", "BM25_INDEX_PATH", mode="after")
+    @field_validator("BM25_INDEX_PATH", mode="after")
     @classmethod
     def resolve_paths(cls, v: str) -> str:
         p = Path(v)
@@ -179,11 +180,12 @@ class Settings(BaseSettings):
     @field_validator("RETRIEVAL_BACKEND", mode="after")
     @classmethod
     def validate_retrieval_backend(cls, v: str) -> str:
-        allowed = {"chroma_bm25", "qdrant_hybrid"}
         val_clean = v.strip().lower()
-        if val_clean not in allowed:
+        if val_clean in {"chroma_bm25", "chroma"}:
+            return "qdrant_hybrid"
+        if val_clean != "qdrant_hybrid":
             raise ValueError(
-                f"Invalid RETRIEVAL_BACKEND: '{v}'. Must be one of: {sorted(allowed)}"
+                f"Invalid RETRIEVAL_BACKEND: '{v}'. Must be 'qdrant_hybrid'"
             )
         return val_clean
 

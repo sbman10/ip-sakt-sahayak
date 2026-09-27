@@ -55,8 +55,8 @@ def evaluate_retrieval_quality(
 
     # Qdrant's native RRF score is not a cosine similarity or distance. A
     # reciprocal-rank score is positive when at least one hybrid branch
-    # returned the candidate, so it requires its own threshold. Applying the
-    # Chroma distance threshold to it would incorrectly abstain on valid
+    # returned the candidate, so it requires its own threshold. Applying a
+    # raw distance threshold to it would incorrectly abstain on valid
     # Qdrant results.
     qdrant_rrf_candidates = [
         c for c in candidates if c.get("retrieval_score_type") == "qdrant_rrf"
@@ -97,7 +97,7 @@ def evaluate_retrieval_quality(
             "top_rrf_score": top_rrf_score,
         }
 
-    # Legacy Chroma/BM25 path: inspect its vector distance as before.
+    # Fallback / lexical path: inspect distance if present.
     distances = [
         float(c.get("distance", c.get("vector_distance", 1.0)))
         for c in candidates

@@ -3,7 +3,7 @@ backend/app/services/audit_service.py
 -------------------------------------
 Database Audit & Metrics Logging Service for IP-SAKTI Sahayak.
 Persists query telemetry, DPDP-compliant scrubbed representations,
-composite confidence metrics, and response latencies to SQLite/PostgreSQL.
+composite confidence metrics, and response latencies to PostgreSQL (Supabase).
 """
 
 from __future__ import annotations
@@ -111,7 +111,7 @@ async def async_log_audit_transaction(
     """
     try:
         # If db_session is an active Session, use fresh SessionLocal in worker thread
-        # to avoid SQLite cross-thread concurrency contention.
+        # to ensure safe thread isolation.
         await run_in_threadpool(
             _sync_insert_audit,
             raw_query=raw_query,

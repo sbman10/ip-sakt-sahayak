@@ -64,7 +64,7 @@ router = APIRouter()
 
 
 def _resolve_source_filters(jurisdiction: str) -> list[str]:
-    """Map a jurisdiction value to the ChromaDB collections that will be queried.
+    """Map a jurisdiction value to the vector collections / partitions queried.
 
     Used for response observability so clients can see exactly which corpora a
     turn was grounded in. 'Both' fans out across both collections.
@@ -214,7 +214,7 @@ async def chat_endpoint(
     # For KNOWLEDGE_SEEK: use rewritten query for retrieval if available
     retrieval_query = classification.rewritten_query.strip() or scrubbed_query
 
-    # ── Stage (c): Hybrid RRF Retrieval (ChromaDB + BM25) ──────
+    # ── Stage (c): Hybrid RRF Retrieval (Qdrant + BM25) ──────
     try:
         candidates = hybrid_rrf_search(
             query=retrieval_query,

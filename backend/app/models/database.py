@@ -2,7 +2,7 @@
 backend/app/models/database.py
 -------------------------------
 Authoritative consolidated SQLAlchemy models for IP-SAKTI Sahayak persistent storage.
-Supports both SQLite (local development fallback) and Supabase PostgreSQL (production).
+Supports PostgreSQL (Supabase production) and isolated test engines.
 
 Entities:
 - User: Authentication, credentials, and profile (UUID PK)
@@ -41,7 +41,7 @@ from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 from app.core.config import settings
 
 # ---------------------------------------------------------------------------
-# Database Engine Setup (Dynamic SQLite / Supabase PostgreSQL)
+# Database Engine Setup (Supabase PostgreSQL / Test Runner Engine)
 # ---------------------------------------------------------------------------
 
 def normalize_database_url(url: str) -> str:
@@ -55,7 +55,7 @@ def normalize_database_url(url: str) -> str:
 
 def create_db_engine(db_url: str):
     """
-    Creates an appropriate SQLAlchemy engine for SQLite or PostgreSQL.
+    Creates an appropriate SQLAlchemy engine for PostgreSQL (production) or test runner.
     Removes SQLite-specific connect_args when connecting to PostgreSQL.
     """
     normalized_url = normalize_database_url(db_url)
@@ -318,11 +318,11 @@ class Feedback(Base):
 # ---------------------------------------------------------------------------
 
 def init_db(engine_override=None):
-    """Create all tables if they don't exist, and ensure SQLite schema columns are synchronized."""
+    """Create all tables if they don't exist, and ensure schema columns are synchronized."""
     target_engine = engine_override or engine
     Base.metadata.create_all(bind=target_engine)
 
-    # SQLite development fallback: ensure added columns exist on pre-existing tables
+    # Test runner fallback: ensure added columns exist on pre-existing tables if using local test engine
     if str(target_engine.url).startswith("sqlite"):
         with target_engine.connect() as conn:
             try:
@@ -334,5 +334,9 @@ def init_db(engine_override=None):
                 pass
 
 
-# Auto-initialize on import
-init_db()
+# Auto-initialize on import only if local test engine (avoids remote Supabase latency during imports)
+try:
+    if "sqlite" in str(engine.url):
+        init_db()
+except Exception:
+    pass

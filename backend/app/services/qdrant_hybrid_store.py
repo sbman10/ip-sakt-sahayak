@@ -527,7 +527,7 @@ class QdrantHybridStore:
         3. Embeds query sparsely with FastEmbed BM25.
         4. Applies metadata filters across supported fields.
         5. Performs Reciprocal Rank Fusion (RRF).
-        6. Returns hits preserving native Qdrant RRF scores (no Chroma distance conversions).
+        6. Returns hits preserving native Qdrant RRF scores directly.
         """
         if not query_text or not query_text.strip():
             raise ValueError("query_text must be a non-empty string.")

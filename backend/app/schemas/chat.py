@@ -348,7 +348,7 @@ class ChatResponse(BaseModel):
     )
     source_filters: list[str] = Field(
         default_factory=list,
-        description="ChromaDB collections/source filters applied during retrieval (observability).",
+        description="Qdrant collections/source filters applied during retrieval (observability).",
     )
     intent: Optional[str] = Field(
         default=None,

@@ -114,21 +114,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     except Exception as e:
         log.warning("[PID %s] Qdrant collection initialization warning: %s", pid, e)
 
-    # 2. Rebuild the legacy in-process BM25 index only when the legacy
-    # Chroma/BM25 backend is active. Qdrant-native hybrid retrieval already
-    # performs sparse BM25 search inside Qdrant and must not make extra
-    # startup calls to the old separate collections.
-    if settings.RETRIEVAL_BACKEND == "chroma_bm25":
-        try:
-            bm25_loaded = load_bm25_index_on_startup()
-            if bm25_loaded:
-                log.info("[PID %s] In-memory BM25 index reconstructed successfully from Qdrant.", pid)
-            else:
-                log.warning("[PID %s] BM25 index empty at startup. Chunks will be indexed as documents are added.", pid)
-        except Exception as e:
-            log.warning("[PID %s] BM25 index reconstruction warning: %s", pid, e)
-    else:
-        log.info("[PID %s] Skipping legacy BM25 rebuild; Qdrant native sparse retrieval is active.", pid)
+    # 2. Qdrant-native hybrid retrieval performs sparse BM25 search inside Qdrant.
+    log.info("[PID %s] Qdrant native hybrid retrieval is active.", pid)
 
     # 3. Preload SentenceTransformer and CrossEncoder in background so server starts immediately
     async def _preload_ml_models():
@@ -182,8 +169,8 @@ app = FastAPI(
     description=(
         "Ayurvedic Intellectual Property Assistant - a high-performance RAG-powered legal Q&A backend "
         "supporting Ministry of AYUSH Problem Statement 26045. "
-        "Features Qdrant hybrid retrieval with a safe Chroma/BM25 fallback and "
-        "Gemini grounded citations with composite confidence scoring."
+        "Features Qdrant hybrid retrieval with BM25 lexical fusion and "
+        "Groq LLM grounded citations with composite confidence scoring."
     ),
     version="1.0.0",
     docs_url="/docs",
@@ -327,15 +314,11 @@ def llm_health_check_alias() -> dict[str, Any]:
 )
 async def readiness_check(response: Response) -> dict[str, Any]:
     """
-    Readiness probe validating only the subsystems required for the active configuration.
-    For default chroma_bm25 startup:
-      - Validates database connectivity
-      - Validates HF dense embedding configuration (without preloading local model)
-      - Validates ChromaDB & BM25 index
-      - Does NOT require local BGE-M3 model object, CrossEncoder model object, or Qdrant Cloud.
-    For Qdrant canary or qdrant_hybrid startup:
-      - Additionally validates Qdrant URL and API key
-      - Validates the configured production collection exists, has the hybrid schema, and is green.
+    Readiness probe validating the subsystems required for active configuration:
+      - Validates database connectivity (PostgreSQL / Supabase)
+      - Validates HF dense embedding configuration
+      - Validates Qdrant Cloud URL and API key
+      - Validates the configured production collection exists, has hybrid schema, and is green.
     """
     checks: dict[str, Any] = {}
     is_ready = True
@@ -377,52 +360,37 @@ async def readiness_check(response: Response) -> dict[str, Any]:
     else:
         checks["cross_encoder"] = "disabled"
 
-    # 4. Retrieval Subsystem Readiness
-    is_canary = settings.QDRANT_CANARY_ENABLED and settings.QDRANT_TRAFFIC_PERCENT > 0
-    is_qdrant_active = (settings.RETRIEVAL_BACKEND == "qdrant_hybrid") or is_canary
-
-    if is_qdrant_active:
-        # Active Qdrant or Canary mode: must verify Qdrant config and collection status
-        qdrant_configured = bool(settings.QDRANT_URL and settings.QDRANT_API_KEY)
-        checks["qdrant_configured"] = qdrant_configured
-        if not qdrant_configured:
-            is_ready = False
-            checks["qdrant_collection"] = False
-        else:
-            try:
-                from app.services.qdrant_hybrid_store import qdrant_hybrid_store
-                col_name = settings.QDRANT_PRODUCTION_COLLECTION
-                schema = qdrant_hybrid_store.verify_collection_schema(col_name)
-                q_status = {
-                    "exists": True,
-                    "green": str(schema.get("status", "")).lower() == "green",
-                    "schema_valid": bool(schema.get("is_compatible")),
-                    "points_count": schema.get("points_count"),
-                    "collection": col_name,
-                }
-                checks["qdrant_collection"] = q_status
-                if not (q_status["exists"] and q_status["green"] and q_status["schema_valid"]):
-                    is_ready = False
-            except Exception as e:
-                log.warning("Readiness probe Qdrant verification failed: %s", e)
-                checks["qdrant_collection"] = {"exists": False, "green": False, "error": str(e)}
-                is_ready = False
+    # 4. Retrieval Subsystem Readiness (Qdrant Hybrid & BM25)
+    qdrant_configured = bool(settings.QDRANT_URL and settings.QDRANT_API_KEY)
+    checks["qdrant_configured"] = qdrant_configured
+    if not qdrant_configured:
+        is_ready = False
+        checks["qdrant_collection"] = False
     else:
-        # Default startup (chroma_bm25, canary disabled)
-        # Does NOT require Qdrant production retrieval
-        checks["qdrant"] = "not_required"
-        chroma_ok = False
         try:
-            import chromadb
-            client = chromadb.PersistentClient(path=settings.CHROMA_DB_DIR)
-            client.heartbeat()
-            chroma_ok = True
+            from app.services.qdrant_hybrid_store import qdrant_hybrid_store
+            col_name = settings.QDRANT_PRODUCTION_COLLECTION
+            schema = qdrant_hybrid_store.verify_collection_schema(col_name)
+            q_status = {
+                "exists": True,
+                "green": str(schema.get("status", "")).lower() == "green",
+                "schema_valid": bool(schema.get("is_compatible")),
+                "points_count": schema.get("points_count"),
+                "collection": col_name,
+            }
+            checks["qdrant_collection"] = q_status
+            if not (q_status["exists"] and q_status["green"] and q_status["schema_valid"]):
+                is_ready = False
         except Exception as e:
-            log.warning("Readiness probe ChromaDB check warning: %s", e)
-            chroma_ok = False
-        checks["chroma_bm25"] = chroma_ok
-        if not chroma_ok:
+            log.warning("Readiness probe Qdrant verification failed: %s", e)
+            checks["qdrant_collection"] = {"exists": False, "green": False, "error": str(e)}
             is_ready = False
+
+    try:
+        from app.services.bm25_service import get_bm25_index
+        checks["bm25_loaded"] = get_bm25_index().is_loaded
+    except Exception:
+        checks["bm25_loaded"] = False
 
     # 5. LLM Provider Topology
     from app.services.llm import get_llm_diagnostics

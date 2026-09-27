@@ -1,21 +1,19 @@
 """
 backend/app/services/retrieval_router.py
 -----------------------------------------
-Retrieval Router, Canary Traffic Controller, and Safe Fallback Service for IP-SAKTI Sahayak (Phase 5D).
+Retrieval Router, Canary Traffic Controller, and Safe Fallback Service for IP-SAKTI Sahayak.
 
-Provides a single, stable retrieval entry point that dynamically routes queries
-to the configured vector backend (ChromaDB+BM25 or Qdrant Hybrid) and guarantees
-strict schema normalization, non-leaking correlation logging, evidence validation,
-and safe fallback.
+Provides a single, stable retrieval entry point that routes queries
+to the production vector backend (Qdrant Hybrid) with BM25 fallback,
+guaranteeing strict schema normalization, non-leaking correlation logging,
+evidence validation, and safe fallback.
 
 Invariants:
-- Default backend is 'chroma_bm25'.
-- Live user queries never touch Qdrant unless RETRIEVAL_BACKEND='qdrant_hybrid'
-  or QDRANT_CANARY_ENABLED=True with deterministic bucket selection.
+- Default backend is 'qdrant_hybrid'.
 - If Qdrant fails, times out, returns empty results, or fails citation/filter
-  validation when fallback is enabled, safely falls back to ChromaDB+BM25.
-- Result schemas for both backends are 100% normalized and identical.
-- Qdrant native scores are preserved directly without Chroma distance conversion.
+  validation when fallback is enabled, safely falls back to lexical BM25.
+- Result schemas are 100% normalized and standardized.
+- Qdrant native scores are preserved directly.
 - Telemetry never logs raw queries, tokens, or PII.
 """
 
@@ -73,7 +71,7 @@ def normalize_chroma_result(
     fallback_reason: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
-    Normalizes a ChromaDB + BM25 result dictionary into the standardized schema.
+    Normalizes a BM25 / lexical fallback result dictionary into the standardized schema.
     Preserves existing distance and RRF score fields for downstream consumers.
     """
     meta = doc.get("metadata") or {}
@@ -83,7 +81,7 @@ def normalize_chroma_result(
     dist = float(doc.get("distance", doc.get("vector_distance", 1.0)))
     sim = float(doc.get("vector_similarity", max(0.0, min(1.0, 1.0 - dist))))
 
-    backend_label = "chroma_bm25_fallback" if fallback_used else "chroma_bm25"
+    backend_label = "bm25_fallback" if fallback_used else "bm25"
 
     return {
         # Core standardized fields (identical across all backends)
@@ -106,11 +104,15 @@ def normalize_chroma_result(
         "vector_distance": dist,
         "vector_similarity": sim,
         "rrf_score": score,
-        "retrieval_score_type": "chroma_rrf",
+        "retrieval_score_type": "rrf",
         "retrieval_backend": backend_label,
         "fallback_used": fallback_used,
         "fallback_reason": fallback_reason,
     }
+
+
+# Backwards compatibility alias
+normalize_fallback_result = normalize_chroma_result
 
 
 def normalize_qdrant_result(doc: Dict[str, Any]) -> Dict[str, Any]:
@@ -367,7 +369,7 @@ class RetrievalRouter:
             max_workers=4, thread_name_prefix="qdrant_router"
         )
 
-    def _execute_chroma(
+    def _execute_fallback(
         self,
         query: str,
         jurisdiction: str,
@@ -376,7 +378,7 @@ class RetrievalRouter:
         fallback_reason: Optional[str] = None,
         **filters: Any,
     ) -> List[Dict[str, Any]]:
-        """Call legacy ChromaDB + BM25 retrieval service and normalize results."""
+        """Call fallback BM25 retrieval service and normalize results."""
         from app.services.retrieval_service import hybrid_rrf_search
 
         raw_candidates = hybrid_rrf_search(
@@ -386,13 +388,16 @@ class RetrievalRouter:
             **filters,
         )
         return [
-            normalize_chroma_result(
+            normalize_fallback_result(
                 c,
                 fallback_used=fallback_used,
                 fallback_reason=fallback_reason,
             )
             for c in raw_candidates
         ]
+
+    # Alias for backwards compatibility
+    _execute_chroma = _execute_fallback
 
     def _execute_qdrant_direct(
         self,
@@ -457,11 +462,11 @@ class RetrievalRouter:
         )
 
         # -------------------------------------------------------------
-        # Path A: ChromaDB + BM25 (Default / Non-Canary Traffic)
+        # Path A: Lexical BM25 (Non-Qdrant Traffic)
         # -------------------------------------------------------------
         if not use_qdrant:
             try:
-                results = self._execute_chroma(
+                results = self._execute_fallback(
                     query=query,
                     jurisdiction=jurisdiction,
                     top_k=top_k,
@@ -472,7 +477,7 @@ class RetrievalRouter:
                 latency_ms = (time.perf_counter() - start_time) * 1000.0
                 canary_metrics_tracker.record_chroma_request(latency_ms)
                 log.info(
-                    "[%s] Retrieval complete | backend: chroma_bm25 | reason: %s | query_hash: %s | "
+                    "[%s] Retrieval complete | backend: lexical_bm25 | reason: %s | query_hash: %s | "
                     "results: %d | latency: %.2fms",
                     req_id,
                     routing_reason,
@@ -481,13 +486,13 @@ class RetrievalRouter:
                     latency_ms,
                 )
                 return results
-            except Exception as chroma_exc:
+            except Exception as exc:
                 latency_ms = (time.perf_counter() - start_time) * 1000.0
                 canary_metrics_tracker.record_chroma_request(latency_ms)
                 log.error(
-                    "[%s] Primary ChromaDB retrieval error: %s | query_hash: %s | latency: %.2fms",
+                    "[%s] Primary fallback retrieval error: %s | query_hash: %s | latency: %.2fms",
                     req_id,
-                    type(chroma_exc).__name__,
+                    type(exc).__name__,
                     query_hash,
                     latency_ms,
                 )
@@ -585,9 +590,9 @@ class RetrievalRouter:
             )
             return []
 
-        # Execute safe fallback to ChromaDB + BM25:
+        # Execute safe fallback to BM25 lexical search:
         try:
-            fallback_results = self._execute_chroma(
+            fallback_results = self._execute_fallback(
                 query=query,
                 jurisdiction=jurisdiction,
                 top_k=top_k,
@@ -597,7 +602,7 @@ class RetrievalRouter:
             )
             latency_ms = (time.perf_counter() - start_time) * 1000.0
             log.warning(
-                "[%s] Fallback succeeded | backend: chroma_bm25_fallback | reason: %s | query_hash: %s | "
+                "[%s] Fallback succeeded | backend: bm25_fallback | reason: %s | query_hash: %s | "
                 "results: %d | latency: %.2fms",
                 req_id,
                 fallback_category,
@@ -609,8 +614,8 @@ class RetrievalRouter:
         except Exception as fallback_exc:
             latency_ms = (time.perf_counter() - start_time) * 1000.0
             log.error(
-                "[%s] Dual failure: Both Qdrant canary and Chroma fallback failed. "
-                "Qdrant reason: %s | Chroma error: %s | query_hash: %s | latency: %.2fms",
+                "[%s] Dual failure: Both Qdrant and fallback failed. "
+                "Qdrant reason: %s | Fallback error: %s | query_hash: %s | latency: %.2fms",
                 req_id,
                 fallback_category,
                 type(fallback_exc).__name__,
