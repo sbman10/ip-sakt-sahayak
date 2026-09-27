@@ -70,9 +70,13 @@ class Settings(BaseSettings):
     CHROMA_DB_DIR: str = str(_BASE_DIR / "chroma_db")
     BM25_INDEX_PATH: str = str(_BASE_DIR / "bm25_index.pkl")
 
-    # API Keys & LLM settings (Dual-Provider Architecture)
-    LLM_PRIMARY_PROVIDER: str = "gemini"
-    LLM_FALLBACK_PROVIDER: str = "cerebras"
+    # API Keys & LLM settings (Multi-Provider Architecture)
+    LLM_PRIMARY_PROVIDER: str = "groq"
+    LLM_FALLBACK_PROVIDER: str = "groq"
+
+    GROQ_API_KEY: str = ""
+    GROQ_BASE_URL: str = "https://api.groq.com/openai/v1"
+    GROQ_MODEL: str = "openai/gpt-oss-120b"
 
     CEREBRAS_API_KEY: str = ""
     CEREBRAS_BASE_URL: str = "https://api.cerebras.ai/v1"
@@ -81,7 +85,7 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = ""
     GEMINI_API_KEYS: Union[List[str], str] = []
     GEMINI_MODEL: str = "gemini-3.6-flash"
-    PRIMARY_MODEL: str = "gemini-3.6-flash"
+    PRIMARY_MODEL: str = "openai/gpt-oss-120b"
 
     GENERATION_MAX_RETRIES: int = 1
     GENERATION_TIMEOUT_SECONDS: float = 60.0
@@ -97,7 +101,7 @@ class Settings(BaseSettings):
 
     # Intent Classification & Early Routing (Requirement 5: disabled by default in production)
     INTENT_CLASSIFICATION_ENABLED: bool = False
-    INTENT_CLASSIFIER_MODEL: str = "gemini-3.6-flash"
+    INTENT_CLASSIFIER_MODEL: str = "openai/gpt-oss-120b"
     INTENT_CLASSIFIER_TIMEOUT_SECONDS: float = 3.0
     INTENT_CONFIDENCE_THRESHOLD: float = 0.60
 
@@ -218,11 +222,16 @@ class Settings(BaseSettings):
     @field_validator("LLM_PRIMARY_PROVIDER", "LLM_FALLBACK_PROVIDER", mode="after")
     @classmethod
     def validate_llm_provider(cls, v: str) -> str:
-        allowed = {"gemini", "cerebras"}
+        allowed = {"groq", "gemini", "cerebras"}
         val_clean = v.strip().lower()
         if val_clean not in allowed:
             raise ValueError(f"Invalid LLM provider: '{v}'. Must be one of: {sorted(allowed)}")
         return val_clean
+
+    @property
+    def is_groq_configured(self) -> bool:
+        """True if Groq API key is set and non-empty."""
+        return bool(self.GROQ_API_KEY and self.GROQ_API_KEY.strip())
 
     @property
     def is_cerebras_configured(self) -> bool:

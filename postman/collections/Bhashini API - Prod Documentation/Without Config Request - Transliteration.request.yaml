@@ -1,0 +1,62 @@
+$kind: http-request
+url: "{{ulca_base_url}}{{model_pipeline_endpoint}}"
+method: POST
+headers:
+  - key: ulcaApiKey
+    value: "{{api_key}}"
+  - key: userID
+    value: "{{user_id}}"
+  - key: Authorization
+    value: ""
+    disabled: true
+body:
+  type: json
+  content: |-
+    {
+        "pipelineTasks" : [
+            {
+                "taskType" : "transliteration"
+            } 
+        ],
+        "pipelineRequestConfig" : {
+            "pipelineId": "{{pipeline_id}}"
+        }
+    }
+scripts:
+  - type: afterResponse
+    code: "var jsonRes=pm.response.json();\r
+
+      pm.collectionVariables.set(\"callback_url\", jsonRes.pipelineInferenceAPIEndPoint.callbackUrl);\r
+
+      pm.collectionVariables.set(\"callback_url_feedback\", jsonRes.feedbackUrl);\r
+
+      pm.collectionVariables.set(\"compute_call_authorization_key\", jsonRes.pipelineInferenceAPIEndPoint.inferenceApiKey.name);\r
+
+      pm.collectionVariables.set(\"compute_call_authorization_value\", jsonRes.pipelineInferenceAPIEndPoint.inferenceApiKey.value);\r
+
+      \r
+
+      var pipelineResponseConfig=jsonRes.pipelineResponseConfig;\r
+
+      for(let eachResp of pipelineResponseConfig){\r
+
+      \    if(eachResp.taskType=='transliteration'){\r
+
+      \        var allConfig=eachResp.config;\r
+
+      \        for(let eachConfig of allConfig){\r
+
+      \            if(eachConfig.language.sourceLanguage==pm.collectionVariables.get('trans_source_language') && eachConfig.language.targetLanguage==pm.collectionVariables.get('trans_target_language')){\r
+
+      \                pm.collectionVariables.set(\"trans_service_id\", eachConfig.serviceId);\r
+
+      \            }\r
+
+      \        }\r
+
+      \    }    \r
+
+      }"
+    language: text/javascript
+settings: {}
+order: 4000

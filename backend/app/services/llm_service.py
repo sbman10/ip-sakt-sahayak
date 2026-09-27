@@ -1,9 +1,9 @@
 """
 backend/app/services/llm_service.py
 ------------------------------------
-Grounded Gemini LLM Service for IP-SAKTI Sahayak.
-Uses high-reliability Google Gemini service with dynamic output token limits,
-key rotation, and non-blocking async execution.
+Grounded LLM Service for IP-SAKTI Sahayak.
+Uses high-reliability Groq LLM service with dynamic output token limits
+and non-blocking async execution.
 """
 
 from __future__ import annotations
@@ -15,6 +15,8 @@ from app.core.config import settings
 from app.services.llm import (
     GeminiGenerationError,
     GeminiQuotaExceededError,
+    GroqGenerationError,
+    GroqQuotaExceededError,
     GroundedAnswerText,
     async_generate_grounded_answer,
 )

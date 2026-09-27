@@ -1,0 +1,83 @@
+$kind: http-request
+url: "{{ulca_base_url}}{{model_pipeline_endpoint}}"
+method: POST
+headers:
+  userID: "{{user_id}}"
+  ulcaApiKey: "{{api_key}}"
+body:
+  type: json
+  content: |-
+    {
+        "pipelineTasks": [
+            {
+                "taskType": "asr",
+                "config": {
+                    "language": {
+                        "sourceLanguage": "{{source_language}}"
+                    }
+                }
+            },
+            {
+                "taskType": "translation",
+                "config": {
+                    "language": {
+                        "sourceLanguage": "{{source_language}}",
+                        "targetLanguage": "{{target_language}}"
+                    }
+                }
+            },
+            {
+                "taskType": "tts",
+                "config": {
+                    "language": {
+                        "sourceLanguage": "{{target_language}}"
+                    }
+                }
+            }
+        ],
+        "pipelineRequestConfig": {
+            "pipelineId": "{{pipeline_id}}"
+        }
+    }
+scripts:
+  - type: afterResponse
+    code: "var jsonRes=pm.response.json();\r
+
+      pm.collectionVariables.set(\"callback_url\", jsonRes.pipelineInferenceAPIEndPoint.callbackUrl);\r
+
+      pm.collectionVariables.set(\"callback_url_feedback\", jsonRes.feedbackUrl);\r
+
+      pm.collectionVariables.set(\"compute_call_authorization_key\", jsonRes.pipelineInferenceAPIEndPoint.inferenceApiKey.name);\r
+
+      pm.collectionVariables.set(\"compute_call_authorization_value\", jsonRes.pipelineInferenceAPIEndPoint.inferenceApiKey.value);\r
+
+      \r
+
+      var pipelineResponseConfig=jsonRes.pipelineResponseConfig;\r
+
+      for(let eachResp of pipelineResponseConfig){\r
+
+      \    if(eachResp.taskType=='asr'){\r
+
+      \        pm.collectionVariables.set(\"asr_service_id\", eachResp.config[0].serviceId);\r
+
+      \    }\r
+
+      \    else if(eachResp.taskType=='translation'){\r
+
+      \        pm.collectionVariables.set(\"nmt_service_id\", eachResp.config[0].serviceId);\r
+
+      \r
+
+      \    }\r
+
+      \    else if(eachResp.taskType=='tts'){\r
+
+      \        pm.collectionVariables.set(\"tts_service_id\", eachResp.config[0].serviceId);\r
+
+      \    }\r
+
+      }"
+    language: text/javascript
+settings: {}
+order: 1000

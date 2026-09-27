@@ -165,24 +165,54 @@ async def generate_roadmap(
     """
     _VALID_STATUS = {"required", "conditional", "optional", "info"}
 
+    jur_norm = (jurisdiction or "India").strip().lower()
+    selected_jurisdiction = (
+        "both" if jur_norm == "both"
+        else "international" if "international" in jur_norm
+        else "india"
+    )
+
+    user_content = (
+        f"selected_jurisdiction: {selected_jurisdiction}\n\n"
+        f"--- RETRIEVED LEGAL CONTEXT ---\n"
+        f"{context_str if context_str.strip() else '[No relevant passages retrieved]'}\n"
+        f"--- END CONTEXT ---\n\n"
+        f"INNOVATION:\n{innovation}\n\n"
+        f"CURRENT STAGE:\n{stage.strip() or '[not provided]'}\n\n"
+        f"Return ONLY the JSON roadmap object as specified. Ground every stage, timeline and "
+        f"law reference in the retrieved context above."
+    )
+
     try:
-        raw = await execute_with_retry_and_fallback(
-            _build_roadmap_call,
-            innovation=innovation,
-            stage=stage,
-            context_str=context_str,
-            jurisdiction=jurisdiction,
+        from app.services.llm_providers import llm_orchestrator
+        resp = await llm_orchestrator.generate_answer(
+            system_prompt=_ROADMAP_SYSTEM_PROMPT,
+            user_prompt=user_content,
+            max_output_tokens=1600,
+            temperature=0.15,
+            raise_on_failure=True,
         )
-    except ResourceExhaustedError:
-        log.error("All Gemini keys exhausted during roadmap generation.")
-        return _empty_roadmap(
-            "The roadmap service is temporarily rate-limited. Please try again shortly."
-        )
+        raw = resp.text
     except Exception as e:
-        log.error("Roadmap generation failed: %s", e, exc_info=True)
-        return _empty_roadmap(
-            "The roadmap engine could not be reached right now. Please try again."
-        )
+        log.warning("llm_orchestrator roadmap call failed or fallback needed: %s", e)
+        try:
+            raw = await execute_with_retry_and_fallback(
+                _build_roadmap_call,
+                innovation=innovation,
+                stage=stage,
+                context_str=context_str,
+                jurisdiction=jurisdiction,
+            )
+        except ResourceExhaustedError:
+            log.error("All LLM keys exhausted during roadmap generation.")
+            return _empty_roadmap(
+                "The roadmap service is temporarily rate-limited. Please try again shortly."
+            )
+        except Exception as e2:
+            log.error("Roadmap generation failed: %s", e2, exc_info=True)
+            return _empty_roadmap(
+                "The roadmap engine could not be reached right now. Please try again."
+            )
 
     data = _safe_parse_json(raw)
     if not data:

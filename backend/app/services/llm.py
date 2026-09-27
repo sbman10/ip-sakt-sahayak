@@ -1,10 +1,9 @@
 """
 backend/app/services/llm.py
 ----------------------------
-Dual-Provider LLM orchestration service for IP-SAKTI Sahayak.
-Coordinates between Cerebras (primary) and Google Gemini (fallback)
-with automatic failover, mode-aware token limits, sentence boundary trimming,
-and unified streaming protocol.
+LLM orchestration service for IP-SAKTI Sahayak.
+Coordinates Groq LLM (primary) with automatic failover, mode-aware token limits,
+sentence boundary trimming, and unified streaming protocol.
 """
 
 from __future__ import annotations
@@ -13,10 +12,7 @@ import asyncio
 import logging
 from typing import Any, Dict, Iterator, Optional, Union
 
-from google import genai
-
 from app.core.config import settings
-from app.services.key_manager import key_manager
 from app.services.prompt_builder import prompt_builder
 from app.services.llm_providers import (
     DualProviderOrchestrator,
@@ -31,9 +27,13 @@ from app.services.llm_providers import (
     llm_orchestrator,
 )
 
+from app.services.key_manager import key_manager
+
 log = logging.getLogger("app.services.llm")
 
-# Backward-compatibility error aliases
+# Provider error aliases
+GroqQuotaExceededError = ProviderQuotaError
+GroqGenerationError = ProviderTransientError
 GeminiQuotaExceededError = ProviderQuotaError
 GeminiGenerationError = ProviderTransientError
 
@@ -70,8 +70,10 @@ class GroundedAnswerText(str):
         return obj
 
 
-def _get_client_and_key() -> tuple[genai.Client, str]:
-    """Retrieves an active client configured with a rotated key."""
+def _get_client_and_key() -> tuple[Any, str]:
+    """Retrieves an active client configured with a rotated key (legacy Gemini helper)."""
+    from google import genai
+    from app.services.key_manager import key_manager
     active_key = key_manager.get_active_key()
     client = genai.Client(api_key=active_key)
     return client, active_key
