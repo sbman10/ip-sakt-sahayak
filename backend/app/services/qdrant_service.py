@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from qdrant_client import QdrantClient
 from qdrant_client.http import models as qmodels
-from qdrant_client.http.models import Distance, FieldCondition, Filter, MatchValue, PayloadSchemaType, PointStruct, VectorParams
+from qdrant_client.http.models import Distance, FieldCondition, Filter, MatchAny, MatchValue, PayloadSchemaType, PointStruct, VectorParams
 
 from app.core.config import settings
 
@@ -354,6 +354,7 @@ class QdrantService:
         jurisdiction: Optional[str] = None,
         user_id: Optional[str] = None,
         document_id: Optional[str] = None,
+        document_ids: Optional[List[str]] = None,
     ) -> List[Dict[str, Any]]:
         """
         Executes dense vector search against a Qdrant collection with payload filtering.
@@ -380,7 +381,12 @@ class QdrantService:
             must_conditions.append(
                 FieldCondition(key="user_id", match=MatchValue(value=str(user_id).strip()))
             )
-        if document_id:
+        # Support both single document_id and list of document_ids
+        if document_ids and len(document_ids) > 0:
+            must_conditions.append(
+                FieldCondition(key="document_id", match=MatchAny(any=[str(d).strip() for d in document_ids if d]))
+            )
+        elif document_id:
             must_conditions.append(
                 FieldCondition(key="document_id", match=MatchValue(value=str(document_id).strip()))
             )

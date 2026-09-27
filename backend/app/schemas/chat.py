@@ -107,6 +107,14 @@ class CitationItem(BaseModel):
         default="",
         description="Short explanation of why this source supports the answer.",
     )
+    is_user_document: bool = Field(
+        default=False,
+        description="True if this citation is from a user-uploaded document, False for official sources.",
+    )
+    original_filename: Optional[str] = Field(
+        default=None,
+        description="Original filename for user-uploaded documents.",
+    )
 
 
 class ExtractedEntities(BaseModel):
@@ -199,6 +207,12 @@ class ChatRequest(BaseModel):
     conversation_id: Optional[str] = Field(
         default=None,
         description="Optional existing conversation ID to append this turn to.",
+    )
+    
+    # ── Document Scoping for RAG Retrieval ──
+    document_ids: Optional[list[str]] = Field(
+        default=None,
+        description="Optional list of document IDs to scope retrieval to (e.g. user-uploaded PDFs).",
     )
 
     # ── Optional Context Profile & Formulation Data ──

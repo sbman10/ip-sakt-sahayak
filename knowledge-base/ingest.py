@@ -18,10 +18,9 @@ Architectural roles:
 Usage (Legacy):
     python knowledge-base/ingest.py
 """
+from __future__ import annotations
 
 import warnings
-
-from __future__ import annotations
 
 import logging
 import os

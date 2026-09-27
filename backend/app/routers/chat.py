@@ -15,6 +15,7 @@ import json
 import logging
 import time
 import uuid
+from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -22,7 +23,8 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.models.database import Conversation, Message, get_db
+from app.models.database import Conversation, Message, User, get_db
+from app.routers.auth import get_current_user
 from app.schemas.chat import (
     ChatRequest,
     ChatResponse,
@@ -89,6 +91,7 @@ def _resolve_source_filters(jurisdiction: str) -> list[str]:
 async def chat_endpoint(
     request: ChatRequest,
     db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user),
 ) -> ChatResponse:
     """
     Main dialogue turn endpoint executing intent-routed RAG pipeline.
@@ -217,6 +220,7 @@ async def chat_endpoint(
             query=retrieval_query,
             jurisdiction=jurisdiction,
             top_k=8,
+            document_ids=request.document_ids,  # Scope to user-uploaded docs if provided
         )
     except Exception as e:
         log.error("Hybrid retrieval failed: %s", e, exc_info=True)
@@ -401,11 +405,29 @@ async def chat_endpoint(
                 id=str(uuid.uuid4()),
                 title=raw_query[:50] + ("..." if len(raw_query) > 50 else ""),
                 jurisdiction=jurisdiction,
+                language=language[:10] if language else "en",
+                user_id=current_user.id if current_user else None,
             )
             db.add(conv)
             db.commit()
             conv_id = conv.id
+        else:
+            conv = db.query(Conversation).filter(Conversation.id == conv_id).first()
+            if conv:
+                conv.updated_at = datetime.utcnow()
+                if not conv.user_id and current_user:
+                    conv.user_id = current_user.id
+                db.commit()
 
+        # Save user message
+        user_msg = Message(
+            conversation_id=conv_id,
+            role="user",
+            content=raw_query,
+        )
+        db.add(user_msg)
+
+        # Save assistant message
         msg = Message(
             conversation_id=conv_id,
             role="assistant",
@@ -442,6 +464,8 @@ async def chat_endpoint(
 )
 async def chat_stream_endpoint(
     request: ChatRequest,
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user),
 ):
     """
     Streaming SSE endpoint with full intent-routing parity.
@@ -567,6 +591,7 @@ async def chat_stream_endpoint(
             query=retrieval_query,
             jurisdiction=jurisdiction,
             top_k=5,
+            document_ids=request.document_ids,  # Scope to user-uploaded docs if provided
         )
     except Exception:
         candidates = []
@@ -612,13 +637,46 @@ async def chat_stream_endpoint(
             )
         )
 
+    # Persist turn metadata in DB for stream
+    conv_id = request.conversation_id
+    try:
+        if not conv_id:
+            conv = Conversation(
+                id=str(uuid.uuid4()),
+                title=raw_query[:50] + ("..." if len(raw_query) > 50 else ""),
+                jurisdiction=jurisdiction,
+                language=language[:10] if language else "en",
+                user_id=current_user.id if current_user else None,
+            )
+            db.add(conv)
+            db.commit()
+            conv_id = conv.id
+        else:
+            conv = db.query(Conversation).filter(Conversation.id == conv_id).first()
+            if conv:
+                conv.updated_at = datetime.utcnow()
+                if not conv.user_id and current_user:
+                    conv.user_id = current_user.id
+                db.commit()
+
+        user_msg = Message(
+            conversation_id=conv_id,
+            role="user",
+            content=raw_query,
+        )
+        db.add(user_msg)
+        db.commit()
+    except Exception as stream_db_err:
+        log.warning("Could not persist user turn in stream: %s", stream_db_err)
+
     def _generate_stream():
-        # Emit metadata first (observability + intent)
-        yield f"data: {json.dumps({'type': 'meta', 'intent': classification.intent, 'jurisdiction': jurisdiction, 'source_filters': source_filters, 'rewritten_query': classification.rewritten_query or None})}\n\n"
+        # Emit metadata first (observability + intent + conversation_id)
+        yield f"data: {json.dumps({'type': 'meta', 'intent': classification.intent, 'jurisdiction': jurisdiction, 'source_filters': source_filters, 'rewritten_query': classification.rewritten_query or None, 'conversation_id': conv_id})}\n\n"
         # Then send citation metadata payload
         citation_data = [c.model_dump() for c in citations]
-        yield f"data: {json.dumps({'type': 'citations', 'citations': citation_data})}\n\n"
+        yield f"data: {json.dumps({'type': 'citations', 'citations': citation_data, 'conversation_id': conv_id})}\n\n"
 
+        accumulated_tokens = []
         had_error = False
         try:
             for token in stream_grounded_answer(
@@ -632,13 +690,29 @@ async def chat_stream_endpoint(
                 user_intent=user_intent,
                 requested_information=requested_information,
             ):
+                accumulated_tokens.append(token)
                 yield f"data: {json.dumps({'type': 'token', 'token': token})}\n\n"
         except Exception as stream_err:
             had_error = True
             log.error("Streaming generation failed: %s", stream_err, exc_info=True)
-            yield f"data: {json.dumps({'type': 'error', 'message': str(stream_err), 'status': 'degraded'})}\n\n"
+            yield f"data: {json.dumps({'type': 'error', 'message': str(stream_err), 'status': 'degraded', 'conversation_id': conv_id})}\n\n"
 
-        if not had_error:
-            yield f"data: {json.dumps({'type': 'done', 'done': True, 'status': 'answered', 'completed': True})}\n\n"
+        if not had_error and conv_id:
+            try:
+                full_text = "".join(accumulated_tokens)
+                if full_text:
+                    ai_msg = Message(
+                        conversation_id=conv_id,
+                        role="assistant",
+                        content=full_text,
+                        confidence="high",
+                        citations_json=json.dumps(citation_data),
+                    )
+                    db.add(ai_msg)
+                    db.commit()
+            except Exception as stream_ai_err:
+                log.warning("Could not persist streamed assistant response: %s", stream_ai_err)
+
+        yield f"data: {json.dumps({'type': 'done', 'done': True, 'status': 'answered' if not had_error else 'degraded', 'completed': True, 'conversation_id': conv_id})}\n\n"
 
     return StreamingResponse(_generate_stream(), media_type="text/event-stream")
