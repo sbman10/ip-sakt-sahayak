@@ -7780,7 +7780,7 @@ import {
    ============================================================ */
 function DocumentsPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize, isLoggedIn, userName, onLogout }) {
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--doc-bg, #f8fafc)' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--doc-bg, #F7F5F0)' }}>
       <Navbar
         onOpenAbout={onOpenAbout}
         onOpenWizard={onOpenWizard}
@@ -7801,7 +7801,7 @@ function DraftsPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, s
   const navigate = useNavigate()
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--dg-bg, #f8fafc)' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--dg-bg, #F7F5F0)' }}>
       <Navbar
         onOpenAbout={onOpenAbout}
         onOpenWizard={onOpenWizard}
@@ -7820,7 +7820,7 @@ function DraftsPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, s
 
 function WorkspacePage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize, isLoggedIn, userName, onLogout }) {
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--mw-bg, #f8fafc)' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--mw-bg, #F7F5F0)' }}>
       <Navbar
         onOpenAbout={onOpenAbout}
         onOpenWizard={onOpenWizard}
@@ -7839,7 +7839,7 @@ function WorkspacePage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize
 
 function ExpertConnectPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize, isLoggedIn, userName, onLogout }) {
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--ec-bg, #f8fafc)' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--ec-bg, #F7F5F0)' }}>
       <Navbar
         onOpenAbout={onOpenAbout}
         onOpenWizard={onOpenWizard}

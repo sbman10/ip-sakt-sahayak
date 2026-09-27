@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
+import { IconX } from './Icons'
 
 const CASE_TYPES = [
-  { value: 'patent', label: '⚙️ Patent' },
-  { value: 'trademark', label: '™️ Trademark' },
-  { value: 'copyright', label: '©️ Copyright' },
-  { value: 'gi', label: '🌿 Geographical Indication (GI)' },
+  { value: 'patent', label: 'Patent' },
+  { value: 'trademark', label: 'Trademark' },
+  { value: 'copyright', label: 'Copyright' },
+  { value: 'gi', label: 'Geographical Indication (GI)' },
 ]
 
 const STATUSES = [
@@ -92,11 +93,11 @@ function AddMatterModalContent({ onClose, onSubmit, matter, saving, externalErro
             <h3 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: 'var(--mw-text-main, #0f172a)' }}>
               {editing ? 'Edit Patent Matter' : 'New Patent Matter'}
             </h3>
-            <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--mw-text-muted, #64748b)' }}>
+            <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--mw-text-muted, #667085)' }}>
               {editing ? 'Update application metadata, status and details.' : 'Create a new patent or IP case to track filings and statutory deadlines.'}
             </p>
           </div>
-          <button type="button" onClick={onClose} style={closeBtn} title="Close">✕</button>
+          <button type="button" onClick={onClose} style={closeBtn} title="Close"><IconX size={18} /></button>
         </div>
 
         <label style={lbl}>Patent / Matter Title *</label>
@@ -199,39 +200,41 @@ const lbl = {
   display: 'block',
   fontSize: 12,
   fontWeight: 600,
-  color: 'var(--mw-text-main, #0f172a)',
+  color: 'var(--mw-text-main, #111827)',
   margin: '14px 0 5px',
 }
 
 const inp = {
   width: '100%',
   boxSizing: 'border-box',
-  padding: '9px 12px',
-  borderRadius: 8,
-  background: 'var(--mw-bg, #f8fafc)',
-  border: '1px solid var(--mw-card-border, #e2e8f0)',
-  color: 'var(--mw-text-main, #0f172a)',
-  fontSize: 13,
+  padding: '10px 14px',
+  borderRadius: 10,
+  background: 'var(--mw-card-bg, #ffffff)',
+  border: '1px solid var(--mw-card-border, #E4E0D8)',
+  color: 'var(--mw-text-main, #111827)',
+  fontSize: 13.5,
   outline: 'none',
-  transition: 'border-color 0.15s ease',
+  transition: 'all 0.15s ease',
 }
 
 const closeBtn = {
   background: 'transparent',
   border: 'none',
-  color: 'var(--mw-text-muted, #64748b)',
-  fontSize: 16,
+  color: 'var(--mw-text-muted, #667085)',
   cursor: 'pointer',
-  padding: 4,
-  borderRadius: 4,
+  padding: 6,
+  borderRadius: 8,
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
 }
 
 const ghostBtn = {
   padding: '9px 18px',
-  borderRadius: 8,
-  border: '1px solid var(--mw-card-border, #e2e8f0)',
+  borderRadius: 10,
+  border: '1px solid var(--mw-card-border, #E4E0D8)',
   background: 'transparent',
-  color: 'var(--mw-text-body, #334155)',
+  color: 'var(--mw-text-body, #4B5563)',
   cursor: 'pointer',
   fontWeight: 600,
   fontSize: 13,
@@ -239,12 +242,12 @@ const ghostBtn = {
 
 const primaryBtn = {
   padding: '9px 22px',
-  borderRadius: 8,
+  borderRadius: 10,
   border: 'none',
   cursor: 'pointer',
-  background: 'var(--mw-purple, #7c3aed)',
+  background: 'var(--mw-purple, #6D35E8)',
   color: '#ffffff',
   fontWeight: 600,
   fontSize: 13,
-  boxShadow: '0 4px 14px rgba(124, 58, 237, 0.28)',
+  boxShadow: '0 4px 14px rgba(109, 53, 232, 0.28)',
 }

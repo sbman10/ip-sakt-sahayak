@@ -4,21 +4,22 @@
    ============================================================ */
 
 :root {
-  --doc-purple: #7c3aed;
-  --doc-purple-hover: #6d28d9;
-  --doc-purple-light: #f5f3ff;
-  --doc-purple-border: #ddd6fe;
-  --doc-purple-ring: rgba(124, 58, 237, 0.18);
+  --doc-purple: #6D35E8;
+  --doc-purple-hover: #5425C7;
+  --doc-purple-light: #F4EFFE;
+  --doc-purple-border: #D8C7F9;
+  --doc-purple-ring: rgba(109, 53, 232, 0.18);
 
-  --doc-bg: #f8fafc;
-  --doc-card-bg: #ffffff;
-  --doc-card-border: #e2e8f0;
-  --doc-card-hover-border: #cbd5e1;
+  --doc-bg: #F7F5F0;
+  --doc-card-bg: #FFFFFF;
+  --doc-card-bg-sec: #F3F0EA;
+  --doc-card-border: #E4E0D8;
+  --doc-card-hover-border: #D1CBC0;
 
-  --doc-text-main: #0f172a;
-  --doc-text-body: #334155;
-  --doc-text-muted: #64748b;
-  --doc-text-subtle: #94a3b8;
+  --doc-text-main: #111827;
+  --doc-text-body: #374151;
+  --doc-text-muted: #667085;
+  --doc-text-subtle: #9CA3AF;
 
   --doc-success-text: #15803d;
   --doc-success-bg: #dcfce7;
@@ -32,45 +33,10 @@
   --doc-danger-bg: #fee2e2;
   --doc-danger-border: #fecaca;
 
-  --doc-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.05);
-  --doc-shadow-md: 0 4px 14px -2px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
-  --doc-shadow-lg: 0 12px 30px -4px rgba(15, 23, 42, 0.08), 0 4px 10px -2px rgba(15, 23, 42, 0.04);
-  --doc-shadow-purple: 0 4px 14px rgba(124, 58, 237, 0.25);
-}
-
-[data-theme="dark"] {
-  --doc-purple: #9333ea;
-  --doc-purple-hover: #a855f7;
-  --doc-purple-light: rgba(147, 51, 234, 0.15);
-  --doc-purple-border: rgba(168, 85, 247, 0.35);
-  --doc-purple-ring: rgba(168, 85, 247, 0.3);
-
-  --doc-bg: #090d14;
-  --doc-card-bg: #111827;
-  --doc-card-border: #1f2937;
-  --doc-card-hover-border: #374151;
-
-  --doc-text-main: #f8fafc;
-  --doc-text-body: #e2e8f0;
-  --doc-text-muted: #94a3b8;
-  --doc-text-subtle: #64748b;
-
-  --doc-success-text: #4ade80;
-  --doc-success-bg: rgba(74, 222, 128, 0.15);
-  --doc-success-border: rgba(74, 222, 128, 0.3);
-
-  --doc-warning-text: #fbbf24;
-  --doc-warning-bg: rgba(251, 191, 36, 0.15);
-  --doc-warning-border: rgba(251, 191, 36, 0.3);
-
-  --doc-danger-text: #f87171;
-  --doc-danger-bg: rgba(239, 68, 68, 0.15);
-  --doc-danger-border: rgba(239, 68, 68, 0.3);
-
-  --doc-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --doc-shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
-  --doc-shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.6);
-  --doc-shadow-purple: 0 4px 20px rgba(147, 51, 234, 0.35);
+  --doc-shadow-sm: 0 1px 3px rgba(17, 24, 39, 0.04);
+  --doc-shadow-md: 0 4px 14px rgba(17, 24, 39, 0.06);
+  --doc-shadow-lg: 0 12px 28px rgba(17, 24, 39, 0.08);
+  --doc-shadow-purple: 0 4px 14px rgba(109, 53, 232, 0.22);
 }
 
 /* ------------------------------------------------------------
@@ -403,7 +369,7 @@
 
 .doc-upload-card {
   background: var(--doc-card-bg);
-  border: 2px dashed #cbd5e1;
+  border: 2px dashed #D1CBC0;
   border-radius: 16px;
   padding: 38px 24px;
   text-align: center;
@@ -416,8 +382,8 @@
 }
 
 .doc-upload-card:hover {
-  border-color: #a855f7;
-  background-color: #faf5ff;
+  border-color: var(--doc-purple);
+  background-color: #FAF8F5;
   box-shadow: var(--doc-shadow-md);
 }
 

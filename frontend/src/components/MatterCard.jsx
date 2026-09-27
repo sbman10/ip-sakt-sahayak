@@ -1,8 +1,19 @@
+import React from 'react'
+import {
+  IconFileText,
+  IconAward,
+  IconBook,
+  IconLeaf,
+  IconGlobe,
+  IconEdit,
+  IconTrash,
+} from './Icons'
+
 const CASE_TYPE_META = {
-  patent: { label: 'Patent', color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe', emoji: '⚙️' },
-  trademark: { label: 'Trademark', color: '#0284c7', bg: '#f0f9ff', border: '#bae6fd', emoji: '™️' },
-  copyright: { label: 'Copyright', color: '#d97706', bg: '#fffbeb', border: '#fde68a', emoji: '©️' },
-  gi: { label: 'GI', color: '#059669', bg: '#ecfdf5', border: '#a7f3d0', emoji: '🌿' },
+  patent: { label: 'Patent', color: '#6D35E8', bg: '#F4EFFE', border: '#D8C7F9', icon: IconFileText },
+  trademark: { label: 'Trademark', color: '#0284C7', bg: '#F0F9FF', border: '#BAE6FD', icon: IconAward },
+  copyright: { label: 'Copyright', color: '#D97706', bg: '#FFFBEB', border: '#FDE68A', icon: IconBook },
+  gi: { label: 'GI', color: '#059669', bg: '#ECFDF5', border: '#A7F3D0', icon: IconLeaf },
 }
 
 function formatDate(value) {
@@ -14,14 +25,14 @@ function formatDate(value) {
   } catch { return null }
 }
 
-function getJurisdictionFlag(appNumber) {
-  if (!appNumber) return '🇮🇳'
+function getJurisdictionCode(appNumber) {
+  if (!appNumber) return 'IN'
   const u = appNumber.toUpperCase()
-  if (u.startsWith('PCT') || u.startsWith('WO')) return '🌐'
-  if (u.startsWith('US')) return '🇺🇸'
-  if (u.startsWith('EP')) return '🇪🇺'
-  if (u.startsWith('GB')) return '🇬🇧'
-  return '🇮🇳'
+  if (u.startsWith('PCT') || u.startsWith('WO')) return 'PCT'
+  if (u.startsWith('US')) return 'US'
+  if (u.startsWith('EP')) return 'EP'
+  if (u.startsWith('GB')) return 'GB'
+  return 'IN'
 }
 
 /**
@@ -29,9 +40,10 @@ function getJurisdictionFlag(appNumber) {
  * Props: matter, onOpen(matter), onEdit(matter), onDelete(matter)
  */
 export default function MatterCard({ matter, onOpen, onEdit, onDelete }) {
-  const meta = CASE_TYPE_META[matter.case_type] || { label: matter.case_type, color: '#64748b', bg: '#f1f5f9', border: '#e2e8f0', emoji: '📄' }
+  const meta = CASE_TYPE_META[matter.case_type] || { label: matter.case_type, color: '#64748B', bg: '#F1F5F9', border: '#E2E8F0', icon: IconFileText }
   const filed = formatDate(matter.filing_date)
-  const flag = getJurisdictionFlag(matter.application_number)
+  const code = getJurisdictionCode(matter.application_number)
+  const IconComp = meta.icon
 
   return (
     <div
@@ -42,48 +54,53 @@ export default function MatterCard({ matter, onOpen, onEdit, onDelete }) {
       onKeyDown={(e) => { if (e.key === 'Enter') onOpen?.(matter) }}
       style={{
         background: 'var(--mw-card-bg, #ffffff)',
-        border: '1px solid var(--mw-card-border, #e2e8f0)',
-        borderRadius: 12,
+        border: '1px solid var(--mw-card-border, #E4E0D8)',
+        borderRadius: 14,
         padding: '14px 16px',
         marginBottom: 10,
         cursor: 'pointer',
         transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-        boxShadow: 'var(--mw-shadow-sm, 0 1px 3px rgba(0,0,0,0.05))',
+        boxShadow: 'var(--mw-shadow-sm, 0 1px 3px rgba(17,24,39,0.04))',
         textAlign: 'left',
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.transform = 'translateY(-2px)'
-        e.currentTarget.style.borderColor = 'var(--mw-purple, #7c3aed)'
-        e.currentTarget.style.boxShadow = 'var(--mw-shadow-md, 0 4px 12px rgba(0,0,0,0.08))'
+        e.currentTarget.style.borderColor = 'var(--mw-purple, #6D35E8)'
+        e.currentTarget.style.boxShadow = 'var(--mw-shadow-md, 0 4px 14px rgba(17,24,39,0.08))'
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.transform = 'none'
-        e.currentTarget.style.borderColor = 'var(--mw-card-border, #e2e8f0)'
-        e.currentTarget.style.boxShadow = 'var(--mw-shadow-sm, 0 1px 3px rgba(0,0,0,0.05))'
+        e.currentTarget.style.borderColor = 'var(--mw-card-border, #E4E0D8)'
+        e.currentTarget.style.boxShadow = 'var(--mw-shadow-sm, 0 1px 3px rgba(17,24,39,0.04))'
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 8 }}>
         <span
           style={{
             fontSize: 11, fontWeight: 700, letterSpacing: 0.3,
-            padding: '2px 8px', borderRadius: 4,
+            padding: '2px 8px', borderRadius: 6,
             background: meta.bg, color: meta.color,
             border: `1px solid ${meta.border}`, whiteSpace: 'nowrap',
+            display: 'inline-flex', alignItems: 'center', gap: 4,
           }}
         >
-          {meta.emoji} {meta.label}
+          <IconComp size={12} /> {meta.label}
         </span>
         <div style={{ display: 'flex', gap: 4 }}>
           <button
             title="Edit"
             onClick={(e) => { e.stopPropagation(); onEdit?.(matter) }}
             style={iconBtn}
-          >✏️</button>
+          >
+            <IconEdit size={13} />
+          </button>
           <button
             title="Delete"
             onClick={(e) => { e.stopPropagation(); onDelete?.(matter) }}
-            style={{ ...iconBtn, color: '#ef4444' }}
-          >🗑️</button>
+            style={{ ...iconBtn, color: '#dc2626' }}
+          >
+            <IconTrash size={13} />
+          </button>
         </div>
       </div>
 
@@ -92,7 +109,7 @@ export default function MatterCard({ matter, onOpen, onEdit, onDelete }) {
         fontSize: 14,
         fontWeight: 700,
         lineHeight: 1.35,
-        color: 'var(--mw-text-main, #0f172a)',
+        color: 'var(--mw-text-main, #111827)',
       }}>
         {matter.title}
       </h4>
@@ -100,14 +117,16 @@ export default function MatterCard({ matter, onOpen, onEdit, onDelete }) {
       {matter.application_number && (
         <div style={{
           fontSize: 12,
-          color: 'var(--mw-text-muted, #64748b)',
+          color: 'var(--mw-text-muted, #667085)',
           fontFamily: 'var(--font-mono, monospace)',
           marginBottom: 8,
           display: 'flex',
           alignItems: 'center',
-          gap: 4,
+          gap: 6,
         }}>
-          <span>{flag}</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: 'var(--mw-bg, #F7F5F0)', padding: '1px 6px', borderRadius: 4, border: '1px solid var(--mw-card-border, #E4E0D8)', fontSize: 11 }}>
+            <IconGlobe size={11} /> {code}
+          </span>
           <span>#{matter.application_number}</span>
         </div>
       )}
@@ -116,7 +135,7 @@ export default function MatterCard({ matter, onOpen, onEdit, onDelete }) {
         <p style={{
           margin: '0 0 10px',
           fontSize: 12,
-          color: 'var(--mw-text-muted, #64748b)',
+          color: 'var(--mw-text-muted, #667085)',
           lineHeight: 1.4,
           overflow: 'hidden',
           textOverflow: 'ellipsis',
@@ -133,7 +152,7 @@ export default function MatterCard({ matter, onOpen, onEdit, onDelete }) {
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingTop: 8,
-        borderTop: '1px solid var(--mw-card-border, #f1f5f9)',
+        borderTop: '1px solid var(--mw-card-border, #E4E0D8)',
         fontSize: 11,
         color: 'var(--mw-text-subtle, #94a3b8)',
       }}>
@@ -149,8 +168,12 @@ const iconBtn = {
   border: 'none',
   cursor: 'pointer',
   fontSize: 12,
-  opacity: 0.75,
-  padding: '3px 4px',
-  borderRadius: 4,
-  lineHeight: 1,
+  color: 'var(--mw-text-muted, #667085)',
+  opacity: 0.85,
+  padding: '4px',
+  borderRadius: 6,
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  transition: 'all 0.15s ease',
 }

@@ -1,78 +1,85 @@
 /* ============================================================
-   STATUTORY DOCUMENT PREPARATION ASSISTANT - LEGAL-TECH WORKSPACE
-   Visual Design Reference: Matter Workspace Design Language
+   STATUTORY DOCUMENT PREPARATION ASSISTANT
+   Unified Design System: Warm Ivory & Professional Purple
    ============================================================ */
 
 :root {
-  --dg-purple: #7c3aed;
-  --dg-purple-hover: #6d28d9;
-  --dg-purple-light: #f5f3ff;
-  --dg-purple-border: #ddd6fe;
-  --dg-purple-ring: rgba(124, 58, 237, 0.18);
+  --dg-bg: #F7F5F0;
+  --dg-card-bg: #FFFFFF;
+  --dg-card-subtle: #F3F0EA;
+  --dg-card-surface: #FAF9F6;
+  --dg-card-border: #E4E0D8;
+  --dg-card-border-hover: #D1CCC2;
 
-  --dg-bg: #f8fafc;
-  --dg-card-bg: #ffffff;
-  --dg-card-border: #e2e8f0;
-  --dg-card-hover-border: #cbd5e1;
+  --dg-purple: #6D35E8;
+  --dg-purple-hover: #5425C7;
+  --dg-purple-light: #F4EFFE;
+  --dg-purple-border: #D8C7F9;
+  --dg-purple-ring: rgba(109, 53, 232, 0.16);
 
-  --dg-text-main: #0f172a;
-  --dg-text-body: #334155;
-  --dg-text-muted: #64748b;
-  --dg-text-subtle: #94a3b8;
+  --dg-text-main: #111827;
+  --dg-text-body: #4B5563;
+  --dg-text-muted: #667085;
+  --dg-text-subtle: #94A3B8;
 
-  --dg-success-text: #15803d;
-  --dg-success-bg: #dcfce7;
-  --dg-success-border: #bbf7d0;
+  --dg-success-text: #16A34A;
+  --dg-success-bg: #DCFCE7;
+  --dg-success-border: #BBF7D0;
 
-  --dg-warning-text: #b45309;
-  --dg-warning-bg: #fef3c7;
-  --dg-warning-border: #fde68a;
+  --dg-warning-text: #D97706;
+  --dg-warning-bg: #FEF3C7;
+  --dg-warning-border: #FDE68A;
 
-  --dg-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.05);
-  --dg-shadow-md: 0 4px 14px -2px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
-  --dg-shadow-lg: 0 12px 30px -4px rgba(15, 23, 42, 0.08), 0 4px 10px -2px rgba(15, 23, 42, 0.04);
-  --dg-shadow-purple: 0 4px 14px rgba(124, 58, 237, 0.28);
+  --dg-danger-text: #DC2626;
+  --dg-danger-bg: #FEE2E2;
+  --dg-danger-border: #FECACA;
+
+  --dg-shadow-sm: 0 1px 3px rgba(17, 24, 39, 0.04), 0 1px 2px rgba(17, 24, 39, 0.02);
+  --dg-shadow-md: 0 4px 14px -2px rgba(17, 24, 39, 0.06), 0 2px 6px -1px rgba(17, 24, 39, 0.03);
+  --dg-shadow-lg: 0 12px 28px -4px rgba(17, 24, 39, 0.08), 0 4px 10px -2px rgba(17, 24, 39, 0.03);
+  --dg-shadow-purple: 0 4px 14px rgba(109, 53, 232, 0.25);
 }
 
 [data-theme="dark"] {
-  --dg-purple: #9333ea;
-  --dg-purple-hover: #a855f7;
-  --dg-purple-light: rgba(147, 51, 234, 0.15);
-  --dg-purple-border: rgba(168, 85, 247, 0.35);
-  --dg-purple-ring: rgba(168, 85, 247, 0.3);
+  --dg-bg: #0F141C;
+  --dg-card-bg: #1A2232;
+  --dg-card-subtle: #151C28;
+  --dg-card-surface: #202A3C;
+  --dg-card-border: #2D3748;
+  --dg-card-border-hover: #4A5568;
 
-  --dg-bg: #090d14;
-  --dg-card-bg: #111827;
-  --dg-card-border: #1f2937;
-  --dg-card-hover-border: #374151;
+  --dg-purple: #8B5CF6;
+  --dg-purple-hover: #7C3AED;
+  --dg-purple-light: rgba(139, 92, 246, 0.15);
+  --dg-purple-border: rgba(139, 92, 246, 0.35);
+  --dg-purple-ring: rgba(139, 92, 246, 0.25);
 
-  --dg-text-main: #f8fafc;
-  --dg-text-body: #e2e8f0;
-  --dg-text-muted: #94a3b8;
-  --dg-text-subtle: #64748b;
+  --dg-text-main: #F3F4F6;
+  --dg-text-body: #E5E7EB;
+  --dg-text-muted: #9CA3AF;
+  --dg-text-subtle: #6B7280;
 
-  --dg-success-text: #4ade80;
+  --dg-success-text: #4ADE80;
   --dg-success-bg: rgba(74, 222, 128, 0.15);
   --dg-success-border: rgba(74, 222, 128, 0.3);
 
-  --dg-warning-text: #fbbf24;
+  --dg-warning-text: #FBBF24;
   --dg-warning-bg: rgba(251, 191, 36, 0.15);
   --dg-warning-border: rgba(251, 191, 36, 0.3);
 
-  --dg-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --dg-shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
-  --dg-shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.6);
-  --dg-shadow-purple: 0 4px 20px rgba(147, 51, 234, 0.35);
+  --dg-danger-text: #F87171;
+  --dg-danger-bg: rgba(248, 113, 113, 0.15);
+  --dg-danger-border: rgba(248, 113, 113, 0.3);
 }
 
 /* ------------------------------------------------------------
    1. PAGE CONTAINER
-   Professional centered content container on light cool-gray
+   Warm professional backdrop with generous reading margins
    ------------------------------------------------------------ */
 .dg-page {
   max-width: 1240px;
   margin: 0 auto;
-  padding: 24px 24px 56px;
+  padding: 20px 24px 64px;
   background-color: var(--dg-bg);
   color: var(--dg-text-body);
   font-family: var(--font-body, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
@@ -80,8 +87,85 @@
 }
 
 /* ------------------------------------------------------------
-   2. TOP AREA
-   Compact modern controls sitting naturally above main card
+   TOP STRIP & BREADCRUMBS (Cohesive with other 3 pages)
+   ------------------------------------------------------------ */
+.dg-top-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.dg-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--dg-text-muted);
+}
+
+.dg-breadcrumb-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--dg-text-muted);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.15s ease;
+}
+
+.dg-breadcrumb-link:hover {
+  color: var(--dg-purple);
+}
+
+.dg-breadcrumb-sep {
+  color: var(--dg-text-subtle);
+  font-size: 12px;
+}
+
+.dg-breadcrumb-active {
+  color: var(--dg-purple);
+  font-weight: 600;
+  background: var(--dg-purple-light);
+  border: 1px solid var(--dg-purple-border);
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.dg-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dg-portal-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--dg-text-body);
+  background: var(--dg-card-bg);
+  border: 1px solid var(--dg-card-border);
+  border-radius: 999px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  box-shadow: var(--dg-shadow-sm);
+}
+
+.dg-portal-link:hover {
+  background: var(--dg-purple-light);
+  border-color: var(--dg-purple);
+  color: var(--dg-purple);
+  transform: translateY(-1px);
+}
+
+/* ------------------------------------------------------------
+   2. TOP CONTROLS (Back to portal, time est, sample data)
    ------------------------------------------------------------ */
 .dg-top-controls {
   display: flex;
@@ -98,39 +182,33 @@
   gap: 8px;
   background: var(--dg-card-bg);
   border: 1px solid var(--dg-card-border);
-  border-radius: 9999px;
-  padding: 8px 18px;
+  padding: 8px 16px;
+  border-radius: 999px;
   font-size: 13px;
   font-weight: 600;
   color: var(--dg-text-main);
-  box-shadow: var(--dg-shadow-sm);
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  text-decoration: none;
+  box-shadow: var(--dg-shadow-sm);
+  transition: all 0.2s ease;
 }
 
 .dg-btn-back-pill:hover {
-  background: var(--dg-bg);
-  border-color: var(--dg-card-hover-border);
+  background: var(--dg-purple-light);
+  border-color: var(--dg-purple);
   color: var(--dg-purple);
   transform: translateY(-1px);
-  box-shadow: var(--dg-shadow-md);
 }
 
 .dg-back-arrow {
-  font-size: 14px;
-  transition: transform 0.2s ease;
-}
-
-.dg-btn-back-pill:hover .dg-back-arrow {
-  transform: translateX(-3px);
+  display: inline-flex;
+  align-items: center;
+  color: inherit;
 }
 
 .dg-top-controls-right {
   display: flex;
   align-items: center;
   gap: 12px;
-  flex-wrap: wrap;
 }
 
 .dg-est-time-pill {
@@ -139,11 +217,11 @@
   gap: 8px;
   background: var(--dg-card-bg);
   border: 1px solid var(--dg-card-border);
-  border-radius: 9999px;
-  padding: 6px 14px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--dg-text-body);
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--dg-text-muted);
   box-shadow: var(--dg-shadow-sm);
 }
 
@@ -151,108 +229,105 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: #16a34a;
-  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.2);
-  flex-shrink: 0;
-  display: inline-block;
+  background: var(--dg-success-text);
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
 }
 
 .dg-btn-sample {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   background: var(--dg-card-bg);
   border: 1px solid var(--dg-card-border);
-  border-radius: 9999px;
-  padding: 6px 14px;
-  font-size: 12px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--dg-purple);
-  box-shadow: var(--dg-shadow-sm);
   cursor: pointer;
+  box-shadow: var(--dg-shadow-sm);
   transition: all 0.2s ease;
 }
 
 .dg-btn-sample:hover {
   background: var(--dg-purple-light);
-  border-color: var(--dg-purple-border);
-  color: var(--dg-purple-hover);
+  border-color: var(--dg-purple);
+  transform: translateY(-1px);
 }
 
 /* ------------------------------------------------------------
    3. MAIN TOOL CARD
-   Large premium white card with 18px radius and subtle shadow
+   Polished white surface card with soft shadow
    ------------------------------------------------------------ */
 .dg-main-card {
   background: var(--dg-card-bg);
   border: 1px solid var(--dg-card-border);
   border-radius: 18px;
+  padding: 36px 40px;
   box-shadow: var(--dg-shadow-md);
-  padding: 32px 36px;
-  box-sizing: border-box;
 }
 
 /* ------------------------------------------------------------
    4. TOOL HEADER
    ------------------------------------------------------------ */
 .dg-tool-header {
-  margin-bottom: 24px;
+  margin-bottom: 28px;
 }
 
 .dg-tool-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   background: var(--dg-purple-light);
-  color: var(--dg-purple);
   border: 1px solid var(--dg-purple-border);
-  font-size: 11px;
+  color: var(--dg-purple);
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 11.5px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
-  border-radius: 6px;
-  padding: 4px 10px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .dg-badge-icon {
-  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
 }
 
 .dg-tool-title {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 800;
   color: var(--dg-text-main);
-  margin: 0 0 8px;
-  letter-spacing: -0.02em;
+  margin: 0 0 10px;
   line-height: 1.25;
+  letter-spacing: -0.5px;
 }
 
 .dg-tool-desc {
   font-size: 15px;
   color: var(--dg-text-muted);
-  line-height: 1.5;
+  line-height: 1.6;
+  max-width: 900px;
   margin: 0;
-  max-width: 860px;
 }
 
 /* ------------------------------------------------------------
-   5. HOW IT WORKS
-   Clean horizontal stepper inside subtle inner card
+   5. WORKFLOW STEPPER
    ------------------------------------------------------------ */
 .dg-stepper-inner-card {
-  background: var(--dg-bg);
+  background: var(--dg-card-subtle);
   border: 1px solid var(--dg-card-border);
   border-radius: 14px;
-  padding: 16px 22px;
-  margin-bottom: 32px;
+  padding: 18px 24px;
+  margin-bottom: 36px;
 }
 
 .dg-stepper-track {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 14px;
 }
 
 .dg-stepper-step {
@@ -260,14 +335,13 @@
   align-items: center;
   gap: 12px;
   cursor: pointer;
-  flex: 1;
-  padding: 6px 8px;
+  padding: 6px 10px;
   border-radius: 10px;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
 }
 
 .dg-stepper-step:hover {
-  background: rgba(0, 0, 0, 0.02);
+  background: rgba(255, 255, 255, 0.6);
 }
 
 .dg-step-badge {
@@ -277,25 +351,26 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
-  flex-shrink: 0;
-  background: var(--dg-card-border);
-  color: var(--dg-text-muted);
+  background: var(--dg-card-bg);
+  border: 1.5px solid var(--dg-card-border);
+  color: var(--dg-text-subtle);
   transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
 .dg-stepper-step.active .dg-step-badge {
   background: var(--dg-purple);
-  color: #ffffff;
+  border-color: var(--dg-purple);
+  color: #FFFFFF;
   box-shadow: 0 0 0 4px var(--dg-purple-ring);
 }
 
 .dg-stepper-step.completed .dg-step-badge {
   background: var(--dg-success-bg);
+  border-color: var(--dg-success-border);
   color: var(--dg-success-text);
-  border: 1px solid var(--dg-success-border);
-  font-weight: 800;
 }
 
 .dg-step-info {
@@ -304,10 +379,10 @@
 }
 
 .dg-step-label {
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 13.5px;
+  font-weight: 600;
   color: var(--dg-text-main);
-  line-height: 1.3;
+  transition: color 0.15s ease;
 }
 
 .dg-stepper-step.active .dg-step-label {
@@ -315,123 +390,114 @@
 }
 
 .dg-step-subtext {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--dg-text-muted);
 }
 
 .dg-stepper-connector {
-  flex: 0 0 28px;
-  height: 2px;
+  flex: 1;
+  height: 1.5px;
   background: var(--dg-card-border);
-  border-radius: 2px;
+  margin: 0 8px;
 }
 
 /* ------------------------------------------------------------
-   6. SECTION HEADINGS & BLOCK SPACING
+   6. DOCUMENT TEMPLATES GRID
    ------------------------------------------------------------ */
 .dg-section-block {
-  margin-bottom: 32px;
+  margin-bottom: 36px;
 }
 
 .dg-section-heading-wrap {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .dg-section-title {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--dg-text-main);
-  margin: 0 0 4px;
-  letter-spacing: -0.01em;
+  margin: 0 0 6px;
+  letter-spacing: -0.3px;
 }
 
 .dg-section-subtitle {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--dg-text-muted);
   margin: 0;
-  line-height: 1.4;
 }
 
-/* ------------------------------------------------------------
-   DOCUMENT TEMPLATE AREA (Selectable Cards)
-   ------------------------------------------------------------ */
 .dg-templates-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+  gap: 18px;
 }
 
 .dg-template-card {
   background: var(--dg-card-bg);
-  border: 1px solid var(--dg-card-border);
-  border-radius: 14px;
-  padding: 18px 20px;
+  border: 1.5px solid var(--dg-card-border);
+  border-radius: 16px;
+  padding: 24px;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  position: relative;
-  box-sizing: border-box;
+  box-shadow: var(--dg-shadow-sm);
+  outline: none;
 }
 
 .dg-template-card:hover {
-  border-color: var(--dg-purple-border);
+  border-color: var(--dg-card-border-hover);
+  box-shadow: var(--dg-shadow-md);
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px -2px rgba(124, 58, 237, 0.08);
 }
 
 .dg-template-card.selected {
   border-color: var(--dg-purple);
-  background: var(--dg-purple-light);
-  box-shadow: 0 0 0 1px var(--dg-purple), 0 8px 20px -4px rgba(124, 58, 237, 0.14);
+  background: rgba(109, 53, 232, 0.025);
+  box-shadow: 0 0 0 1px var(--dg-purple), 0 8px 24px -4px rgba(109, 53, 232, 0.12);
 }
 
 .dg-template-top {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  align-items: center;
+  margin-bottom: 14px;
 }
 
 .dg-template-icon-wrap {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: var(--dg-bg);
-  border: 1px solid var(--dg-card-border);
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--dg-purple-light);
+  color: var(--dg-purple);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
-  transition: all 0.2s ease;
 }
 
 .dg-template-card.selected .dg-template-icon-wrap {
-  background: var(--dg-card-bg);
-  border-color: var(--dg-purple-border);
+  background: var(--dg-purple);
+  color: #FFFFFF;
 }
 
 .dg-template-radio {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  border: 2px solid var(--dg-card-hover-border);
+  border: 2px solid var(--dg-card-border-hover);
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
-  background: var(--dg-card-bg);
 }
 
 .dg-template-radio.checked {
   border-color: var(--dg-purple);
-  background: var(--dg-card-bg);
 }
 
 .dg-radio-inner-dot {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: var(--dg-purple);
 }
@@ -439,15 +505,15 @@
 .dg-template-tag {
   font-size: 11px;
   font-weight: 700;
-  color: var(--dg-purple);
+  letter-spacing: 0.5px;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  color: var(--dg-purple);
   margin-bottom: 6px;
-  display: inline-block;
+  display: block;
 }
 
 .dg-template-name {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
   color: var(--dg-text-main);
   margin: 0 0 6px;
@@ -455,110 +521,109 @@
 }
 
 .dg-template-ref {
-  font-size: 11px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono, monospace);
+  font-size: 11.5px;
   color: var(--dg-text-muted);
-  background: rgba(0, 0, 0, 0.03);
-  padding: 3px 6px;
-  border-radius: 4px;
+  background: var(--dg-card-subtle);
+  padding: 4px 8px;
+  border-radius: 6px;
+  margin-bottom: 10px;
   display: inline-block;
-  margin-bottom: 8px;
-  word-break: break-word;
-}
-
-[data-theme="dark"] .dg-template-ref {
-  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--dg-card-border);
 }
 
 .dg-template-desc {
   font-size: 13px;
   color: var(--dg-text-body);
-  line-height: 1.45;
-  margin: 0;
+  line-height: 1.5;
+  margin: 0 0 16px;
+  flex: 1;
 }
 
 .dg-template-footer {
+  border-top: 1px solid var(--dg-card-border);
+  padding-top: 14px;
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-top: 14px;
-  padding-top: 10px;
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
-  font-size: 12px;
-}
-
-[data-theme="dark"] .dg-template-footer {
-  border-top-color: rgba(255, 255, 255, 0.08);
+  align-items: center;
+  margin-top: auto;
 }
 
 .dg-template-selection-text {
+  font-size: 12.5px;
   font-weight: 600;
   color: var(--dg-text-muted);
-  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
 }
 
 .dg-template-card.selected .dg-template-selection-text {
   color: var(--dg-purple);
-  font-weight: 700;
 }
 
 .dg-btn-link-details {
-  background: transparent;
+  background: none;
   border: none;
   color: var(--dg-purple);
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
   padding: 0;
-  text-decoration: underline;
-  text-underline-offset: 2px;
+  transition: opacity 0.15s ease;
 }
 
 .dg-btn-link-details:hover {
-  color: var(--dg-purple-hover);
+  text-decoration: underline;
 }
 
 .dg-template-details-box {
-  margin-top: 10px;
-  font-size: 12px;
-  color: var(--dg-text-body);
-  background: var(--dg-card-bg);
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: var(--dg-card-subtle);
   border: 1px solid var(--dg-card-border);
   border-radius: 8px;
-  padding: 8px 12px;
-  line-height: 1.4;
+  font-size: 12px;
+  color: var(--dg-text-body);
+  line-height: 1.5;
 }
 
 /* ------------------------------------------------------------
-   7. FORM / ENTITY DETAILS
-   2-column desktop layout, clear labels, purple focus rings
+   7. FORM GROUPS & INPUTS
    ------------------------------------------------------------ */
 .dg-form-wrapper {
   display: flex;
   flex-direction: column;
+  gap: 20px;
 }
 
 .dg-form-group-box {
-  background: var(--dg-bg);
+  background: var(--dg-card-surface);
   border: 1px solid var(--dg-card-border);
   border-radius: 14px;
-  padding: 20px 22px;
-  margin-bottom: 18px;
+  padding: 22px 24px;
 }
 
 .dg-group-title-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 10px;
+  margin-bottom: 18px;
 }
 
 .dg-group-icon {
-  font-size: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--dg-purple-light);
+  color: var(--dg-purple);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .dg-group-title {
-  font-size: 14px;
+  font-size: 15.5px;
   font-weight: 700;
   color: var(--dg-text-main);
   margin: 0;
@@ -566,7 +631,7 @@
 
 .dg-grid-2col {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, 1fr);
   gap: 16px;
 }
 
@@ -581,106 +646,68 @@
 }
 
 .dg-field-label {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--dg-text-main);
   display: flex;
   align-items: center;
   gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dg-text-main);
 }
 
 .dg-req-mark {
-  color: #dc2626;
-  font-weight: bold;
+  color: var(--dg-danger-text);
 }
 
 .dg-form-input,
-.dg-form-select {
-  height: 42px;
-  padding: 0 14px;
+.dg-form-select,
+.dg-form-textarea {
+  width: 100%;
+  background: var(--dg-card-bg);
   border: 1px solid var(--dg-card-border);
   border-radius: 10px;
+  padding: 10px 14px;
   font-size: 14px;
   color: var(--dg-text-main);
-  background: var(--dg-card-bg);
-  transition: all 0.15s ease;
+  font-family: inherit;
   box-sizing: border-box;
-  width: 100%;
+  transition: all 0.2s ease;
 }
 
 .dg-form-input:focus,
-.dg-form-select:focus {
-  outline: none;
-  border-color: var(--dg-purple);
-  box-shadow: 0 0 0 3px var(--dg-purple-ring);
-}
-
-.dg-form-input::placeholder {
-  color: var(--dg-text-subtle);
-}
-
-.dg-form-textarea {
-  padding: 12px 14px;
-  border: 1px solid var(--dg-card-border);
-  border-radius: 10px;
-  font-size: 14px;
-  color: var(--dg-text-main);
-  background: var(--dg-card-bg);
-  transition: all 0.15s ease;
-  box-sizing: border-box;
-  width: 100%;
-  resize: vertical;
-  line-height: 1.5;
-  font-family: inherit;
-}
-
+.dg-form-select:focus,
 .dg-form-textarea:focus {
   outline: none;
   border-color: var(--dg-purple);
   box-shadow: 0 0 0 3px var(--dg-purple-ring);
 }
 
-.dg-form-textarea::placeholder {
-  color: var(--dg-text-subtle);
-}
-
 .dg-field-help {
-  font-size: 11px;
+  font-size: 11.5px;
   color: var(--dg-text-muted);
-  line-height: 1.4;
+  margin-top: 2px;
 }
 
 /* ------------------------------------------------------------
-   8. "WHAT YOU'LL GET"
-   Single clean 2x2 grid with soft green check icons
+   8. DELIVERABLES 2x2
    ------------------------------------------------------------ */
 .dg-deliverables-section {
-  margin-top: 24px;
-  padding-top: 22px;
-  border-top: 1px solid var(--dg-card-border);
-  margin-bottom: 24px;
+  margin-top: 16px;
 }
 
 .dg-deliverables-2x2 {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, 1fr);
   gap: 14px;
 }
 
 .dg-deliverable-item {
-  background: var(--dg-card-bg);
+  background: var(--dg-card-surface);
   border: 1px solid var(--dg-card-border);
   border-radius: 12px;
   padding: 14px 16px;
   display: flex;
   align-items: flex-start;
-  gap: 14px;
-  transition: all 0.2s ease;
-}
-
-.dg-deliverable-item:hover {
-  border-color: var(--dg-card-hover-border);
-  box-shadow: var(--dg-shadow-sm);
+  gap: 12px;
 }
 
 .dg-deliverable-check {
@@ -693,77 +720,57 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
-  font-weight: 800;
   flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.dg-deliverable-body {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
+  margin-top: 1px;
 }
 
 .dg-deliverable-name {
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 700;
   color: var(--dg-text-main);
-  margin: 0;
+  margin: 0 0 3px;
 }
 
 .dg-deliverable-text {
   font-size: 12px;
   color: var(--dg-text-muted);
   margin: 0;
-  line-height: 1.4;
+  line-height: 1.45;
 }
 
 /* ------------------------------------------------------------
-   ERROR NOTIFICATION
+   9. NOTIFICATIONS & CTA ZONE
    ------------------------------------------------------------ */
 .dg-error-box {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #991b1b;
+  background: var(--dg-danger-bg);
+  border: 1px solid var(--dg-danger-border);
+  color: var(--dg-danger-text);
   padding: 12px 16px;
   border-radius: 10px;
-  font-size: 13px;
-  margin-bottom: 18px;
+  font-size: 13.5px;
+  margin-top: 12px;
 }
 
-[data-theme="dark"] .dg-error-box {
-  background: rgba(239, 68, 68, 0.15);
-  border-color: rgba(239, 68, 68, 0.35);
-  color: #fca5a5;
-}
-
-/* ------------------------------------------------------------
-   9. PRIMARY CTA
-   Purple primary button matching Matter Workspace
-   ------------------------------------------------------------ */
 .dg-cta-zone {
   display: flex;
-  justify-content: center;
-  margin: 20px 0 16px;
+  justify-content: flex-start;
+  margin: 24px 0 16px;
 }
 
 .dg-btn-primary-cta {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: 10px;
   background: var(--dg-purple);
-  color: #ffffff;
+  color: #FFFFFF;
   border: none;
-  border-radius: 10px;
-  padding: 13px 32px;
+  border-radius: 12px;
+  padding: 14px 28px;
   font-size: 15px;
   font-weight: 600;
-  letter-spacing: -0.01em;
   cursor: pointer;
   box-shadow: var(--dg-shadow-purple);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -771,110 +778,90 @@
 
 .dg-btn-primary-cta:hover:not(:disabled) {
   background: var(--dg-purple-hover);
+  box-shadow: 0 6px 20px rgba(109, 53, 232, 0.35);
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(124, 58, 237, 0.36);
-}
-
-.dg-btn-primary-cta:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.25);
 }
 
 .dg-btn-primary-cta:disabled {
   opacity: 0.55;
   cursor: not-allowed;
   transform: none;
-  box-shadow: none;
-}
-
-.dg-cta-arrow {
-  font-size: 16px;
-  font-weight: bold;
-  transition: transform 0.2s ease;
-}
-
-.dg-btn-primary-cta:hover:not(:disabled) .dg-cta-arrow {
-  transform: translateX(3px);
 }
 
 .dg-spinner {
   width: 16px;
   height: 16px;
   border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: #ffffff;
+  border-top-color: #FFFFFF;
   border-radius: 50%;
-  animation: dgSpin 0.7s linear infinite;
+  animation: dg-spin 0.8s linear infinite;
 }
 
-@keyframes dgSpin {
-  to {
-    transform: rotate(360deg);
-  }
+@keyframes dg-spin {
+  to { transform: rotate(360deg); }
 }
 
-/* ------------------------------------------------------------
-   10. LEGAL DISCLAIMER
-   Subtle amber indicator + readable notice
-   ------------------------------------------------------------ */
+.dg-cta-arrow {
+  display: inline-flex;
+  align-items: center;
+  transition: transform 0.15s ease;
+}
+
+.dg-btn-primary-cta:hover:not(:disabled) .dg-cta-arrow {
+  transform: translateX(3px);
+}
+
 .dg-disclaimer-row {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 8px;
-  text-align: center;
   font-size: 12px;
   color: var(--dg-text-muted);
-  line-height: 1.45;
-  max-width: 780px;
-  margin: 0 auto;
+  line-height: 1.5;
 }
 
 .dg-disclaimer-dot {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: #d97706;
+  background: var(--dg-text-subtle);
   flex-shrink: 0;
-  box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.15);
 }
 
 /* ------------------------------------------------------------
-   11. GENERATED DOCUMENT PREVIEW PANEL
+   10. GENERATED DOCUMENT PREVIEW PANEL
    ------------------------------------------------------------ */
 .dg-preview-wrapper {
-  margin-top: 32px;
-  scroll-margin-top: 32px;
+  margin-top: 36px;
 }
 
 .dg-preview-card {
   background: var(--dg-card-bg);
   border: 1px solid var(--dg-card-border);
   border-radius: 18px;
-  padding: 28px 32px;
-  box-shadow: var(--dg-shadow-md);
+  padding: 32px;
+  box-shadow: var(--dg-shadow-lg);
 }
 
 .dg-preview-header-bar {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin-bottom: 24px;
-  padding-bottom: 18px;
+  align-items: center;
   border-bottom: 1px solid var(--dg-card-border);
+  padding-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .dg-preview-title {
   font-size: 22px;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--dg-text-main);
   margin: 0 0 4px;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.3px;
 }
 
 .dg-preview-subtitle {
-  font-size: 13px;
+  font-size: 13.5px;
   color: var(--dg-text-muted);
   margin: 0;
 }
@@ -886,8 +873,8 @@
   background: var(--dg-card-bg);
   border: 1px solid var(--dg-card-border);
   border-radius: 8px;
-  padding: 8px 14px;
-  font-size: 13px;
+  padding: 7px 14px;
+  font-size: 12.5px;
   font-weight: 600;
   color: var(--dg-text-body);
   cursor: pointer;
@@ -895,66 +882,63 @@
 }
 
 .dg-btn-secondary-sm:hover {
-  background: var(--dg-bg);
-  color: var(--dg-text-main);
-  border-color: var(--dg-card-hover-border);
+  border-color: var(--dg-danger-text);
+  color: var(--dg-danger-text);
+  background: var(--dg-danger-bg);
 }
 
 .dg-preview-grid {
   display: grid;
-  grid-template-columns: 310px 1fr;
-  gap: 24px;
-  align-items: start;
+  grid-template-columns: 320px 1fr;
+  gap: 28px;
 }
 
 .dg-preview-sidebar {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 }
 
 .dg-sidebar-meta {
-  background: var(--dg-bg);
+  background: var(--dg-card-surface);
   border: 1px solid var(--dg-card-border);
   border-radius: 12px;
   padding: 16px;
 }
 
 .dg-sidebar-tag {
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 700;
   color: var(--dg-purple);
   background: var(--dg-purple-light);
   border: 1px solid var(--dg-purple-border);
+  padding: 3px 8px;
   border-radius: 4px;
-  padding: 2px 6px;
   display: inline-block;
   margin-bottom: 8px;
 }
 
 .dg-sidebar-title {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--dg-text-main);
   margin: 0 0 4px;
-  line-height: 1.35;
 }
 
 .dg-sidebar-ref {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--dg-text-muted);
   margin: 0;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 .dg-stats-strip {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, 1fr);
   gap: 10px;
 }
 
 .dg-stat-cell {
-  background: var(--dg-bg);
+  background: var(--dg-card-surface);
   border: 1px solid var(--dg-card-border);
   border-radius: 10px;
   padding: 12px;
@@ -964,17 +948,14 @@
 .dg-stat-value {
   font-size: 20px;
   font-weight: 800;
-  color: var(--dg-text-main);
+  color: var(--dg-purple);
   display: block;
 }
 
 .dg-stat-caption {
   font-size: 11px;
-  font-weight: 600;
   color: var(--dg-text-muted);
-  text-transform: uppercase;
-  margin-top: 2px;
-  display: block;
+  font-weight: 500;
 }
 
 .dg-sidebar-actions {
@@ -984,33 +965,34 @@
 }
 
 .dg-btn-action {
-  display: flex;
+  width: 100%;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  width: 100%;
-  padding: 10px 14px;
-  border-radius: 8px;
+  padding: 10px 16px;
+  border-radius: 10px;
   font-size: 13px;
   font-weight: 600;
-  border: 1px solid var(--dg-card-border);
-  background: var(--dg-card-bg);
-  color: var(--dg-text-main);
   cursor: pointer;
-  transition: all 0.15s ease;
-  box-sizing: border-box;
+  transition: all 0.2s ease;
+  background: var(--dg-card-bg);
+  border: 1px solid var(--dg-card-border);
+  color: var(--dg-text-main);
+  box-shadow: var(--dg-shadow-sm);
 }
 
 .dg-btn-action:hover {
-  background: var(--dg-bg);
-  border-color: var(--dg-card-hover-border);
+  border-color: var(--dg-purple);
+  color: var(--dg-purple);
+  background: var(--dg-purple-light);
 }
 
 .dg-btn-action.primary-action {
   background: var(--dg-purple);
-  color: #ffffff;
   border-color: var(--dg-purple);
-  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.2);
+  color: #FFFFFF;
+  box-shadow: var(--dg-shadow-purple);
 }
 
 .dg-btn-action.primary-action:hover {
@@ -1019,12 +1001,12 @@
 
 .dg-btn-action.copied {
   background: var(--dg-success-bg);
-  color: var(--dg-success-text);
   border-color: var(--dg-success-border);
+  color: var(--dg-success-text);
 }
 
 .dg-agent-checklist {
-  background: var(--dg-bg);
+  background: var(--dg-card-surface);
   border: 1px solid var(--dg-card-border);
   border-radius: 12px;
   padding: 16px;
@@ -1033,235 +1015,166 @@
 .dg-checklist-head {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12px;
+  gap: 8px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--dg-text-main);
   margin-bottom: 10px;
 }
 
 .dg-check-icon {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--dg-success-bg);
   color: var(--dg-success-text);
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  font-weight: 800;
 }
 
 .dg-checklist-items {
+  list-style: none;
+  padding: 0;
   margin: 0;
-  padding-left: 18px;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--dg-text-body);
-  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 /* ------------------------------------------------------------
-   REALISTIC DOCUMENT PAPER SHEET
+   11. REALISTIC DOCUMENT PAPER SHEET
    ------------------------------------------------------------ */
 .dg-paper-sheet {
-  background: #ffffff;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.05);
-  padding: 40px 48px;
+  background: #FFFFFF;
+  border: 2px solid var(--dg-card-border);
+  border-radius: 12px;
+  padding: 36px 40px;
+  box-shadow: var(--dg-shadow-md);
   position: relative;
-  font-family: "Georgia", "Times New Roman", serif;
-  color: #1e293b;
-  max-height: 800px;
-  overflow-y: auto;
-  box-sizing: border-box;
+  color: #1F2937;
 }
 
 .dg-sheet-page-indicator {
   position: absolute;
   top: 16px;
   right: 20px;
-  font-family: ui-monospace, SFMono-Regular, monospace;
-  font-size: 10px;
-  color: #94a3b8;
-  letter-spacing: 0.05em;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--dg-text-subtle);
 }
 
 .dg-sheet-header {
   text-align: center;
-  border-bottom: 2px solid #0f172a;
-  padding-bottom: 20px;
+  border-bottom: 2px solid #111827;
+  padding-bottom: 16px;
   margin-bottom: 24px;
 }
 
 .dg-sheet-emblem {
-  font-size: 28px;
-  line-height: 1;
-  margin-bottom: 6px;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 8px;
+  color: #111827;
 }
 
 .dg-sheet-gov {
-  font-family: system-ui, sans-serif;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
-  letter-spacing: 0.1em;
-  color: #0f172a;
-  text-transform: uppercase;
-  margin-bottom: 4px;
+  letter-spacing: 1px;
+  color: #111827;
 }
 
 .dg-sheet-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #0f172a;
-  margin-bottom: 4px;
+  font-size: 17px;
+  font-weight: 800;
+  color: #111827;
+  margin: 6px 0 2px;
 }
 
 .dg-sheet-ref {
-  font-family: ui-monospace, SFMono-Regular, monospace;
-  font-size: 11px;
-  color: #64748b;
+  font-size: 12px;
+  color: #4B5563;
+  font-style: italic;
 }
 
-.dg-sheet-sections {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+.dg-sheet-section {
+  margin-bottom: 20px;
 }
 
 .dg-sheet-section-heading {
-  font-family: system-ui, sans-serif;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #0f172a;
-  border-bottom: 1px solid #e2e8f0;
+  color: #111827;
+  border-bottom: 1px solid #E5E7EB;
   padding-bottom: 4px;
   margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .dg-sheet-section-body {
-  font-family: inherit;
-  font-size: 13px;
-  line-height: 1.65;
-  color: #1e293b;
   white-space: pre-wrap;
-  word-break: break-word;
+  font-family: inherit;
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: #374151;
   margin: 0;
 }
 
 .dg-sheet-verification {
+  border-top: 1px solid #E5E7EB;
+  padding-top: 16px;
+  margin-top: 28px;
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  margin-top: 36px;
-  padding-top: 20px;
-  border-top: 1px solid #e2e8f0;
-  font-family: system-ui, sans-serif;
 }
 
 .dg-sig-line {
-  border-top: 1px solid #0f172a;
+  border-top: 1px solid #111827;
+  width: 240px;
   padding-top: 6px;
   font-size: 11px;
-  font-weight: 600;
-  color: #0f172a;
-  min-width: 220px;
+  color: #4B5563;
   text-align: center;
 }
 
 .dg-sheet-disclaimer {
   margin-top: 24px;
-  padding-top: 12px;
-  border-top: 1px dashed rgba(0, 0, 0, 0.15);
+  padding: 12px;
+  background: var(--dg-card-subtle);
+  border: 1px solid var(--dg-card-border);
+  border-radius: 6px;
   font-size: 11px;
-  font-style: italic;
-  color: #64748b;
-  font-family: system-ui, sans-serif;
+  color: var(--dg-text-muted);
+  line-height: 1.45;
 }
 
 /* ------------------------------------------------------------
-   12. RESPONSIVE DESIGN
+   RESPONSIVENESS
    ------------------------------------------------------------ */
-@media (max-width: 1024px) {
-  .dg-templates-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .dg-preview-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  .dg-page {
-    padding: 16px 14px 40px;
-  }
-
+@media (max-width: 900px) {
   .dg-main-card {
-    padding: 22px 18px;
-    border-radius: 14px;
+    padding: 24px 20px;
   }
-
-  .dg-tool-title {
-    font-size: 22px;
+  .dg-stepper-inner-card {
+    padding: 14px 16px;
   }
-
-  .dg-templates-grid {
-    grid-template-columns: 1fr;
+  .dg-stepper-step {
+    padding: 4px;
   }
-
-  .dg-grid-2col {
-    grid-template-columns: 1fr;
-  }
-
-  .dg-col-span-2 {
-    grid-column: span 1;
-  }
-
-  .dg-stepper-track {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-  }
-
   .dg-stepper-connector {
     display: none;
   }
-
-  .dg-deliverables-2x2 {
+  .dg-preview-grid {
     grid-template-columns: 1fr;
   }
-
-  .dg-btn-primary-cta {
-    width: 100%;
+  .dg-grid-2col {
+    grid-template-columns: 1fr;
   }
-
-  .dg-top-controls {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
+  .dg-col-span-2 {
+    grid-column: span 1;
   }
-
-  .dg-top-controls-right {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  .dg-paper-sheet {
-    padding: 24px 18px;
-  }
-
-  .dg-sheet-verification {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 20px;
-  }
-
-  .dg-sig-line {
-    width: 100%;
-    text-align: left;
+  .dg-deliverables-2x2 {
+    grid-template-columns: 1fr;
   }
 }

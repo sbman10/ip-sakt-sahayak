@@ -3,8 +3,25 @@ import {
   IconSparkles,
   IconCopy,
   IconCheck,
+  IconCheckCircle,
   IconAlertTriangle,
+  IconFileText,
+  IconScroll,
+  IconLeaf,
+  IconScales,
+  IconUser,
+  IconEdit,
+  IconDownload,
+  IconPrinter,
+  IconX,
+  IconFlask,
+  IconEmblem,
+  IconArrowLeft,
+  IconChevronRight,
+  IconHome,
+  IconFolder,
 } from './Icons'
+import { Link } from 'react-router-dom'
 import { getApiBase } from '../api/config'
 import './DraftGenerator.css'
 
@@ -20,7 +37,7 @@ const TEMPLATES = [
     label: 'Patent Application — Form 1',
     subtitle: 'Application for grant of patent & complete specification scaffold',
     reference: 'Patents Rules, 2003 — Form 1 (Section 7, 54 & 135; Rule 20(1))',
-    icon: '📜',
+    icon: IconFileText,
     showClaims: true,
     showRespondent: false,
     descriptionLabel: 'Field of Invention & Technical Summary',
@@ -34,7 +51,7 @@ const TEMPLATES = [
     label: 'NBA Approval Application — Form III',
     subtitle: 'Statutory biological resource & traditional knowledge clearance',
     reference: 'Biological Diversity Act, 2002 — Section 6, Form III',
-    icon: '🌿',
+    icon: IconLeaf,
     showClaims: false,
     showRespondent: false,
     descriptionLabel: 'Biological Resource(s) & Associated Traditional Knowledge',
@@ -48,7 +65,7 @@ const TEMPLATES = [
     label: 'Pre-Grant Opposition — Section 3(p)',
     subtitle: 'Representation challenging patents claiming traditional knowledge',
     reference: 'Patents Act, 1970 — Section 25(1) read with Section 3(p)',
-    icon: '⚖️',
+    icon: IconScales,
     showClaims: false,
     showRespondent: true,
     descriptionLabel: 'Statement of Case & Grounds of Opposition',
@@ -439,6 +456,32 @@ export default function DraftGenerator({ onBack }) {
 
   return (
     <div className="dg-page">
+      {/* Top Utility Strip matching all 4 pages */}
+      <div className="dg-top-strip">
+        <div className="dg-breadcrumbs">
+          <Link to="/" className="dg-breadcrumb-link">
+            <IconHome size={15} />
+            <span>IP-SAKTI Portal</span>
+          </Link>
+          <span className="dg-breadcrumb-sep">/</span>
+          <span className="dg-breadcrumb-active">Draft Generator</span>
+        </div>
+        <div className="dg-top-actions">
+          <Link to="/workspace" className="dg-portal-link" title="Matter Workspace">
+            <IconFolder size={14} />
+            <span>Matter Workspace</span>
+          </Link>
+          <Link to="/documents" className="dg-portal-link" title="Document Library">
+            <IconFileText size={14} />
+            <span>Documents</span>
+          </Link>
+          <Link to="/chat" className="dg-portal-link" title="Consult RagVyn AI">
+            <IconSparkles size={14} />
+            <span>Ask RagVyn AI</span>
+          </Link>
+        </div>
+      </div>
+
       {/* 2. TOP AREA: Compact modern controls sitting above the main content */}
       <div className="dg-top-controls">
         <button
@@ -447,7 +490,7 @@ export default function DraftGenerator({ onBack }) {
           onClick={onBack}
           title="Return to IP-SAKTI Portal"
         >
-          <span className="dg-back-arrow" aria-hidden="true">←</span>
+          <span className="dg-back-arrow" aria-hidden="true"><IconArrowLeft size={14} /></span>
           <span>Back to Portal</span>
         </button>
 
@@ -463,7 +506,7 @@ export default function DraftGenerator({ onBack }) {
             onClick={() => handleFillSample(templateType)}
             title="Populate statutory demonstration data"
           >
-            <span>🧪</span>
+            <IconFlask size={14} />
             <span>Fill Sample Data</span>
           </button>
         </div>
@@ -474,7 +517,7 @@ export default function DraftGenerator({ onBack }) {
         {/* 4. TOOL HEADER */}
         <header className="dg-tool-header">
           <div className="dg-tool-badge">
-            <span className="dg-badge-icon" aria-hidden="true">📜</span>
+            <span className="dg-badge-icon" aria-hidden="true"><IconFileText size={13} /></span>
             <span>STATUTORY DOCUMENT PREPARATION ASSISTANT</span>
           </div>
           <h1 className="dg-tool-title">Prepare your statutory document</h1>
@@ -495,7 +538,7 @@ export default function DraftGenerator({ onBack }) {
               }}
             >
               <div className="dg-step-badge">
-                {currentStep > 1 ? '✓' : '01'}
+                {currentStep > 1 ? <IconCheck size={14} /> : '01'}
               </div>
               <div className="dg-step-info">
                 <span className="dg-step-label">Select Document Template</span>
@@ -514,7 +557,7 @@ export default function DraftGenerator({ onBack }) {
               }}
             >
               <div className="dg-step-badge">
-                {currentStep > 2 ? '✓' : '02'}
+                {currentStep > 2 ? <IconCheck size={14} /> : '02'}
               </div>
               <div className="dg-step-info">
                 <span className="dg-step-label">Fill Innovation & Entity Details</span>
@@ -533,7 +576,7 @@ export default function DraftGenerator({ onBack }) {
               }}
             >
               <div className="dg-step-badge">
-                {result ? '✓' : '03'}
+                {result ? <IconCheck size={14} /> : '03'}
               </div>
               <div className="dg-step-info">
                 <span className="dg-step-label">Export Formatted Legal Draft</span>
@@ -556,6 +599,7 @@ export default function DraftGenerator({ onBack }) {
             {TEMPLATES.map((tpl) => {
               const isSelected = templateType === tpl.id
               const showDet = !!viewDetailsMap[tpl.id]
+              const TplIcon = tpl.icon
 
               return (
                 <div
@@ -577,7 +621,7 @@ export default function DraftGenerator({ onBack }) {
                 >
                   <div className="dg-template-top">
                     <div className="dg-template-icon-wrap" aria-hidden="true">
-                      <span>{tpl.icon}</span>
+                      <TplIcon size={22} />
                     </div>
                     <div className={`dg-template-radio ${isSelected ? 'checked' : ''}`} aria-label={`Select ${tpl.label}`}>
                       {isSelected && <span className="dg-radio-inner-dot" />}
@@ -591,7 +635,14 @@ export default function DraftGenerator({ onBack }) {
 
                   <div className="dg-template-footer">
                     <span className="dg-template-selection-text">
-                      {isSelected ? '✓ Selected for drafting' : 'Click to select'}
+                      {isSelected ? (
+                        <>
+                          <IconCheck size={13} style={{ marginRight: 5, verticalAlign: 'middle' }} />
+                          Selected for drafting
+                        </>
+                      ) : (
+                        'Click to select'
+                      )}
                     </span>
                     <button
                       type="button"
@@ -601,7 +652,7 @@ export default function DraftGenerator({ onBack }) {
                       }}
                       className="dg-btn-link-details"
                     >
-                      {showDet ? 'Hide details' : 'View details'}
+                      {showDet ? 'Hide details' : 'View details →'}
                     </button>
                   </div>
 
@@ -635,7 +686,7 @@ export default function DraftGenerator({ onBack }) {
             {/* Form Group 1: Applicant / Opponent */}
             <div className="dg-form-group-box">
               <div className="dg-group-title-row">
-                <span className="dg-group-icon" aria-hidden="true">👤</span>
+                <span className="dg-group-icon" aria-hidden="true"><IconUser size={16} /></span>
                 <h3 className="dg-group-title">
                   {templateType === '3p_petition' ? 'Opponent / Petitioner Information' : 'Applicant Information'}
                 </h3>
@@ -711,7 +762,7 @@ export default function DraftGenerator({ onBack }) {
             {/* Form Group 2: Innovation / Patent Particulars */}
             <div className="dg-form-group-box">
               <div className="dg-group-title-row">
-                <span className="dg-group-icon" aria-hidden="true">⚙️</span>
+                <span className="dg-group-icon" aria-hidden="true"><IconFileText size={16} /></span>
                 <h3 className="dg-group-title">
                   {templateType === '3p_petition' ? 'Target Patent Particulars' : 'Innovation / Patent Particulars'}
                 </h3>
@@ -789,7 +840,7 @@ export default function DraftGenerator({ onBack }) {
             {/* Form Group 3: Technical Description & Grounds */}
             <div className="dg-form-group-box">
               <div className="dg-group-title-row">
-                <span className="dg-group-icon" aria-hidden="true">📝</span>
+                <span className="dg-group-icon" aria-hidden="true"><IconEdit size={16} /></span>
                 <h3 className="dg-group-title">
                   {templateType === 'nba'
                     ? 'Biological Resource Origin & Access Disclosures'
@@ -823,7 +874,7 @@ export default function DraftGenerator({ onBack }) {
             {activeTemplate.showClaims && (
               <div className="dg-form-group-box">
                 <div className="dg-group-title-row">
-                  <span className="dg-group-icon" aria-hidden="true">📋</span>
+                  <span className="dg-group-icon" aria-hidden="true"><IconFileText size={16} /></span>
                   <h3 className="dg-group-title">Statutory Patent Claims Scaffold</h3>
                 </div>
 
@@ -859,7 +910,7 @@ export default function DraftGenerator({ onBack }) {
 
               <div className="dg-deliverables-2x2">
                 <div className="dg-deliverable-item">
-                  <div className="dg-deliverable-check" aria-hidden="true">✓</div>
+                  <div className="dg-deliverable-check" aria-hidden="true"><IconCheck size={14} /></div>
                   <div className="dg-deliverable-body">
                     <h4 className="dg-deliverable-name">Standardized Statutory Draft</h4>
                     <p className="dg-deliverable-text">
@@ -869,7 +920,7 @@ export default function DraftGenerator({ onBack }) {
                 </div>
 
                 <div className="dg-deliverable-item">
-                  <div className="dg-deliverable-check" aria-hidden="true">✓</div>
+                  <div className="dg-deliverable-check" aria-hidden="true"><IconCheck size={14} /></div>
                   <div className="dg-deliverable-body">
                     <h4 className="dg-deliverable-name">Pre-populated Legal Clauses</h4>
                     <p className="dg-deliverable-text">
@@ -879,7 +930,7 @@ export default function DraftGenerator({ onBack }) {
                 </div>
 
                 <div className="dg-deliverable-item">
-                  <div className="dg-deliverable-check" aria-hidden="true">✓</div>
+                  <div className="dg-deliverable-check" aria-hidden="true"><IconCheck size={14} /></div>
                   <div className="dg-deliverable-body">
                     <h4 className="dg-deliverable-name">Exportable Document Preview</h4>
                     <p className="dg-deliverable-text">
@@ -889,7 +940,7 @@ export default function DraftGenerator({ onBack }) {
                 </div>
 
                 <div className="dg-deliverable-item">
-                  <div className="dg-deliverable-check" aria-hidden="true">✓</div>
+                  <div className="dg-deliverable-check" aria-hidden="true"><IconCheck size={14} /></div>
                   <div className="dg-deliverable-body">
                     <h4 className="dg-deliverable-name">Filing Checklist & Attachments</h4>
                     <p className="dg-deliverable-text">
@@ -925,7 +976,7 @@ export default function DraftGenerator({ onBack }) {
                   <>
                     <IconSparkles size={16} />
                     <span>Start Using Tool</span>
-                    <span className="dg-cta-arrow" aria-hidden="true">→</span>
+                    <span className="dg-cta-arrow" aria-hidden="true"><IconChevronRight size={16} /></span>
                   </>
                 )}
               </button>
@@ -961,7 +1012,7 @@ export default function DraftGenerator({ onBack }) {
                 onClick={handleReset}
                 className="dg-btn-secondary-sm"
               >
-                <span>✕</span>
+                <IconX size={14} />
                 <span>Clear Result</span>
               </button>
             </div>
@@ -1001,7 +1052,7 @@ export default function DraftGenerator({ onBack }) {
                     onClick={handleDownload}
                     className="dg-btn-action"
                   >
-                    <span>💾</span>
+                    <IconDownload size={16} />
                     <span>Download .txt File</span>
                   </button>
 
@@ -1010,7 +1061,7 @@ export default function DraftGenerator({ onBack }) {
                     onClick={handleDownloadJson}
                     className="dg-btn-action"
                   >
-                    <span>📦</span>
+                    <IconFileText size={16} />
                     <span>Export JSON Payload</span>
                   </button>
 
@@ -1019,14 +1070,14 @@ export default function DraftGenerator({ onBack }) {
                     onClick={() => window.print()}
                     className="dg-btn-action"
                   >
-                    <span>🖨️</span>
+                    <IconPrinter size={16} />
                     <span>Print Document</span>
                   </button>
                 </div>
 
                 <div className="dg-agent-checklist">
                   <div className="dg-checklist-head">
-                    <span className="dg-check-icon" aria-hidden="true">✓</span>
+                    <span className="dg-check-icon" aria-hidden="true"><IconCheckCircle size={15} /></span>
                     <span>Registered Agent Checklist</span>
                   </div>
                   <ul className="dg-checklist-items">
@@ -1045,7 +1096,7 @@ export default function DraftGenerator({ onBack }) {
                 <span className="dg-sheet-page-indicator">PAGE 1 OF 1 • STATUTORY DRAFT</span>
 
                 <header className="dg-sheet-header">
-                  <div className="dg-sheet-emblem" aria-hidden="true">🇮🇳</div>
+                  <div className="dg-sheet-emblem" aria-hidden="true"><IconEmblem size={26} /></div>
                   <div className="dg-sheet-gov">GOVERNMENT OF INDIA</div>
                   <div className="dg-sheet-title">{result.document_title}</div>
                   <div className="dg-sheet-ref">{result.form_reference}</div>
