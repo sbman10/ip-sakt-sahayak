@@ -19,6 +19,8 @@ import UserProfileMenu from './components/UserProfileMenu'
 import EditProfileModal from './components/EditProfileModal'
 import ToolIntro from './components/ToolIntro'
 import { TOOL_INTRO_CONFIGS } from './data/toolIntroConfigs'
+import SiteFooter from './components/SiteFooter'
+import SitemapPage from './components/SitemapPage'
 import {
   IconHome,
   IconFlask,
@@ -4547,98 +4549,9 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout 
   )
 }
 
-/* ============================================================
-   TRANSLATED FOOTER COMPONENT - Professional Government Style
-   ============================================================ */
+// TranslatedFooter replaced by institutional <SiteFooter />
 function TranslatedFooter() {
-  const { t } = useLanguage()
-
-  return (
-    <footer className="gov-footer" role="contentinfo">
-      {/* Main Footer Content */}
-      <div className="gov-footer-main">
-        <div className="gov-footer-container">
-          {/* Column 1: Brand & Ministry Info */}
-          <div className="gov-footer-col gov-footer-brand-col">
-            <div className="gov-footer-brand" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span className="gov-footer-logo" style={{ display: 'flex', color: 'var(--primary-light)' }}><IconLeaf size={24} /></span>
-              <div className="gov-footer-brand-text">
-                <h3 className="gov-footer-title">IP-SAKTI Sahayak</h3>
-                <span className="gov-footer-subtitle">आईपी-शक्ति सहायक</span>
-              </div>
-            </div>
-            <div className="gov-footer-ministry">
-              <p className="gov-footer-ministry-name">{t('ministry')}</p>
-              <p className="gov-footer-govt">{t('govtOf')}</p>
-            </div>
-            <p className="gov-footer-tagline">
-              Smart IP & Regulatory Assistance Portal for Traditional Knowledge
-            </p>
-          </div>
-
-          {/* Column 2: Quick Links */}
-          <div className="gov-footer-col">
-            <h4 className="gov-footer-col-title">Quick Links</h4>
-            <ul className="gov-footer-links">
-              <li><Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconHome size={14} /> Home</Link></li>
-              <li><Link to="/chat" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconMessageSquare size={14} /> AI Consultation</Link></li>
-              <li><Link to="/abs-checker" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconLeaf size={14} /> ABS Checker</Link></li>
-              <li><Link to="/ip-calculator" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconCalculator size={14} /> IP Calculator</Link></li>
-              <li><Link to="/deadline-calculator" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconCalendar size={14} /> {t('deadlineCalc')}</Link></li>
-              <li><Link to="/sources" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconBook size={14} /> Sources</Link></li>
-            </ul>
-          </div>
-
-          {/* Column 3: Resources */}
-          <div className="gov-footer-col">
-            <h4 className="gov-footer-col-title">Resources</h4>
-            <ul className="gov-footer-links">
-              <li><a href="https://www.ayush.gov.in" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconGovt size={14} /> AYUSH Portal</a></li>
-              <li><a href="https://tkdl.res.in" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconBook size={14} /> TKDL Database</a></li>
-              <li><a href="https://nbaindia.org" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconLeaf size={14} /> NBA India</a></li>
-              <li><a href="https://ipindia.gov.in" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconScales size={14} /> IP India</a></li>
-              <li><Link to="/privacy" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconLock size={14} /> Privacy Policy</Link></li>
-            </ul>
-          </div>
-
-          {/* Column 4: Contact & Social */}
-          <div className="gov-footer-col">
-            <h4 className="gov-footer-col-title">Contact Us</h4>
-            <div className="gov-footer-contact">
-              <p style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IconPin size={14} /> AYUSH Bhawan, B Block</p>
-              <p style={{ paddingLeft: '20px' }}>GPO Complex, INA, New Delhi - 110023</p>
-              <p style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IconMail size={14} /> info-ayush@gov.in</p>
-              <p style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IconPhone size={14} /> +91-11-24651950</p>
-            </div>
-            <div className="gov-footer-social">
-              <a href="https://twitter.com/moaboratory" target="_blank" rel="noopener noreferrer" aria-label="Twitter" className="gov-social-icon">X</a>
-              <a href="https://facebook.com/moaboratory" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="gov-social-icon">fb</a>
-              <a href="https://youtube.com/@ministryofayush" target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="gov-social-icon">yt</a>
-              <a href="https://instagram.com/ministryofayush" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="gov-social-icon">ig</a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Footer Bottom Bar */}
-      <div className="gov-footer-bottom">
-        <div className="gov-footer-container gov-footer-bottom-content">
-          <div className="gov-footer-legal">
-            <span>© 2026 Ministry of AYUSH, Government of India</span>
-            <span className="gov-footer-separator">|</span>
-            <Link to="/privacy">Privacy Policy</Link>
-            <span className="gov-footer-separator">|</span>
-            <Link to="/sources">Terms of Use</Link>
-            <span className="gov-footer-separator">|</span>
-            <span>Accessibility Statement</span>
-          </div>
-          <div className="gov-footer-credits">
-            <span className="gov-footer-made">National Digital Health & IP Mission • India</span>
-          </div>
-        </div>
-      </div>
-    </footer>
-  )
+  return null
 }
 
 /* ============================================================
@@ -5570,9 +5483,6 @@ function LandingPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, 
 
       {/* FAQ Section */}
       <FAQSection />
-
-      {/* Footer */}
-      <TranslatedFooter />
     </div>
   )
 }
@@ -9413,8 +9323,6 @@ function PrivacyPolicyPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, font
           </section>
         </Reveal>
       </main>
-
-      <TranslatedFooter />
     </div>
   )
 }
@@ -10052,6 +9960,7 @@ function AppShell({ children, isLoggedIn, userName, onOpenAbout, onLogout }) {
   // Keep the application shell available on the landing page as well.
   // Login and auth callback remain distraction-free and outside the app shell.
   const hideSidebar = location.pathname === '/login' || location.pathname === '/auth/callback'
+  const hideFooter = location.pathname === '/login' || location.pathname === '/auth/callback' || location.pathname === '/chat'
 
   const handleNewChat = () => {
     navigate('/chat', { state: { newChat: true } })
@@ -10103,7 +10012,18 @@ function AppShell({ children, isLoggedIn, userName, onOpenAbout, onLogout }) {
           !hideSidebar && !isMobile && sidebarCollapsed ? 'ragvyn-app-content--sidebar-collapsed' : '',
         ].filter(Boolean).join(' ')}
       >
-        {children}
+        <div className="ragvyn-shell-flow">
+          <div className="ragvyn-shell-main">
+            {children}
+          </div>
+          {!hideFooter && (
+            <SiteFooter
+              isLoggedIn={isLoggedIn}
+              userName={userName}
+              onOpenAbout={onOpenAbout}
+            />
+          )}
+        </div>
       </div>
     </>
   )
@@ -10404,6 +10324,12 @@ export default function App() {
                 setFontSize={setFontSize}
                 setPrefillPrompt={setPrefillPrompt}
               />
+            }
+          />
+          <Route
+            path="/sitemap"
+            element={
+              <SitemapPage />
             }
           />
           {/* Legacy route redirects */}

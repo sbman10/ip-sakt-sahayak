@@ -1,0 +1,459 @@
+/* ============================================================
+   INSTITUTIONAL SITE FOOTER - IP-SAKTI / RAGVYN
+   Visual Aesthetic: Formal Indian Government / Legal-Tech
+   Clean, calm, restrained typography, zero decorative clutter
+   ============================================================ */
+
+.site-footer {
+  width: 100%;
+  background-color: var(--gov-footer-bg, #f8fafc);
+  border-top: 1px solid var(--gov-footer-border, #e2e8f0);
+  color: var(--gov-footer-text, #475569);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  position: relative;
+  z-index: 10;
+  box-sizing: border-box;
+}
+
+/* Dark mode theme token mapping */
+[data-theme='dark'] .site-footer {
+  background-color: #0b1120;
+  border-top-color: #1e293b;
+  color: #94a3b8;
+}
+
+/* Main Container aligned with page container */
+.site-footer-container {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 44px 24px 28px;
+  box-sizing: border-box;
+}
+
+/* ============================================================
+   FOUR-COLUMN NAVIGATION GRID
+   ============================================================ */
+.site-footer-grid {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr 1.15fr 0.9fr;
+  gap: 36px 28px;
+  margin-bottom: 40px;
+}
+
+.site-footer-col {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Column Header */
+.site-footer-heading {
+  margin: 0 0 16px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--gov-footer-title, #0f172a);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+[data-theme='dark'] .site-footer-heading {
+  color: #f8fafc;
+}
+
+/* Brand info in Column 1 */
+.site-footer-brand-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.site-footer-brand-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: rgba(22, 101, 52, 0.08);
+  border: 1px solid rgba(22, 101, 52, 0.18);
+  color: #166534;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+[data-theme='dark'] .site-footer-brand-icon {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.25);
+  color: #4ade80;
+}
+
+.site-footer-brand-name {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--gov-footer-title, #0f172a);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+[data-theme='dark'] .site-footer-brand-name {
+  color: #f8fafc;
+}
+
+.site-footer-brand-sub {
+  font-size: 11.5px;
+  color: var(--gov-footer-text, #64748b);
+  display: block;
+}
+
+.site-footer-description {
+  margin: 0 0 18px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--gov-footer-text, #475569);
+  max-width: 320px;
+}
+
+[data-theme='dark'] .site-footer-description {
+  color: #94a3b8;
+}
+
+/* Institutional Badge */
+.site-footer-inst-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 16px;
+  width: fit-content;
+}
+
+[data-theme='dark'] .site-footer-inst-badge {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+}
+
+/* Links List */
+.site-footer-nav {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.site-footer-nav li {
+  margin: 0;
+  padding: 0;
+}
+
+.site-footer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--gov-footer-text, #475569);
+  text-decoration: none;
+  background: none;
+  border: none;
+  padding: 2px 0;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 0.15s ease;
+  text-align: left;
+}
+
+.site-footer-link:hover {
+  color: #166534;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+[data-theme='dark'] .site-footer-link {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .site-footer-link:hover {
+  color: #4ade80;
+}
+
+.site-footer-link:focus-visible {
+  outline: 2px solid #166534;
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+[data-theme='dark'] .site-footer-link:focus-visible {
+  outline-color: #4ade80;
+}
+
+/* Disabled "Coming soon" items */
+.site-footer-disabled-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #94a3b8;
+  padding: 2px 0;
+  cursor: default;
+}
+
+.site-footer-coming-soon-pill {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+}
+
+[data-theme='dark'] .site-footer-coming-soon-pill {
+  background: #1e293b;
+  border-color: #334155;
+  color: #94a3b8;
+}
+
+/* Mobile Accordion Header Button */
+.site-footer-accordion-btn {
+  display: none;
+  width: 100%;
+  padding: 12px 0;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--gov-footer-border, #e2e8f0);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--gov-footer-title, #0f172a);
+  text-align: left;
+  cursor: pointer;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.site-footer-accordion-chevron {
+  color: #64748b;
+  transition: transform 0.2s ease;
+  display: flex;
+  align-items: center;
+}
+
+.site-footer-accordion-chevron.open {
+  transform: rotate(180deg);
+}
+
+/* ============================================================
+   BOTTOM LEGAL STRIP
+   ============================================================ */
+.site-footer-bottom {
+  padding-top: 24px;
+  border-top: 1px solid var(--gov-footer-border, #e2e8f0);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+  color: var(--gov-footer-text, #64748b);
+}
+
+[data-theme='dark'] .site-footer-bottom {
+  border-top-color: #1e293b;
+  color: #94a3b8;
+}
+
+.site-footer-legal-links {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.site-footer-legal-link {
+  color: var(--gov-footer-text, #64748b);
+  text-decoration: none;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 12.5px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 0.15s ease;
+}
+
+.site-footer-legal-link:hover {
+  color: #166534;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+[data-theme='dark'] .site-footer-legal-link {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .site-footer-legal-link:hover {
+  color: #4ade80;
+}
+
+.site-footer-legal-link:focus-visible {
+  outline: 2px solid #166534;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.site-footer-separator {
+  color: #cbd5e1;
+  font-size: 12px;
+}
+
+[data-theme='dark'] .site-footer-separator {
+  color: #334155;
+}
+
+/* Back to Top Accessible Button */
+.site-footer-back-to-top {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  color: #374151;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.site-footer-back-to-top:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+  color: #111827;
+}
+
+[data-theme='dark'] .site-footer-back-to-top {
+  background: #1e293b;
+  border-color: #334155;
+  color: #cbd5e1;
+}
+
+[data-theme='dark'] .site-footer-back-to-top:hover {
+  background: #334155;
+  border-color: #475569;
+  color: #ffffff;
+}
+
+.site-footer-back-to-top:focus-visible {
+  outline: 2px solid #166534;
+  outline-offset: 2px;
+}
+
+/* ============================================================
+   RESPONSIVE BREAKPOINTS
+   ============================================================ */
+@media (max-width: 960px) {
+  .site-footer-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 32px 24px;
+  }
+}
+
+@media (max-width: 640px) {
+  .site-footer-container {
+    padding: 24px 16px 20px;
+  }
+
+  .site-footer-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-bottom: 24px;
+  }
+
+  .site-footer-col {
+    border-bottom: 1px solid var(--gov-footer-border, #e2e8f0);
+  }
+
+  [data-theme='dark'] .site-footer-col {
+    border-bottom-color: #1e293b;
+  }
+
+  .site-footer-col:first-child {
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--gov-footer-border, #e2e8f0);
+  }
+
+  /* Show accordion toggle on mobile for cols 2, 3, 4 */
+  .site-footer-accordion-btn {
+    display: flex;
+    border-bottom: none;
+  }
+
+  .site-footer-col-content {
+    display: none;
+    padding-bottom: 16px;
+  }
+
+  .site-footer-col-content.open {
+    display: block;
+    animation: footerSlideDown 0.2s ease;
+  }
+
+  .site-footer-heading:not(.site-footer-accordion-btn) {
+    display: none;
+  }
+
+  .site-footer-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .site-footer-legal-links {
+    gap: 10px;
+  }
+}
+
+@keyframes footerSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Print Stylesheet */
+@media print {
+  .site-footer {
+    border-top: 1px solid #ccc !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .site-footer-back-to-top,
+  .site-footer-accordion-chevron {
+    display: none !important;
+  }
+}
