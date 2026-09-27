@@ -3,6 +3,32 @@ import { Link } from 'react-router-dom'
 import MatterCard from './MatterCard'
 import MatterTimeline from './MatterTimeline'
 import AddMatterModal from './AddMatterModal'
+import {
+  IconFolder,
+  IconZap,
+  IconAward,
+  IconClock,
+  IconAlertTriangle,
+  IconCheckCircle,
+  IconCheck,
+  IconSearch,
+  IconX,
+  IconPlus,
+  IconRefreshCw,
+  IconCalendar,
+  IconFileText,
+  IconEye,
+  IconEdit,
+  IconTrash,
+  IconGlobe,
+  IconScroll,
+  IconSparkles,
+  IconHome,
+  IconLeaf,
+  IconBook,
+  IconChevronRight,
+  IconCopy,
+} from './Icons'
 import { getApiBase } from '../api/config'
 import './MatterWorkspace.css'
 
@@ -10,18 +36,18 @@ const API_BASE = getApiBase()
 const TOKEN_KEY = 'ip_sakti_access_token'
 
 const STATUS_META = {
-  draft: { label: 'Draft', color: '#64748b', bg: '#f1f5f9', border: '#e2e8f0', dot: '#94a3b8' },
-  filed: { label: 'Filed', color: '#0369a1', bg: '#e0f2fe', border: '#bae6fd', dot: '#0ea5e9' },
+  draft: { label: 'Draft', color: '#475569', bg: '#f1f5f9', border: '#e2e8f0', dot: '#94a3b8' },
+  filed: { label: 'Filed', color: '#1d4ed8', bg: '#eff6ff', border: '#bfdbfe', dot: '#3b82f6' },
   examination: { label: 'Under Examination', color: '#b45309', bg: '#fef3c7', border: '#fde68a', dot: '#f59e0b' },
   granted: { label: 'Granted', color: '#15803d', bg: '#dcfce7', border: '#bbf7d0', dot: '#16a34a' },
   rejected: { label: 'Rejected / Abandoned', color: '#b91c1c', bg: '#fee2e2', border: '#fecaca', dot: '#ef4444' },
 }
 
 const CASE_TYPE_META = {
-  patent: { label: 'Patent', color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe', icon: '⚙️' },
-  trademark: { label: 'Trademark', color: '#0284c7', bg: '#f0f9ff', border: '#bae6fd', icon: '™️' },
-  copyright: { label: 'Copyright', color: '#d97706', bg: '#fffbeb', border: '#fde68a', icon: '©️' },
-  gi: { label: 'GI', color: '#059669', bg: '#ecfdf5', border: '#a7f3d0', icon: '🌿' },
+  patent: { label: 'Patent', color: '#6d35e8', bg: '#f4effe', border: '#d8c7f9', icon: IconFileText },
+  trademark: { label: 'Trademark', color: '#0284c7', bg: '#f0f9ff', border: '#bae6fd', icon: IconAward },
+  copyright: { label: 'Copyright', color: '#d97706', bg: '#fffbeb', border: '#fde68a', icon: IconBook },
+  gi: { label: 'GI', color: '#059669', bg: '#ecfdf5', border: '#a7f3d0', icon: IconLeaf },
 }
 
 const CASE_TYPE_OPTIONS = [
@@ -43,10 +69,10 @@ const STATUS_OPTIONS = [
 
 const JURISDICTION_OPTIONS = [
   { value: 'all', label: 'All Jurisdictions' },
-  { value: 'IN', label: '🇮🇳 India' },
-  { value: 'PCT', label: '🌐 PCT / WIPO' },
-  { value: 'US', label: '🇺🇸 United States' },
-  { value: 'EP', label: '🇪🇺 European Patent Office' },
+  { value: 'IN', label: 'India (IPO)' },
+  { value: 'PCT', label: 'PCT / WIPO' },
+  { value: 'US', label: 'United States (USPTO)' },
+  { value: 'EP', label: 'European Patent Office (EPO)' },
 ]
 
 const SORT_OPTIONS = [
@@ -79,14 +105,14 @@ async function api(path, options = {}) {
 }
 
 function getJurisdiction(appNumber) {
-  if (!appNumber) return { code: 'IN', label: 'India', flag: '🇮🇳' }
+  if (!appNumber) return { code: 'IN', label: 'India' }
   const u = appNumber.toUpperCase()
-  if (u.startsWith('PCT') || u.startsWith('WO')) return { code: 'PCT', label: 'PCT / WIPO', flag: '🌐' }
-  if (u.startsWith('US')) return { code: 'US', label: 'United States', flag: '🇺🇸' }
-  if (u.startsWith('EP')) return { code: 'EP', label: 'EPO (Europe)', flag: '🇪🇺' }
-  if (u.startsWith('GB')) return { code: 'GB', label: 'United Kingdom', flag: '🇬🇧' }
-  if (u.startsWith('JP')) return { code: 'JP', label: 'Japan', flag: '🇯🇵' }
-  return { code: 'IN', label: 'India', flag: '🇮🇳' }
+  if (u.startsWith('PCT') || u.startsWith('WO')) return { code: 'PCT', label: 'PCT / WIPO' }
+  if (u.startsWith('US')) return { code: 'US', label: 'United States' }
+  if (u.startsWith('EP')) return { code: 'EP', label: 'EPO (Europe)' }
+  if (u.startsWith('GB')) return { code: 'GB', label: 'United Kingdom' }
+  if (u.startsWith('JP')) return { code: 'JP', label: 'Japan' }
+  return { code: 'IN', label: 'India' }
 }
 
 function formatDate(value) {
@@ -649,7 +675,7 @@ export default function MatterWorkspace() {
       <div className="mw-top-strip">
         <div className="mw-breadcrumbs">
           <Link to="/" className="mw-breadcrumb-link">
-            <span>🏛️</span>
+            <IconHome size={14} />
             <span>IP-SAKTI Portal</span>
           </Link>
           <span className="mw-breadcrumb-sep">/</span>
@@ -657,11 +683,11 @@ export default function MatterWorkspace() {
         </div>
         <div className="mw-top-actions">
           <Link to="/chat" className="mw-portal-link" title="Consult RagVyn AI">
-            <span>✨</span>
+            <IconSparkles size={14} />
             <span>Ask RagVyn AI</span>
           </Link>
           <Link to="/documents" className="mw-portal-link" title="Document Library">
-            <span>📄</span>
+            <IconFileText size={14} />
             <span>Documents</span>
           </Link>
         </div>
@@ -672,9 +698,7 @@ export default function MatterWorkspace() {
         <header className="mw-header">
           <div className="mw-header-left">
             <div className="mw-header-icon-box" aria-hidden="true">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-              </svg>
+              <IconFolder size={22} />
             </div>
             <div className="mw-header-titles">
               <h1>Matter Workspace</h1>
@@ -708,10 +732,7 @@ export default function MatterWorkspace() {
               title="Refresh workspace matters and upcoming deadlines"
               aria-label="Refresh"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="23 4 23 10 17 10" />
-                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-              </svg>
+              <IconRefreshCw size={15} />
             </button>
             <button
               type="button"
@@ -719,11 +740,8 @@ export default function MatterWorkspace() {
               id="mw-new-matter-btn"
               onClick={() => { setEditingMatter(null); setModalOpen(true) }}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-              <span>+ New Matter</span>
+              <IconPlus size={15} />
+              <span>New Matter</span>
             </button>
           </div>
         </header>
@@ -744,7 +762,7 @@ export default function MatterWorkspace() {
               title="Click to show all matters"
             >
               <div className="mw-summary-card-top">
-                <span className="mw-summary-icon mw-icon-total">📁</span>
+                <span className="mw-summary-icon mw-icon-total"><IconFolder size={18} /></span>
                 <span className="mw-summary-number">{metrics.total}</span>
               </div>
               <div className="mw-summary-label">Total Matters</div>
@@ -758,7 +776,7 @@ export default function MatterWorkspace() {
               title="Click to filter by active matters"
             >
               <div className="mw-summary-card-top">
-                <span className="mw-summary-icon mw-icon-active">⚡</span>
+                <span className="mw-summary-icon mw-icon-active"><IconZap size={18} /></span>
                 <span className="mw-summary-number">{metrics.active}</span>
               </div>
               <div className="mw-summary-label">Active</div>
@@ -772,7 +790,7 @@ export default function MatterWorkspace() {
               title="Click to filter by granted patents"
             >
               <div className="mw-summary-card-top">
-                <span className="mw-summary-icon mw-icon-granted">🏆</span>
+                <span className="mw-summary-icon mw-icon-granted"><IconAward size={18} /></span>
                 <span className="mw-summary-number">{metrics.granted}</span>
               </div>
               <div className="mw-summary-label">Granted</div>
@@ -786,7 +804,7 @@ export default function MatterWorkspace() {
               title="Click to filter by pending examination"
             >
               <div className="mw-summary-card-top">
-                <span className="mw-summary-icon mw-icon-pending">⏳</span>
+                <span className="mw-summary-icon mw-icon-pending"><IconClock size={18} /></span>
                 <span className="mw-summary-number">{metrics.pending}</span>
               </div>
               <div className="mw-summary-label">Pending</div>
@@ -800,7 +818,7 @@ export default function MatterWorkspace() {
               title="Click to filter by matters with upcoming deadlines"
             >
               <div className="mw-summary-card-top">
-                <span className="mw-summary-icon mw-icon-attention">⚠️</span>
+                <span className="mw-summary-icon mw-icon-attention"><IconAlertTriangle size={18} /></span>
                 <span className="mw-summary-number" style={{ color: '#d97706' }}>{metrics.attention}</span>
               </div>
               <div className="mw-summary-label">Needs Attention</div>
@@ -813,7 +831,7 @@ export default function MatterWorkspace() {
         <section className="mw-deadlines-section">
           <div className="mw-deadlines-header">
             <div className="mw-deadlines-title-row">
-              <span style={{ fontSize: 16 }}>⚠️</span>
+              <IconAlertTriangle size={18} color="#d97706" />
               <h2>Needs Attention</h2>
               {upcoming.length > 0 && (
                 <span className="mw-deadlines-count-badge">
@@ -854,7 +872,8 @@ export default function MatterWorkspace() {
 
                     <div className="mw-deadline-footer">
                       <span className="mw-deadline-due-date">
-                        📅 {formatDate(u.reminder_date)}
+                        <IconCalendar size={13} style={{ marginRight: 4 }} />
+                        {formatDate(u.reminder_date)}
                       </span>
                       <button
                         type="button"
@@ -862,7 +881,7 @@ export default function MatterWorkspace() {
                         onClick={() => openDetail(matters.find((m) => m.id === u.matter_id) || { id: u.matter_id, title: u.matter_title })}
                       >
                         <span>View Matter</span>
-                        <span>→</span>
+                        <IconChevronRight size={13} />
                       </button>
                     </div>
                   </div>
@@ -871,7 +890,9 @@ export default function MatterWorkspace() {
             </div>
           ) : (
             <div className="mw-deadlines-empty">
-              <div className="mw-deadlines-empty-icon">✓</div>
+              <div className="mw-deadlines-empty-icon">
+                <IconCheckCircle size={24} style={{ color: '#16A34A' }} />
+              </div>
               <div className="mw-deadlines-empty-text">
                 <h4>You're all caught up</h4>
                 <p>No upcoming patent actions, FER replies, or statutory hearings require urgent attention.</p>
@@ -894,8 +915,13 @@ export default function MatterWorkspace() {
             alignItems: 'center',
             justifyContent: 'space-between',
           }}>
-            <span>⚠️ {error}</span>
-            <button onClick={() => setError('')} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#dc2626' }}>✕</button>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <IconAlertTriangle size={15} />
+              {error}
+            </span>
+            <button onClick={() => setError('')} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#dc2626' }}>
+              <IconX size={15} />
+            </button>
           </div>
         )}
 
@@ -914,10 +940,7 @@ export default function MatterWorkspace() {
               {/* Search */}
               <div className="mw-search-wrapper">
                 <span className="mw-search-icon" aria-hidden="true">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="11" cy="11" r="8" />
-                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                  </svg>
+                  <IconSearch size={15} />
                 </span>
                 <input
                   ref={searchInputRef}
@@ -933,7 +956,9 @@ export default function MatterWorkspace() {
                     className="mw-search-clear"
                     onClick={() => setSearch('')}
                     title="Clear search"
-                  >✕</button>
+                  >
+                    <IconX size={14} />
+                  </button>
                 )}
               </div>
 
@@ -1026,31 +1051,41 @@ export default function MatterWorkspace() {
               {search && (
                 <span className="mw-filter-tag">
                   <span>Query: "{search}"</span>
-                  <button type="button" className="mw-tag-remove" onClick={() => setSearch('')}>✕</button>
+                  <button type="button" className="mw-tag-remove" onClick={() => setSearch('')}>
+                    <IconX size={12} />
+                  </button>
                 </span>
               )}
               {statusFilter !== 'all' && (
                 <span className="mw-filter-tag">
                   <span>Status: {STATUS_OPTIONS.find((o) => o.value === statusFilter)?.label}</span>
-                  <button type="button" className="mw-tag-remove" onClick={() => setStatusFilter('all')}>✕</button>
+                  <button type="button" className="mw-tag-remove" onClick={() => setStatusFilter('all')}>
+                    <IconX size={12} />
+                  </button>
                 </span>
               )}
               {caseTypeFilter !== 'all' && (
                 <span className="mw-filter-tag">
                   <span>Type: {CASE_TYPE_OPTIONS.find((o) => o.value === caseTypeFilter)?.label}</span>
-                  <button type="button" className="mw-tag-remove" onClick={() => setCaseTypeFilter('all')}>✕</button>
+                  <button type="button" className="mw-tag-remove" onClick={() => setCaseTypeFilter('all')}>
+                    <IconX size={12} />
+                  </button>
                 </span>
               )}
               {jurisdictionFilter !== 'all' && (
                 <span className="mw-filter-tag">
                   <span>Jurisdiction: {JURISDICTION_OPTIONS.find((o) => o.value === jurisdictionFilter)?.label}</span>
-                  <button type="button" className="mw-tag-remove" onClick={() => setJurisdictionFilter('all')}>✕</button>
+                  <button type="button" className="mw-tag-remove" onClick={() => setJurisdictionFilter('all')}>
+                    <IconX size={12} />
+                  </button>
                 </span>
               )}
               {summaryFilter !== 'all' && (
                 <span className="mw-filter-tag">
                   <span>Group: {summaryFilter}</span>
-                  <button type="button" className="mw-tag-remove" onClick={() => setSummaryFilter('all')}>✕</button>
+                  <button type="button" className="mw-tag-remove" onClick={() => setSummaryFilter('all')}>
+                    <IconX size={12} />
+                  </button>
                 </span>
               )}
               <button type="button" className="mw-btn-clear-all" onClick={clearAllFilters}>
@@ -1093,9 +1128,7 @@ export default function MatterWorkspace() {
             /* Purposeful Empty State for Fresh Workspace */
             <div className="mw-empty-state">
               <div className="mw-empty-icon-circle">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-                </svg>
+                <IconFolder size={28} />
               </div>
               <h3>No patent matters yet</h3>
               <p>
@@ -1107,17 +1140,15 @@ export default function MatterWorkspace() {
                 className="mw-btn-primary"
                 onClick={() => { setEditingMatter(null); setModalOpen(true) }}
               >
-                + Create First Matter
+                <IconPlus size={15} style={{ marginRight: 6 }} />
+                Create First Matter
               </button>
             </div>
           ) : filteredMatters.length === 0 ? (
             /* No Filter Matches */
             <div className="mw-empty-state">
               <div className="mw-empty-icon-circle">
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="11" cy="11" r="8" />
-                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                </svg>
+                <IconSearch size={26} />
               </div>
               <h3>No matters match your filter</h3>
               <p>
@@ -1151,6 +1182,7 @@ export default function MatterWorkspace() {
                     const caseMeta = CASE_TYPE_META[m.case_type] || CASE_TYPE_META.patent
                     const jur = getJurisdiction(m.application_number)
                     const deadline = nextDeadlinesByMatter[m.id]
+                    const CaseIcon = caseMeta.icon
 
                     return (
                       <tr
@@ -1170,9 +1202,13 @@ export default function MatterWorkspace() {
                                 color: caseMeta.color,
                                 background: caseMeta.bg,
                                 borderColor: caseMeta.border,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 4,
                               }}
                             >
-                              {caseMeta.icon} {caseMeta.label}
+                              {CaseIcon && <CaseIcon size={12} />}
+                              <span>{caseMeta.label}</span>
                             </span>
                             {m.notes && (
                               <span style={{ fontSize: 11, color: 'var(--mw-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 160 }}>
@@ -1195,8 +1231,8 @@ export default function MatterWorkspace() {
 
                         {/* Jurisdiction */}
                         <td className="mw-col-jurisdiction mw-cell-jurisdiction">
-                          <span className="mw-jurisdiction-badge" title={jur.label}>
-                            <span className="mw-flag-icon">{jur.flag}</span>
+                          <span className="mw-jurisdiction-badge" title={jur.label} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                            <IconGlobe size={12} />
                             <span>{jur.label}</span>
                           </span>
                         </td>
@@ -1228,8 +1264,8 @@ export default function MatterWorkspace() {
                               <span
                                 className="mw-deadline-inline-badge"
                                 style={{
-                                  background: deadline.days_remaining < 0 ? '#fee2e2' : deadline.days_remaining <= 7 ? '#fef3c7' : '#dbeafe',
-                                  color: deadline.days_remaining < 0 ? '#b91c1c' : deadline.days_remaining <= 7 ? '#b45309' : '#1d4ed8',
+                                   background: deadline.days_remaining < 0 ? '#fee2e2' : deadline.days_remaining <= 7 ? '#fef3c7' : '#dbeafe',
+                                   color: deadline.days_remaining < 0 ? '#b91c1c' : deadline.days_remaining <= 7 ? '#b45309' : '#1d4ed8',
                                 }}
                               >
                                 {deadline.days_remaining < 0
@@ -1250,7 +1286,7 @@ export default function MatterWorkspace() {
                         {/* Events Count */}
                         <td className="mw-col-events mw-cell-events">
                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                            <span>📋</span>
+                            <IconCalendar size={13} style={{ color: 'var(--mw-text-muted)' }} />
                             <span>{m.event_count ?? 0}</span>
                           </span>
                         </td>
@@ -1287,7 +1323,7 @@ export default function MatterWorkspace() {
                                   className="mw-dropdown-item"
                                   onClick={() => { setActiveMenuId(null); openDetail(m); }}
                                 >
-                                  <span>👁️</span>
+                                  <IconEye size={14} />
                                   <span>Open Details</span>
                                 </button>
                                 <button
@@ -1295,7 +1331,7 @@ export default function MatterWorkspace() {
                                   className="mw-dropdown-item"
                                   onClick={() => { setActiveMenuId(null); setEditingMatter(m); setModalOpen(true); }}
                                 >
-                                  <span>✏️</span>
+                                  <IconEdit size={14} />
                                   <span>Edit Matter</span>
                                 </button>
                                 <button
@@ -1303,7 +1339,7 @@ export default function MatterWorkspace() {
                                   className="mw-dropdown-item"
                                   onClick={() => { setActiveMenuId(null); openDetail(m); }}
                                 >
-                                  <span>➕</span>
+                                  <IconPlus size={14} />
                                   <span>Add Event</span>
                                 </button>
                                 <div style={{ height: 1, background: 'var(--mw-card-border)', margin: '4px 0' }} />
@@ -1312,7 +1348,7 @@ export default function MatterWorkspace() {
                                   className="mw-dropdown-item danger"
                                   onClick={() => { setActiveMenuId(null); handleDelete(m); }}
                                 >
-                                  <span>🗑️</span>
+                                  <IconTrash size={14} />
                                   <span>Delete</span>
                                 </button>
                               </div>
@@ -1439,7 +1475,7 @@ export default function MatterWorkspace() {
           gap: 8,
           animation: 'mw-fade-in 0.2s ease',
         }}>
-          <span>✓</span>
+          <IconCheck size={14} />
           <span>{toast}</span>
         </div>
       )}
@@ -1459,6 +1495,7 @@ function MatterDetailDrawer({ matter, loading, onClose, onEdit, onDelete, onEven
   const jur = getJurisdiction(matter.application_number)
   const statusMeta = STATUS_META[matter.status] || STATUS_META.draft
   const caseMeta = CASE_TYPE_META[matter.case_type] || CASE_TYPE_META.patent
+  const DrawerCaseIcon = caseMeta.icon
 
   const copyAppNumber = () => {
     if (!matter.application_number) return
@@ -1536,13 +1573,17 @@ function MatterDetailDrawer({ matter, loading, onClose, onEdit, onDelete, onEven
                   color: caseMeta.color,
                   background: caseMeta.bg,
                   borderColor: caseMeta.border,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
                 }}
               >
-                {caseMeta.icon} {caseMeta.label}
+                {DrawerCaseIcon && <DrawerCaseIcon size={12} />}
+                <span>{caseMeta.label}</span>
               </span>
 
-              <span className="mw-jurisdiction-badge" title={jur.label} style={{ fontSize: 12 }}>
-                <span>{jur.flag}</span>
+              <span className="mw-jurisdiction-badge" title={jur.label} style={{ fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <IconGlobe size={12} />
                 <span>{jur.label}</span>
               </span>
 
@@ -1566,7 +1607,9 @@ function MatterDetailDrawer({ matter, loading, onClose, onEdit, onDelete, onEven
                   title="Click to copy application number"
                 >
                   <span>#{matter.application_number}</span>
-                  <span style={{ fontSize: 10, opacity: 0.7 }}>{copied ? '✓ Copied' : '📋'}</span>
+                  <span style={{ fontSize: 10, opacity: 0.8, display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+                    {copied ? <><IconCheck size={11} /> Copied</> : <IconCopy size={11} />}
+                  </span>
                 </button>
               )}
             </div>
@@ -1578,13 +1621,17 @@ function MatterDetailDrawer({ matter, loading, onClose, onEdit, onDelete, onEven
               className="mw-drawer-close-btn"
               onClick={onEdit}
               title="Edit Matter"
-            >✏️</button>
+            >
+              <IconEdit size={14} />
+            </button>
             <button
               type="button"
               className="mw-drawer-close-btn"
               onClick={onClose}
               title="Close Drawer"
-            >✕</button>
+            >
+              <IconX size={15} />
+            </button>
           </div>
         </div>
 
@@ -1596,7 +1643,9 @@ function MatterDetailDrawer({ matter, loading, onClose, onEdit, onDelete, onEven
           </div>
           <div>
             <div className="mw-grid-item-label">Jurisdiction</div>
-            <div className="mw-grid-item-value">{jur.flag} {jur.label}</div>
+            <div className="mw-grid-item-value" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <IconGlobe size={13} /> {jur.label}
+            </div>
           </div>
           <div>
             <div className="mw-grid-item-label">Timeline Events</div>
@@ -1653,8 +1702,8 @@ function MatterDetailDrawer({ matter, loading, onClose, onEdit, onDelete, onEven
 
         {/* Add Event Form */}
         <form onSubmit={addEvent} className="mw-add-event-box">
-          <h4 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700, color: 'var(--mw-text-main)' }}>
-            ➕ Add Timeline Event / Reminder
+          <h4 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700, color: 'var(--mw-text-main)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <IconPlus size={14} /> Add Timeline Event / Reminder
           </h4>
 
           <div className="mw-form-group">

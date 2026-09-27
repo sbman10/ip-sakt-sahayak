@@ -1,5 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import {
+  IconHome,
+  IconFolder,
+  IconScroll,
+  IconLock,
+  IconX,
+  IconChevronRight,
+} from './Icons'
 import { getApiBase } from '../api/config'
 import './DocumentUpload.css'
 
@@ -420,21 +428,24 @@ export default function DocumentUpload() {
       <div className="doc-top-strip">
         <div className="doc-breadcrumbs">
           <Link to="/" className="doc-breadcrumb-link">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-              <polyline points="9 22 9 12 15 12 15 22" />
-            </svg>
-            IP-SAKTI Portal
+            <IconHome size={14} />
+            <span>IP-SAKTI Portal</span>
           </Link>
           <span className="doc-breadcrumb-sep">/</span>
           <span className="doc-breadcrumb-active">My Documents</span>
         </div>
         <div className="doc-top-actions">
-          <Link to="/workspace" className="doc-portal-link">
-            Matter Workspace
+          <Link to="/workspace" className="doc-portal-link" title="Matter Workspace">
+            <IconFolder size={14} />
+            <span>Matter Workspace</span>
           </Link>
-          <Link to="/" className="doc-portal-link">
-            ← Return to Portal
+          <Link to="/drafts" className="doc-portal-link" title="Draft Generator">
+            <IconScroll size={14} />
+            <span>Draft Generator</span>
+          </Link>
+          <Link to="/chat" className="doc-portal-link" title="Ask RagVyn AI">
+            <IconSparkles size={14} />
+            <span>Ask RagVyn AI</span>
           </Link>
         </div>
       </div>
@@ -658,7 +669,7 @@ export default function DocumentUpload() {
                 onClick={() => setError('')}
                 aria-label="Dismiss error"
               >
-                ✕
+                <IconX size={14} />
               </button>
             </div>
           )}
@@ -675,7 +686,7 @@ export default function DocumentUpload() {
                 onClick={() => setNotice('')}
                 aria-label="Dismiss notification"
               >
-                ✕
+                <IconX size={14} />
               </button>
             </div>
           )}
@@ -694,9 +705,18 @@ export default function DocumentUpload() {
               Uploaded documents are parsed, chunked with semantic sliding windows, and embedded into a private vector collection scoped exclusively to your account. They are securely referenced during AI consultations and draft generation to provide grounded, citation-backed legal responses.
             </p>
             <div className="doc-ai-pills">
-              <span className="doc-ai-pill">🔒 End-to-End Private</span>
-              <span className="doc-ai-pill">⚡ Semantic Chunking</span>
-              <span className="doc-ai-pill">🎯 Bi-Encoder Vector Embeddings</span>
+              <span className="doc-ai-pill">
+                <IconLock size={12} style={{ marginRight: 4 }} />
+                <span>End-to-End Private</span>
+              </span>
+              <span className="doc-ai-pill">
+                <IconSparkles size={12} style={{ marginRight: 4 }} />
+                <span>Semantic Chunking</span>
+              </span>
+              <span className="doc-ai-pill">
+                <IconCheckCircle size={12} style={{ marginRight: 4 }} />
+                <span>Bi-Encoder Vector Embeddings</span>
+              </span>
             </div>
           </div>
         </section>
@@ -732,7 +752,7 @@ export default function DocumentUpload() {
                     onClick={() => setSearchQuery('')}
                     title="Clear search"
                   >
-                    ✕
+                    <IconX size={14} />
                   </button>
                 )}
               </div>
