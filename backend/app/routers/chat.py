@@ -220,6 +220,7 @@ async def chat_endpoint(
             query=retrieval_query,
             jurisdiction=jurisdiction,
             top_k=8,
+            document_ids=request.document_ids,  # Scope to user-uploaded docs if provided
         )
     except Exception as e:
         log.error("Hybrid retrieval failed: %s", e, exc_info=True)
@@ -590,6 +591,7 @@ async def chat_stream_endpoint(
             query=retrieval_query,
             jurisdiction=jurisdiction,
             top_k=5,
+            document_ids=request.document_ids,  # Scope to user-uploaded docs if provided
         )
     except Exception:
         candidates = []
