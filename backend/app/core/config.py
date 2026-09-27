@@ -131,10 +131,14 @@ class Settings(BaseSettings):
         "aws-0-ap-northeast-2.pooler.supabase.com:5432/postgres"
     )
 
-    # Supabase PostgreSQL & Storage
-    SUPABASE_URL: str = ""
+    # Supabase PostgreSQL, Auth & Storage
+    SUPABASE_URL: str = "https://dvutvnmskqcrvsjtufwm.supabase.co"
+    SUPABASE_ANON_KEY: str = ""
     SUPABASE_SERVICE_ROLE_KEY: str = ""
     SUPABASE_STORAGE_BUCKET: str = "legal-documents"
+    FRONTEND_URL: str = "https://ragvynai.vercel.app"
+    TESTING: bool = False
+    MOCK_SUPABASE_AUTH: bool = False
 
     # Additional Qdrant collection names used by specialized features.
     QDRANT_INDIA_COLLECTION: str = "india_statutes"
@@ -142,13 +146,15 @@ class Settings(BaseSettings):
     QDRANT_USER_UPLOADS_COLLECTION: str = "user_uploads"
 
     # CORS
-    ALLOWED_ORIGINS: List[str] = [
+    ALLOWED_ORIGINS: Union[List[str], str] = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "http://localhost:5174",
         "http://127.0.0.1:5174",
         "http://localhost:3000",
         "http://127.0.0.1:3000",
+        "https://ragvynai.vercel.app",
+        "https://ragvyn.vercel.app",
     ]
 
     model_config = SettingsConfigDict(
@@ -205,6 +211,52 @@ class Settings(BaseSettings):
                 f"Invalid QDRANT_TRAFFIC_PERCENT: '{v}'. Must be an integer between 0 and 100."
             )
         return v
+
+    @field_validator("ALLOWED_ORIGINS", mode="before")
+    @classmethod
+    def parse_allowed_origins(cls, v: Union[str, List[str]], info) -> List[str]:
+        """
+        Safely parse ALLOWED_ORIGINS whether passed as JSON array string,
+        comma-separated string, single origin string, or List[str].
+        """
+        default_origins = [
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "http://localhost:5174",
+            "http://127.0.0.1:5174",
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "https://ragvynai.vercel.app",
+            "https://ragvyn.vercel.app",
+        ]
+        if not v:
+            return default_origins
+        if isinstance(v, str):
+            clean_str = v.strip()
+            # Handle JSON array format e.g. '["http://localhost:5173", "https://ragvynai.vercel.app"]'
+            if clean_str.startswith("[") and clean_str.endswith("]"):
+                try:
+                    import json
+                    parsed = json.loads(clean_str)
+                    if isinstance(parsed, list):
+                        return [str(item).strip() for item in parsed if str(item).strip()]
+                except Exception:
+                    pass
+            # Handle comma or newline separated strings e.g. 'https://ragvynai.vercel.app,http://localhost:5173'
+            origins = [item.strip().strip("'\"") for item in clean_str.replace("\n", ",").split(",") if item.strip()]
+            if "*" in origins:
+                return ["*"]
+            for d in default_origins:
+                if d not in origins:
+                    origins.append(d)
+            return origins
+        elif isinstance(v, list):
+            origins = [str(item).strip() for item in v if str(item).strip()]
+            for d in default_origins:
+                if d not in origins:
+                    origins.append(d)
+            return origins
+        return default_origins
 
     @field_validator("GEMINI_API_KEYS", mode="before")
     @classmethod
