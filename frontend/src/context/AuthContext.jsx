@@ -69,7 +69,7 @@ export function AuthProvider({ children }) {
         // Fallback: check stored local session for test accounts / password login
         const savedToken = localStorage.getItem('ip_sakti_access_token')
         const savedUserStr = localStorage.getItem('ip_sakti_user')
-        if (savedToken && savedUserStr) {
+        if (savedToken && savedToken !== 'undefined' && savedToken !== 'null' && savedUserStr) {
           try {
             const savedUser = JSON.parse(savedUserStr)
             const fallbackSession = {
@@ -91,6 +91,8 @@ export function AuthProvider({ children }) {
           } catch {
             // invalid json
           }
+        } else if (savedToken === 'undefined' || savedToken === 'null') {
+          localStorage.removeItem('ip_sakti_access_token')
         }
       }
       setLoading(false)
@@ -308,14 +310,14 @@ export function AuthProvider({ children }) {
    */
   const loginAsDemoUser = useCallback((demoAccount = {}) => {
     const email = demoAccount.email || 'admin@ipsakti.gov.in'
-    const name = demoAccount.name || 'Admin'
+    const name = demoAccount.name || 'Admin Director'
     const nowIso = new Date().toISOString()
     const demoSession = {
       access_token: 'demo-admin-token-' + Date.now(),
       user: {
-        id: demoAccount.id || 'demo-admin-id',
+        id: demoAccount.id || '11111111-1111-4111-8111-111111111111',
         email: email,
-        role: 'authenticated',
+        role: 'admin',
         confirmed_at: nowIso,
         email_confirmed_at: nowIso,
         user_metadata: {
@@ -365,6 +367,7 @@ export function AuthProvider({ children }) {
     signInWithOtp,
     verifyOtp,
     signUp,
+    signUpWithPassword: signUp,
     loginWithPassword,
     loginAsDemoUser,
     resendVerificationEmail,

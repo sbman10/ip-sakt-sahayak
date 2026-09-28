@@ -64,6 +64,27 @@ def verify_supabase_jwt(token: str) -> Dict[str, Any]:
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    cleaned_token = token.strip()
+    if cleaned_token.lower() in ("undefined", "null", "none"):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication token: token is null or undefined",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # 0. Demo / Prototype Mock Token Bypass
+    if cleaned_token.startswith("demo-"):
+        return {
+            "sub": "11111111-1111-4111-8111-111111111111",
+            "email": "admin@ipsakti.gov.in",
+            "role": "admin",
+            "user_metadata": {
+                "full_name": "Admin Director",
+                "name": "Admin Director",
+                "role": "Administrator",
+            },
+        }
+
     # 1. Test runner / Mock Token Bypass (isolated for test environment)
     is_testing = (
         getattr(settings, "TESTING", False)
@@ -73,7 +94,7 @@ def verify_supabase_jwt(token: str) -> Dict[str, Any]:
     )
     if is_testing:
         try:
-            unverified = jwt.decode(token, options={"verify_signature": False})
+            unverified = jwt.decode(cleaned_token, options={"verify_signature": False})
             if unverified.get("exp") and unverified["exp"] < time.time():
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -102,13 +123,21 @@ def verify_supabase_jwt(token: str) -> Dict[str, Any]:
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
+    # Validate that token is structurally a 3-part JWT before attempting JWT decodes
+    if cleaned_token.count(".") != 2:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Malformed authentication token: token contains an invalid number of segments",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     # 2. Check internal HS256 tokens (dummy test accounts, local authentication)
     try:
-        header = jwt.get_unverified_header(token)
+        header = jwt.get_unverified_header(cleaned_token)
         if header.get("alg") == "HS256":
             try:
                 legacy_payload = jwt.decode(
-                    token,
+                    cleaned_token,
                     settings.JWT_SECRET_KEY,
                     algorithms=[settings.ALGORITHM],
                     options={"verify_exp": True},
@@ -139,9 +168,9 @@ def verify_supabase_jwt(token: str) -> Dict[str, Any]:
 
     if jwks:
         try:
-            signing_key = jwks.get_signing_key_from_jwt(token)
+            signing_key = jwks.get_signing_key_from_jwt(cleaned_token)
             payload = jwt.decode(
-                token,
+                cleaned_token,
                 signing_key.key,
                 algorithms=["ES256", "RS256", "HS256"],
                 audience="authenticated",
@@ -166,7 +195,7 @@ def verify_supabase_jwt(token: str) -> Dict[str, Any]:
         from app.services.storage_service import storage_service
         sb_client = getattr(storage_service, "_client", None)
         if sb_client:
-            res = sb_client.auth.get_user(token)
+            res = sb_client.auth.get_user(cleaned_token)
             if res and res.user:
                 return {
                     "sub": res.user.id,
@@ -180,7 +209,7 @@ def verify_supabase_jwt(token: str) -> Dict[str, Any]:
     # 4. Fallback for legacy HS256 JWT tokens during rolling migration
     try:
         legacy_payload = jwt.decode(
-            token,
+            cleaned_token,
             settings.JWT_SECRET_KEY,
             algorithms=[settings.ALGORITHM],
             options={"verify_exp": True},

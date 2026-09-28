@@ -81,7 +81,7 @@ export default function UserProfileMenu({
   const fetchProfileIdentity = useCallback(async () => {
     try {
       const token = localStorage.getItem('ip_sakti_access_token')
-      if (!token) return
+      if (!token || token === 'undefined' || token === 'null') return
       const API_BASE = getApiBase()
       const resp = await fetch(`${API_BASE}/api/profile`, {
         headers: {

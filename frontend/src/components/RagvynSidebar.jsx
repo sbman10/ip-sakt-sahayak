@@ -183,7 +183,7 @@ export default function RagvynSidebar({
     setLoadingSessions(true)
     try {
       const token = localStorage.getItem('ip_sakti_access_token')
-      const headers = token ? { Authorization: `Bearer ${token}` } : {}
+      const headers = (token && token !== 'undefined' && token !== 'null') ? { Authorization: `Bearer ${token}` } : {}
       const res = await fetch(`${API_BASE}/api/conversations?limit=30`, { headers })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()

@@ -42,8 +42,10 @@ export default function LoginPage({ onLogin }) {
   const {
     signInWithOtp,
     verifyOtp,
+    signUp,
     signUpWithPassword,
     loginWithPassword,
+    loginAsDemoUser,
     resendVerificationEmail,
     isLoggedIn,
   } = useAuth()
@@ -224,20 +226,20 @@ export default function LoginPage({ onLogin }) {
     }
 
     setIsLoading(true)
-    setLoadingAccountId(acc.id)
     try {
-      if (!ADMIN_DEMO_EMAIL || !ADMIN_DEMO_PASSWORD) {
-        throw new Error('Admin demo access is not configured for this environment.')
-      }
-      const data = await loginWithPassword(ADMIN_DEMO_EMAIL, ADMIN_DEMO_PASSWORD)
-      setSuccess(`Authenticated as ${acc.name}! Accessing workspace...`)
-      if (onLogin && data?.user) {
-        onLogin(data.user.email, data.user.user_metadata?.full_name || acc.name)
+      const registerFn = signUp || signUpWithPassword
+      const sessionData = await registerFn(cleanEmail, cleanPassword, cleanName)
+      setSuccess('Account created successfully! Entering workspace...')
+      if (onLogin && sessionData?.user) {
+        onLogin(
+          sessionData.user.email,
+          sessionData.user.user_metadata?.full_name || cleanName
+        )
       }
       setTimeout(() => {
         const redirectUrl = location.state?.from || '/'
         navigate(redirectUrl, { replace: true })
-      }, 500)
+      }, 300)
     } catch (err) {
       console.error('[LoginPage] Registration error:', err)
       const msg = err.message || ''
