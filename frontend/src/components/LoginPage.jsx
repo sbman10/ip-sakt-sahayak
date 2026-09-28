@@ -1,28 +1,27 @@
 /**
  * frontend/src/components/LoginPage.jsx
  * --------------------------------------
- * Unified Authentication Surface for RAGVYN AI.
+ * Unified Authentication Page for RAGVYN.
  * 
  * Features:
- * - Single combined Login/Register entry point with clean mode switching.
- * - Registration with Full Name, Email, and Password via Supabase Auth.
- * - Strict enforcement of Supabase email verification with "check your email" state and resend capability.
- * - Login with Email & Password via supabase.auth.signInWithPassword.
- * - Clear error states for unverified email, invalid credentials, rate-limits, and network errors.
- * - Optional Admin demo and OTP fallback.
+ * - Optional single Admin prototype login.
+ * - Direct ID & Password Authentication (bypasses email OTP for instant access).
+ * - Optional Supabase Email OTP with 6/8 digit dynamic length support.
+ * - Automatic session synchronization and reactive navigation.
  */
 
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useLanguage } from '../App'
 import { useAuth } from '../context/AuthContext'
-import { IpSaktiLogo, IconCheck, IconLock, IconRefreshCw, IconMail, IconShieldCheck } from './Icons'
+import { IpSaktiLogo, IconCheck, IconLock, IconRefreshCw } from './Icons'
 
-// Demo credentials for local / prototype review
+// Demo credentials are read from local environment variables and never rendered.
 const ADMIN_DEMO_ENABLED = import.meta.env.DEV || import.meta.env.VITE_ENABLE_ADMIN_DEMO === 'true'
 const ADMIN_DEMO_EMAIL = import.meta.env.VITE_ADMIN_DEMO_EMAIL || 'admin@ipsakti.gov.in'
 const ADMIN_DEMO_PASSWORD = import.meta.env.VITE_ADMIN_DEMO_PASSWORD || 'Password@123'
 
+// Keep exactly one frontend demo profile. This does not create or delete Supabase users.
 const DUMMY_ACCOUNTS = [
   {
     id: 'admin',
@@ -45,42 +44,30 @@ export default function LoginPage({ onLogin }) {
     verifyOtp,
     signUpWithPassword,
     loginWithPassword,
-    loginAsDemoUser,
     resendVerificationEmail,
     isLoggedIn,
   } = useAuth()
 
-  // Initial tab resolution: supports ?mode=register or state.register
-  const [authTab, setAuthTab] = useState(() => {
-    const params = new URLSearchParams(location.search)
-    if (params.get('mode') === 'register' || location.state?.register) {
-      return 'register'
-    }
-    return 'login'
-  })
+  // Tabs: 'demo' | 'password' | 'otp' | 'register'
+  const [authTab, setAuthTab] = useState('demo')
 
-  // Login Form State
+  // Password Login State
   const [loginEmail, setLoginEmail] = useState('')
   const [loginPassword, setLoginPassword] = useState('')
 
-  // Register Form State
-  const [regFullName, setRegFullName] = useState('')
-  const [regEmail, setRegEmail] = useState('')
-  const [regPassword, setRegPassword] = useState('')
+  // Registration State
+  const [registerFullName, setRegisterFullName] = useState('')
+  const [registerEmail, setRegisterEmail] = useState('')
+  const [registerPassword, setRegisterPassword] = useState('')
 
-  // Email Verification Screen State
-  const [verificationPending, setVerificationPending] = useState(false)
-  const [pendingEmail, setPendingEmail] = useState('')
-  const [unverifiedLoginEmail, setUnverifiedLoginEmail] = useState(null)
-
-  // OTP Login State (optional secondary action)
+  // OTP Login State
   const [otpStep, setOtpStep] = useState('email')
   const [otpEmail, setOtpEmail] = useState('')
   const [otpLength, setOtpLength] = useState(8)
   const [otpCode, setOtpCode] = useState(() => Array(8).fill(''))
   const [cooldown, setCooldown] = useState(0)
 
-  // Feedback UI State
+  // Common UI State
   const [isLoading, setIsLoading] = useState(false)
   const [loadingAccountId, setLoadingAccountId] = useState(null)
   const [error, setError] = useState('')
@@ -88,7 +75,7 @@ export default function LoginPage({ onLogin }) {
 
   const otpInputsRef = useRef([])
 
-  // If already logged in, redirect away to requested page or home
+  // If already logged in, redirect away
   useEffect(() => {
     if (isLoggedIn) {
       const redirectUrl = location.state?.from || '/'
@@ -96,7 +83,7 @@ export default function LoginPage({ onLogin }) {
     }
   }, [isLoggedIn, navigate, location.state])
 
-  // Cooldown timer for resending verification / OTP
+  // Cooldown timer for resending OTP
   useEffect(() => {
     if (cooldown <= 0) return
     const timer = setInterval(() => {
@@ -114,112 +101,91 @@ export default function LoginPage({ onLogin }) {
     }
   }, [authTab, otpStep, otpLength])
 
-  // Reset tab errors on tab switch
-  const switchTab = (tab) => {
-    setAuthTab(tab)
+  const toggleOtpLength = (targetLen) => {
+    const newLen = targetLen || (otpLength === 8 ? 6 : 8)
+    setOtpLength(newLen)
+    setOtpCode(Array(newLen).fill(''))
     setError('')
-    setSuccess('')
-    setUnverifiedLoginEmail(null)
   }
 
-  // -------------------------------------------------------------
-  // 1. Supabase User Registration
-  // -------------------------------------------------------------
-  const handleRegisterSubmit = async (e) => {
-    if (e) e.preventDefault()
+  // 0. Google OAuth - Redirect to backend OAuth URL
+  const handleGoogleLogin = async () => {
     setError('')
     setSuccess('')
-    setUnverifiedLoginEmail(null)
-
-    const cleanName = regFullName.trim()
-    const cleanEmail = regEmail.trim().toLowerCase()
-    const cleanPass = regPassword
-
-    // Validation
-    if (!cleanName || !cleanEmail || !cleanPass) {
-      setError('Please provide your full name, email address, and password.')
-      return
-    }
-
-    if (!EMAIL_REGEX.test(cleanEmail)) {
-      setError('Please enter a valid email address.')
-      return
-    }
-
-    if (cleanPass.length < 6) {
-      setError('Password must be at least 6 characters long.')
-      return
-    }
-
     setIsLoading(true)
     try {
-      const data = await signUpWithPassword(cleanEmail, cleanPass, cleanName)
-      
-      // If email verification is required (standard Supabase configuration)
-      // data.user exists but data.session is null until verified.
-      if (data?.user && !data?.session) {
-        setPendingEmail(cleanEmail)
-        setVerificationPending(true)
-        setCooldown(60)
-        setSuccess('Registration successful! Please verify your email to continue.')
-      } else if (data?.session) {
-        // Auto-confirmed environment
-        setSuccess('Registration successful! Entering workspace...')
-        if (onLogin && data.user) {
-          onLogin(data.user.email, cleanName)
-        }
-        setTimeout(() => {
-          const redirectUrl = location.state?.from || '/'
-          navigate(redirectUrl, { replace: true })
-        }, 400)
+      const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
+      const res = await fetch(`${apiBase}/api/auth/google/url`)
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        throw new Error(errData.detail || 'Failed to initiate Google login')
+      }
+      const data = await res.json()
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        throw new Error('No OAuth URL returned from server')
       }
     } catch (err) {
-      console.error('[LoginPage] Registration error:', err)
+      console.error('[LoginPage] Google OAuth error:', err)
       const msg = err.message || ''
-      if (msg.toLowerCase().includes('already registered') || msg.toLowerCase().includes('user already exists')) {
-        setError('An account with this email address already exists. Please log in instead.')
-      } else if (msg.toLowerCase().includes('rate limit')) {
-        setError('Too many registration attempts. Please wait a few moments and try again.')
-      } else if (msg.toLowerCase().includes('network') || msg.toLowerCase().includes('fetch')) {
-        setError('Network connection error. Please check your internet connection and try again.')
+      if (msg.includes('not configured') || msg.includes('Client ID')) {
+        setError('Google OAuth is not configured. Please use email/password login.')
       } else {
-        setError(msg || 'Registration failed. Please check your details and try again.')
+        setError(msg || 'Unable to start Google login. Please try email/password.')
       }
-    } finally {
       setIsLoading(false)
     }
   }
 
-  // -------------------------------------------------------------
-  // 2. Supabase Password Login
-  // -------------------------------------------------------------
+  // 1. Instant Demo / Test Account Login
+  const handleQuickLogin = async (acc) => {
+    setError('')
+    setSuccess('')
+    setIsLoading(true)
+    setLoadingAccountId(acc.id)
+    try {
+      if (!ADMIN_DEMO_EMAIL || !ADMIN_DEMO_PASSWORD) {
+        throw new Error('Admin demo access is not configured for this environment.')
+      }
+      const sessionData = await loginWithPassword(ADMIN_DEMO_EMAIL, ADMIN_DEMO_PASSWORD)
+      setSuccess(`Authenticated as ${acc.name}! Accessing workspace...`)
+      if (onLogin && sessionData.user) {
+        onLogin(sessionData.user.email, sessionData.user.user_metadata?.full_name || acc.name)
+      }
+      setTimeout(() => {
+        const redirectUrl = location.state?.from || '/'
+        navigate(redirectUrl, { replace: true })
+      }, 300)
+    } catch (err) {
+      console.error('[LoginPage] Quick login failed:', err)
+      setError(err.message || 'Login failed. Please check backend status.')
+    } finally {
+      setIsLoading(false)
+      setLoadingAccountId(null)
+    }
+  }
+
+  // 2. Manual Email & Password Login
   const handlePasswordSubmit = async (e) => {
     if (e) e.preventDefault()
     setError('')
     setSuccess('')
-    setUnverifiedLoginEmail(null)
 
     const cleanEmail = loginEmail.trim().toLowerCase()
-    const cleanPass = loginPassword
-
-    if (!cleanEmail || !cleanPass) {
+    if (!cleanEmail || !loginPassword) {
       setError('Please provide both email and password.')
-      return
-    }
-
-    if (!EMAIL_REGEX.test(cleanEmail)) {
-      setError('Please enter a valid email address.')
       return
     }
 
     setIsLoading(true)
     try {
-      const data = await loginWithPassword(cleanEmail, cleanPass)
+      const sessionData = await loginWithPassword(cleanEmail, loginPassword)
       setSuccess('Login successful! Entering workspace...')
-      if (onLogin && data?.user) {
+      if (onLogin && sessionData.user) {
         onLogin(
-          data.user.email,
-          data.user.user_metadata?.full_name || data.user.email.split('@')[0]
+          sessionData.user.email,
+          sessionData.user.user_metadata?.full_name || sessionData.user.email.split('@')[0]
         )
       }
       setTimeout(() => {
@@ -228,72 +194,42 @@ export default function LoginPage({ onLogin }) {
       }, 300)
     } catch (err) {
       console.error('[LoginPage] Password login error:', err)
-      const msg = (err.message || '').toLowerCase()
-      if (msg.includes('email not confirmed')) {
-        setUnverifiedLoginEmail(cleanEmail)
-        setError('Your email has not been verified yet. Please check your inbox or resend the verification email below.')
-      } else if (msg.includes('invalid login credentials') || msg.includes('invalid') || msg.includes('grant_error')) {
-        setError('Invalid email or password. Please verify your credentials and try again.')
-      } else if (msg.includes('rate limit') || msg.includes('too many')) {
-        setError('Too many login attempts. Please wait a few moments and try again.')
-      } else if (msg.includes('network') || msg.includes('fetch')) {
-        setError('Unable to connect to the authentication service. Please check your internet connection.')
-      } else {
-        setError(err.message || 'Login failed. Please verify your credentials.')
-      }
+      setError(err.message || 'Invalid email or password.')
     } finally {
       setIsLoading(false)
     }
   }
 
-  // -------------------------------------------------------------
-  // 3. Resend Verification Email
-  // -------------------------------------------------------------
-  const handleResendVerification = async (targetEmail) => {
-    const emailToUse = targetEmail || pendingEmail || unverifiedLoginEmail || loginEmail
-    if (!emailToUse) return
-
+  // 3. Registration with full name, email, password
+  const handleRegisterSubmit = async (e) => {
+    if (e) e.preventDefault()
     setError('')
     setSuccess('')
-    setIsLoading(true)
-    try {
-      await resendVerificationEmail(emailToUse)
-      setSuccess(`Verification link re-sent to ${emailToUse}. Please check your inbox.`)
-      setCooldown(60)
-    } catch (err) {
-      console.error('[LoginPage] Resend verification error:', err)
-      const msg = (err.message || '').toLowerCase()
-      if (msg.includes('rate limit')) {
-        setError('Please wait a moment before requesting another verification email.')
-      } else {
-        setError(err.message || 'Failed to resend verification email. Please try again later.')
-      }
-    } finally {
-      setIsLoading(false)
+
+    const cleanName = registerFullName.trim()
+    const cleanEmail = registerEmail.trim().toLowerCase()
+    const cleanPassword = registerPassword
+
+    if (!cleanName) {
+      setError('Please enter your full name.')
+      return
     }
-  }
+    if (!cleanEmail || !EMAIL_REGEX.test(cleanEmail)) {
+      setError('Please enter a valid email address.')
+      return
+    }
+    if (!cleanPassword || cleanPassword.length < 8) {
+      setError('Password must be at least 8 characters.')
+      return
+    }
 
-  // -------------------------------------------------------------
-  // 4. Quick Demo / Prototype Profile Login
-  // -------------------------------------------------------------
-  const handleQuickLogin = async (acc) => {
-    setError('')
-    setSuccess('')
     setIsLoading(true)
     setLoadingAccountId(acc.id)
     try {
-      let data = null
-      if (ADMIN_DEMO_EMAIL && ADMIN_DEMO_PASSWORD) {
-        try {
-          data = await loginWithPassword(ADMIN_DEMO_EMAIL, ADMIN_DEMO_PASSWORD)
-        } catch (supabaseErr) {
-          console.warn('[LoginPage] Remote Supabase admin credentials not found, using prototype demo session:', supabaseErr?.message)
-          data = loginAsDemoUser({ email: ADMIN_DEMO_EMAIL, name: acc.name, id: acc.id })
-        }
-      } else {
-        data = loginAsDemoUser({ email: ADMIN_DEMO_EMAIL, name: acc.name, id: acc.id })
+      if (!ADMIN_DEMO_EMAIL || !ADMIN_DEMO_PASSWORD) {
+        throw new Error('Admin demo access is not configured for this environment.')
       }
-
+      const data = await loginWithPassword(ADMIN_DEMO_EMAIL, ADMIN_DEMO_PASSWORD)
       setSuccess(`Authenticated as ${acc.name}! Accessing workspace...`)
       if (onLogin && data?.user) {
         onLogin(data.user.email, data.user.user_metadata?.full_name || acc.name)
@@ -301,26 +237,31 @@ export default function LoginPage({ onLogin }) {
       setTimeout(() => {
         const redirectUrl = location.state?.from || '/'
         navigate(redirectUrl, { replace: true })
-      }, 300)
+      }, 500)
     } catch (err) {
-      console.error('[LoginPage] Quick login failed:', err)
-      setError(err.message || 'Demo login failed.')
+      console.error('[LoginPage] Registration error:', err)
+      const msg = err.message || ''
+      if (msg.includes('already exists') || msg.includes('409')) {
+        setError('An account with this email already exists. Please login instead.')
+      } else if (msg.includes('password') || msg.includes('weak')) {
+        setError('Password is too weak. Use at least 8 characters with uppercase, lowercase, number, and special character.')
+      } else {
+        setError(msg || 'Registration failed. Please try again.')
+      }
     } finally {
       setIsLoading(false)
-      setLoadingAccountId(null)
     }
   }
 
-  // -------------------------------------------------------------
-  // 5. OTP Login Handlers
-  // -------------------------------------------------------------
+  // 4. Send Supabase Email OTP
   const handleSendOtp = async (e) => {
     if (e) e.preventDefault()
     setError('')
     setSuccess('')
+
     const cleanEmail = otpEmail.trim().toLowerCase()
     if (!cleanEmail || !EMAIL_REGEX.test(cleanEmail)) {
-      setError('Please enter a valid email address to receive your passcode.')
+      setError('Please enter a valid email address.')
       return
     }
 
@@ -329,21 +270,49 @@ export default function LoginPage({ onLogin }) {
       await signInWithOtp(cleanEmail)
       setOtpStep('otp')
       setCooldown(60)
-      setSuccess(`Verification code dispatched to ${cleanEmail}.`)
+      setSuccess(`A verification passcode has been sent to ${cleanEmail}.`)
     } catch (err) {
-      console.error('[LoginPage] OTP dispatch error:', err)
-      setError(err.message || 'Failed to dispatch verification code.')
+      console.error('[LoginPage] OTP request error:', err)
+      const msg = err.message || ''
+      if (msg.includes('rate limit') || msg.includes('over_email_send_rate_limit')) {
+        setError('Too many login attempts. Please wait a minute before requesting another code.')
+      } else if (msg.includes('Invalid API key') || msg.includes('anon') || msg.includes('placeholder')) {
+        setError('Supabase anonymous key (VITE_SUPABASE_ANON_KEY) is missing. You can use the Quick Demo Logins tab above!')
+      } else if (msg.includes('Error sending') || msg.includes('unexpected_failure')) {
+        setError('Supabase could not dispatch email (Custom SMTP required). Use the Quick Demo Logins tab to enter instantly!')
+      } else {
+        setError(msg || 'Unable to send verification code. Please check your connection.')
+      }
     } finally {
       setIsLoading(false)
     }
   }
 
+  // Handle OTP digit changes
   const handleOtpChange = (index, value) => {
-    const digit = value.slice(-1).replace(/[^0-9]/g, '')
+    const cleanVal = value.replace(/[^0-9]/g, '')
+
+    if (cleanVal.length > 1) {
+      const targetLen = cleanVal.length >= 8 ? 8 : 6
+      if (targetLen !== otpLength) {
+        setOtpLength(targetLen)
+      }
+      const digits = cleanVal.slice(0, targetLen).split('')
+      const newOtp = Array(targetLen).fill('')
+      digits.forEach((d, i) => {
+        newOtp[i] = d
+      })
+      setOtpCode(newOtp)
+      const nextFocus = Math.min(digits.length, targetLen - 1)
+      otpInputsRef.current[nextFocus]?.focus()
+      return
+    }
+
     const newOtp = [...otpCode]
-    newOtp[index] = digit
+    newOtp[index] = cleanVal ? cleanVal[0] : ''
     setOtpCode(newOtp)
-    if (digit && index < otpLength - 1) {
+
+    if (cleanVal && index < otpLength - 1) {
       otpInputsRef.current[index + 1]?.focus()
     }
   }
@@ -354,27 +323,22 @@ export default function LoginPage({ onLogin }) {
     }
   }
 
-  const toggleOtpLength = (targetLen) => {
-    const newLen = targetLen || (otpLength === 8 ? 6 : 8)
-    setOtpLength(newLen)
-    setOtpCode(Array(newLen).fill(''))
-    setError('')
-  }
-
+  // Verify Supabase OTP
   const handleVerifyOtp = async (e) => {
     if (e) e.preventDefault()
-    const token = otpCode.join('').trim()
-    if (token.length !== otpLength) {
-      setError(`Please enter the complete ${otpLength}-digit code.`)
+    setError('')
+    setSuccess('')
+
+    const code = otpCode.join('').trim()
+    if (code.length !== otpLength) {
+      setError(`Please enter the complete ${otpLength}-digit verification code.`)
       return
     }
 
-    setError('')
-    setSuccess('')
     setIsLoading(true)
     try {
-      const data = await verifyOtp(otpEmail, token)
-      setSuccess('Verification verified! Entering workspace...')
+      const data = await verifyOtp(otpEmail.trim().toLowerCase(), code)
+      setSuccess('Verification successful! Accessing workspace...')
       if (onLogin && data.user) {
         onLogin(
           data.user.email,
@@ -387,7 +351,14 @@ export default function LoginPage({ onLogin }) {
       }, 300)
     } catch (err) {
       console.error('[LoginPage] Verification error:', err)
-      setError(err.message || 'Invalid or expired verification code.')
+      const msg = (err.message || '').toLowerCase()
+      if (msg.includes('expired') || msg.includes('timeout')) {
+        setError('Verification code has expired. Please request a new code.')
+      } else if (msg.includes('invalid') || msg.includes('token')) {
+        setError('Invalid verification code. Please check your email and try again.')
+      } else {
+        setError(err.message || 'Verification failed. Please try again.')
+      }
     } finally {
       setIsLoading(false)
     }
@@ -427,302 +398,60 @@ export default function LoginPage({ onLogin }) {
               </div>
               <div className="login-feature">
                 <span className="login-feature-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <IconShieldCheck size={14} />
+                  <IconCheck size={14} />
                 </span>
-                <span>Supabase Protected Authentication</span>
+                <span>Role-Based Multi-Tenant Isolation</span>
               </div>
             </div>
+
           </div>
         </div>
 
         {/* Right Panel - Auth Controls */}
         <div className="login-form-panel">
-          <div className="login-form-container" style={{ maxWidth: '440px' }}>
+          <div className="login-form-container" style={{ maxWidth: '520px' }}>
             <div className="login-form-header">
               <h2>Workspace Authentication</h2>
-              <p>
-                {authTab === 'register'
-                  ? 'Create an account to begin your verified IP consultation.'
-                  : 'Sign in to access your RAGVYN workspace.'}
-              </p>
+              <p>Sign in to continue to your RAGVYN workspace.</p>
             </div>
 
-            {/* Combined Login/Register Tabs */}
-            {!verificationPending && (
-              <div className="login-auth-tabs" role="tablist" aria-label="Authentication methods">
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={authTab === 'login'}
-                  onClick={() => switchTab('login')}
-                  className="login-auth-tab"
-                  id="tab-login"
-                >
-                  Sign In
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={authTab === 'register'}
-                  onClick={() => switchTab('register')}
-                  className="login-auth-tab"
-                  id="tab-register"
-                >
-                  Register
-                </button>
-                {ADMIN_DEMO_ENABLED && (
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={authTab === 'demo'}
-                    onClick={() => switchTab('demo')}
-                    className="login-auth-tab"
-                    id="tab-demo"
-                  >
-                    Admin demo
-                  </button>
-                )}
-              </div>
-            )}
+            {/* Password login remains primary; OTP is intentionally a bottom action. */}
+            <div className="login-auth-tabs" role="tablist" aria-label="Authentication methods">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={authTab === 'demo'}
+                onClick={() => { setAuthTab('demo'); setError(''); setSuccess('') }}
+                className="login-auth-tab"
+              >
+                Demo
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={authTab === 'password'}
+                onClick={() => { setAuthTab('password'); setError(''); setSuccess('') }}
+                className="login-auth-tab"
+              >
+                Login
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={authTab === 'register'}
+                onClick={() => { setAuthTab('register'); setError(''); setSuccess('') }}
+                className="login-auth-tab"
+              >
+                Register
+              </button>
+            </div>
 
-            {/* Error & Success Messages */}
-            {error && (
-              <div className="login-error" role="alert">
-                <p>{error}</p>
-                {unverifiedLoginEmail && (
-                  <button
-                    type="button"
-                    onClick={() => handleResendVerification(unverifiedLoginEmail)}
-                    disabled={isLoading || cooldown > 0}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: '#991b1b',
-                      textDecoration: 'underline',
-                      fontWeight: '700',
-                      cursor: cooldown > 0 ? 'default' : 'pointer',
-                      marginTop: '6px',
-                      display: 'block',
-                      fontSize: '0.85rem',
-                      width: '100%',
-                      textAlign: 'center',
-                    }}
-                  >
-                    {cooldown > 0 ? `Resend email in ${cooldown}s` : 'Resend verification email'}
-                  </button>
-                )}
-              </div>
-            )}
+            {/* Error & Success Banners */}
+            {error && <div className="login-error" role="alert">{error}</div>}
             {success && <div className="login-success" role="status">{success}</div>}
 
-            {/* ========================================================
-                EMAIL VERIFICATION ENFORCEMENT STATE
-                ======================================================== */}
-            {verificationPending ? (
-              <div className="login-verification-card" style={{ textAlign: 'center', padding: '16px 0' }}>
-                <div
-                  style={{
-                    width: '64px',
-                    height: '64px',
-                    borderRadius: '50%',
-                    background: 'rgba(21, 94, 55, 0.12)',
-                    color: '#155e37',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    margin: '0 auto 16px',
-                  }}
-                >
-                  <IconMail size={32} />
-                </div>
-
-                <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#155e37', marginBottom: '8px' }}>
-                  Check Your Email
-                </h3>
-
-                <p style={{ fontSize: '0.9rem', color: '#475569', lineHeight: '1.5', marginBottom: '16px' }}>
-                  A verification link has been sent to <strong>{pendingEmail}</strong>. Please check your inbox and verify your email to activate your account.
-                </p>
-
-                <div
-                  style={{
-                    background: 'rgba(248, 250, 252, 0.8)',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '8px',
-                    padding: '12px',
-                    fontSize: '0.82rem',
-                    color: '#64748b',
-                    marginBottom: '20px',
-                    textAlign: 'left',
-                  }}
-                >
-                  <strong>Note:</strong> Email verification is strictly enforced before accessing protected workspace features. Once verified, you can return here to sign in.
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <button
-                    type="button"
-                    onClick={() => handleResendVerification(pendingEmail)}
-                    disabled={isLoading || cooldown > 0}
-                    className="login-submit-btn"
-                    style={{ margin: 0 }}
-                  >
-                    {isLoading ? <IconRefreshCw size={16} className="spin" /> : null}
-                    <span>{cooldown > 0 ? `Resend Email (${cooldown}s)` : 'Resend Verification Email'}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setVerificationPending(false)
-                      switchTab('login')
-                      setLoginEmail(pendingEmail)
-                    }}
-                    style={{
-                      background: 'transparent',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '10px',
-                      padding: '10px',
-                      fontSize: '0.88rem',
-                      fontWeight: '600',
-                      color: '#475569',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    ← Back to Sign In
-                  </button>
-                </div>
-              </div>
-            ) : null}
-
-            {/* ========================================================
-                TAB 1: SIGN IN (EMAIL + PASSWORD)
-                ======================================================== */}
-            {!verificationPending && authTab === 'login' && (
-              <form onSubmit={handlePasswordSubmit} className="login-form" noValidate>
-                <div className="login-field">
-                  <label htmlFor="loginEmail">Email Address</label>
-                  <input
-                    type="email"
-                    id="loginEmail"
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                    placeholder="innovator@organization.gov.in"
-                    required
-                    autoFocus
-                    disabled={isLoading}
-                    autoComplete="email"
-                  />
-                </div>
-
-                <div className="login-field">
-                  <label htmlFor="loginPassword">Password</label>
-                  <input
-                    type="password"
-                    id="loginPassword"
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    placeholder="••••••••"
-                    required
-                    disabled={isLoading}
-                    autoComplete="current-password"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="login-submit-btn"
-                  disabled={isLoading || !loginEmail.trim() || !loginPassword}
-                >
-                  {isLoading ? <IconRefreshCw size={16} className="spin" /> : null}
-                  <span>{isLoading ? 'Signing In...' : 'Sign In →'}</span>
-                </button>
-
-                <div className="login-toggle">
-                  <span>Don't have an account?</span>
-                  <button
-                    type="button"
-                    onClick={() => switchTab('register')}
-                  >
-                    Register here
-                  </button>
-                </div>
-              </form>
-            )}
-
-            {/* ========================================================
-                TAB 2: REGISTRATION (FULL NAME + EMAIL + PASSWORD)
-                ======================================================== */}
-            {!verificationPending && authTab === 'register' && (
-              <form onSubmit={handleRegisterSubmit} className="login-form" noValidate>
-                <div className="login-field">
-                  <label htmlFor="regFullName">Full Name</label>
-                  <input
-                    type="text"
-                    id="regFullName"
-                    value={regFullName}
-                    onChange={(e) => setRegFullName(e.target.value)}
-                    placeholder="e.g. Dr. Ananya Sharma"
-                    required
-                    autoFocus
-                    disabled={isLoading}
-                    autoComplete="name"
-                  />
-                </div>
-
-                <div className="login-field">
-                  <label htmlFor="regEmail">Email Address</label>
-                  <input
-                    type="email"
-                    id="regEmail"
-                    value={regEmail}
-                    onChange={(e) => setRegEmail(e.target.value)}
-                    placeholder="innovator@organization.gov.in"
-                    required
-                    disabled={isLoading}
-                    autoComplete="email"
-                  />
-                </div>
-
-                <div className="login-field">
-                  <label htmlFor="regPassword">Password (Min. 6 Characters)</label>
-                  <input
-                    type="password"
-                    id="regPassword"
-                    value={regPassword}
-                    onChange={(e) => setRegPassword(e.target.value)}
-                    placeholder="••••••••"
-                    required
-                    disabled={isLoading}
-                    autoComplete="new-password"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="login-submit-btn"
-                  disabled={isLoading || !regFullName.trim() || !regEmail.trim() || !regPassword}
-                >
-                  {isLoading ? <IconRefreshCw size={16} className="spin" /> : null}
-                  <span>{isLoading ? 'Creating Account...' : 'Create Account →'}</span>
-                </button>
-
-                <div className="login-toggle">
-                  <span>Already have an account?</span>
-                  <button
-                    type="button"
-                    onClick={() => switchTab('login')}
-                  >
-                    Sign in here
-                  </button>
-                </div>
-              </form>
-            )}
-
-            {/* ========================================================
-                TAB 3: PROTOTYPE DEMO ACCESS (OPTIONAL)
-                ======================================================== */}
-            {!verificationPending && authTab === 'demo' && ADMIN_DEMO_ENABLED && (
+            {/* Single Admin prototype entry; this does not create or delete users. */}
+            {authTab === 'demo' && (
               <div className="login-demo-section">
                 <p className="login-demo-intro">Use the configured prototype profile to preview the workspace.</p>
                 <div className="login-demo-list">
@@ -741,11 +470,11 @@ export default function LoginPage({ onLogin }) {
                         <button
                           type="button"
                           onClick={() => handleQuickLogin(acc)}
-                          disabled={isLoading}
+                          disabled={isLoading || !ADMIN_DEMO_ENABLED}
                           className="login-submit-btn"
                         >
                           {isCardLoading ? <IconRefreshCw size={14} className="spin" /> : null}
-                          <span>{isCardLoading ? 'Entering...' : 'Continue as Admin →'}</span>
+                          <span>{isCardLoading ? 'Entering...' : ADMIN_DEMO_ENABLED ? 'Continue as Admin →' : 'Demo unavailable'}</span>
                         </button>
                       </div>
                     )
@@ -754,10 +483,164 @@ export default function LoginPage({ onLogin }) {
               </div>
             )}
 
-            {/* ========================================================
-                TAB 4: OPTIONAL OTP FALLBACK
-                ======================================================== */}
-            {!verificationPending && authTab === 'otp' && (
+            {/* Tab 2: Manual Password Login */}
+            {authTab === 'password' && (
+              <form onSubmit={handlePasswordSubmit} className="login-form" noValidate>
+                <div className="login-field">
+                  <label htmlFor="loginEmail">Email Address</label>
+                  <input
+                    type="email"
+                    id="loginEmail"
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    placeholder="e.g. admin@ipsakti.gov.in"
+                    required
+                    autoFocus
+                    disabled={isLoading}
+                    autoComplete="email"
+                  />
+                </div>
+
+                <div className="login-field">
+                  <label htmlFor="loginPassword">Password</label>
+                  <input
+                    type="password"
+                    id="loginPassword"
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    placeholder="Password@123"
+                    required
+                    disabled={isLoading}
+                    autoComplete="current-password"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="login-submit-btn"
+                  disabled={isLoading || !loginEmail.trim() || !loginPassword}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                >
+                  {isLoading && <IconRefreshCw size={16} className="spin" />}
+                  <span>{isLoading ? 'Authenticating...' : 'Sign In with Password →'}</span>
+                </button>
+
+                {/* Divider */}
+                <div style={{ display: 'flex', alignItems: 'center', margin: '16px 0' }}>
+                  <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }}></div>
+                  <span style={{ padding: '0 12px', color: '#64748b', fontSize: '0.85rem' }}>or</span>
+                  <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }}></div>
+                </div>
+
+                {/* Google OAuth Button */}
+                <button
+                  type="button"
+                  onClick={handleGoogleLogin}
+                  disabled={isLoading}
+                  className="login-google-btn"
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '10px',
+                    padding: '12px 20px',
+                    background: '#fff',
+                    border: '1px solid #dadce0',
+                    borderRadius: '8px',
+                    fontSize: '0.95rem',
+                    fontWeight: '500',
+                    color: '#3c4043',
+                    cursor: isLoading ? 'not-allowed' : 'pointer',
+                    transition: 'box-shadow 0.2s, border-color 0.2s',
+                  }}
+                  onMouseOver={(e) => { if (!isLoading) e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.12)' }}
+                  onMouseOut={(e) => e.currentTarget.style.boxShadow = 'none'}
+                >
+                  {/* Google "G" logo SVG */}
+                  <svg width="18" height="18" viewBox="0 0 48 48">
+                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+                  </svg>
+                  <span>{isLoading ? 'Redirecting...' : 'Continue with Google'}</span>
+                </button>
+              </form>
+            )}
+
+            {/* Tab 3: Registration with Full Name */}
+            {authTab === 'register' && (
+              <form onSubmit={handleRegisterSubmit} className="login-form" noValidate>
+                <div className="login-field">
+                  <label htmlFor="registerFullName">Full Name</label>
+                  <input
+                    type="text"
+                    id="registerFullName"
+                    value={registerFullName}
+                    onChange={(e) => setRegisterFullName(e.target.value)}
+                    placeholder="Dr. Anshuman Sharma"
+                    required
+                    autoFocus
+                    disabled={isLoading}
+                    autoComplete="name"
+                  />
+                </div>
+
+                <div className="login-field">
+                  <label htmlFor="registerEmail">Email Address</label>
+                  <input
+                    type="email"
+                    id="registerEmail"
+                    value={registerEmail}
+                    onChange={(e) => setRegisterEmail(e.target.value.toLowerCase())}
+                    placeholder="name@organization.gov.in"
+                    required
+                    disabled={isLoading}
+                    autoComplete="email"
+                  />
+                </div>
+
+                <div className="login-field">
+                  <label htmlFor="registerPassword">Password</label>
+                  <input
+                    type="password"
+                    id="registerPassword"
+                    value={registerPassword}
+                    onChange={(e) => setRegisterPassword(e.target.value)}
+                    placeholder="Minimum 8 characters"
+                    required
+                    disabled={isLoading}
+                    autoComplete="new-password"
+                  />
+                  <span className="login-field-hint">Use uppercase, lowercase, number, and special character.</span>
+                </div>
+
+                <button
+                  type="submit"
+                  className="login-submit-btn"
+                  disabled={isLoading || !registerFullName.trim() || !registerEmail.trim() || !registerPassword}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                >
+                  {isLoading && <IconRefreshCw size={16} className="spin" />}
+                  <span>{isLoading ? 'Creating Account...' : 'Create Account →'}</span>
+                </button>
+
+                <p className="login-register-note" style={{ fontSize: '0.85rem', color: 'var(--text-secondary, #666)', marginTop: '12px', textAlign: 'center' }}>
+                  Already have an account?{' '}
+                  <button
+                    type="button"
+                    onClick={() => { setAuthTab('password'); setError(''); setSuccess('') }}
+                    style={{ background: 'none', border: 'none', color: 'var(--primary, #1a5f2a)', cursor: 'pointer', textDecoration: 'underline' }}
+                  >
+                    Sign in here
+                  </button>
+                </p>
+              </form>
+            )}
+
+            {/* Tab 4: Supabase Email OTP */}
+            {authTab === 'otp' && (
               otpStep === 'email' ? (
                 <form onSubmit={handleSendOtp} className="login-form" noValidate>
                   <div className="login-field">
@@ -779,8 +662,9 @@ export default function LoginPage({ onLogin }) {
                     type="submit"
                     className="login-submit-btn"
                     disabled={isLoading || !otpEmail.trim()}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                   >
-                    {isLoading ? <IconRefreshCw size={16} className="spin" /> : null}
+                    {isLoading && <IconRefreshCw size={16} className="spin" />}
                     <span>{isLoading ? 'Sending Passcode...' : 'Send Verification Code →'}</span>
                   </button>
                 </form>
@@ -850,8 +734,9 @@ export default function LoginPage({ onLogin }) {
                     type="submit"
                     className="login-submit-btn"
                     disabled={isLoading || otpCode.join('').length !== otpLength}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                   >
-                    {isLoading ? <IconRefreshCw size={16} className="spin" /> : null}
+                    {isLoading && <IconRefreshCw size={16} className="spin" />}
                     <span>{isLoading ? 'Verifying...' : 'Verify & Continue →'}</span>
                   </button>
 
@@ -904,18 +789,16 @@ export default function LoginPage({ onLogin }) {
               )
             )}
 
-            {!verificationPending && authTab !== 'otp' && (
-              <div className="login-otp-action" style={{ marginTop: '16px' }}>
-                <span>Prefer a one-time code?</span>
-                <button
-                  type="button"
-                  onClick={() => switchTab('otp')}
-                  aria-label="Sign in with email OTP"
-                >
-                  Sign in with email OTP
-                </button>
-              </div>
-            )}
+            {authTab !== 'otp' && <div className="login-otp-action">
+              <span>Prefer a code instead?</span>
+              <button
+                type="button"
+                onClick={() => { setAuthTab('otp'); setError(''); setSuccess('') }}
+                aria-label="Sign in with email OTP"
+              >
+                Sign in with email OTP
+              </button>
+            </div>}
 
             {/* Terms Note */}
             <p className="login-terms" style={{ marginTop: '20px' }}>
@@ -928,7 +811,7 @@ export default function LoginPage({ onLogin }) {
             {/* Security Badge */}
             <div className="login-security" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
               <IconLock size={14} />
-              <span>Official Supabase Encrypted Authentication</span>
+              <span>Secure session handling</span>
             </div>
           </div>
         </div>

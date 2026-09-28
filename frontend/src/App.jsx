@@ -543,8 +543,6 @@ const UI_TRANSLATIONS = {
     tourAbsDesc: 'Check if your biological resource needs NBA / ABS approval under the Biodiversity Act before you commercialise.',
     tourChecklistTitle: '✅ Filing Checklists',
     tourChecklistDesc: 'Step-by-step interactive checklists for Patent, Trademark, GI and ABS filings with docs, time and fees.',
-    tourFtoTitle: 'FTO',
-    tourFtoDesc: 'It helps users identify relevant existing patents and potential infringement risks before commercializing an Ayurvedic product or formulation.',
     tourServicesTitle: '💼 Services',
     tourServicesDesc: 'Open this menu for hands-on services — draft generation, your case workspace, document upload and expert help.',
     tourDraftsTitle: '📝 Draft Generator',
@@ -4551,7 +4549,7 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn: propLoggedIn, userN
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '8px' }}>
                 <Link
                   to="/login"
-                  className="gov-nav-mobile-login-btn gov-nav-mobile-login-register-btn"
+                  className="gov-nav-mobile-login-btn"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <IconUser size={16} />
@@ -4590,7 +4588,7 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn: propLoggedIn, userN
               </div>
             ) : (
               <div className="gov-nav-guest-group">
-                <Link to="/login" className="gov-nav-login-btn gov-nav-login-register-btn" id="gov-nav-login-btn">
+                <Link to="/login" className="gov-nav-login-btn">
                   <IconUser size={14} />
                   <span>Login/Register</span>
                 </Link>
@@ -4685,6 +4683,609 @@ function Navbar({ onOpenAbout, onOpenWizard, theme, toggleTheme, isLoggedIn, use
   )
 }
 
+/* ============================================================
+   INNOVATION ASSESSMENT CARD (HERO INTERACTIVE ENGINE)
+   ============================================================ */
+function InnovationAssessmentCard({ onStartAssessment }) {
+  const navigate = useNavigate()
+  const API_BASE = getApiBase()
+
+  // Step state: 1 to 4
+  const [currentStep, setCurrentStep] = useState(1)
+
+  // Selected option IDs for each of the 4 steps
+  const [selectedType, setSelectedType] = useState('formulation')
+  const [selectedPathway, setSelectedPathway] = useState('patent_novel')
+  const [selectedRegulation, setSelectedRegulation] = useState('ayush_proprietary')
+  const [selectedSource, setSelectedSource] = useState('classical_texts')
+
+  // Execution states: 'idle' | 'loading' | 'success' | 'error'
+  const [status, setStatus] = useState('idle')
+  const [result, setResult] = useState(null)
+  const [errorMsg, setErrorMsg] = useState('')
+  const [loadingStepIndex, setLoadingStepIndex] = useState(0)
+
+  // STEP 1: Innovation Options
+  const step1Options = [
+    {
+      id: 'formulation',
+      title: 'Ayurvedic formulation',
+      desc: 'Polyherbal composition, standardized extract, or modified classical recipe',
+      statute: 'Patents Act § 3(p) & TKDL Prior Art',
+      badge: 'TKDL Check',
+      route: 'Prior Art Screening + ASU Form 22 Licensing',
+    },
+    {
+      id: 'process',
+      title: 'New process / method',
+      desc: 'Novel extraction technique, bio-enhancement, or modernized delivery method',
+      statute: 'Patents Act § 3(e) & Technical Step',
+      badge: 'Process Patent',
+      route: 'Process Patentability + Biological Diversity Act Form 1',
+    },
+    {
+      id: 'brand',
+      title: 'Product or brand',
+      desc: 'Proprietary finished formulation, brand identity, or distinctive packaging',
+      statute: 'Trade Marks Act Class 5 & 30',
+      badge: 'Trademark & Design',
+      route: 'Distinctiveness Screening + Schedule T GMP Compliance',
+    },
+    {
+      id: 'research',
+      title: 'Research innovation',
+      desc: 'Clinical trial data, active phytoconstituent isolation, or collaborative discovery',
+      statute: 'Biological Diversity Act § 3, 4, 6',
+      badge: 'ABS Clearance',
+      route: 'NBA Prior Approval + TK Protection Clearance',
+    }
+  ]
+
+  // STEP 2: IP Pathway Options
+  const step2Options = [
+    {
+      id: 'patent_novel',
+      title: 'Patent Protection (§ 2(1)(j))',
+      desc: 'Novelty & non-obvious technical step with synergistic efficacy beyond mere admixture',
+      statute: 'Patents Act 1970 § 2(1)(j), 3(e)',
+      badge: 'Patent Route',
+      route: 'Synergy Proof + Non-Obviousness Technical Validation',
+    },
+    {
+      id: 'tkdl_clearance',
+      title: 'TKDL Prior Art Defensive Clearance',
+      desc: 'Defensive screening against 3.5L+ classical formulations to overcome Section 3(p)',
+      statute: 'Patents Act § 3(p) & TKDL',
+      badge: 'TKDL Screening',
+      route: 'Classical Literature Prior Art Search & Clearance',
+    },
+    {
+      id: 'trademark_brand',
+      title: 'Trademark & Trade Dress (Class 5/30)',
+      desc: 'Proprietary brand name registration avoiding generic Ayurvedic descriptor conflicts',
+      statute: 'Trade Marks Act 1999 Class 5/30',
+      badge: 'Brand Protection',
+      route: 'Distinctiveness Screening & Packaging Registration',
+    },
+    {
+      id: 'abs_clearance',
+      title: 'Biological Diversity ABS Approval',
+      desc: 'Mandatory statutory approval for Indian biological resources prior to IP filing',
+      statute: 'Biological Diversity Act 2002 § 3, 4, 6',
+      badge: 'NBA Clearance',
+      route: 'NBA Form I / III Application & ABS Agreement',
+    }
+  ]
+
+  // STEP 3: Regulation Options
+  const step3Options = [
+    {
+      id: 'ayush_shastriya',
+      title: 'AYUSH Classical License (Shastriya)',
+      desc: 'Manufactured strictly per First Schedule authoritative Ayurvedic classical texts',
+      statute: 'Drugs & Cosmetics Act Rule 158-B(1)',
+      badge: 'ASU Rule 158-B(1)',
+      route: 'State AYUSH Licensing Authority Shastriya Clearance',
+    },
+    {
+      id: 'ayush_proprietary',
+      title: 'AYUSH Proprietary License (Anubhavasiddha)',
+      desc: 'Patent/Proprietary ASU medicine with pilot safety & efficacy documentation',
+      statute: 'Drugs & Cosmetics Rules Rule 158-B(2)',
+      badge: 'ASU Rule 158-B(2)',
+      route: 'Safety & Efficacy Trial Dossier + State AYUSH License',
+    },
+    {
+      id: 'ayurveda_aahar',
+      title: 'FSSAI Ayurveda-Aahar Regime',
+      desc: 'Health & wellness dietary supplement governed by Ayurveda Aahar Regulations 2022',
+      statute: 'FSSAI Ayurveda Aahar Regulations 2022',
+      badge: 'FSSAI Regime',
+      route: 'Ayurveda Aahar Standards Compliance & Labelling Clearances',
+    },
+    {
+      id: 'gmp_clinical',
+      title: 'Schedule T GMP & Standardized Extract',
+      desc: 'Good Manufacturing Practice with heavy metal, microbial & chromatographic profiling',
+      statute: 'Drugs & Cosmetics Act Schedule T',
+      badge: 'Schedule T GMP',
+      route: 'Pharmacopoeial Quality Assurance & Monograph Compliance',
+    }
+  ]
+
+  // STEP 4: Source Verification Options
+  const step4Options = [
+    {
+      id: 'classical_texts',
+      title: '1st Schedule Classical Text Source',
+      desc: 'Formulations referenced in Charaka Samhita, Sushruta Samhita, or Sahasrayogam',
+      statute: 'Drugs & Cosmetics Act 1st Schedule',
+      badge: 'Classical Source',
+      route: 'Cross-Reference TKDL Prior Art Citation Database',
+    },
+    {
+      id: 'indigenous_bio',
+      title: 'Indigenous Indian Biological Resource',
+      desc: 'Botanicals and biological materials harvested or cultivated within India',
+      statute: 'Biological Diversity Act 2002 § 3',
+      badge: 'National Resource',
+      route: 'Mandatory State Biodiversity Board / NBA Prior Approval',
+    },
+    {
+      id: 'novel_extract',
+      title: 'Novel Processed Extract / Synthetic Compound',
+      desc: 'Enriched phytoconstituents, supercritical CO2 extracts, or novel drug delivery',
+      statute: 'Patents Act § 3(e) Synergism',
+      badge: 'Novel Extract',
+      route: 'Comparative In-Vitro / In-Vivo Efficacy & Synergism Proof',
+    },
+    {
+      id: 'authenticated_herbs',
+      title: 'Pharmacopoeially Authenticated Botanicals',
+      desc: 'Tested against Ayurvedic Pharmacopoeia of India (API) standards with HPTLC',
+      statute: 'Ayurvedic Pharmacopoeia of India',
+      badge: 'API Monograph',
+      route: 'Raw Material Traceability & Certificate of Analysis (CoA)',
+    }
+  ]
+
+  // Dynamic step configuration
+  const currentStepConfig = currentStep === 1
+    ? { title: 'What are you developing?', hint: 'Step 1 of 4: Select your innovation type', options: step1Options, selected: selectedType, setSelect: setSelectedType }
+    : currentStep === 2
+      ? { title: 'Target IP Protection Pathway', hint: 'Step 2 of 4: Select primary IP objective', options: step2Options, selected: selectedPathway, setSelect: setSelectedPathway }
+      : currentStep === 3
+        ? { title: 'Regulatory & Licensing Regime', hint: 'Step 3 of 4: Select applicable regulatory standard', options: step3Options, selected: selectedRegulation, setSelect: setSelectedRegulation }
+        : { title: 'Source Verification & Biological Origin', hint: 'Step 4 of 4: Select biological & traditional knowledge provenance', options: step4Options, selected: selectedSource, setSelect: setSelectedSource }
+
+  const activeOption = currentStepConfig.options.find(o => o.id === currentStepConfig.selected) || currentStepConfig.options[0]
+
+  // Dynamic retrieval progress messages for RagVyn AI RAG pipeline
+  const loadingMessages = [
+    'Compiling 4-step diagnostic parameters...',
+    'Querying Patents Act, Biodiversity Act & TKDL corpora...',
+    'Evaluating Section 3(p) prior art and Section 3(e) synergism...',
+    'Synthesizing grounded RagVyn AI statutory guidance...'
+  ]
+
+  useEffect(() => {
+    if (status !== 'loading') return
+    const timer = setInterval(() => {
+      setLoadingStepIndex(prev => (prev + 1) % loadingMessages.length)
+    }, 1600)
+    return () => clearInterval(timer)
+  }, [status, loadingMessages.length])
+
+  // Submit collected 4-step data to RagVyn AI existing API
+  const handleSubmitAssessment = async () => {
+    setStatus('loading')
+    setErrorMsg('')
+    setLoadingStepIndex(0)
+
+    const opt1 = step1Options.find(o => o.id === selectedType) || step1Options[0]
+    const opt2 = step2Options.find(o => o.id === selectedPathway) || step2Options[0]
+    const opt3 = step3Options.find(o => o.id === selectedRegulation) || step3Options[0]
+    const opt4 = step4Options.find(o => o.id === selectedSource) || step4Options[0]
+
+    const structuredContext = {
+      innovation_type: opt1.title,
+      formulation_details: opt1.desc,
+      ip_pathway: opt2.title + ' (' + opt2.statute + ')',
+      regulatory_regime: opt3.title + ' (' + opt3.statute + ')',
+      source_verification: opt4.title + ' (' + opt4.desc + ')',
+    }
+
+    const contextualQuestion = `The user completed an IP/regulatory assessment with the following information:
+- Innovation Type: ${opt1.title} (${opt1.desc})
+- Targeted IP Pathway: ${opt2.title} (${opt2.statute})
+- Regulatory Regime: ${opt3.title} (${opt3.statute})
+- Source Verification & TK Status: ${opt4.title} (${opt4.desc})
+
+Based on this information, provide comprehensive statutory-grounded IP and regulatory guidance using the verified Indian and international knowledge corpus. Assess patentability under Patents Act 1970 (specifically analyzing Section 3(p) traditional knowledge bar and Section 3(e) synergistic efficacy requirement), Traditional Knowledge Digital Library (TKDL) prior art implications, Biological Diversity Act 2002 Access and Benefit Sharing (ABS) compliance, and required licensing under Drugs & Cosmetics Rules.`
+
+    const payload = {
+      question: contextualQuestion,
+      jurisdiction: 'India',
+      language: 'EN',
+      product_description: opt1.desc,
+      formulation_type: opt1.title,
+      context: structuredContext,
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (!res.ok) throw new Error(`Server returned HTTP ${res.status}`)
+      const data = await res.json()
+
+      const confidenceData = data.confidence && typeof data.confidence === 'object'
+        ? data.confidence
+        : null
+
+      setResult({
+        answer: data.answer,
+        citations: data.citations || [],
+        confidence: confidenceData,
+        disclaimer: data.disclaimer,
+        conversation_id: data.conversation_id,
+        contextualQuestion,
+        structuredContext,
+      })
+      setStatus('success')
+
+      if (onStartAssessment) {
+        onStartAssessment(contextualQuestion)
+      }
+    } catch (err) {
+      console.error('[Assessment] RagVyn RAG execution failed:', err)
+      setErrorMsg('RagVyn AI was unable to complete the statutory diagnostic at this moment. Please check that the backend server is running and try again.')
+      setStatus('error')
+    }
+  }
+
+  // Navigate to full RagVyn AI consultation with this completed session pre-loaded
+  const handleContinueInRagVyn = () => {
+    if (!result) return
+    navigate('/chat', {
+      state: {
+        assessmentResult: {
+          prompt: result.contextualQuestion,
+          result: result,
+        }
+      }
+    })
+  }
+
+  // Reset diagnostic to retake
+  const handleRetake = () => {
+    setStatus('idle')
+    setResult(null)
+    setCurrentStep(1)
+  }
+
+  return (
+    <div className="hero-assessment-card" role="region" aria-label="Interactive Innovation Assessment Tool">
+      {/* Card Header */}
+      <div className="assessment-card-header">
+        <div className="assessment-card-title-group">
+          <span className="card-kicker-tag">INTERACTIVE DIAGNOSTIC</span>
+          <h2 className="assessment-card-heading">Is Your Innovation IP-Ready?</h2>
+        </div>
+        <div className="assessment-progress-pill" aria-label={`Step ${currentStep} of 4`}>
+          <span className="progress-num-active">
+            {status === 'success' ? 'READY' : status === 'loading' ? 'WAIT' : `0${currentStep}`}
+          </span>
+          {status !== 'success' && status !== 'loading' && (
+            <>
+              <span className="progress-num-divider">/</span>
+              <span className="progress-num-total">04</span>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Progress Stepper (Interactive 4-Step Pipeline) */}
+      <div className="assessment-pipeline-steps" aria-label="Assessment Progress Steps">
+        {[
+          { num: 1, label: 'Innovation' },
+          { num: 2, label: 'IP pathway' },
+          { num: 3, label: 'Regulation' },
+          { num: 4, label: 'Source verification' },
+        ].map((st, idx, arr) => {
+          const isCompleted = status === 'success' || currentStep > st.num
+          const isActive = status !== 'success' && currentStep === st.num
+          return (
+            <div key={st.num} style={{ display: 'contents' }}>
+              <div
+                className={`pipeline-step ${isActive ? 'step-active' : ''} ${isCompleted ? 'step-completed clickable' : ''}`}
+                onClick={() => {
+                  if (status !== 'loading') {
+                    if (status === 'success' || isCompleted) {
+                      setStatus('idle')
+                      setCurrentStep(st.num)
+                    }
+                  }
+                }}
+                title={isCompleted ? `Jump to Step ${st.num}: ${st.label}` : undefined}
+                role="button"
+                tabIndex={isCompleted ? 0 : -1}
+                aria-label={`Step ${st.num}: ${st.label}`}
+              >
+                <span className="step-bullet">{isCompleted && !isActive ? '✓' : st.num}</span>
+                <span className="step-label">{st.label}</span>
+              </div>
+              {idx < arr.length - 1 && (
+                <div className={`pipeline-connector ${currentStep > st.num + 1 || (status === 'success' && currentStep > st.num) ? 'active completed' : currentStep > st.num ? 'active' : ''}`} />
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      {/* ── STATE 1: LOADING (RAG Retrieval in progress) ── */}
+      {status === 'loading' && (
+        <div className="assessment-loading-box">
+          <div className="assessment-spinner" aria-hidden="true" />
+          <div className="assessment-loading-title">RagVyn AI Diagnostic in Progress</div>
+          <div className="assessment-loading-status">{loadingMessages[loadingStepIndex]}</div>
+          <div className="assessment-loading-subtext">
+            Evaluating Section 3(p) traditional knowledge exclusions, Section 3(e) synergistic efficacy, TKDL prior art, and Biological Diversity Act ABS clearance.
+          </div>
+        </div>
+      )}
+
+      {/* ── STATE 2: ERROR ── */}
+      {status === 'error' && (
+        <>
+          <div className="assessment-error-box">
+            <div className="assessment-error-header">
+              <IconAlertTriangle size={18} />
+              <span>Diagnostic Engine Notice</span>
+            </div>
+            <div className="assessment-error-text">
+              {errorMsg}
+            </div>
+          </div>
+          <div className="assessment-card-actions">
+            <div className="assessment-nav-row">
+              <button
+                type="button"
+                className="assessment-back-btn"
+                onClick={() => setStatus('idle')}
+              >
+                <span>Review Answers</span>
+              </button>
+              <button
+                type="button"
+                className="assessment-action-btn"
+                onClick={handleSubmitAssessment}
+              >
+                <IconRotate size={16} />
+                <span>Retry Diagnostic</span>
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── STATE 3: SUCCESS (Grounded RagVyn AI Response) ── */}
+      {status === 'success' && result && (
+        <div className="assessment-result-view">
+          {/* Summary chips of user's 4-step assessment */}
+          <div className="assessment-result-summary">
+            <span className="assessment-summary-chip">
+              <span className="assessment-chip-key">Innovation:</span>
+              <span>{step1Options.find(o => o.id === selectedType)?.title}</span>
+            </span>
+            <span className="assessment-summary-chip">
+              <span className="assessment-chip-key">IP:</span>
+              <span>{step2Options.find(o => o.id === selectedPathway)?.badge}</span>
+            </span>
+            <span className="assessment-summary-chip">
+              <span className="assessment-chip-key">Reg:</span>
+              <span>{step3Options.find(o => o.id === selectedRegulation)?.badge}</span>
+            </span>
+            <span className="assessment-summary-chip">
+              <span className="assessment-chip-key">Source:</span>
+              <span>{step4Options.find(o => o.id === selectedSource)?.badge}</span>
+            </span>
+          </div>
+
+          {/* Scrollable grounded assessment output */}
+          <div className="assessment-result-scroll">
+            <div className="assessment-answer-card">
+              <JargonText text={result.answer} />
+            </div>
+
+            {result.citations && result.citations.length > 0 && (
+              <CollapsibleCitations citations={result.citations} />
+            )}
+
+            {result.confidence && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <ConfidenceBadge level={result.confidence} />
+                <ConfidenceMeter level={result.confidence} />
+              </div>
+            )}
+
+            <DisclaimerBanner />
+          </div>
+
+          {/* Action buttons */}
+          <div className="assessment-card-actions">
+            <div className="assessment-nav-row">
+              <button
+                type="button"
+                className="assessment-back-btn"
+                onClick={handleRetake}
+                title="Retake diagnostic with new parameters"
+              >
+                <IconRotate size={15} />
+                <span>Retake</span>
+              </button>
+              <button
+                type="button"
+                className="assessment-action-btn"
+                onClick={handleContinueInRagVyn}
+                id="continue-in-ragvyn-btn"
+              >
+                <span>Continue in RagVyn AI</span>
+                <IconArrowRight size={16} />
+              </button>
+            </div>
+            <div className="assessment-card-footnote">
+              <span>Source-backed legal intelligence • Zero hallucination protocol</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── STATE 4: IDLE (Interactive Questions for Step 1 - 4) ── */}
+      {status === 'idle' && (
+        <>
+          {/* Question Bar */}
+          <div className="assessment-question-bar">
+            <span className="assessment-q-label">{currentStepConfig.title}</span>
+            <span className="assessment-q-hint">{currentStepConfig.hint}</span>
+          </div>
+
+          {/* 4 Interactive Selectable Options for Active Step */}
+          <div className="assessment-options-list" role="radiogroup" aria-label={currentStepConfig.title}>
+            {currentStepConfig.options.map((opt) => {
+              const isSelected = currentStepConfig.selected === opt.id
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={isSelected}
+                  className={`assessment-option-btn ${isSelected ? 'selected' : ''}`}
+                  onClick={() => currentStepConfig.setSelect(opt.id)}
+                >
+                  <div className="option-radio-ring" aria-hidden="true">
+                    {isSelected && <div className="option-radio-dot" />}
+                  </div>
+                  <div className="option-text-group">
+                    <div className="option-header-row">
+                      <span className="option-title">{opt.title}</span>
+                      <span className="option-statute-badge">{opt.badge}</span>
+                    </div>
+                    <span className="option-desc">{opt.desc}</span>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Dynamic Statutory Determination Preview */}
+          <div className="assessment-dynamic-preview">
+            <div className="preview-indicator-bar">
+              <span className="live-engine-pulse" />
+              <span className="preview-engine-label">STATUTORY ROUTING PREVIEW</span>
+              <span className="preview-source-tag">OFFICIAL ACTS</span>
+            </div>
+            <div className="preview-grid">
+              <div className="preview-item">
+                <span className="preview-item-label">Applicable Framework:</span>
+                <span className="preview-item-val">{activeOption.statute}</span>
+              </div>
+              <div className="preview-item">
+                <span className="preview-item-label">Recommended Pathway:</span>
+                <span className="preview-item-val">{activeOption.route}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Footer */}
+          <div className="assessment-card-actions">
+            {currentStep === 1 && (
+              <button
+                type="button"
+                className="assessment-action-btn"
+                onClick={() => setCurrentStep(2)}
+                id="step-1-next-btn"
+              >
+                <span>Next: IP Pathway</span>
+                <IconArrowRight size={16} />
+              </button>
+            )}
+
+            {currentStep === 2 && (
+              <div className="assessment-nav-row">
+                <button
+                  type="button"
+                  className="assessment-back-btn"
+                  onClick={() => setCurrentStep(1)}
+                >
+                  <span>← Back</span>
+                </button>
+                <button
+                  type="button"
+                  className="assessment-action-btn"
+                  onClick={() => setCurrentStep(3)}
+                  id="step-2-next-btn"
+                >
+                  <span>Next: Regulation</span>
+                  <IconArrowRight size={16} />
+                </button>
+              </div>
+            )}
+
+            {currentStep === 3 && (
+              <div className="assessment-nav-row">
+                <button
+                  type="button"
+                  className="assessment-back-btn"
+                  onClick={() => setCurrentStep(2)}
+                >
+                  <span>← Back</span>
+                </button>
+                <button
+                  type="button"
+                  className="assessment-action-btn"
+                  onClick={() => setCurrentStep(4)}
+                  id="step-3-next-btn"
+                >
+                  <span>Next: Source Verification</span>
+                  <IconArrowRight size={16} />
+                </button>
+              </div>
+            )}
+
+            {currentStep === 4 && (
+              <div className="assessment-nav-row">
+                <button
+                  type="button"
+                  className="assessment-back-btn"
+                  onClick={() => setCurrentStep(3)}
+                >
+                  <span>← Back</span>
+                </button>
+                <button
+                  type="button"
+                  className="assessment-action-btn"
+                  onClick={handleSubmitAssessment}
+                  id="submit-assessment-btn"
+                >
+                  <IconSparkles size={16} />
+                  <span>Assess with RagVyn AI</span>
+                </button>
+              </div>
+            )}
+
+            <div className="assessment-card-footnote">
+              <span>Source-backed legal intelligence • Zero hallucination protocol</span>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
 
 /* ============================================================
    HERO TYPEWRITER TITLE COMPONENT
@@ -4828,70 +5429,66 @@ function LandingPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, 
         onLogout={onLogout}
       />
 
-      {/* Hero Section - Centered Grand Editorial Composition */}
-      <section className="hero-section hero-section-centered" id="hero" ref={heroRef} aria-labelledby="hero-title">
+      {/* Hero Section - Two Column Split Composition */}
+      <section className="hero-section" id="hero" ref={heroRef} aria-labelledby="hero-title">
         <div className="hero-container">
-          <div className="hero-centered-content">
-            {/* Eyebrow Institutional Badge */}
-            <div className="hero-eyebrow">
-              <span className="eyebrow-seal"><IconShieldCheck size={15} /></span>
-              <span className="hero-eyebrow-text">{t('heroEyebrow') || 'AYUSH & STATUTORY INTELLECTUAL PROPERTY'}</span>
-            </div>
+          <div className="hero-grid">
+            {/* Left Column: Narrative, Statues & CTAs */}
+            <div className="hero-content-col">
+              <HeroTypewriterTitle
+                line1Text={t('heroTitle')}
+                line2Text={t('heroSubtitle')}
+                trigger={animTrigger}
+              />
 
-            {/* Typewriter Title */}
-            <HeroTypewriterTitle
-              line1Text={t('heroTitle')}
-              line2Text={t('heroSubtitle')}
-              trigger={animTrigger}
-            />
+              <p className="hero-description">
+                {t('heroDesc')}
+              </p>
 
-            {/* High Readability Frosted Description */}
-            <p className="hero-description">
-              {t('heroDesc')}
-            </p>
-
-            {/* Centered Action CTAs */}
-            <div className="hero-cta-group">
-              <Link to="/chat" className="btn-primary hero-btn-main" id="hero-start-btn">
-                <span>{t('startAssessment')}</span>
-                <IconArrowRight size={16} />
-              </Link>
-              <a href="#how-it-works" className="btn-secondary hero-btn-sub">
-                <span>{t('howItWorksBtn')}</span>
-              </a>
-            </div>
-
-            {/* Refined Statutory Trust Indicators - Balanced 4-Item Ribbon */}
-            <div className="hero-trust-indicators">
-              <div className="hero-trust-item">
-                <div className="trust-icon-box"><IconScales size={16} /></div>
-                <div className="trust-text-box">
-                  <strong>{t('trustPatentsAct')}</strong>
-                  <span>{t('trustPatentsActDesc')}</span>
-                </div>
+              <div className="hero-cta-group">
+                <Link to="/chat" className="btn-primary hero-btn-main" id="hero-start-btn">
+                  <span>{t('startAssessment')}</span>
+                  <IconArrowRight size={16} />
+                </Link>
+                <a href="#how-it-works" className="btn-secondary hero-btn-sub">
+                  <span>{t('howItWorksBtn')}</span>
+                </a>
               </div>
-              <div className="hero-trust-item">
-                <div className="trust-icon-box"><IconBook size={16} /></div>
-                <div className="trust-text-box">
-                  <strong>{t('trustTkdl')}</strong>
-                  <span>{t('trustTkdlDesc')}</span>
+
+              {/* Verified Statutory Trust Badges */}
+              <div className="hero-trust-indicators">
+                <div className="hero-trust-item">
+                  <div className="trust-icon-box"><IconScales size={15} /></div>
+                  <div className="trust-text-box">
+                    <strong>{t('trustPatentsAct')}</strong>
+                    <span>{t('trustPatentsActDesc')}</span>
+                  </div>
                 </div>
-              </div>
-              <div className="hero-trust-item">
-                <div className="trust-icon-box"><IconLeaf size={16} /></div>
-                <div className="trust-text-box">
-                  <strong>{t('trustBdAct')}</strong>
-                  <span>{t('trustBdActDesc')}</span>
+                <div className="hero-trust-item">
+                  <div className="trust-icon-box"><IconBook size={15} /></div>
+                  <div className="trust-text-box">
+                    <strong>{t('trustTkdl')}</strong>
+                    <span>{t('trustTkdlDesc')}</span>
+                  </div>
                 </div>
-              </div>
-              <div className="hero-trust-item">
-                <div className="trust-icon-box"><IconShieldCheck size={16} /></div>
-                <div className="trust-text-box">
-                  <strong>{t('trustDrugsRules')}</strong>
-                  <span>{t('trustDrugsRulesDesc')}</span>
+                <div className="hero-trust-item">
+                  <div className="trust-icon-box"><IconLeaf size={15} /></div>
+                  <div className="trust-text-box">
+                    <strong>{t('trustBdAct')}</strong>
+                    <span>{t('trustBdActDesc')}</span>
+                  </div>
+                </div>
+                <div className="hero-trust-item">
+                  <div className="trust-icon-box"><IconShieldCheck size={15} /></div>
+                  <div className="trust-text-box">
+                    <strong>{t('trustDrugsRules')}</strong>
+                    <span>{t('trustDrugsRulesDesc')}</span>
+                  </div>
                 </div>
               </div>
             </div>
+
+            {/* Right Column: Removed - Interactive diagnostic was here */}
           </div>
         </div>
       </section>
@@ -8916,55 +9513,22 @@ function AppShell({ children, isLoggedIn, userName, userEmail, onOpenAbout, onLo
     setShowBackToTop(false)
   }, [location.pathname, location.search, location.hash])
 
-  // Show the control only after the user has scrolled a meaningful distance (> 300px), hide near top.
+  // Show the control only after the user has crossed half of the scrollable document.
   useEffect(() => {
-    const getScrollTop = () => {
-      const winScroll = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0
-      const shellFlow = document.querySelector('.ragvyn-shell-flow')
-      const shellScroll = shellFlow ? shellFlow.scrollTop : 0
-      return Math.max(winScroll, shellScroll)
-    }
-
     const updateBackToTopVisibility = () => {
-      const top = getScrollTop()
-      setShowBackToTop(top > 300)
+      const root = document.documentElement
+      const scrollableHeight = Math.max(0, root.scrollHeight - window.innerHeight)
+      setShowBackToTop(scrollableHeight > 0 && window.scrollY >= scrollableHeight * 0.5)
     }
 
     updateBackToTopVisibility()
     window.addEventListener('scroll', updateBackToTopVisibility, { passive: true })
     window.addEventListener('resize', updateBackToTopVisibility)
-
-    const shellFlow = document.querySelector('.ragvyn-shell-flow')
-    if (shellFlow) {
-      shellFlow.addEventListener('scroll', updateBackToTopVisibility, { passive: true })
-    }
-
     return () => {
       window.removeEventListener('scroll', updateBackToTopVisibility)
       window.removeEventListener('resize', updateBackToTopVisibility)
-      if (shellFlow) {
-        shellFlow.removeEventListener('scroll', updateBackToTopVisibility)
-      }
     }
   }, [location.pathname])
-
-  const scrollToTop = () => {
-    const prefersReducedMotion =
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const behavior = prefersReducedMotion ? 'auto' : 'smooth'
-    window.scrollTo({ top: 0, left: 0, behavior })
-    if (document.documentElement) {
-      document.documentElement.scrollTo({ top: 0, left: 0, behavior })
-    }
-    if (document.body) {
-      document.body.scrollTo({ top: 0, left: 0, behavior })
-    }
-    const shellFlow = document.querySelector('.ragvyn-shell-flow')
-    if (shellFlow && shellFlow.scrollTop > 0) {
-      shellFlow.scrollTo({ top: 0, left: 0, behavior })
-    }
-  }
 
   // Track sidebar hidden state (synced with RagvynSidebar via custom event)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -9000,10 +9564,9 @@ function AppShell({ children, isLoggedIn, userName, userEmail, onOpenAbout, onLo
     return () => window.removeEventListener('resize', updateViewport)
   }, [])
 
-  // Sidebar must exist ONLY inside the RAGVYN AI chatbot interface (/chat).
-  // It must never appear on Landing, Formulation Wizard, ABS Checker, IP Calculator,
-  // Deadline Calculator, Sources, Use Cases, About, Login, or any standalone pages.
-  const isChatRoute = location.pathname === '/chat'
+  // The RagvynSidebar is chat-only: it renders exclusively on the /chat route.
+  // Every other page (landing, login, sources, pricing, patentability, etc.) has no sidebar.
+  const showSidebar = location.pathname === '/chat'
   const hideFooter = location.pathname === '/login' || location.pathname === '/auth/callback' || location.pathname === '/chat'
 
   const handleNewChat = () => {
@@ -9020,7 +9583,7 @@ function AppShell({ children, isLoggedIn, userName, userEmail, onOpenAbout, onLo
 
   return (
     <>
-      {isChatRoute && (
+      {showSidebar && (
         <RagvynSidebar
           isLoggedIn={isLoggedIn}
           userName={userName}
@@ -9037,10 +9600,9 @@ function AppShell({ children, isLoggedIn, userName, userEmail, onOpenAbout, onLo
         />
       )}
 
-      {/* Persistent sidebar toggle — visible only inside chatbot on desktop */}
-      {isChatRoute && !isMobile && (
+      {/* Persistent sidebar toggle — chat-only, desktop only */}
+      {showSidebar && !isMobile && (
         <button
-          type="button"
           className="ragvyn-sidebar-restore-toggle"
           onClick={handleToggleSidebar}
           aria-label={sidebarCollapsed ? 'Open sidebar' : 'Close sidebar'}
@@ -9053,8 +9615,8 @@ function AppShell({ children, isLoggedIn, userName, userEmail, onOpenAbout, onLo
       <div
         className={[
           'ragvyn-app-content',
-          isChatRoute && !isMobile && !sidebarCollapsed ? 'ragvyn-app-content--sidebar-expanded' : '',
-          isChatRoute && !isMobile && sidebarCollapsed ? 'ragvyn-app-content--sidebar-collapsed' : '',
+          showSidebar && !isMobile && !sidebarCollapsed ? 'ragvyn-app-content--sidebar-expanded' : '',
+          showSidebar && !isMobile && sidebarCollapsed ? 'ragvyn-app-content--sidebar-collapsed' : '',
         ].filter(Boolean).join(' ')}
       >
         <div className="ragvyn-shell-flow">
@@ -9073,14 +9635,12 @@ function AppShell({ children, isLoggedIn, userName, userEmail, onOpenAbout, onLo
 
       {showBackToTop && (
         <button
-          type="button"
           className="ragvyn-back-to-top"
-          onClick={scrollToTop}
-          aria-label="Back to top of page"
+          onClick={() => window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })}
+          aria-label="Back to top"
           title="Back to top"
         >
           <span aria-hidden="true">↑</span>
-          <span className="sr-only">Back to top</span>
         </button>
       )}
     </>

@@ -10,8 +10,9 @@
  * - Handles email OTP sign-in, verification, sign-out, and clean switch-account.
  */
 
-import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react'
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react'
 import { supabase, siteUrl } from '../api/supabaseClient'
+import { getApiBase } from '../api/config'
 
 const AuthContext = createContext(null)
 
@@ -177,95 +178,106 @@ export function AuthProvider({ children }) {
   }, [syncLocalCaches])
 
   /**
-   * Supabase User Registration with Full Name metadata.
-   * Enforces Supabase email verification flow.
+   * Register a new user with email, password, and full name.
+   * Uses backend /api/auth/signup endpoint.
    */
-  const signUpWithPassword = useCallback(async (email, password, fullName) => {
-    const cleanEmail = (email || '').trim().toLowerCase()
-    const cleanName = (fullName || '').trim()
-    const redirectTarget = `${siteUrl}/auth/callback`
-
-    const { data, error } = await supabase.auth.signUp({
-      email: cleanEmail,
-      password: password,
-      options: {
-        data: {
-          full_name: cleanName,
-          name: cleanName,
-        },
-        emailRedirectTo: redirectTarget,
+  const signUp = useCallback(async (email, password, fullName) => {
+    const apiBase = getApiBase()
+    const res = await fetch(`${apiBase}/api/auth/signup`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        email: (email || '').trim().toLowerCase(),
+        password: password,
+        full_name: (fullName || '').trim(),
+      }),
     })
 
-    if (error) {
-      throw error
+    const data = await res.json()
+    if (!res.ok) {
+      throw new Error(data.detail || 'Registration failed. Please try again.')
     }
 
-    // Only establish active session if Supabase did not require verification
-    // (i.e. session returned immediately). Unverified users receive data.user but null session.
-    if (data?.session) {
-      setSession(data.session)
-      setUser(data.session.user)
-      syncLocalCaches(data.session)
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(
-          new CustomEvent('ip-sakti-user-updated', { detail: data.session.user })
-        )
-      }
+    const newSession = {
+      access_token: data.tokens.access_token,
+      refresh_token: data.tokens.refresh_token,
+      user: {
+        id: data.user.id,
+        email: data.user.email,
+        role: data.user.role || 'user',
+        user_metadata: {
+          full_name: data.user.full_name,
+          name: data.user.full_name,
+          organization: data.user.organization,
+          role: data.user.role,
+        },
+      },
     }
 
-    return data
+    setSession(newSession)
+    setUser(newSession.user)
+    syncLocalCaches(newSession)
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('ip-sakti-user-updated', { detail: newSession.user })
+      )
+    }
+
+    return newSession
   }, [syncLocalCaches])
 
   /**
-   * Supabase Password Login.
-   * Signs in a verified user using supabase.auth.signInWithPassword.
+   * Direct password login (for dummy test accounts & local auth).
    */
   const loginWithPassword = useCallback(async (email, password) => {
-    const cleanEmail = (email || '').trim().toLowerCase()
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: cleanEmail,
-      password: password,
-    })
-
-    if (error) {
-      throw error
-    }
-
-    if (data?.session) {
-      setSession(data.session)
-      setUser(data.session.user)
-      syncLocalCaches(data.session)
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(
-          new CustomEvent('ip-sakti-user-updated', { detail: data.session.user })
-        )
-      }
-    }
-
-    return data
-  }, [syncLocalCaches])
-
-  /**
-   * Resend signup verification email via Supabase.
-   */
-  const resendVerificationEmail = useCallback(async (email) => {
-    const cleanEmail = (email || '').trim().toLowerCase()
-    const redirectTarget = `${siteUrl}/auth/callback`
-    const { data, error } = await supabase.auth.resend({
-      type: 'signup',
-      email: cleanEmail,
-      options: {
-        emailRedirectTo: redirectTarget,
+    const apiBase = getApiBase()
+    const res = await fetch(`${apiBase}/api/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        email: (email || '').trim().toLowerCase(),
+        password: password,
+      }),
     })
 
-    if (error) {
-      throw error
+    const data = await res.json()
+    if (!res.ok) {
+      throw new Error(data.detail || 'Login failed. Please verify your credentials.')
     }
 
-    return data
-  }, [])
+    const newSession = {
+      access_token: data.tokens.access_token,
+      refresh_token: data.tokens.refresh_token,
+      user: {
+        id: data.user.id,
+        email: data.user.email,
+        role: data.user.role || 'user',
+        user_metadata: {
+          full_name: data.user.full_name,
+          name: data.user.full_name,
+          organization: data.user.organization,
+          role: data.user.role,
+        },
+      },
+    }
+
+    setSession(newSession)
+    setUser(newSession.user)
+    syncLocalCaches(newSession)
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('ip-sakti-user-updated', { detail: newSession.user })
+      )
+    }
+
+    return newSession
+  }, [syncLocalCaches])
 
   /**
    * Complete Sign Out.
@@ -352,7 +364,7 @@ export function AuthProvider({ children }) {
     loading,
     signInWithOtp,
     verifyOtp,
-    signUpWithPassword,
+    signUp,
     loginWithPassword,
     loginAsDemoUser,
     resendVerificationEmail,
@@ -368,7 +380,7 @@ export function AuthProvider({ children }) {
     loading,
     signInWithOtp,
     verifyOtp,
-    signUpWithPassword,
+    signUp,
     loginWithPassword,
     loginAsDemoUser,
     resendVerificationEmail,
