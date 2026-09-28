@@ -522,8 +522,8 @@ const UI_TRANSLATIONS = {
     tourChatDesc: 'Ask any Ayurveda IP question in your language and get a cited, trustworthy answer — the heart of the app.',
     tourToolsTitle: '🧰 IP Tools',
     tourToolsDesc: 'Open this menu for our smart tools that go beyond chat. We will highlight the top three next.',
-    tourVerdictTitle: '🛡️ Patentability Verdict',
-    tourVerdictDesc: 'Type a formula and get an instant RED / YELLOW / GREEN verdict on whether it can be patented — our Biopiracy Shield.',
+    tourVerdictTitle: '⚖️ Patentability Assessment',
+    tourVerdictDesc: 'Analyse prior art and Section 3(p)/3(d)/3(e) for your formulation — our evidence-based biopiracy shield.',
     tourRoadmapTitle: '🗺️ IP Journey Roadmap',
     tourRoadmapDesc: 'See your full patent journey — filing to grant to renewals — as a personalized, grounded timeline.',
     tourGuardianTitle: '🧭 Dual-Use Guardian',
@@ -552,6 +552,12 @@ const UI_TRANSLATIONS = {
     tourSourcesDesc: 'See exactly which laws, acts and treaties power our answers — full transparency you can trust.',
     tourPricingTitle: '🏷️ Pricing',
     tourPricingDesc: 'Free to start. Upgrade for more daily queries, uploads, drafts and expert consultations when you need them.',
+    tourSidebarTitle: '📂 RagVyn AI Sidebar',
+    tourSidebarDesc: 'Access your chat history, start new tasks, and navigate to tools — all from this collapsible sidebar. Click the hamburger icon (☰) anytime to open it.',
+    tourSidebarNewChatTitle: '➕ New Task',
+    tourSidebarNewChatDesc: 'Start a fresh conversation with RagVyn AI. Your previous chats are saved in the Recents section below.',
+    tourSidebarHistoryTitle: '🕐 Recent Conversations',
+    tourSidebarHistoryDesc: 'All your past chats are here. Click any conversation to continue where you left off.',
     tourFinishTitle: '🎉 You are all set!',
     tourFinishDesc: 'That is the whole toolkit. Jump into RagVyn AI to ask your first question — replay this tour anytime from the Tour button.',
     logout: 'Logout',
@@ -4318,8 +4324,41 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, theme: propTheme, toggleTheme: 
 
           <li>
             <Link to="/use-cases" id="tour-use-cases" className="ragvyn-nav-link" onClick={() => setMobileMenuOpen(false)}>
-              Use Cases
+              {t('navigation.useCases') || 'Use Cases'}
             </Link>
+          </li>
+          <li>
+            <Link to="/sources" className="ragvyn-nav-link" onClick={() => setMobileMenuOpen(false)}>
+              {t('navigation.officialSources') || 'Official Sources'}
+            </Link>
+          </li>
+          <li className="gov-nav-item-secondary">
+            <button
+              type="button"
+              className="gov-nav-link-btn"
+              data-tour="about"
+              onClick={() => {
+                setMobileMenuOpen(false)
+                if (onOpenAbout) onOpenAbout()
+              }}
+            >
+              <IconInfo size={15} />
+              <span>{t('common.about') || 'About'}</span>
+            </button>
+          </li>
+          <li className="gov-nav-item-secondary">
+            <button
+              type="button"
+              className="gov-nav-link-btn"
+              onClick={() => {
+                setMobileMenuOpen(false)
+                handleStartTour()
+              }}
+              title="Take a guided tour"
+            >
+              <IconCompass size={15} />
+              <span>{t('navigation.tour') || 'Tour'}</span>
+            </button>
           </li>
 
           {/* Mobile-Only Actions */}
