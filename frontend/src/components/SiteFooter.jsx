@@ -1,12 +1,9 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   IconLeaf,
   IconChevronDown,
-  IconChevronRight,
-  IconExternalLink,
   IconShieldCheck,
-  IconArrowLeft,
 } from './Icons'
 import './SiteFooter.css'
 
@@ -56,10 +53,18 @@ export default function SiteFooter({
     const prefersReducedMotion =
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    window.scrollTo({
-      top: 0,
-      behavior: prefersReducedMotion ? 'auto' : 'smooth',
-    })
+    const behavior = prefersReducedMotion ? 'auto' : 'smooth'
+    window.scrollTo({ top: 0, left: 0, behavior })
+    if (document.documentElement) {
+      document.documentElement.scrollTo({ top: 0, left: 0, behavior })
+    }
+    if (document.body) {
+      document.body.scrollTo({ top: 0, left: 0, behavior })
+    }
+    const shellFlow = document.querySelector('.ragvyn-shell-flow')
+    if (shellFlow && shellFlow.scrollTop > 0) {
+      shellFlow.scrollTo({ top: 0, left: 0, behavior })
+    }
   }
 
   // ----------------------------------------------------------------

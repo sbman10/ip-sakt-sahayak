@@ -521,6 +521,9 @@ class QdrantHybridStore:
         document_ids: Optional[List[str]] = None,  # Support scoping to multiple docs
         section: Optional[str] = None,
         trace: Optional[List[Dict[str, Any]]] = None,
+        user_id: Optional[str] = None,
+        organisation_id: Optional[str] = None,
+        **kwargs: Any,
     ) -> List[Dict[str, Any]]:
         """
         Executes end-to-end Qdrant Hybrid Search:
@@ -575,6 +578,7 @@ class QdrantHybridStore:
             details={"dimension": len(dense_vec), "normalized": True},
             started_at=dense_started,
         )
+        log.info("embedding_dense completed")
 
         sparse_started = time.perf_counter()
         record_stage(
@@ -593,6 +597,7 @@ class QdrantHybridStore:
             details={"non_zero_terms": len(sparse_vec.indices)},
             started_at=sparse_started,
         )
+        log.info("embedding_sparse completed")
 
         # 4. Resolve filters
         explicit_filter = self.build_filter(
@@ -649,6 +654,7 @@ class QdrantHybridStore:
             details={"result_count": len(response.points), "score_type": "qdrant_rrf"},
             started_at=search_started,
         )
+        log.info("qdrant_rrf completed")
 
         # 6. Format and preserve native Qdrant scores and real branch metrics
         q_sparse_map = dict(zip(sparse_vec.indices, sparse_vec.values)) if (sparse_vec and hasattr(sparse_vec, "indices")) else {}
