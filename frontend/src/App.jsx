@@ -2749,7 +2749,7 @@ function CitationCard({ citation, isExpanded, onToggle }) {
       {isExpanded && (
         <div className="citation-content">
           {snippetText ? (
-            <p className="citation-snippet">{snippetText.length > 300 ? snippetText.slice(0, 300) + '…' : snippetText}</p>
+            <p className="citation-snippet">{snippetText}</p>
           ) : (
             <p className="citation-snippet" style={{ opacity: 0.7 }}>Source document retrieved from verified legal corpus.</p>
           )}

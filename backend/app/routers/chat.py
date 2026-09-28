@@ -255,7 +255,7 @@ async def chat_endpoint(
         candidates = hybrid_rrf_search(
             query=retrieval_query,
             jurisdiction=jurisdiction,
-            top_k=8,
+            top_k=5,
             user_id=active_user_id,
             organisation_id=active_org_id,
             document_ids=target_doc_ids,  # Scope to user-uploaded docs if provided
@@ -299,7 +299,7 @@ async def chat_endpoint(
         query=retrieval_query,
         candidates=candidates,
         skip_threshold=settings.RERANK_SKIP_THRESHOLD,
-        final_k=4,
+        final_k=3,
     )
 
     top_rerank_score = (
@@ -315,7 +315,7 @@ async def chat_endpoint(
     # ── Stage (f): Context Compression & Citation Formatting ────
     context_text, cleaned_chunks = context_compressor.build_prompt_context(
         chunks=reranked_passages,
-        max_tokens=3500,
+        max_tokens=2500,
     )
 
     # Build CitationItem list from cleaned chunks with SOURCE_ID traceability
@@ -331,6 +331,14 @@ async def chat_endpoint(
                 section=section_name,
                 text=chunk.get("text", ""),
                 relevance=f"[{source_id}] Grounded in {source_name} ({section_name}).",
+                # Extended metadata (Phase 4)
+                authority=chunk.get("authority"),
+                page_number=chunk.get("page") or chunk.get("page_number"),
+                publication_date=chunk.get("publication_date"),
+                source_url=chunk.get("source_url") or chunk.get("url"),
+                reranker_score=chunk.get("reranker_score"),
+                context_before=chunk.get("context_before"),
+                context_after=chunk.get("context_after"),
             )
         )
 
@@ -708,7 +716,7 @@ async def chat_stream_endpoint(
         final_k=3,
     )
 
-    context_text, cleaned_chunks = context_compressor.build_prompt_context(reranked, max_tokens=3500)
+    context_text, cleaned_chunks = context_compressor.build_prompt_context(reranked, max_tokens=2500)
 
     # Build citation items with SOURCE_IDs
     citations = []
@@ -723,6 +731,14 @@ async def chat_stream_endpoint(
                 section=section_name,
                 text=chunk.get("text", ""),
                 relevance=f"[{source_id}] Grounded in {source_name} ({section_name}).",
+                # Extended metadata (Phase 4)
+                authority=chunk.get("authority"),
+                page_number=chunk.get("page") or chunk.get("page_number"),
+                publication_date=chunk.get("publication_date"),
+                source_url=chunk.get("source_url") or chunk.get("url"),
+                reranker_score=chunk.get("reranker_score"),
+                context_before=chunk.get("context_before"),
+                context_after=chunk.get("context_after"),
             )
         )
 

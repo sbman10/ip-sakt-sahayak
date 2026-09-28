@@ -115,6 +115,37 @@ class CitationItem(BaseModel):
         default=None,
         description="Original filename for user-uploaded documents.",
     )
+    # Extended metadata for complete citation provenance (Phase 4)
+    authority: Optional[str] = Field(
+        default=None,
+        description="Issuing authority (e.g. 'Government of India', 'WIPO').",
+    )
+    page_number: Optional[str] = Field(
+        default=None,
+        description="Page number in the original document.",
+    )
+    publication_date: Optional[str] = Field(
+        default=None,
+        description="Publication or effective date of the source.",
+    )
+    source_url: Optional[str] = Field(
+        default=None,
+        description="URL to the original source document.",
+    )
+    reranker_score: Optional[float] = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="Cross-encoder reranker confidence score.",
+    )
+    context_before: Optional[str] = Field(
+        default=None,
+        description="Text from the previous chunk in the same document (neighboring context).",
+    )
+    context_after: Optional[str] = Field(
+        default=None,
+        description="Text from the next chunk in the same document (neighboring context).",
+    )
 
 
 class ExtractedEntities(BaseModel):
