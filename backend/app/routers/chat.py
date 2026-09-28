@@ -459,6 +459,8 @@ async def chat_endpoint(
             conv = conv_query.first()
             if conv:
                 conv.updated_at = datetime.utcnow()
+                if language:
+                    conv.language = language[:10]
                 if not conv.user_id and active_user_id:
                     conv.user_id = active_user_id
                 if not conv.organisation_id and active_org_id:
@@ -748,6 +750,8 @@ async def chat_stream_endpoint(
             conv = conv_query.first()
             if conv:
                 conv.updated_at = datetime.utcnow()
+                if language:
+                    conv.language = language[:10]
                 if not conv.user_id and active_user_id:
                     conv.user_id = active_user_id
                 if not conv.organisation_id and active_org_id:

@@ -196,9 +196,9 @@ class ChatRequest(BaseModel):
         description='Jurisdiction context ("India", "International", or "Both").',
     )
     language: str = Field(
-        default="EN",
-        description='ISO 639-1 language code for response (default "EN").',
-        examples=["EN", "HI"],
+        default="en",
+        description='ISO 639-1 language code for response ("en", "hi", "mr"). Default "en".',
+        examples=["en", "hi", "mr"],
     )
     answer_mode: Literal["brief", "standard", "detailed"] = Field(
         default="standard",
@@ -271,13 +271,23 @@ class ChatRequest(BaseModel):
             raise ValueError("question must have at least 2 non-whitespace characters.")
         return cleaned
 
-    @field_validator("language")
+    @field_validator("language", mode="before")
     @classmethod
-    def language_to_upper(cls, v: str) -> str:
-        """Normalise language codes to uppercase (e.g. 'en' -> 'EN')."""
+    def validate_language(cls, v: Any) -> str:
+        """Validate and normalise language codes to supported values ('en', 'hi', 'mr'). Fall back safely to 'en'."""
         if not v:
-            return "EN"
-        return v.strip().upper()
+            return "en"
+        raw = str(v).strip().lower()
+        if raw in ("en", "hi", "mr"):
+            return raw
+        # Map common aliases
+        if raw in ("english", "eng"):
+            return "en"
+        if raw in ("hindi", "hin"):
+            return "hi"
+        if raw in ("marathi", "mar"):
+            return "mr"
+        return "en"
 
     model_config = {
         "json_schema_extra": {

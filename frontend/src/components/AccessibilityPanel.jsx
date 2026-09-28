@@ -62,6 +62,15 @@ export default function AccessibilityPanel({ t, hideFab = false }) {
     return () => { try { delete window.__openAccessibility } catch (_) {} }
   }, [])
 
+  // Close with Escape key
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
   // Apply + persist on every change.
   useEffect(() => {
     applySettings(s)

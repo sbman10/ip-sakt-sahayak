@@ -91,9 +91,45 @@ CORE OPERATIONAL PRINCIPLES:
             "detailed": "Provide an exhaustive legal analysis including detailed statutory breakdown, relevant exceptions, and procedural requirements.",
         }.get(answer_mode.lower(), "Provide a comprehensive, well-structured legal explanation.")
 
-        language_instruction = (
-            f"Respond in {language.upper()} language." if language.upper() != "EN" else "Respond in English."
-        )
+        lang_code = (language or "en").strip().lower()
+        if lang_code not in ("en", "hi", "mr"):
+            lang_code = "en"
+
+        if lang_code == "hi":
+            language_instruction = (
+                "RESPONSE LANGUAGE DIRECTIVE: HINDI (हिन्दी)\n"
+                "- Write the entire explanation, headings, bullet points, disclaimers, and uncertainty notices in natural, fluent Hindi using the Devanagari script (देवनागरी लिपि).\n"
+                "- CRITICAL CITATION & STATUTORY PRESERVATION RULE:\n"
+                "  * DO NOT translate official statute titles (e.g., 'Patents Act 1970', 'Biological Diversity Act 2002', 'TKDL', 'Drugs and Cosmetics Rules').\n"
+                "  * DO NOT alter, translate, or invent statutory section numbers, rule numbers, or form names (e.g., 'Section 3(p)', 'Section 2(1)(j)', 'Section 3(d)', 'Rule 158-B', 'Form 1', 'Form 18').\n"
+                "  * Keep all source citation IDs EXACTLY intact in square brackets, e.g. [SRC-001] or [SRC-001, Section 3(p)]. NEVER translate or alter citation IDs.\n"
+                "  * Explain the legal reasoning and implications clearly in Hindi, but keep all official statutory names and section citations traceable.\n"
+                "  * Clearly distinguish between verbatim source text and your explanation.\n"
+                "  * Do not claim the underlying statute itself is published in Hindi if quoting English statutory text.\n"
+                "- HINDI DISCLAIMER:\n"
+                "  * Conclude with the legal disclaimer in Hindi: 'यह जानकारी केवल अनुसंधान और सूचनात्मक उद्देश्यों के लिए है और इसे औपचारिक कानूनी सलाह नहीं माना जाना चाहिए। आधिकारिक कार्यवाही के लिए कृपया किसी पंजीकृत पेटेंट एजेंट या वकील से परामर्श लें।'"
+            )
+        elif lang_code == "mr":
+            language_instruction = (
+                "RESPONSE LANGUAGE DIRECTIVE: MARATHI (मराठी)\n"
+                "- Write the entire explanation, headings, bullet points, disclaimers, and uncertainty notices in natural, fluent Marathi using the Devanagari script (देवनागरी लिपी).\n"
+                "- CRITICAL CITATION & STATUTORY PRESERVATION RULE:\n"
+                "  * DO NOT translate official statute titles (e.g., 'Patents Act 1970', 'Biological Diversity Act 2002', 'TKDL', 'Drugs and Cosmetics Rules').\n"
+                "  * DO NOT alter, translate, or invent statutory section numbers, rule numbers, or form names (e.g., 'Section 3(p)', 'Section 2(1)(j)', 'Section 3(d)', 'Rule 158-B', 'Form 1', 'Form 18').\n"
+                "  * Keep all source citation IDs EXACTLY intact in square brackets, e.g. [SRC-001] or [SRC-001, Section 3(p)]. NEVER translate or alter citation IDs.\n"
+                "  * Explain the legal reasoning and implications clearly in Marathi, but keep all official statutory names and section citations traceable.\n"
+                "  * Clearly distinguish between verbatim source text and your explanation.\n"
+                "  * Do not claim the underlying statute itself is published in Marathi if quoting English statutory text.\n"
+                "- MARATHI DISCLAIMER:\n"
+                "  * Conclude with the legal disclaimer in Marathi: 'ही माहिती केवळ संशोधन आणि माहितीच्या उद्देशाने आहे आणि याला अधिकृत कायदेशीर सल्ला मानले जाऊ नये. अधिकृत प्रक्रियेसाठी कृपया नोंदणीकृत पेटेंट एजंट किंवा वकिलाचा सल्ला घ्यावा.'"
+            )
+        else:
+            language_instruction = (
+                "RESPONSE LANGUAGE DIRECTIVE: ENGLISH\n"
+                "- Respond in clear, authoritative, professional legal English.\n"
+                "- Cite every material statutory claim with exact source identifiers [SRC-XXX].\n"
+                "- Conclude with a brief disclaimer that this is general statutory information and not legal advice."
+            )
 
         # ── 2. Jurisdiction Processing ──────────────────────────────
         jur_norm = (jurisdiction or "India").strip().lower()

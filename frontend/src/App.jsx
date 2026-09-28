@@ -12,6 +12,7 @@ import DualUseGuardian from './components/DualUseGuardian'
 import OnboardingTour from './components/OnboardingTour'
 import { NextActionBar, JargonText, FriendlyEmptyState } from './components/UXHelpers'
 import AccessibilityPanel from './components/AccessibilityPanel'
+import AccessibilityDropdown from './components/AccessibilityDropdown'
 import ExpertConnect from './components/ExpertConnect'
 import PricingPage from './components/PricingPage'
 import PatentabilityAssessment from './components/PatentabilityAssessment'
@@ -24,6 +25,7 @@ import SitemapPage from './components/SitemapPage'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import LoginPage from './components/LoginPage'
 import AuthCallbackPage from './components/AuthCallbackPage'
+import { LanguageProvider, useLanguage, SUPPORTED_LOCALES } from './locales'
 import {
   IconHome,
   IconFlask,
@@ -67,6 +69,7 @@ import {
   IconMail,
   IconPhone,
   IconAccessibility,
+  IconCompass,
   IconMenu,
   IconTrendingUp,
   IconCalendar,
@@ -88,6 +91,7 @@ import {
 import { RAGVYN_THEMES, getChatTheme, getThemeCSSVariables, DEFAULT_THEME_ID } from './config/chatThemes'
 import DraftGenerator from './components/DraftGenerator'
 import { getApiBase } from './api/config'
+import UseCasesPage from './components/UseCasesPage'
 
 // IconClose component (X icon)
 function IconClose({ size = 16 }) {
@@ -102,18 +106,7 @@ function IconClose({ size = 16 }) {
 /* ============================================================
    GLOBAL LANGUAGE CONTEXT & TRANSLATIONS
    ============================================================ */
-const SITE_LANGUAGES = [
-  { code: 'en', label: 'English', flag: 'EN' },
-  { code: 'hi', label: 'हिन्दी', flag: 'HI' },
-  { code: 'kn', label: 'ಕನ್ನಡ', flag: 'KN' },
-  { code: 'bn', label: 'বাংলা', flag: 'BN' },
-  { code: 'ta', label: 'தமிழ்', flag: 'TA' },
-  { code: 'te', label: 'తెలుగు', flag: 'TE' },
-  { code: 'mr', label: 'मराठी', flag: 'MR' },
-  { code: 'gu', label: 'ગુજરાતી', flag: 'GU' },
-  { code: 'ml', label: 'മലയാളം', flag: 'ML' },
-  { code: 'pa', label: 'ਪੰਜਾਬੀ', flag: 'PA' },
-]
+const SITE_LANGUAGES = SUPPORTED_LOCALES
 
 // Complete translations for all UI text
 const UI_TRANSLATIONS = {
@@ -164,15 +157,15 @@ const UI_TRANSLATIONS = {
     pfcOpenFull: 'Open Full Cost Estimator',
 
     // Hero Section
-    heroEyebrow: 'AYUSH INNOVATION GUIDANCE',
+    heroEyebrow: 'RAGVYN • SOURCE-BACKED IP GUIDANCE',
     heroTitle: 'Protect your innovation.',
     heroSubtitle: 'Know what comes next.',
-    heroDesc: 'Navigate intellectual property, regulation, traditional knowledge and biodiversity-related pathways through one guided assessment.',
-    startAssessment: 'Start Assessment →',
-    startConsultation: 'Start Assessment →',
+    heroDesc: 'Navigate intellectual property, AYUSH regulation, traditional knowledge and biodiversity pathways with grounded, source-backed guidance.',
+    startAssessment: 'Start a New Task',
+    startConsultation: 'Start a New Task',
     howItWorksBtn: 'How it works',
     formulationWizard: 'Formulation Wizard',
-    seeDemo: 'See Demo',
+    seeDemo: 'Watch Demo',
 
     // Trust Pills
     zeroHallucination: 'Zero-hallucination',
@@ -228,7 +221,7 @@ const UI_TRANSLATIONS = {
 
     // How It Works
     howItWorksLabel: 'Simple Process',
-    howItWorksTitle: 'How IP-SAKTI Sahayak Works',
+    howItWorksTitle: 'How RAGVYN Works',
     step1Title: 'Ask Your Question',
     step1Desc: 'Describe your formulation, IP concern, or regulatory query in any supported language.',
     step2Title: 'AI Retrieves Citations',
@@ -239,17 +232,17 @@ const UI_TRANSLATIONS = {
     step4Desc: 'Use confidence badges & Formulation Wizard to plan your patent or licensing filing.',
 
     // Comparison Section
-    comparisonLabel: 'Why Choose IP-SAKTI?',
+    comparisonLabel: 'Why Choose RAGVYN?',
     comparisonTitle: 'Not just another chatbot. A domain-specialized legal guide',
     comparisonFeature: 'Feature',
     comparisonGenericAI: 'Generic AI',
-    comparisonIpSakti: 'IP-SAKTI',
+    comparisonIpSakti: 'RAGVYN',
 
     // Demo Section
-    seeDemo: 'See Demo',
+    seeDemo: 'Watch Demo',
     demoLabel: 'Live Demo',
-    demoTitle: 'See IP-SAKTI in Action',
-    demoSampleResponse: 'IP-SAKTI Sahayak: Sample Response',
+    demoTitle: 'See RAGVYN in Action',
+    demoSampleResponse: 'RAGVYN: Sample Response',
     demoHighConfidence: 'High Confidence',
     demoDisclaimer: 'Informational only. Consult IP attorney for formal advice',
     demoTryIt: 'Try It Yourself',
@@ -1260,57 +1253,23 @@ const UI_TRANSLATIONS = {
   },
 }
 
-// Fallback to English for languages without full translation
-const getTranslation = (lang, key) => {
-  if (UI_TRANSLATIONS[lang] && UI_TRANSLATIONS[lang][key] !== undefined) {
-    return UI_TRANSLATIONS[lang][key]
-  }
-  if (UI_TRANSLATIONS['en'] && UI_TRANSLATIONS['en'][key] !== undefined) {
-    return UI_TRANSLATIONS['en'][key]
-  }
-  return key
-}
-
-const LanguageContext = createContext({ lang: 'en', setLang: () => { }, t: (key) => key })
-
-function LanguageProvider({ children }) {
-  const [lang, setLang] = useState(() => {
-    return localStorage.getItem('ip_sakti_lang') || 'en'
-  })
-
-  useEffect(() => {
-    localStorage.setItem('ip_sakti_lang', lang)
-    document.documentElement.setAttribute('lang', lang)
-  }, [lang])
-
-  const t = (key) => getTranslation(lang, key)
-
-  return (
-    <LanguageContext.Provider value={{ lang, setLang, t, languages: SITE_LANGUAGES }}>
-      {children}
-    </LanguageContext.Provider>
-  )
-}
-
-export function useLanguage() {
-  return useContext(LanguageContext)
-}
+export { useLanguage, LanguageProvider }
 
 /* Global Language Selector Component */
-function GlobalLanguageSelector() {
+function GlobalLanguageSelector({ className = 'global-lang-dropdown', id }) {
   const { lang, setLang, languages } = useLanguage()
 
   return (
-    <div className="global-lang-selector">
+    <div className="global-lang-selector" id={id}>
       <select
         value={lang}
         onChange={(e) => setLang(e.target.value)}
-        aria-label="Select website language"
-        className="global-lang-dropdown"
+        aria-label="Select interface language"
+        className={className}
       >
         {languages.map(l => (
           <option key={l.code} value={l.code}>
-            {l.flag} {l.label}
+            {l.nativeLabel || l.label}
           </option>
         ))}
       </select>
@@ -2023,13 +1982,15 @@ function StatuteShowcase() {
    ============================================================ */
 function useTheme() {
   const [theme, setTheme] = useState(() => {
-    const saved = localStorage.getItem('ip_sakti_theme')
+    const saved = localStorage.getItem('ragvyn_theme') || localStorage.getItem('ip_sakti_theme')
     if (saved === 'light' || saved === 'dark') return saved
-    return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+    if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark'
+    return 'light'
   })
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
+    localStorage.setItem('ragvyn_theme', theme)
     localStorage.setItem('ip_sakti_theme', theme)
   }, [theme])
 
@@ -2037,7 +1998,7 @@ function useTheme() {
     setTheme(prev => (prev === 'dark' ? 'light' : 'dark'))
   }
 
-  return { theme, toggleTheme }
+  return { theme, toggleTheme, setTheme }
 }
 
 /* ============================================================
@@ -2045,27 +2006,30 @@ function useTheme() {
    ============================================================ */
 function useFontSize() {
   const [fontSize, setFontSizeState] = useState(() => {
-    return localStorage.getItem('ip_sakti_font_size') || 'md'
+    return localStorage.getItem('ragvyn_font_scale') || localStorage.getItem('ip_sakti_font_size') || 'md'
   })
 
   useEffect(() => {
     document.documentElement.setAttribute('data-font-scale', fontSize)
+    localStorage.setItem('ragvyn_font_scale', fontSize)
     localStorage.setItem('ip_sakti_font_size', fontSize)
   }, [fontSize])
 
   return { fontSize, setFontSize: setFontSizeState }
 }
 
-function ThemeToggleBtn({ theme, toggleTheme }) {
+function ThemeToggleBtn({ theme, toggleTheme, id = 'tour-theme-toggle' }) {
   return (
     <button
-      className="theme-toggle-btn"
+      id={id}
+      type="button"
+      className="ragvyn-nav-tool-btn theme-toggle-btn"
       onClick={toggleTheme}
       title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
       aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
       style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
     >
-      {theme === 'dark' ? <IconSun size={16} /> : <IconMoon size={16} />}
+      {theme === 'dark' ? <IconSun size={15} /> : <IconMoon size={15} />}
     </button>
   )
 }
@@ -4053,6 +4017,8 @@ function FAQSection() {
    INSTITUTIONAL ACCESSIBILITY STRIP (COMPACT GOV-TECH)
    ============================================================ */
 function GovtAccessibilityBar({ theme, toggleTheme }) {
+  const [a11yOpen, setA11yOpen] = useState(false)
+  const a11yTriggerRef = useRef(null)
 
   return (
     <div className="gov-utility-strip" role="region" aria-label="Institutional Identity & Accessibility">
@@ -4069,22 +4035,32 @@ function GovtAccessibilityBar({ theme, toggleTheme }) {
         </div>
 
         <div className="gov-utility-right">
-
           <GlobalLanguageSelector />
 
           <ThemeToggleBtn theme={theme} toggleTheme={toggleTheme} />
 
-          <button
-            type="button"
-            className="gov-skip-link"
-            title="Accessibility options"
-            aria-label="Open accessibility options"
-            onClick={() => { if (window.__openAccessibility) window.__openAccessibility() }}
-            style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '5px', background: 'rgba(212,175,55,0.18)', border: '1.5px solid rgba(212,175,55,0.7)', borderRadius: '18px', cursor: 'pointer', padding: '5px 12px', color: 'inherit', fontWeight: 700 }}
-          >
-            <IconAccessibility size={20} />
-            <span style={{ fontSize: '0.78rem' }}>Accessibility</span>
-          </button>
+          <div className="ragvyn-a11y-anchor">
+            <button
+              ref={a11yTriggerRef}
+              type="button"
+              className="gov-skip-link"
+              title="Accessibility options"
+              aria-label="Open accessibility options"
+              aria-haspopup="dialog"
+              aria-expanded={a11yOpen}
+              aria-controls="ragvyn-a11y-popover"
+              onClick={() => setA11yOpen(prev => !prev)}
+              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '5px', background: 'rgba(212,175,55,0.18)', border: '1.5px solid rgba(212,175,55,0.7)', borderRadius: '18px', cursor: 'pointer', padding: '5px 12px', color: 'inherit', fontWeight: 700 }}
+            >
+              <IconAccessibility size={20} />
+              <span style={{ fontSize: '0.78rem' }}>Accessibility</span>
+            </button>
+            <AccessibilityDropdown
+              isOpen={a11yOpen}
+              onClose={() => setA11yOpen(false)}
+              triggerRef={a11yTriggerRef}
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -4098,7 +4074,7 @@ function IpSaktiLogo({ className = '', size = 36 }) {
   return (
     <img
       src="/logo.png"
-      alt="IP-SAKTI Sahayak Logo"
+      alt="RAGVYN Logo"
       className={className}
       width={size}
       height={size}
@@ -4110,7 +4086,7 @@ function IpSaktiLogo({ className = '', size = 36 }) {
 /* ============================================================
    GOVERNMENT PORTAL MAIN NAVIGATION BAR (CLEAN SINGLE ROW)
    ============================================================ */
-function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn: propLoggedIn, userName: propUserName, userEmail: propUserEmail, onLogout: propLogout, onSwitchAccount: propSwitchAccount }) {
+function GovtNavbar({ onOpenAbout, onOpenWizard, theme: propTheme, toggleTheme: propToggleTheme, isLoggedIn: propLoggedIn, userName: propUserName, userEmail: propUserEmail, onLogout: propLogout, onSwitchAccount: propSwitchAccount, setPrefillPrompt }) {
   const { t } = useLanguage()
   const navigate = useNavigate()
   const location = useLocation()
@@ -4120,6 +4096,14 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn: propLoggedIn, userN
   } catch {
     authCtx = null
   }
+
+  const localThemeHook = useTheme()
+  const effectiveTheme = propTheme || localThemeHook.theme
+  const handleToggleTheme = propToggleTheme || localThemeHook.toggleTheme
+
+  const [a11yOpen, setA11yOpen] = useState(false)
+  const a11yTriggerRef = useRef(null)
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [toolsDropdownOpen, setToolsDropdownOpen] = useState(false)
@@ -4128,6 +4112,22 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn: propLoggedIn, userN
   const [editProfileOpen, setEditProfileOpen] = useState(false)
   const toolsDropdownRef = useRef(null)
   const servicesDropdownRef = useRef(null)
+
+  const handleStartTour = () => {
+    if (location.pathname !== '/') {
+      navigate('/', { state: { startTour: true } })
+    } else {
+      setTourRun(true)
+    }
+  }
+
+  // Handle tour trigger when navigated from another page
+  useEffect(() => {
+    if (location.pathname === '/' && location.state?.startTour) {
+      setTourRun(true)
+      window.history.replaceState({}, document.title)
+    }
+  }, [location])
 
   const authLoggedIn = authCtx ? authCtx.isLoggedIn : (propLoggedIn !== undefined
     ? Boolean(propLoggedIn)
@@ -4198,214 +4198,135 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn: propLoggedIn, userN
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  const isLoggedIn = authLoggedIn
+
   return (
     <>
-    <nav className={`gov-nav-bar${scrolled ? ' nav-scrolled' : ''}`} role="navigation" aria-label="Main Portal Navigation">
-      <div className="gov-nav-container">
-        {/* Left: Brand Identity */}
+    <nav className={`ragvyn-float-nav${scrolled ? ' nav-scrolled' : ''}`} role="navigation" aria-label="Main Navigation">
+      <div className="ragvyn-float-nav-inner">
+        {/* Left: Brand */}
         <Link
           to="/"
-          className="gov-brand-wrap"
+          id="tour-nav-brand"
+          className="ragvyn-nav-brand"
           onClick={() => {
             setMobileMenuOpen(false)
             window.dispatchEvent(new CustomEvent('retrigger-hero-anim'))
           }}
         >
-          <IpSaktiLogo size={36} className="gov-brand-icon" />
-          <div className="gov-brand-text">
-            <div className="gov-brand-title">
-              IP-SAKTI <span className="title-highlight">Sahayak</span>
-            </div>
-            <div className="gov-brand-subtitle">
-              <span className="ayush-dot" />
-              <span>Ayurveda IP & Regulatory Guidance</span>
-            </div>
-          </div>
+          <IpSaktiLogo size={32} className="ragvyn-nav-logo" />
+          <span className="ragvyn-nav-wordmark">RAGVYN</span>
         </Link>
 
-        {/* Center: Professional navigation with dropdowns */}
-        <ul className={`gov-nav-menu ${mobileMenuOpen ? 'mobile-open' : ''}`}>
-          {/* Tools Dropdown */}
-          <li className="gov-nav-dropdown" ref={toolsDropdownRef}>
-            <button
-              type="button"
-              className="gov-nav-link-btn gov-nav-dropdown-trigger"
-              data-tour="ip-tools"
-              onClick={() => {
-                setToolsDropdownOpen(!toolsDropdownOpen)
-                setServicesDropdownOpen(false)
-              }}
-              aria-expanded={toolsDropdownOpen}
-            >
-              <IconCalculator size={15} />
-              <span>IP Tools</span>
-              <IconChevronDown size={12} className={`dropdown-chevron ${toolsDropdownOpen ? 'open' : ''}`} />
-            </button>
-            {toolsDropdownOpen && (
-              <div className="gov-nav-dropdown-menu">
-                <Link to="/patentability" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
-                  <IconScales size={16} />
-                  <div className="dropdown-item-content">
-                    <span className="dropdown-item-title">⚖️ Patentability Assessment</span>
-                    <span className="dropdown-item-desc">Prior art & § 3(p)/3(d)/3(e) assessment</span>
-                  </div>
-                </Link>
-                <Link to="/roadmap" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
-                  <IconCalendar size={16} />
-                  <div className="dropdown-item-content">
-                    <span className="dropdown-item-title">🗺️ IP Journey Roadmap</span>
-                    <span className="dropdown-item-desc">Personalized filing-to-grant timeline</span>
-                  </div>
-                </Link>
-                <Link to="/guardian" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
-                  <IconLeaf size={16} />
-                  <div className="dropdown-item-content">
-                    <span className="dropdown-item-title">🧭 Dual-Use Guardian</span>
-                    <span className="dropdown-item-desc">IP + AYUSH + ABS + FSSAI in one view</span>
-                  </div>
-                </Link>
-                <Link to="/ip-calculator" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
-                  <IconCurrencyRupee size={16} />
-                  <div className="dropdown-item-content">
-                    <span className="dropdown-item-title">Fee Calculator</span>
-                    <span className="dropdown-item-desc">Patent filing fees estimate</span>
-                  </div>
-                </Link>
-                <Link to="/deadline-calculator" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
-                  <IconCalendar size={16} />
-                  <div className="dropdown-item-content">
-                    <span className="dropdown-item-title">Deadline Calculator</span>
-                    <span className="dropdown-item-desc">Track RFE, FER & renewals</span>
-                  </div>
-                </Link>
-                <Link to="/abs-checker" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
-                  <IconLeaf size={16} />
-                  <div className="dropdown-item-content">
-                    <span className="dropdown-item-title">ABS Checker</span>
-                    <span className="dropdown-item-desc">Biodiversity compliance</span>
-                  </div>
-                </Link>
-                <Link to="/checklists" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
-                  <IconCheck size={16} />
-                  <div className="dropdown-item-content">
-                    <span className="dropdown-item-title">Filing Checklists</span>
-                    <span className="dropdown-item-desc">Patent, TM, GI checklists</span>
-                  </div>
-                </Link>
-              </div>
-            )}
-          </li>
-
-          {/* Freedom to Operate */}
+        {/* Center: Navigation Links */}
+        <ul className={`ragvyn-nav-links ${mobileMenuOpen ? 'mobile-open' : ''}`}>
           <li>
-            <button type="button" className="gov-nav-link-btn" data-tour="fto">
-              <span>FTO</span>
-            </button>
+            <Link to="/" className="ragvyn-nav-link" onClick={() => { setMobileMenuOpen(false); window.dispatchEvent(new CustomEvent('retrigger-hero-anim')); }}>
+              Home
+            </Link>
           </li>
 
-          {/* Services Dropdown */}
-          <li className="gov-nav-dropdown" ref={servicesDropdownRef}>
+          {/* Services Dropdown — contains all tools */}
+          <li className="ragvyn-nav-dropdown" id="tour-services-menu" ref={servicesDropdownRef}>
             <button
               type="button"
-              className="gov-nav-link-btn gov-nav-dropdown-trigger"
-              data-tour="services"
+              className="ragvyn-nav-link ragvyn-nav-dropdown-trigger"
               onClick={() => {
                 setServicesDropdownOpen(!servicesDropdownOpen)
                 setToolsDropdownOpen(false)
               }}
               aria-expanded={servicesDropdownOpen}
             >
-              <IconBriefcase size={15} />
-              <span>Services</span>
+              Services
               <IconChevronDown size={12} className={`dropdown-chevron ${servicesDropdownOpen ? 'open' : ''}`} />
             </button>
             {servicesDropdownOpen && (
-              <div className="gov-nav-dropdown-menu">
-                <Link to="/drafts" className="gov-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
-                  <IconEdit size={16} />
-                  <div className="dropdown-item-content">
-                    <span className="dropdown-item-title">Draft Generator</span>
-                    <span className="dropdown-item-desc">Form-1, NBA templates</span>
+              <div className="ragvyn-dropdown-menu">
+                <Link to="/formulation-wizard" className="ragvyn-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
+                  <span className="ragvyn-dropdown-icon">🧪</span>
+                  <div className="ragvyn-dropdown-text">
+                    <strong>Formulation Wizard</strong>
+                    <span>3-step IP & regulatory classification</span>
                   </div>
                 </Link>
-                <Link to="/workspace" className="gov-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
-                  <IconBriefcase size={16} />
-                  <div className="dropdown-item-content">
-                    <span className="dropdown-item-title">Matter Workspace</span>
-                    <span className="dropdown-item-desc">Track your IP cases</span>
-                    {!isLoggedIn && <span className="dropdown-item-badge">Login required</span>}
+                <Link to="/abs-checker" className="ragvyn-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
+                  <span className="ragvyn-dropdown-icon">🌿</span>
+                  <div className="ragvyn-dropdown-text">
+                    <strong>ABS Checker</strong>
+                    <span>Biodiversity & Nagoya compliance</span>
                   </div>
                 </Link>
-                <Link to="/documents" className="gov-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
-                  <IconPaperClip size={16} />
-                  <div className="dropdown-item-content">
-                    <span className="dropdown-item-title">Document Upload</span>
-                    <span className="dropdown-item-desc">Upload & search PDFs</span>
-                    {!isLoggedIn && <span className="dropdown-item-badge">Login required</span>}
+                <Link to="/ip-calculator" className="ragvyn-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
+                  <span className="ragvyn-dropdown-icon">💰</span>
+                  <div className="ragvyn-dropdown-text">
+                    <strong>IP Calculator</strong>
+                    <span>Patent filing fees estimate</span>
                   </div>
                 </Link>
-                <Link to="/experts" className="gov-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
-                  <IconUsers size={16} />
-                  <div className="dropdown-item-content">
-                    <span className="dropdown-item-title">Expert Connect</span>
-                    <span className="dropdown-item-desc">Find IP experts & FAQs</span>
+                <Link to="/deadline-calculator" className="ragvyn-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
+                  <span className="ragvyn-dropdown-icon">📅</span>
+                  <div className="ragvyn-dropdown-text">
+                    <strong>Deadline Calculator</strong>
+                    <span>Track RFE, FER & renewal deadlines</span>
+                  </div>
+                </Link>
+                <Link to="/sources" className="ragvyn-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
+                  <span className="ragvyn-dropdown-icon">📚</span>
+                  <div className="ragvyn-dropdown-text">
+                    <strong>Official Data Corpora</strong>
+                    <span>Authoritative legal source library</span>
+                  </div>
+                </Link>
+                <Link to="/patentability" className="ragvyn-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
+                  <span className="ragvyn-dropdown-icon">⚖️</span>
+                  <div className="ragvyn-dropdown-text">
+                    <strong>Patentability Assessment</strong>
+                    <span>Prior art & § 3(p)/3(d)/3(e)</span>
+                  </div>
+                </Link>
+                <Link to="/checklists" className="ragvyn-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
+                  <span className="ragvyn-dropdown-icon">✅</span>
+                  <div className="ragvyn-dropdown-text">
+                    <strong>Filing Checklists</strong>
+                    <span>Patent, TM, GI checklists</span>
+                  </div>
+                </Link>
+                <Link to="/drafts" className="ragvyn-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
+                  <span className="ragvyn-dropdown-icon">📝</span>
+                  <div className="ragvyn-dropdown-text">
+                    <strong>Draft Generator</strong>
+                    <span>Form-1, NBA templates</span>
+                  </div>
+                </Link>
+                <Link to="/workspace" className="ragvyn-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
+                  <span className="ragvyn-dropdown-icon">💼</span>
+                  <div className="ragvyn-dropdown-text">
+                    <strong>Matter Workspace</strong>
+                    <span>Track your IP cases</span>
+                  </div>
+                </Link>
+                <Link to="/experts" className="ragvyn-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
+                  <span className="ragvyn-dropdown-icon">👥</span>
+                  <div className="ragvyn-dropdown-text">
+                    <strong>Expert Connect</strong>
+                    <span>Find IP experts & FAQs</span>
                   </div>
                 </Link>
               </div>
             )}
           </li>
 
-          {/* Direct Links */}
-          <li className="gov-nav-item-secondary">
-            <button
-              type="button"
-              className="gov-nav-link-btn"
-              onClick={handleSeeDemo}
-              aria-label="See Demo"
-            >
-              <IconEye size={15} />
-              <span>{t('seeDemo') || 'See Demo'}</span>
-            </button>
-          </li>
           <li>
-            <Link to="/sources" className="gov-nav-link" onClick={() => setMobileMenuOpen(false)}>
-              <IconBook size={15} />
-              <span>Sources</span>
+            <Link to="/use-cases" id="tour-use-cases" className="ragvyn-nav-link" onClick={() => setMobileMenuOpen(false)}>
+              Use Cases
             </Link>
           </li>
-          <li className="gov-nav-item-secondary">
-            <button
-              type="button"
-              className="gov-nav-link-btn"
-              onClick={() => {
-                setMobileMenuOpen(false)
-                if (onOpenAbout) onOpenAbout()
-              }}
-            >
-              <IconInfo size={15} />
-              <span>About</span>
-            </button>
-          </li>
-          <li className="gov-nav-item-secondary">
-            <button
-              type="button"
-              className="gov-nav-link-btn"
-              onClick={() => {
-                setMobileMenuOpen(false)
-                setTourRun(true)
-              }}
-              title="Take a guided tour"
-            >
-              <IconInfo size={15} />
-              <span>{t('tourNavBtn') || 'Tour'}</span>
-            </button>
-          </li>
 
-          {/* Mobile-Only Actions inside Hamburger Menu */}
-          <li className="gov-nav-mobile-actions">
+          {/* Mobile-Only Actions */}
+          <li className="ragvyn-nav-mobile-actions">
             {authLoggedIn ? (
-              <div className="gov-nav-mobile-profile-card">
-                <div className="gov-nav-mobile-profile-header">
+              <div className="ragvyn-nav-mobile-profile-card">
+                <div className="ragvyn-nav-mobile-profile-header">
                   <div className="gov-profile-avatar-circle">
                     <span className="gov-profile-avatar-initial">
                       {(authUserName || 'U').charAt(0).toUpperCase()}
@@ -4416,84 +4337,88 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn: propLoggedIn, userN
                     <span className="welcome-name">{authUserName || 'Innovator'}</span>
                   </div>
                 </div>
-
-                <div className="gov-nav-mobile-profile-actions">
-                  <button
-                    type="button"
-                    className="gov-nav-mobile-profile-action-btn"
-                    onClick={() => {
-                      setMobileMenuOpen(false)
-                      setEditProfileOpen(true)
-                    }}
-                  >
-                    <span>✎ Edit Profile</span>
-                  </button>
-                  <Link
-                    to="/chat"
-                    className="gov-nav-mobile-profile-action-btn"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <span>◉ My Consultations</span>
-                  </Link>
-                  <Link
-                    to="/pricing"
-                    className="gov-nav-mobile-profile-action-btn gov-nav-mobile-pro-btn"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <span>⭐ Upgrade to Pro</span>
-                    <span className="gov-profile-pro-badge">PRO</span>
-                  </Link>
-                  <button
-                    type="button"
-                    className="gov-nav-mobile-profile-action-btn gov-nav-mobile-logout-btn"
-                    onClick={() => {
-                      setMobileMenuOpen(false)
-                      effectiveLogout()
-                    }}
-                  >
-                    <span>Logout</span>
-                  </button>
+                <div className="ragvyn-nav-mobile-profile-actions">
+                  <button type="button" className="ragvyn-nav-mobile-action" onClick={() => { setMobileMenuOpen(false); setEditProfileOpen(true); }}>✎ Edit Profile</button>
+                  <Link to="/chat" className="ragvyn-nav-mobile-action" onClick={() => setMobileMenuOpen(false)}>◉ My Consultations</Link>
+                  <button type="button" className="ragvyn-nav-mobile-action ragvyn-nav-mobile-logout" onClick={() => { setMobileMenuOpen(false); effectiveLogout(); }}>Logout</button>
                 </div>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '8px' }}>
-                <Link
-                  to="/login"
-                  className="gov-nav-mobile-login-btn"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <IconUser size={16} />
-                  <span>Login</span>
+                <Link to="/login" className="ragvyn-nav-mobile-login" onClick={() => setMobileMenuOpen(false)}>
+                  <IconUser size={16} /> Login
                 </Link>
-                <Link
-                  to="/login?mode=register"
-                  state={{ register: true }}
-                  className="gov-nav-mobile-register-btn"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <span>Register</span>
+                <Link to="/login?mode=register" state={{ register: true }} className="ragvyn-nav-mobile-register" onClick={() => setMobileMenuOpen(false)}>
+                  Register
                 </Link>
               </div>
             )}
-            <Link
-              to="/chat"
-              className="gov-nav-mobile-cta"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <span>Consult RagVyn AI</span>
+            <Link to="/chat" className="ragvyn-nav-mobile-cta" onClick={() => setMobileMenuOpen(false)}>
+              <span>Consult RAGVYN AI</span>
               <IconArrowRight size={15} />
             </Link>
           </li>
         </ul>
 
         {/* Right: Actions */}
-        <div className="gov-nav-actions">
-          {/* Desktop User/Guest Groups */}
-          <div className="gov-nav-desktop-actions">
+        <div className="ragvyn-nav-right">
+          {/* Top-Right Header Compact Controls: Tour, Language, Theme, Accessibility */}
+          <div className="ragvyn-nav-tools-group">
+            <button
+              type="button"
+              id="tour-nav-btn"
+              className="ragvyn-nav-tour-btn"
+              onClick={handleStartTour}
+              aria-label="Start guided product tour"
+              title="Take a tour"
+            >
+              <IconCompass size={14} />
+              <span>Tour</span>
+            </button>
+
+            <div id="tour-lang-selector" className="ragvyn-nav-lang-wrapper">
+              <GlobalLanguageSelector className="ragvyn-nav-lang-select" />
+            </div>
+
+            <button
+              type="button"
+              id="tour-theme-toggle"
+              className="ragvyn-nav-tool-btn"
+              onClick={handleToggleTheme}
+              aria-label={`Switch to ${effectiveTheme === 'dark' ? 'light' : 'dark'} mode`}
+              title={`Switch to ${effectiveTheme === 'dark' ? 'light' : 'dark'} mode`}
+            >
+              {effectiveTheme === 'dark' ? <IconSun size={15} /> : <IconMoon size={15} />}
+            </button>
+
+            <div className="ragvyn-a11y-anchor">
+              <button
+                ref={a11yTriggerRef}
+                type="button"
+                id="tour-a11y-btn"
+                className={`ragvyn-nav-tool-btn a11y-toggle-btn ${a11yOpen ? 'active' : ''}`}
+                onClick={() => setA11yOpen(prev => !prev)}
+                aria-haspopup="dialog"
+                aria-expanded={a11yOpen}
+                aria-controls="ragvyn-a11y-popover"
+                aria-label="Accessibility preferences"
+                title="Accessibility preferences"
+              >
+                <IconAccessibility size={16} />
+              </button>
+              <AccessibilityDropdown
+                isOpen={a11yOpen}
+                onClose={() => setA11yOpen(false)}
+                triggerRef={a11yTriggerRef}
+              />
+            </div>
+          </div>
+
+          <div className="ragvyn-nav-desktop-actions">
             {authLoggedIn ? (
-              <div className="gov-nav-user-group">
-                <Link to="/chat" className="gov-nav-cta" id="gov-nav-consult-btn">
-                  <span>RagVyn AI</span>
+              <div className="ragvyn-nav-user-group">
+                <Link to="/chat" className="ragvyn-nav-cta-btn" id="gov-nav-consult-btn">
+                  RAGVYN AI
                   <IconArrowRight size={14} />
                 </Link>
                 <UserProfileMenu
@@ -4505,46 +4430,21 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn: propLoggedIn, userN
                 />
               </div>
             ) : (
-              <div className="gov-nav-guest-group">
-                <Link to="/login" className="gov-nav-login-btn">
-                  <IconUser size={14} />
-                  <span>Login</span>
+              <div className="ragvyn-nav-guest-group">
+                <Link to="/login" className="ragvyn-nav-login-link">
+                  Login
                 </Link>
-                <Link to="/login?mode=register" state={{ register: true }} className="gov-nav-register-btn">
-                  <span>Register</span>
-                </Link>
-                <Link to="/chat" className="gov-nav-cta" id="gov-nav-consult-btn">
-                  <span>RagVyn AI</span>
-                  <IconArrowRight size={14} />
+                <Link to="/chat" className="ragvyn-nav-cta-btn" id="gov-nav-consult-btn">
+                  RAGVYN AI
                 </Link>
               </div>
             )}
           </div>
 
-          {/* Mobile Profile Avatar Trigger (When logged in) */}
-          {authLoggedIn && (
-            <div className="gov-nav-mobile-profile-wrap">
-              <UserProfileMenu
-                compact={true}
-                userName={authUserName}
-                userEmail={authUserEmail}
-                onLogout={effectiveLogout}
-                onSwitchAccount={effectiveSwitchAccount}
-                onOpenEditProfile={() => setEditProfileOpen(true)}
-              />
-            </div>
-          )}
-
-          {/* Mobile Quick Action Pill */}
-          <Link to="/chat" className="gov-nav-mobile-quick-cta" aria-label="RagVyn AI">
-            <span>AI</span>
-            <IconSparkles size={13} />
-          </Link>
-
           {/* Mobile hamburger toggle */}
           <button
             type="button"
-            className="gov-mobile-toggle"
+            className="ragvyn-mobile-toggle"
             aria-label="Toggle navigation menu"
             aria-expanded={mobileMenuOpen}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -4554,11 +4454,7 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn: propLoggedIn, userN
         </div>
       </div>
       {mobileMenuOpen && (
-        <div
-          className="gov-mobile-backdrop"
-          onClick={() => setMobileMenuOpen(false)}
-          aria-hidden="true"
-        />
+        <div className="ragvyn-mobile-backdrop" onClick={() => setMobileMenuOpen(false)} aria-hidden="true" />
       )}
     </nav>
     <EditProfileModal
@@ -4568,9 +4464,6 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn: propLoggedIn, userN
     <OnboardingTour
       run={tourRun}
       onClose={() => setTourRun(false)}
-      onOpenTools={(open) => setToolsDropdownOpen(open)}
-      onOpenServices={(open) => setServicesDropdownOpen(open)}
-      t={t}
     />
     </>
   )
@@ -4584,21 +4477,20 @@ function TranslatedFooter() {
 /* ============================================================
    NAVBAR WRAPPER (COMMON)
    ============================================================ */
-function Navbar({ onOpenAbout, onOpenWizard, theme, toggleTheme, isLoggedIn, userName, userEmail, onLogout, onSwitchAccount }) {
+function Navbar({ onOpenAbout, onOpenWizard, theme, toggleTheme, isLoggedIn, userName, userEmail, onLogout, onSwitchAccount, setPrefillPrompt }) {
   return (
-    <header className="gov-portal-header-wrapper" role="banner">
-      <GovtAccessibilityBar
-        theme={theme}
-        toggleTheme={toggleTheme}
-      />
+    <header className="ragvyn-nav-wrapper" role="banner">
       <GovtNavbar
         onOpenAbout={onOpenAbout}
         onOpenWizard={onOpenWizard}
+        theme={theme}
+        toggleTheme={toggleTheme}
         isLoggedIn={isLoggedIn}
         userName={userName}
         userEmail={userEmail}
         onLogout={onLogout}
         onSwitchAccount={onSwitchAccount}
+        setPrefillPrompt={setPrefillPrompt}
       />
     </header>
   )
@@ -4734,7 +4626,7 @@ function LandingPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, 
   }, [location.pathname, location.state, location.hash])
 
   return (
-    <div className="landing">
+    <div className="landing ragvyn-landing">
       <Navbar
         onOpenAbout={onOpenAbout}
         onOpenWizard={onOpenWizard}
@@ -4748,184 +4640,59 @@ function LandingPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, 
         onLogout={onLogout}
       />
 
-      {/* Hero Section - Two Column Split Composition */}
-      <section className="hero-section" id="hero" ref={heroRef} aria-labelledby="hero-title">
-        <div className="hero-container">
-          <div className="hero-content-col hero-content-centered">
-            {/* Government / Statutory Authority Eyebrow */}
-            <div className="hero-eyebrow">
-              <span className="eyebrow-seal"><IconGovt size={16} /></span>
-              <span className="hero-eyebrow-text">{t('heroEyebrow')}</span>
-              <span className="hero-live-pill">
-                <span className="live-pulse-dot" />
-                <span className="live-pill-text">Corpus 2026 Active</span>
-              </span>
-            </div>
+      {/* ─── FULL-SCREEN HERO ─── */}
+      <section className="ragvyn-hero" id="hero" ref={heroRef} aria-labelledby="hero-title">
+        <div className="ragvyn-hero-bg" aria-hidden="true" />
+        <div className="ragvyn-hero-overlay" aria-hidden="true" />
 
-            {/* Typewriter Title */}
-            <HeroTypewriterTitle
-              line1Text={t('heroTitle')}
-              line2Text={t('heroSubtitle')}
-              trigger={animTrigger}
-            />
+        <div className="ragvyn-hero-content">
+          {/* Headline */}
+          <HeroTypewriterTitle
+            line1Text={t('heroTitle')}
+            line2Text={t('heroSubtitle')}
+            trigger={animTrigger}
+          />
 
-            {/* Description */}
-            <p className="hero-description">
-              {t('heroDesc')}
-            </p>
+          {/* Supporting text */}
+          <p className="ragvyn-hero-desc">
+            {t('heroDesc')}
+          </p>
 
-            {/* CTA Buttons */}
-            <div className="hero-cta-group">
-              <Link to="/chat" className="btn-primary hero-btn-main" id="hero-start-btn">
-                <IconSparkles size={18} />
-                <span>{t('startAssessment')}</span>
-                <IconArrowRight size={16} />
-              </Link>
-              <a href="#how-it-works" className="btn-secondary hero-btn-sub">
-                <span>{t('howItWorksBtn')}</span>
-              </a>
-            </div>
-
-            {/* Interactive Quick Prompts for Live Demo */}
-            <div className="hero-quick-prompts" aria-label="Quick statutory query prompts">
-              <span className="hero-quick-label">⚡ Explore Key Statutes:</span>
-              <div className="hero-quick-chips">
-                <button
-                  type="button"
-                  className="hero-chip"
-                  onClick={() => {
-                    if (setPrefillPrompt) setPrefillPrompt('Can a novel Ashwagandha & Curcumin polyherbal extract be patented under Section 3(e) in India?')
-                    navigate('/chat')
-                  }}
-                >
-                  🌿 Patents Act § 3(p) & § 3(e)
-                </button>
-                <button
-                  type="button"
-                  className="hero-chip"
-                  onClick={() => {
-                    if (setPrefillPrompt) setPrefillPrompt('What are the TKDL prior art screening criteria for classical Ayurvedic formulations?')
-                    navigate('/chat')
-                  }}
-                >
-                  📜 TKDL Prior Art Screening
-                </button>
-                <button
-                  type="button"
-                  className="hero-chip"
-                  onClick={() => {
-                    if (setPrefillPrompt) setPrefillPrompt('How to obtain NBA clearance under the Biological Diversity Act 2002 for commercial herbs?')
-                    navigate('/chat')
-                  }}
-                >
-                  🌱 Biodiversity Act ABS Clearance
-                </button>
-                <button
-                  type="button"
-                  className="hero-chip"
-                  onClick={() => {
-                    if (setPrefillPrompt) setPrefillPrompt('What are the ASU regulatory licensing requirements under Form 22 and Form 44 of Drugs & Cosmetics Rules?')
-                    navigate('/chat')
-                  }}
-                >
-                  ⚖️ ASU Form 22 Licensing
-                </button>
-              </div>
-            </div>
-
-            {/* Verified Statutory Trust Badges (4 Column Grid) */}
-            <div className="hero-trust-indicators hero-trust-grid-4">
-              <div className="hero-trust-item">
-                <div className="trust-icon-box"><IconScales size={18} /></div>
-                <div className="trust-text-box">
-                  <strong>{t('trustPatentsAct')}</strong>
-                  <span>{t('trustPatentsActDesc')}</span>
-                </div>
-              </div>
-              <div className="hero-trust-item">
-                <div className="trust-icon-box"><IconBook size={18} /></div>
-                <div className="trust-text-box">
-                  <strong>{t('trustTkdl')}</strong>
-                  <span>{t('trustTkdlDesc')}</span>
-                </div>
-              </div>
-              <div className="hero-trust-item">
-                <div className="trust-icon-box"><IconLeaf size={18} /></div>
-                <div className="trust-text-box">
-                  <strong>{t('trustBdAct')}</strong>
-                  <span>{t('trustBdActDesc')}</span>
-                </div>
-              </div>
-              <div className="hero-trust-item">
-                <div className="trust-icon-box"><IconShieldCheck size={18} /></div>
-                <div className="trust-text-box">
-                  <strong>{t('trustDrugsRules')}</strong>
-                  <span>{t('trustDrugsRulesDesc')}</span>
-                </div>
-              </div>
-            </div>
+          {/* CTA Buttons — Start + Watch Demo */}
+          <div className="ragvyn-hero-ctas">
+            <Link to="/chat" className="ragvyn-cta-primary" id="hero-start-btn">
+              {t('startAssessment')}
+              <IconArrowRight size={16} />
+            </Link>
+            <button
+              type="button"
+              id="hero-demo-btn"
+              className="ragvyn-cta-secondary"
+              onClick={(e) => {
+                e.preventDefault()
+                const el = document.getElementById('demo')
+                if (el) {
+                  el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                } else {
+                  navigate('/', { state: { scrollTo: 'demo' } })
+                }
+              }}
+            >
+              <IconPlay size={16} />
+              {t('seeDemo')}
+            </button>
           </div>
         </div>
-      </section>
 
-      {/* Stats Counter */}
-      <StatsCounter />
+        {/* Scroll indicator */}
+        <div className="ragvyn-scroll-hint" aria-hidden="true">
+          <span>SCROLL</span>
+          <span className="ragvyn-scroll-arrow">↓</span>
+        </div>
+      </section>
 
       {/* Live Demo Preview */}
       <DemoPreview />
-
-      {/* Features Grid */}
-      <section className="section" id="features" aria-labelledby="features-title">
-        <Reveal>
-          <p className="section-label">{t('featuresLabel')}</p>
-          <h2 className="section-title" id="features-title">{t('featuresTitle')}</h2>
-        </Reveal>
-        <div className="features-grid">
-          {[
-            {
-              icon: <IconScroll size={24} />,
-              titleKey: 'featureStatuteCited',
-              descKey: 'featureStatuteCitedDesc',
-            },
-            {
-              icon: <IconFlask size={24} />,
-              titleKey: 'featureFormulationWizard',
-              descKey: 'featureFormulationWizardDesc',
-            },
-            {
-              icon: <IconGlobe size={24} />,
-              titleKey: 'featureMultilingual',
-              descKey: 'featureMultilingualDesc',
-            },
-            {
-              icon: <IconScales size={24} />,
-              titleKey: 'featureJurisdiction',
-              descKey: 'featureJurisdictionDesc',
-            },
-            {
-              icon: <IconLeaf size={24} />,
-              titleKey: 'featureABS',
-              descKey: 'featureABSDesc',
-            },
-            {
-              icon: <IconLock size={24} />,
-              titleKey: 'featureTKDL',
-              descKey: 'featureTKDLDesc',
-            },
-          ].map((f, i) => (
-            <Reveal key={f.titleKey} delay={i * 80}>
-              <article className="feature-card">
-                <div className="feature-icon" aria-hidden="true" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{f.icon}</div>
-                <h3>{t(f.titleKey)}</h3>
-                <p>{t(f.descKey)}</p>
-              </article>
-            </Reveal>
-          ))}
-        </div>
-      </section>
-
-      {/* Personas Section */}
-      <PersonasSection />
 
       {/* How It Works */}
       <section className="section" id="how-it-works" aria-labelledby="how-title">
@@ -4950,12 +4717,6 @@ function LandingPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, 
           ))}
         </div>
       </section>
-
-      {/* Comparison Section */}
-      <ComparisonSection />
-
-      {/* Statute Showcase */}
-      <StatuteShowcase />
 
       {/* FAQ Section */}
       <FAQSection />
@@ -5731,7 +5492,7 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
     const requestBody = {
       question: trimmed,
       jurisdiction: jurisdiction.charAt(0).toUpperCase() + jurisdiction.slice(1),
-      language: lang.toUpperCase(),
+      language: (lang || 'en').toLowerCase(),
       conversation_id: conversationId,
     }
 
@@ -8901,10 +8662,10 @@ function AppShell({ children, isLoggedIn, userName, userEmail, onOpenAbout, onLo
     return () => window.removeEventListener('resize', updateViewport)
   }, [])
 
-  // Keep the application shell available on the landing page as well.
-  // Login and auth callback remain distraction-free and outside the app shell.
-  const hideSidebar = location.pathname === '/login' || location.pathname === '/auth/callback'
-  const hideFooter = location.pathname === '/login' || location.pathname === '/auth/callback' || location.pathname === '/chat'
+  // Sidebar is strictly rendered ONLY on RAGVYN AI chatbot routes (/chat and /chat/*)
+  const isChatRoute = location.pathname === '/chat' || location.pathname.startsWith('/chat/')
+  const showSidebar = isChatRoute
+  const hideFooter = location.pathname === '/login' || location.pathname === '/auth/callback' || isChatRoute
 
   const handleNewChat = () => {
     navigate('/chat', { state: { newChat: true } })
@@ -8920,7 +8681,7 @@ function AppShell({ children, isLoggedIn, userName, userEmail, onOpenAbout, onLo
 
   return (
     <>
-      {!hideSidebar && (
+      {showSidebar && (
         <RagvynSidebar
           isLoggedIn={isLoggedIn}
           userName={userName}
@@ -8937,8 +8698,8 @@ function AppShell({ children, isLoggedIn, userName, userEmail, onOpenAbout, onLo
         />
       )}
 
-      {/* Persistent sidebar toggle — always visible on desktop (like Codex) */}
-      {!hideSidebar && !isMobile && (
+      {/* Persistent sidebar toggle — mounted only on chatbot routes */}
+      {showSidebar && !isMobile && (
         <button
           className="ragvyn-sidebar-restore-toggle"
           onClick={handleToggleSidebar}
@@ -8952,8 +8713,8 @@ function AppShell({ children, isLoggedIn, userName, userEmail, onOpenAbout, onLo
       <div
         className={[
           'ragvyn-app-content',
-          !hideSidebar && !isMobile && !sidebarCollapsed ? 'ragvyn-app-content--sidebar-expanded' : '',
-          !hideSidebar && !isMobile && sidebarCollapsed ? 'ragvyn-app-content--sidebar-collapsed' : '',
+          showSidebar && !isMobile && !sidebarCollapsed ? 'ragvyn-app-content--sidebar-expanded' : '',
+          showSidebar && !isMobile && sidebarCollapsed ? 'ragvyn-app-content--sidebar-collapsed' : '',
         ].filter(Boolean).join(' ')}
       >
         <div className="ragvyn-shell-flow">
@@ -9265,6 +9026,30 @@ function AppContent() {
             path="/sitemap"
             element={
               <SitemapPage />
+            }
+          />
+          {/* Use Cases page */}
+          <Route
+            path="/use-cases"
+            element={
+              <UseCasesPage
+                navbar={
+                  <Navbar
+                    onOpenAbout={() => setIsAboutOpen(true)}
+                    onOpenWizard={() => setIsWizardOpen(true)}
+                    theme={theme}
+                    toggleTheme={toggleTheme}
+                    fontSize={fontSize}
+                    setFontSize={setFontSize}
+                    setPrefillPrompt={setPrefillPrompt}
+                    isLoggedIn={isLoggedIn}
+                    userName={userName}
+                    userEmail={userEmail}
+                    onLogout={signOut}
+                    onSwitchAccount={switchAccount}
+                  />
+                }
+              />
             }
           />
           {/* Legacy route redirects */}
