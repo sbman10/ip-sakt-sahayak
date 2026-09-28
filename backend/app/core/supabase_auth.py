@@ -102,7 +102,37 @@ def verify_supabase_jwt(token: str) -> Dict[str, Any]:
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-    # 2. Production JWKS Verification
+    # 2. Check internal HS256 tokens (dummy test accounts, local authentication)
+    try:
+        header = jwt.get_unverified_header(token)
+        if header.get("alg") == "HS256":
+            try:
+                legacy_payload = jwt.decode(
+                    token,
+                    settings.JWT_SECRET_KEY,
+                    algorithms=[settings.ALGORITHM],
+                    options={"verify_exp": True},
+                )
+                if legacy_payload and ("user_id" in legacy_payload or "sub" in legacy_payload):
+                    return {
+                        "sub": str(legacy_payload.get("user_id") or legacy_payload.get("sub")),
+                        "email": legacy_payload.get("email"),
+                        "role": legacy_payload.get("role", "user"),
+                    }
+            except ExpiredSignatureError:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Token has expired",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+            except Exception:
+                pass
+    except HTTPException:
+        raise
+    except Exception:
+        pass
+
+    # 3. Production Supabase JWKS Verification
     jwks = get_jwks_client()
     base_url = (settings.SUPABASE_URL or "").strip().rstrip("/")
     expected_issuer = f"{base_url}/auth/v1" if base_url else None

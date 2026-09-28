@@ -24,7 +24,7 @@ from app.models.database import (
     User,
     get_db,
 )
-from app.routers.auth import require_auth, get_current_user
+from app.core.supabase_auth import require_auth, get_current_user
 
 log = logging.getLogger("app.core.dependencies")
 

@@ -12,6 +12,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react'
 import { supabase, siteUrl } from '../api/supabaseClient'
+import { getApiBase } from '../api/config'
 
 const AuthContext = createContext(null)
 
@@ -60,9 +61,36 @@ export function AuthProvider({ children }) {
       if (error) {
         console.warn('[AuthContext] Session retrieval error:', error.message)
       }
-      setSession(initialSession)
-      setUser(initialSession?.user || null)
-      syncLocalCaches(initialSession)
+      if (initialSession) {
+        setSession(initialSession)
+        setUser(initialSession?.user || null)
+        syncLocalCaches(initialSession)
+      } else {
+        // Fallback: check stored local session for test accounts / password login
+        const savedToken = localStorage.getItem('ip_sakti_access_token')
+        const savedUserStr = localStorage.getItem('ip_sakti_user')
+        if (savedToken && savedUserStr) {
+          try {
+            const savedUser = JSON.parse(savedUserStr)
+            const fallbackSession = {
+              access_token: savedToken,
+              user: {
+                id: savedUser.id,
+                email: savedUser.email,
+                role: savedUser.role || 'user',
+                user_metadata: {
+                  full_name: savedUser.full_name,
+                  name: savedUser.full_name,
+                },
+              },
+            }
+            setSession(fallbackSession)
+            setUser(fallbackSession.user)
+          } catch {
+            // invalid json
+          }
+        }
+      }
       setLoading(false)
     })
 
@@ -116,23 +144,85 @@ export function AuthProvider({ children }) {
     const normalizedEmail = (email || '').trim().toLowerCase()
     const normalizedToken = (token || '').trim()
 
-    const { data, error } = await supabase.auth.verifyOtp({
+    // Try standard email OTP type, fallback to magiclink if rejected by server config
+    let res = await supabase.auth.verifyOtp({
       email: normalizedEmail,
       token: normalizedToken,
       type: 'email',
     })
 
-    if (error) {
-      throw error
+    if (res.error && (res.error.message?.toLowerCase().includes('type') || res.error.status === 400)) {
+      const fallbackRes = await supabase.auth.verifyOtp({
+        email: normalizedEmail,
+        token: normalizedToken,
+        type: 'magiclink',
+      })
+      if (!fallbackRes.error) {
+        res = fallbackRes
+      }
     }
 
-    if (data.session) {
-      setSession(data.session)
-      setUser(data.session.user)
-      syncLocalCaches(data.session)
+    if (res.error) {
+      throw res.error
     }
 
-    return data
+    if (res.data?.session) {
+      setSession(res.data.session)
+      setUser(res.data.session.user)
+      syncLocalCaches(res.data.session)
+    }
+
+    return res.data
+  }, [syncLocalCaches])
+
+  /**
+   * Direct password login (for dummy test accounts & local auth).
+   */
+  const loginWithPassword = useCallback(async (email, password) => {
+    const apiBase = getApiBase()
+    const res = await fetch(`${apiBase}/api/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: (email || '').trim().toLowerCase(),
+        password: password,
+      }),
+    })
+
+    const data = await res.json()
+    if (!res.ok) {
+      throw new Error(data.detail || 'Login failed. Please verify your credentials.')
+    }
+
+    const newSession = {
+      access_token: data.tokens.access_token,
+      refresh_token: data.tokens.refresh_token,
+      user: {
+        id: data.user.id,
+        email: data.user.email,
+        role: data.user.role || 'user',
+        user_metadata: {
+          full_name: data.user.full_name,
+          name: data.user.full_name,
+          organization: data.user.organization,
+          role: data.user.role,
+        },
+      },
+    }
+
+    setSession(newSession)
+    setUser(newSession.user)
+    syncLocalCaches(newSession)
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('ip-sakti-user-updated', { detail: newSession.user })
+      )
+    }
+
+    return newSession
   }, [syncLocalCaches])
 
   /**
@@ -178,6 +268,7 @@ export function AuthProvider({ children }) {
     loading,
     signInWithOtp,
     verifyOtp,
+    loginWithPassword,
     signOut,
     switchAccount,
   }), [
@@ -190,6 +281,7 @@ export function AuthProvider({ children }) {
     loading,
     signInWithOtp,
     verifyOtp,
+    loginWithPassword,
     signOut,
     switchAccount,
   ])
