@@ -1,2 +1,0 @@
-"""Validated API data models."""
-

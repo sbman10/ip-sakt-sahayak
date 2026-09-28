@@ -1,4 +1,0 @@
-# Directory reserved for version-controlled PostgreSQL schema migrations
-# 0001_initial_schema.sql (users, conversations, messages, matter_workspace, matter_events, audit_logs, uploaded_documents)
-# 0002_indexes_and_constraints.sql
-# 0003_storage_metadata.sql
