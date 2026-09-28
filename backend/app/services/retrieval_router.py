@@ -646,7 +646,7 @@ class RetrievalRouter:
             latency_ms = (time.perf_counter() - start_time) * 1000.0
             canary_metrics_tracker.record_qdrant_success(latency_ms)
             log.info(
-                "[%s] Canary retrieval complete | backend: qdrant_hybrid | reason: %s | query_hash: %s | "
+                "[%s] Canary retrieval complete | retrieval_backend=qdrant_hybrid | reason: %s | query_hash: %s | "
                 "results: %d | latency: %.2fms",
                 req_id,
                 routing_reason,

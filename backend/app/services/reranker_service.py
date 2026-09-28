@@ -123,9 +123,16 @@ async def conditional_rerank(
         # Call async_rerank via worker thread pool
         scores = await async_rerank(query=query, passage_list=texts)
 
-        # Attach reranker_score to each candidate dictionary
+        import math
+
+        # Attach reranker_score to each candidate dictionary (sigmoid normalized to 0.0-1.0)
         for i, score in enumerate(scores):
-            candidates[i]["reranker_score"] = float(score)
+            raw = float(score)
+            if 0.0 <= raw <= 1.0:
+                norm_score = raw
+            else:
+                norm_score = 1.0 / (1.0 + math.exp(-raw))
+            candidates[i]["reranker_score"] = round(norm_score, 4)
             candidates[i]["rerank_skipped"] = False
 
         # Sort candidates by reranker_score descending

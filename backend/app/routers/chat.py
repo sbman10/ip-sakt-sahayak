@@ -388,8 +388,8 @@ async def chat_endpoint(
                 relevance=f"[{source_id}] Grounded in {source_name} ({section_name}).",
                 # Extended metadata (Phase 4)
                 authority=chunk.get("authority"),
-                page_number=chunk.get("page") or chunk.get("page_number"),
-                publication_date=chunk.get("publication_date"),
+                page_number=str(chunk.get("page") or chunk.get("page_number")) if (chunk.get("page") is not None or chunk.get("page_number") is not None) else None,
+                publication_date=str(chunk.get("publication_date")) if chunk.get("publication_date") is not None else None,
                 source_url=chunk.get("source_url") or chunk.get("url"),
                 reranker_score=chunk.get("reranker_score"),
                 context_before=chunk.get("context_before"),

@@ -141,13 +141,6 @@ const STEPS = [
     placement: 'right',
     openTools: true,
   },
-  // ---- FTO navigation item ----
-  {
-    selector: '[data-tour="fto"]',
-    titleKey: 'tourFtoTitle',
-    descKey: 'tourFtoDesc',
-    placement: 'bottom',
-  },
   // ---- Services dropdown ----
   {
     selector: '[data-tour="services"]',

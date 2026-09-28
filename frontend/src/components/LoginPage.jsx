@@ -1,27 +1,28 @@
 /**
  * frontend/src/components/LoginPage.jsx
  * --------------------------------------
- * Unified Authentication Page for RAGVYN.
+ * Unified Authentication Surface for RAGVYN AI.
  * 
  * Features:
- * - Optional single Admin prototype login.
- * - Direct ID & Password Authentication (bypasses email OTP for instant access).
- * - Optional Supabase Email OTP with 6/8 digit dynamic length support.
- * - Automatic session synchronization and reactive navigation.
+ * - Single combined Login/Register entry point with clean mode switching.
+ * - Registration with Full Name, Email, and Password via Supabase Auth.
+ * - Strict enforcement of Supabase email verification with "check your email" state and resend capability.
+ * - Login with Email & Password via supabase.auth.signInWithPassword.
+ * - Clear error states for unverified email, invalid credentials, rate-limits, and network errors.
+ * - Optional Admin demo and OTP fallback.
  */
 
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useLanguage } from '../App'
 import { useAuth } from '../context/AuthContext'
-import { IpSaktiLogo, IconCheck, IconLock, IconRefreshCw } from './Icons'
+import { IpSaktiLogo, IconCheck, IconLock, IconRefreshCw, IconMail, IconShieldCheck } from './Icons'
 
-// Demo credentials are read from local environment variables and never rendered.
+// Demo credentials for local / prototype review
 const ADMIN_DEMO_ENABLED = import.meta.env.DEV || import.meta.env.VITE_ENABLE_ADMIN_DEMO === 'true'
 const ADMIN_DEMO_EMAIL = import.meta.env.VITE_ADMIN_DEMO_EMAIL || 'admin@ipsakti.gov.in'
 const ADMIN_DEMO_PASSWORD = import.meta.env.VITE_ADMIN_DEMO_PASSWORD || 'Password@123'
 
-// Keep exactly one frontend demo profile. This does not create or delete Supabase users.
 const DUMMY_ACCOUNTS = [
   {
     id: 'admin',
@@ -39,23 +40,46 @@ export default function LoginPage({ onLogin }) {
   const { t } = useLanguage()
   const navigate = useNavigate()
   const location = useLocation()
-  const { signInWithOtp, verifyOtp, loginWithPassword, isLoggedIn } = useAuth()
+  const {
+    signInWithOtp,
+    verifyOtp,
+    signUpWithPassword,
+    loginWithPassword,
+    resendVerificationEmail,
+    isLoggedIn,
+  } = useAuth()
 
-  // Tabs: 'demo' | 'password' | 'otp'
-  const [authTab, setAuthTab] = useState('demo')
+  // Initial tab resolution: supports ?mode=register or state.register
+  const [authTab, setAuthTab] = useState(() => {
+    const params = new URLSearchParams(location.search)
+    if (params.get('mode') === 'register' || location.state?.register) {
+      return 'register'
+    }
+    return 'login'
+  })
 
-  // Password Login State
+  // Login Form State
   const [loginEmail, setLoginEmail] = useState('')
   const [loginPassword, setLoginPassword] = useState('')
 
-  // OTP Login State
+  // Register Form State
+  const [regFullName, setRegFullName] = useState('')
+  const [regEmail, setRegEmail] = useState('')
+  const [regPassword, setRegPassword] = useState('')
+
+  // Email Verification Screen State
+  const [verificationPending, setVerificationPending] = useState(false)
+  const [pendingEmail, setPendingEmail] = useState('')
+  const [unverifiedLoginEmail, setUnverifiedLoginEmail] = useState(null)
+
+  // OTP Login State (optional secondary action)
   const [otpStep, setOtpStep] = useState('email')
   const [otpEmail, setOtpEmail] = useState('')
   const [otpLength, setOtpLength] = useState(8)
   const [otpCode, setOtpCode] = useState(() => Array(8).fill(''))
   const [cooldown, setCooldown] = useState(0)
 
-  // Common UI State
+  // Feedback UI State
   const [isLoading, setIsLoading] = useState(false)
   const [loadingAccountId, setLoadingAccountId] = useState(null)
   const [error, setError] = useState('')
@@ -63,7 +87,7 @@ export default function LoginPage({ onLogin }) {
 
   const otpInputsRef = useRef([])
 
-  // If already logged in, redirect away
+  // If already logged in, redirect away to requested page or home
   useEffect(() => {
     if (isLoggedIn) {
       const redirectUrl = location.state?.from || '/'
@@ -71,7 +95,7 @@ export default function LoginPage({ onLogin }) {
     }
   }, [isLoggedIn, navigate, location.state])
 
-  // Cooldown timer for resending OTP
+  // Cooldown timer for resending verification / OTP
   useEffect(() => {
     if (cooldown <= 0) return
     const timer = setInterval(() => {
@@ -89,14 +113,168 @@ export default function LoginPage({ onLogin }) {
     }
   }, [authTab, otpStep, otpLength])
 
-  const toggleOtpLength = (targetLen) => {
-    const newLen = targetLen || (otpLength === 8 ? 6 : 8)
-    setOtpLength(newLen)
-    setOtpCode(Array(newLen).fill(''))
+  // Reset tab errors on tab switch
+  const switchTab = (tab) => {
+    setAuthTab(tab)
     setError('')
+    setSuccess('')
+    setUnverifiedLoginEmail(null)
   }
 
-  // 1. Instant Demo / Test Account Login
+  // -------------------------------------------------------------
+  // 1. Supabase User Registration
+  // -------------------------------------------------------------
+  const handleRegisterSubmit = async (e) => {
+    if (e) e.preventDefault()
+    setError('')
+    setSuccess('')
+    setUnverifiedLoginEmail(null)
+
+    const cleanName = regFullName.trim()
+    const cleanEmail = regEmail.trim().toLowerCase()
+    const cleanPass = regPassword
+
+    // Validation
+    if (!cleanName || !cleanEmail || !cleanPass) {
+      setError('Please provide your full name, email address, and password.')
+      return
+    }
+
+    if (!EMAIL_REGEX.test(cleanEmail)) {
+      setError('Please enter a valid email address.')
+      return
+    }
+
+    if (cleanPass.length < 6) {
+      setError('Password must be at least 6 characters long.')
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const data = await signUpWithPassword(cleanEmail, cleanPass, cleanName)
+      
+      // If email verification is required (standard Supabase configuration)
+      // data.user exists but data.session is null until verified.
+      if (data?.user && !data?.session) {
+        setPendingEmail(cleanEmail)
+        setVerificationPending(true)
+        setCooldown(60)
+        setSuccess('Registration successful! Please verify your email to continue.')
+      } else if (data?.session) {
+        // Auto-confirmed environment
+        setSuccess('Registration successful! Entering workspace...')
+        if (onLogin && data.user) {
+          onLogin(data.user.email, cleanName)
+        }
+        setTimeout(() => {
+          const redirectUrl = location.state?.from || '/'
+          navigate(redirectUrl, { replace: true })
+        }, 400)
+      }
+    } catch (err) {
+      console.error('[LoginPage] Registration error:', err)
+      const msg = err.message || ''
+      if (msg.toLowerCase().includes('already registered') || msg.toLowerCase().includes('user already exists')) {
+        setError('An account with this email address already exists. Please log in instead.')
+      } else if (msg.toLowerCase().includes('rate limit')) {
+        setError('Too many registration attempts. Please wait a few moments and try again.')
+      } else if (msg.toLowerCase().includes('network') || msg.toLowerCase().includes('fetch')) {
+        setError('Network connection error. Please check your internet connection and try again.')
+      } else {
+        setError(msg || 'Registration failed. Please check your details and try again.')
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // -------------------------------------------------------------
+  // 2. Supabase Password Login
+  // -------------------------------------------------------------
+  const handlePasswordSubmit = async (e) => {
+    if (e) e.preventDefault()
+    setError('')
+    setSuccess('')
+    setUnverifiedLoginEmail(null)
+
+    const cleanEmail = loginEmail.trim().toLowerCase()
+    const cleanPass = loginPassword
+
+    if (!cleanEmail || !cleanPass) {
+      setError('Please provide both email and password.')
+      return
+    }
+
+    if (!EMAIL_REGEX.test(cleanEmail)) {
+      setError('Please enter a valid email address.')
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const data = await loginWithPassword(cleanEmail, cleanPass)
+      setSuccess('Login successful! Entering workspace...')
+      if (onLogin && data?.user) {
+        onLogin(
+          data.user.email,
+          data.user.user_metadata?.full_name || data.user.email.split('@')[0]
+        )
+      }
+      setTimeout(() => {
+        const redirectUrl = location.state?.from || '/'
+        navigate(redirectUrl, { replace: true })
+      }, 300)
+    } catch (err) {
+      console.error('[LoginPage] Password login error:', err)
+      const msg = (err.message || '').toLowerCase()
+      if (msg.includes('email not confirmed')) {
+        setUnverifiedLoginEmail(cleanEmail)
+        setError('Your email has not been verified yet. Please check your inbox or resend the verification email below.')
+      } else if (msg.includes('invalid login credentials') || msg.includes('invalid') || msg.includes('grant_error')) {
+        setError('Invalid email or password. Please verify your credentials and try again.')
+      } else if (msg.includes('rate limit') || msg.includes('too many')) {
+        setError('Too many login attempts. Please wait a few moments and try again.')
+      } else if (msg.includes('network') || msg.includes('fetch')) {
+        setError('Unable to connect to the authentication service. Please check your internet connection.')
+      } else {
+        setError(err.message || 'Login failed. Please verify your credentials.')
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // -------------------------------------------------------------
+  // 3. Resend Verification Email
+  // -------------------------------------------------------------
+  const handleResendVerification = async (targetEmail) => {
+    const emailToUse = targetEmail || pendingEmail || unverifiedLoginEmail || loginEmail
+    if (!emailToUse) return
+
+    setError('')
+    setSuccess('')
+    setIsLoading(true)
+    try {
+      await resendVerificationEmail(emailToUse)
+      setSuccess(`Verification link re-sent to ${emailToUse}. Please check your inbox.`)
+      setCooldown(60)
+    } catch (err) {
+      console.error('[LoginPage] Resend verification error:', err)
+      const msg = (err.message || '').toLowerCase()
+      if (msg.includes('rate limit')) {
+        setError('Please wait a moment before requesting another verification email.')
+      } else {
+        setError(err.message || 'Failed to resend verification email. Please try again later.')
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // -------------------------------------------------------------
+  // 4. Quick Demo / Prototype Profile Login
+  // -------------------------------------------------------------
   const handleQuickLogin = async (acc) => {
     setError('')
     setSuccess('')
@@ -106,10 +284,10 @@ export default function LoginPage({ onLogin }) {
       if (!ADMIN_DEMO_EMAIL || !ADMIN_DEMO_PASSWORD) {
         throw new Error('Admin demo access is not configured for this environment.')
       }
-      const sessionData = await loginWithPassword(ADMIN_DEMO_EMAIL, ADMIN_DEMO_PASSWORD)
+      const data = await loginWithPassword(ADMIN_DEMO_EMAIL, ADMIN_DEMO_PASSWORD)
       setSuccess(`Authenticated as ${acc.name}! Accessing workspace...`)
-      if (onLogin && sessionData.user) {
-        onLogin(sessionData.user.email, sessionData.user.user_metadata?.full_name || acc.name)
+      if (onLogin && data?.user) {
+        onLogin(data.user.email, data.user.user_metadata?.full_name || acc.name)
       }
       setTimeout(() => {
         const redirectUrl = location.state?.from || '/'
@@ -117,56 +295,23 @@ export default function LoginPage({ onLogin }) {
       }, 300)
     } catch (err) {
       console.error('[LoginPage] Quick login failed:', err)
-      setError(err.message || 'Login failed. Please check backend status.')
+      setError(err.message || 'Demo login failed.')
     } finally {
       setIsLoading(false)
       setLoadingAccountId(null)
     }
   }
 
-  // 2. Manual Email & Password Login
-  const handlePasswordSubmit = async (e) => {
-    if (e) e.preventDefault()
-    setError('')
-    setSuccess('')
-
-    const cleanEmail = loginEmail.trim().toLowerCase()
-    if (!cleanEmail || !loginPassword) {
-      setError('Please provide both email and password.')
-      return
-    }
-
-    setIsLoading(true)
-    try {
-      const sessionData = await loginWithPassword(cleanEmail, loginPassword)
-      setSuccess('Login successful! Entering workspace...')
-      if (onLogin && sessionData.user) {
-        onLogin(
-          sessionData.user.email,
-          sessionData.user.user_metadata?.full_name || sessionData.user.email.split('@')[0]
-        )
-      }
-      setTimeout(() => {
-        const redirectUrl = location.state?.from || '/'
-        navigate(redirectUrl, { replace: true })
-      }, 300)
-    } catch (err) {
-      console.error('[LoginPage] Password login error:', err)
-      setError(err.message || 'Invalid email or password.')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  // 3. Send Supabase Email OTP
+  // -------------------------------------------------------------
+  // 5. OTP Login Handlers
+  // -------------------------------------------------------------
   const handleSendOtp = async (e) => {
     if (e) e.preventDefault()
     setError('')
     setSuccess('')
-
     const cleanEmail = otpEmail.trim().toLowerCase()
     if (!cleanEmail || !EMAIL_REGEX.test(cleanEmail)) {
-      setError('Please enter a valid email address.')
+      setError('Please enter a valid email address to receive your passcode.')
       return
     }
 
@@ -175,49 +320,21 @@ export default function LoginPage({ onLogin }) {
       await signInWithOtp(cleanEmail)
       setOtpStep('otp')
       setCooldown(60)
-      setSuccess(`A verification passcode has been sent to ${cleanEmail}.`)
+      setSuccess(`Verification code dispatched to ${cleanEmail}.`)
     } catch (err) {
-      console.error('[LoginPage] OTP request error:', err)
-      const msg = err.message || ''
-      if (msg.includes('rate limit') || msg.includes('over_email_send_rate_limit')) {
-        setError('Too many login attempts. Please wait a minute before requesting another code.')
-      } else if (msg.includes('Invalid API key') || msg.includes('anon') || msg.includes('placeholder')) {
-        setError('Supabase anonymous key (VITE_SUPABASE_ANON_KEY) is missing. You can use the Quick Demo Logins tab above!')
-      } else if (msg.includes('Error sending') || msg.includes('unexpected_failure')) {
-        setError('Supabase could not dispatch email (Custom SMTP required). Use the Quick Demo Logins tab to enter instantly!')
-      } else {
-        setError(msg || 'Unable to send verification code. Please check your connection.')
-      }
+      console.error('[LoginPage] OTP dispatch error:', err)
+      setError(err.message || 'Failed to dispatch verification code.')
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Handle OTP digit changes
   const handleOtpChange = (index, value) => {
-    const cleanVal = value.replace(/[^0-9]/g, '')
-
-    if (cleanVal.length > 1) {
-      const targetLen = cleanVal.length >= 8 ? 8 : 6
-      if (targetLen !== otpLength) {
-        setOtpLength(targetLen)
-      }
-      const digits = cleanVal.slice(0, targetLen).split('')
-      const newOtp = Array(targetLen).fill('')
-      digits.forEach((d, i) => {
-        newOtp[i] = d
-      })
-      setOtpCode(newOtp)
-      const nextFocus = Math.min(digits.length, targetLen - 1)
-      otpInputsRef.current[nextFocus]?.focus()
-      return
-    }
-
+    const digit = value.slice(-1).replace(/[^0-9]/g, '')
     const newOtp = [...otpCode]
-    newOtp[index] = cleanVal ? cleanVal[0] : ''
+    newOtp[index] = digit
     setOtpCode(newOtp)
-
-    if (cleanVal && index < otpLength - 1) {
+    if (digit && index < otpLength - 1) {
       otpInputsRef.current[index + 1]?.focus()
     }
   }
@@ -228,22 +345,27 @@ export default function LoginPage({ onLogin }) {
     }
   }
 
-  // Verify Supabase OTP
+  const toggleOtpLength = (targetLen) => {
+    const newLen = targetLen || (otpLength === 8 ? 6 : 8)
+    setOtpLength(newLen)
+    setOtpCode(Array(newLen).fill(''))
+    setError('')
+  }
+
   const handleVerifyOtp = async (e) => {
     if (e) e.preventDefault()
-    setError('')
-    setSuccess('')
-
-    const code = otpCode.join('').trim()
-    if (code.length !== otpLength) {
-      setError(`Please enter the complete ${otpLength}-digit verification code.`)
+    const token = otpCode.join('').trim()
+    if (token.length !== otpLength) {
+      setError(`Please enter the complete ${otpLength}-digit code.`)
       return
     }
 
+    setError('')
+    setSuccess('')
     setIsLoading(true)
     try {
-      const data = await verifyOtp(otpEmail.trim().toLowerCase(), code)
-      setSuccess('Verification successful! Accessing workspace...')
+      const data = await verifyOtp(otpEmail, token)
+      setSuccess('Verification verified! Entering workspace...')
       if (onLogin && data.user) {
         onLogin(
           data.user.email,
@@ -256,14 +378,7 @@ export default function LoginPage({ onLogin }) {
       }, 300)
     } catch (err) {
       console.error('[LoginPage] Verification error:', err)
-      const msg = (err.message || '').toLowerCase()
-      if (msg.includes('expired') || msg.includes('timeout')) {
-        setError('Verification code has expired. Please request a new code.')
-      } else if (msg.includes('invalid') || msg.includes('token')) {
-        setError('Invalid verification code. Please check your email and try again.')
-      } else {
-        setError(err.message || 'Verification failed. Please try again.')
-      }
+      setError(err.message || 'Invalid or expired verification code.')
     } finally {
       setIsLoading(false)
     }
@@ -303,51 +418,302 @@ export default function LoginPage({ onLogin }) {
               </div>
               <div className="login-feature">
                 <span className="login-feature-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <IconCheck size={14} />
+                  <IconShieldCheck size={14} />
                 </span>
-                <span>Role-Based Multi-Tenant Isolation</span>
+                <span>Supabase Protected Authentication</span>
               </div>
             </div>
-
           </div>
         </div>
 
         {/* Right Panel - Auth Controls */}
         <div className="login-form-panel">
-          <div className="login-form-container" style={{ maxWidth: '520px' }}>
+          <div className="login-form-container" style={{ maxWidth: '440px' }}>
             <div className="login-form-header">
               <h2>Workspace Authentication</h2>
-              <p>Sign in to continue to your RAGVYN workspace.</p>
+              <p>
+                {authTab === 'register'
+                  ? 'Create an account to begin your verified IP consultation.'
+                  : 'Sign in to access your RAGVYN workspace.'}
+              </p>
             </div>
 
-            {/* Password login remains primary; OTP is intentionally a bottom action. */}
-            <div className="login-auth-tabs" role="tablist" aria-label="Authentication methods">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={authTab === 'demo'}
-                onClick={() => { setAuthTab('demo'); setError(''); setSuccess('') }}
-                className="login-auth-tab"
-              >
-                Admin demo
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={authTab === 'password'}
-                onClick={() => { setAuthTab('password'); setError(''); setSuccess('') }}
-                className="login-auth-tab"
-              >
-                Password login
-              </button>
-            </div>
+            {/* Combined Login/Register Tabs */}
+            {!verificationPending && (
+              <div className="login-auth-tabs" role="tablist" aria-label="Authentication methods">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={authTab === 'login'}
+                  onClick={() => switchTab('login')}
+                  className="login-auth-tab"
+                  id="tab-login"
+                >
+                  Sign In
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={authTab === 'register'}
+                  onClick={() => switchTab('register')}
+                  className="login-auth-tab"
+                  id="tab-register"
+                >
+                  Register
+                </button>
+                {ADMIN_DEMO_ENABLED && (
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={authTab === 'demo'}
+                    onClick={() => switchTab('demo')}
+                    className="login-auth-tab"
+                    id="tab-demo"
+                  >
+                    Admin demo
+                  </button>
+                )}
+              </div>
+            )}
 
-            {/* Error & Success Banners */}
-            {error && <div className="login-error" role="alert">{error}</div>}
+            {/* Error & Success Messages */}
+            {error && (
+              <div className="login-error" role="alert">
+                <p>{error}</p>
+                {unverifiedLoginEmail && (
+                  <button
+                    type="button"
+                    onClick={() => handleResendVerification(unverifiedLoginEmail)}
+                    disabled={isLoading || cooldown > 0}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#991b1b',
+                      textDecoration: 'underline',
+                      fontWeight: '700',
+                      cursor: cooldown > 0 ? 'default' : 'pointer',
+                      marginTop: '6px',
+                      display: 'block',
+                      fontSize: '0.85rem',
+                      width: '100%',
+                      textAlign: 'center',
+                    }}
+                  >
+                    {cooldown > 0 ? `Resend email in ${cooldown}s` : 'Resend verification email'}
+                  </button>
+                )}
+              </div>
+            )}
             {success && <div className="login-success" role="status">{success}</div>}
 
-            {/* Single Admin prototype entry; this does not create or delete users. */}
-            {authTab === 'demo' && (
+            {/* ========================================================
+                EMAIL VERIFICATION ENFORCEMENT STATE
+                ======================================================== */}
+            {verificationPending ? (
+              <div className="login-verification-card" style={{ textAlign: 'center', padding: '16px 0' }}>
+                <div
+                  style={{
+                    width: '64px',
+                    height: '64px',
+                    borderRadius: '50%',
+                    background: 'rgba(21, 94, 55, 0.12)',
+                    color: '#155e37',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 16px',
+                  }}
+                >
+                  <IconMail size={32} />
+                </div>
+
+                <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#155e37', marginBottom: '8px' }}>
+                  Check Your Email
+                </h3>
+
+                <p style={{ fontSize: '0.9rem', color: '#475569', lineHeight: '1.5', marginBottom: '16px' }}>
+                  A verification link has been sent to <strong>{pendingEmail}</strong>. Please check your inbox and verify your email to activate your account.
+                </p>
+
+                <div
+                  style={{
+                    background: 'rgba(248, 250, 252, 0.8)',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    padding: '12px',
+                    fontSize: '0.82rem',
+                    color: '#64748b',
+                    marginBottom: '20px',
+                    textAlign: 'left',
+                  }}
+                >
+                  <strong>Note:</strong> Email verification is strictly enforced before accessing protected workspace features. Once verified, you can return here to sign in.
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => handleResendVerification(pendingEmail)}
+                    disabled={isLoading || cooldown > 0}
+                    className="login-submit-btn"
+                    style={{ margin: 0 }}
+                  >
+                    {isLoading ? <IconRefreshCw size={16} className="spin" /> : null}
+                    <span>{cooldown > 0 ? `Resend Email (${cooldown}s)` : 'Resend Verification Email'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setVerificationPending(false)
+                      switchTab('login')
+                      setLoginEmail(pendingEmail)
+                    }}
+                    style={{
+                      background: 'transparent',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '10px',
+                      padding: '10px',
+                      fontSize: '0.88rem',
+                      fontWeight: '600',
+                      color: '#475569',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    ← Back to Sign In
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            {/* ========================================================
+                TAB 1: SIGN IN (EMAIL + PASSWORD)
+                ======================================================== */}
+            {!verificationPending && authTab === 'login' && (
+              <form onSubmit={handlePasswordSubmit} className="login-form" noValidate>
+                <div className="login-field">
+                  <label htmlFor="loginEmail">Email Address</label>
+                  <input
+                    type="email"
+                    id="loginEmail"
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    placeholder="innovator@organization.gov.in"
+                    required
+                    autoFocus
+                    disabled={isLoading}
+                    autoComplete="email"
+                  />
+                </div>
+
+                <div className="login-field">
+                  <label htmlFor="loginPassword">Password</label>
+                  <input
+                    type="password"
+                    id="loginPassword"
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                    disabled={isLoading}
+                    autoComplete="current-password"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="login-submit-btn"
+                  disabled={isLoading || !loginEmail.trim() || !loginPassword}
+                >
+                  {isLoading ? <IconRefreshCw size={16} className="spin" /> : null}
+                  <span>{isLoading ? 'Signing In...' : 'Sign In →'}</span>
+                </button>
+
+                <div className="login-toggle">
+                  <span>Don't have an account?</span>
+                  <button
+                    type="button"
+                    onClick={() => switchTab('register')}
+                  >
+                    Register here
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* ========================================================
+                TAB 2: REGISTRATION (FULL NAME + EMAIL + PASSWORD)
+                ======================================================== */}
+            {!verificationPending && authTab === 'register' && (
+              <form onSubmit={handleRegisterSubmit} className="login-form" noValidate>
+                <div className="login-field">
+                  <label htmlFor="regFullName">Full Name</label>
+                  <input
+                    type="text"
+                    id="regFullName"
+                    value={regFullName}
+                    onChange={(e) => setRegFullName(e.target.value)}
+                    placeholder="e.g. Dr. Ananya Sharma"
+                    required
+                    autoFocus
+                    disabled={isLoading}
+                    autoComplete="name"
+                  />
+                </div>
+
+                <div className="login-field">
+                  <label htmlFor="regEmail">Email Address</label>
+                  <input
+                    type="email"
+                    id="regEmail"
+                    value={regEmail}
+                    onChange={(e) => setRegEmail(e.target.value)}
+                    placeholder="innovator@organization.gov.in"
+                    required
+                    disabled={isLoading}
+                    autoComplete="email"
+                  />
+                </div>
+
+                <div className="login-field">
+                  <label htmlFor="regPassword">Password (Min. 6 Characters)</label>
+                  <input
+                    type="password"
+                    id="regPassword"
+                    value={regPassword}
+                    onChange={(e) => setRegPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                    disabled={isLoading}
+                    autoComplete="new-password"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="login-submit-btn"
+                  disabled={isLoading || !regFullName.trim() || !regEmail.trim() || !regPassword}
+                >
+                  {isLoading ? <IconRefreshCw size={16} className="spin" /> : null}
+                  <span>{isLoading ? 'Creating Account...' : 'Create Account →'}</span>
+                </button>
+
+                <div className="login-toggle">
+                  <span>Already have an account?</span>
+                  <button
+                    type="button"
+                    onClick={() => switchTab('login')}
+                  >
+                    Sign in here
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* ========================================================
+                TAB 3: PROTOTYPE DEMO ACCESS (OPTIONAL)
+                ======================================================== */}
+            {!verificationPending && authTab === 'demo' && ADMIN_DEMO_ENABLED && (
               <div className="login-demo-section">
                 <p className="login-demo-intro">Use the configured prototype profile to preview the workspace.</p>
                 <div className="login-demo-list">
@@ -366,11 +732,11 @@ export default function LoginPage({ onLogin }) {
                         <button
                           type="button"
                           onClick={() => handleQuickLogin(acc)}
-                          disabled={isLoading || !ADMIN_DEMO_ENABLED}
+                          disabled={isLoading}
                           className="login-submit-btn"
                         >
                           {isCardLoading ? <IconRefreshCw size={14} className="spin" /> : null}
-                          <span>{isCardLoading ? 'Entering...' : ADMIN_DEMO_ENABLED ? 'Continue as Admin →' : 'Demo unavailable'}</span>
+                          <span>{isCardLoading ? 'Entering...' : 'Continue as Admin →'}</span>
                         </button>
                       </div>
                     )
@@ -379,52 +745,10 @@ export default function LoginPage({ onLogin }) {
               </div>
             )}
 
-            {/* Tab 2: Manual Password Login */}
-            {authTab === 'password' && (
-              <form onSubmit={handlePasswordSubmit} className="login-form" noValidate>
-                <div className="login-field">
-                  <label htmlFor="loginEmail">Email Address</label>
-                  <input
-                    type="email"
-                    id="loginEmail"
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                    placeholder="e.g. admin@ipsakti.gov.in"
-                    required
-                    autoFocus
-                    disabled={isLoading}
-                    autoComplete="email"
-                  />
-                </div>
-
-                <div className="login-field">
-                  <label htmlFor="loginPassword">Password</label>
-                  <input
-                    type="password"
-                    id="loginPassword"
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    placeholder="Password@123"
-                    required
-                    disabled={isLoading}
-                    autoComplete="current-password"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="login-submit-btn"
-                  disabled={isLoading || !loginEmail.trim() || !loginPassword}
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                >
-                  {isLoading && <IconRefreshCw size={16} className="spin" />}
-                  <span>{isLoading ? 'Authenticating...' : 'Sign In with Password →'}</span>
-                </button>
-              </form>
-            )}
-
-            {/* Tab 3: Supabase Email OTP */}
-            {authTab === 'otp' && (
+            {/* ========================================================
+                TAB 4: OPTIONAL OTP FALLBACK
+                ======================================================== */}
+            {!verificationPending && authTab === 'otp' && (
               otpStep === 'email' ? (
                 <form onSubmit={handleSendOtp} className="login-form" noValidate>
                   <div className="login-field">
@@ -446,9 +770,8 @@ export default function LoginPage({ onLogin }) {
                     type="submit"
                     className="login-submit-btn"
                     disabled={isLoading || !otpEmail.trim()}
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                   >
-                    {isLoading && <IconRefreshCw size={16} className="spin" />}
+                    {isLoading ? <IconRefreshCw size={16} className="spin" /> : null}
                     <span>{isLoading ? 'Sending Passcode...' : 'Send Verification Code →'}</span>
                   </button>
                 </form>
@@ -518,9 +841,8 @@ export default function LoginPage({ onLogin }) {
                     type="submit"
                     className="login-submit-btn"
                     disabled={isLoading || otpCode.join('').length !== otpLength}
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                   >
-                    {isLoading && <IconRefreshCw size={16} className="spin" />}
+                    {isLoading ? <IconRefreshCw size={16} className="spin" /> : null}
                     <span>{isLoading ? 'Verifying...' : 'Verify & Continue →'}</span>
                   </button>
 
@@ -573,16 +895,18 @@ export default function LoginPage({ onLogin }) {
               )
             )}
 
-            {authTab !== 'otp' && <div className="login-otp-action">
-              <span>Prefer a code instead?</span>
-              <button
-                type="button"
-                onClick={() => { setAuthTab('otp'); setError(''); setSuccess('') }}
-                aria-label="Sign in with email OTP"
-              >
-                Sign in with email OTP
-              </button>
-            </div>}
+            {!verificationPending && authTab !== 'otp' && (
+              <div className="login-otp-action" style={{ marginTop: '16px' }}>
+                <span>Prefer a one-time code?</span>
+                <button
+                  type="button"
+                  onClick={() => switchTab('otp')}
+                  aria-label="Sign in with email OTP"
+                >
+                  Sign in with email OTP
+                </button>
+              </div>
+            )}
 
             {/* Terms Note */}
             <p className="login-terms" style={{ marginTop: '20px' }}>
@@ -595,7 +919,7 @@ export default function LoginPage({ onLogin }) {
             {/* Security Badge */}
             <div className="login-security" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
               <IconLock size={14} />
-              <span>Secure session handling</span>
+              <span>Official Supabase Encrypted Authentication</span>
             </div>
           </div>
         </div>

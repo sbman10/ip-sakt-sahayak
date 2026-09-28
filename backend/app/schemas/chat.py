@@ -167,7 +167,7 @@ class CitationItem(BaseModel):
         default=None,
         description="Issuing authority (e.g. 'Government of India', 'WIPO').",
     )
-    page_number: Optional[str] = Field(
+    page_number: Optional[Union[str, int]] = Field(
         default=None,
         description="Page number in the original document.",
     )
