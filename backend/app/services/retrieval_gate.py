@@ -41,7 +41,9 @@ def evaluate_retrieval_quality(
         Evaluation decision dictionary containing:
         - is_sufficient: bool
         - reason: str
-        - best_distance: float
+        - best_distance: Optional[float]
+        - best_dense_score: Optional[float]
+        - best_sparse_score: Optional[float]
         - top_rrf_score: float
     """
     if not candidates:
@@ -50,14 +52,28 @@ def evaluate_retrieval_quality(
             "is_sufficient": False,
             "reason": "Insufficient evidence in legal registers",
             "best_distance": 1.0,
+            "best_dense_score": None,
+            "best_sparse_score": None,
             "top_rrf_score": 0.0,
         }
 
-    # Qdrant's native RRF score is not a cosine similarity or distance. A
-    # reciprocal-rank score is positive when at least one hybrid branch
-    # returned the candidate, so it requires its own threshold. Applying a
-    # raw distance threshold to it would incorrectly abstain on valid
-    # Qdrant results.
+    # Extract real branch scores if available on candidates
+    dense_scores = [
+        float(c["dense_score"])
+        for c in candidates
+        if c.get("dense_score") is not None
+    ]
+    best_dense_score = max(dense_scores) if dense_scores else None
+
+    sparse_scores = [
+        float(c["sparse_score"])
+        for c in candidates
+        if c.get("sparse_score") is not None
+    ]
+    best_sparse_score = max(sparse_scores) if sparse_scores else None
+
+    # Qdrant's native RRF score is a reciprocal rank fusion signal only.
+    # It is NOT cosine similarity, vector distance, or probability of correctness.
     qdrant_rrf_candidates = [
         c for c in candidates if c.get("retrieval_score_type") == "qdrant_rrf"
     ]
@@ -76,15 +92,12 @@ def evaluate_retrieval_quality(
             return {
                 "is_sufficient": False,
                 "reason": "Insufficient evidence in legal registers",
-                "best_distance": 1.0,
+                "best_distance": (1.0 - best_dense_score) if best_dense_score is not None else 1.0,
+                "best_dense_score": best_dense_score,
+                "best_sparse_score": best_sparse_score,
                 "top_rrf_score": top_rrf_score,
             }
 
-        # Compatibility value for downstream confidence code only. It is not
-        # treated as a real cosine distance; native RRF remains authoritative.
-        max_two_branch_rank_one = 2.0 / 61.0
-        normalized_rrf = min(1.0, top_rrf_score / max_two_branch_rank_one)
-        best_distance = 1.0 - normalized_rrf
         log.info(
             "Qdrant RRF quality accepted: top_rrf_score=%.4f, minimum=%.4f.",
             top_rrf_score,
@@ -93,15 +106,18 @@ def evaluate_retrieval_quality(
         return {
             "is_sufficient": True,
             "reason": "Sufficient hybrid statutory evidence found",
-            "best_distance": best_distance,
+            "best_distance": (1.0 - best_dense_score) if best_dense_score is not None else None,
+            "best_dense_score": best_dense_score,
+            "best_sparse_score": best_sparse_score,
             "top_rrf_score": top_rrf_score,
         }
 
-    # Fallback / lexical path: inspect distance if present.
+    # Fallback / lexical path: inspect real distance if present.
     distances = [
         float(c.get("distance", c.get("vector_distance", 1.0)))
         for c in candidates
-        if c.get("distance") is not None or c.get("vector_distance") is not None
+        if (c.get("distance") is not None or c.get("vector_distance") is not None)
+        and c.get("retrieval_score_type") != "qdrant_rrf"
     ]
     best_distance = min(distances) if distances else 1.0
 
@@ -123,6 +139,8 @@ def evaluate_retrieval_quality(
             "is_sufficient": False,
             "reason": "Insufficient evidence in legal registers",
             "best_distance": best_distance,
+            "best_dense_score": best_dense_score,
+            "best_sparse_score": best_sparse_score,
             "top_rrf_score": top_rrf_score,
         }
 
@@ -130,6 +148,8 @@ def evaluate_retrieval_quality(
         "is_sufficient": True,
         "reason": "Sufficient statutory evidence found",
         "best_distance": best_distance,
+        "best_dense_score": best_dense_score,
+        "best_sparse_score": best_sparse_score,
         "top_rrf_score": top_rrf_score,
     }
 

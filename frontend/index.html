@@ -5,17 +5,17 @@
     <link rel="icon" type="image/png" href="/logo.png" />
     <link rel="apple-touch-icon" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>RAGVYN — Intellectual Property & Regulatory Intelligence</title>
-    <meta name="description" content="RAGVYN — An authoritative, multilingual AI intelligence platform for Ayurvedic and ASU Intellectual Property, patentability assessment, TKDL prior art, and Biological Diversity Act ABS compliance." />
-    <meta name="keywords" content="RAGVYN, IP, Ayurveda, patent, trademark, AYUSH, TKDL, traditional knowledge, intellectual property" />
+    <title>IP-SAKTI Sahayak — Your Trusted Guide to Ayurvedic Intellectual Property</title>
+    <meta name="description" content="IP-SAKTI Sahayak features RagVyn AI, a multilingual RAG-based AI assistant for Ayurvedic IP guidance — patents, trademarks, traditional knowledge, and more." />
+    <meta name="keywords" content="IP, Ayurveda, patent, trademark, AYUSH, TKDL, traditional knowledge, intellectual property" />
     
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#1D4ED8" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="RAGVYN" />
+    <meta name="apple-mobile-web-app-title" content="IP-SAKTI" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="application-name" content="RAGVYN" />
+    <meta name="application-name" content="IP-SAKTI Sahayak" />
     <meta name="msapplication-TileColor" content="#1D4ED8" />
     <meta name="msapplication-tap-highlight" content="no" />
     
@@ -24,7 +24,7 @@
     
     <!-- Open Graph / Social -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="RAGVYN — Intellectual Property & Regulatory Intelligence" />
+    <meta property="og:title" content="IP-SAKTI Sahayak - Ayurvedic IP Guidance" />
     <meta property="og:description" content="AI-powered IP guidance for Ayurveda - Patents, Trademarks, TKDL, ABS Compliance" />
     <meta property="og:image" content="/logo.png" />
     <meta name="twitter:card" content="summary_large_image" />
@@ -36,53 +36,6 @@
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    
-    <!-- Pre-render Theme & Accessibility Initialization (Prevents Light/Dark and Contrast Flash) -->
-    <script>
-      (function() {
-        try {
-          var saved = localStorage.getItem('ragvyn_theme') || localStorage.getItem('ip_sakti_theme');
-          var theme = 'light';
-          if (saved === 'light' || saved === 'dark') {
-            theme = saved;
-          } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            theme = 'dark';
-          }
-          document.documentElement.setAttribute('data-theme', theme);
-
-          var contrast = localStorage.getItem('ragvyn_contrast');
-          if (contrast === 'high') {
-            document.documentElement.setAttribute('data-contrast', 'high');
-          }
-
-          var fontScale = localStorage.getItem('ragvyn_font_scale') || localStorage.getItem('ip_sakti_font_size');
-          if (fontScale) {
-            document.documentElement.setAttribute('data-font-scale', fontScale);
-          }
-
-          if (localStorage.getItem('ragvyn_text_spacing') === 'increased') {
-            document.documentElement.setAttribute('data-text-spacing', 'increased');
-          }
-
-          if (localStorage.getItem('ragvyn_line_height') === 'increased') {
-            document.documentElement.setAttribute('data-line-height', 'increased');
-          }
-
-          if (localStorage.getItem('ragvyn_hide_images') === 'true') {
-            document.documentElement.setAttribute('data-hide-images', 'true');
-          }
-
-          if (localStorage.getItem('ragvyn_large_cursor') === 'true') {
-            document.documentElement.setAttribute('data-large-cursor', 'true');
-          }
-
-          var savedLang = localStorage.getItem('ragvyn_lang') || localStorage.getItem('ip_sakti_lang');
-          if (savedLang === 'hi' || savedLang === 'mr' || savedLang === 'en') {
-            document.documentElement.setAttribute('lang', savedLang);
-          }
-        } catch (e) {}
-      })();
-    </script>
   </head>
   <body>
     <!-- Skip Link for Accessibility -->
@@ -94,28 +47,15 @@
     <!-- Service Worker Registration -->
     <script>
       if ('serviceWorker' in navigator) {
-        if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
-          navigator.serviceWorker.getRegistrations().then((registrations) => {
-            for (const r of registrations) {
-              r.unregister();
-            }
-          });
-          if ('caches' in window) {
-            caches.keys().then((keys) => {
-              keys.forEach((k) => caches.delete(k));
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+              console.log('SW registered:', registration.scope);
+            })
+            .catch((error) => {
+              console.log('SW registration failed:', error);
             });
-          }
-        } else {
-          window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js')
-              .then((registration) => {
-                console.log('SW registered:', registration.scope);
-              })
-              .catch((error) => {
-                console.log('SW registration failed:', error);
-              });
-          });
-        }
+        });
       }
     </script>
   </body>

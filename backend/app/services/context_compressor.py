@@ -149,6 +149,20 @@ class ContextCompressor:
             if not compressed_text:
                 continue
 
+            # Preserve bounded surrounding context when ingestion has indexed
+            # neighboring text. This gives the answer model and the citation
+            # panel useful continuity without pretending that a single chunk
+            # is the complete source document.
+            context_before = self.compress_passage(str(chunk.get("context_before") or ""))[:600]
+            context_after = self.compress_passage(str(chunk.get("context_after") or ""))[:600]
+            surrounding_context = ""
+            if context_before:
+                surrounding_context += f"Context before:\n{context_before}\n"
+            if context_after:
+                surrounding_context += f"Context after:\n{context_after}\n"
+            if surrounding_context:
+                surrounding_context = surrounding_context.rstrip()
+
             block = (
                 f"[{source_id}]\n"
                 f"Title: {title}\n"
@@ -159,6 +173,7 @@ class ContextCompressor:
                 f"Page: {page}\n"
                 f"Source URL: {source_url}\n"
                 f"Text:\n{compressed_text}"
+                + (f"\n{surrounding_context}" if surrounding_context else "")
             )
             block_len = len(block) + 2  # including newline separator
 
@@ -190,6 +205,10 @@ class ContextCompressor:
             chunk_copy = dict(chunk)
             chunk_copy["text"] = compressed_text
             chunk_copy["source_id"] = source_id
+            if context_before:
+                chunk_copy["context_before"] = context_before
+            if context_after:
+                chunk_copy["context_after"] = context_after
             cleaned_chunks.append(chunk_copy)
 
         formatted_context = "\n\n".join(context_blocks).strip()

@@ -5,7 +5,7 @@ Complete RAG Orchestration Router for IP-SAKTI Sahayak.
 Assembles the full grounded reasoning pipeline:
   PII Scrub -> Intent Classification & Routing ->
   [Non-knowledge Direct Response OR Hybrid RRF -> Retrieval Gate ->
-   Conditional Rerank -> Context Compress -> Master Prompt Gemini Generation ->
+   Conditional Rerank -> Context Compress -> Structured Prompt -> Groq Generation ->
    Claim Verification -> Composite Confidence -> Guardrails -> Audit Log -> Persist]
 """
 
@@ -55,6 +55,7 @@ from app.services.claim_verifier import claim_verifier
 from app.services.confidence_calculator import compute_composite_confidence
 from app.services.claim_guardrails import enforce_claim_guardrails
 from app.services.audit_service import async_log_audit_transaction
+from app.services.rag_trace import record_stage
 
 # Legacy streaming service
 from app.services.guardrails import guardrail_service
@@ -86,7 +87,7 @@ def _resolve_source_filters(jurisdiction: str) -> list[str]:
     description=(
         "Processes query through DPDP PII scrubbing, intent classification, "
         "and either direct response (chitchat/clarification/out_of_scope) or "
-        "hybrid RRF search, retrieval gate, reranking, master prompt Gemini generation, "
+        "hybrid RRF search, retrieval gate, reranking, structured Groq generation, "
         "claim verification, composite confidence, and audit logging."
     ),
 )
@@ -112,9 +113,23 @@ async def chat_endpoint(
     language = request.language or "EN"
     answer_mode = request.answer_mode or "standard"
     source_filters = _resolve_source_filters(jurisdiction)
+    pipeline_trace: list[dict] = []
+    record_stage(
+        pipeline_trace,
+        "request_received",
+        "completed",
+        "Request received",
+        details={"endpoint": "/api/chat"},
+    )
 
     # ── Stage (b): PII Scrubbing (DPDP Compliance) ──────────────
     scrubbed_query = pii_scrubber.scrub_query(raw_query)
+    record_stage(
+        pipeline_trace,
+        "query_scrubbed",
+        "completed",
+        "Query privacy check completed",
+    )
 
     # ── Context Profile & Formulation Extraction ────────────────
     ctx_dict = request.context if isinstance(request.context, dict) else {}
@@ -183,6 +198,13 @@ async def chat_endpoint(
         classification.intent,
         classification.confidence,
         bool(classification.rewritten_query),
+    )
+    record_stage(
+        pipeline_trace,
+        "intent_classified",
+        "completed",
+        "Query intent classified",
+        details={"intent": classification.intent},
     )
 
     if classification.intent == "CHITCHAT":
@@ -259,6 +281,7 @@ async def chat_endpoint(
             user_id=active_user_id,
             organisation_id=active_org_id,
             document_ids=target_doc_ids,  # Scope to user-uploaded docs if provided
+            trace=pipeline_trace,
         )
     except Exception as e:
         log.error("Hybrid retrieval failed: %s", e, exc_info=True)
@@ -269,15 +292,36 @@ async def chat_endpoint(
         candidates=candidates,
         similarity_threshold=settings.SIMILARITY_THRESHOLD,
     )
+    record_stage(
+        pipeline_trace,
+        "retrieval_gate",
+        "completed" if gate_result["is_sufficient"] else "failed",
+        "Evidence quality check passed" if gate_result["is_sufficient"] else "Evidence quality check failed",
+        details={"score_type": gate_result.get("score_type") or "mixed"},
+    )
+
+    best_dense_score = gate_result.get("best_dense_score")
+    best_sparse_score = gate_result.get("best_sparse_score")
+    if best_dense_score is None:
+        dense_candidates = [float(c["dense_score"]) for c in candidates if c.get("dense_score") is not None]
+        if dense_candidates:
+            best_dense_score = max(dense_candidates)
+    if best_sparse_score is None:
+        sparse_candidates = [float(c["sparse_score"]) for c in candidates if c.get("sparse_score") is not None]
+        if sparse_candidates:
+            best_sparse_score = max(sparse_candidates)
 
     if not gate_result["is_sufficient"]:
         elapsed_ms = (time.perf_counter() - start_time) * 1000
         abstention = get_abstention_response()
-        confidence = ConfidenceScore(
-            score=abstention["confidence"]["score"],
-            label=abstention["confidence"]["label"],
-            reason=abstention["confidence"]["reason"],
+        confidence = compute_composite_confidence(
+            gate_failed=True,
+            status="no_data",
+            dense_semantic_score=best_dense_score,
+            sparse_keyword_score=best_sparse_score,
             citation_scores=[],
+            citations_present=False,
+            intent=classification.intent,
         )
         return ChatResponse(
             answer=abstention["answer"],
@@ -291,6 +335,7 @@ async def chat_endpoint(
             intent=classification.intent,
             intent_confidence=classification.confidence,
             rewritten_query_used=classification.rewritten_query if classification.rewritten_query else None,
+            pipeline_trace=pipeline_trace,
         )
 
     # ── Stage (e): Conditional CrossEncoder Reranking ───────────
@@ -301,21 +346,31 @@ async def chat_endpoint(
         skip_threshold=settings.RERANK_SKIP_THRESHOLD,
         final_k=3,
     )
+    record_stage(
+        pipeline_trace,
+        "reranking",
+        "completed",
+        "Relevant passages ranked",
+        details={"candidate_count": len(candidates), "skipped": reranker_skipped},
+    )
 
     top_rerank_score = (
-        reranked_passages[0].get("reranker_score", 0.5)
-        if reranked_passages
-        else 0.5
+        reranked_passages[0].get("reranker_score")
+        if (reranked_passages and not reranker_skipped)
+        else None
     )
-    if reranker_skipped:
-        effective_rerank_score = max(0.0, min(1.0, 1.0 - best_distance))
-    else:
-        effective_rerank_score = top_rerank_score
 
     # ── Stage (f): Context Compression & Citation Formatting ────
     context_text, cleaned_chunks = context_compressor.build_prompt_context(
         chunks=reranked_passages,
         max_tokens=2500,
+    )
+    record_stage(
+        pipeline_trace,
+        "context_building",
+        "completed",
+        "Cited context prepared for the answer model",
+        details={"source_count": len(cleaned_chunks)},
     )
 
     # Build CitationItem list from cleaned chunks with SOURCE_ID traceability
@@ -341,9 +396,24 @@ async def chat_endpoint(
                 context_after=chunk.get("context_after"),
             )
         )
+    record_stage(
+        pipeline_trace,
+        "citations_ready",
+        "completed",
+        "Source citations prepared",
+        details={"citation_count": len(citations)},
+    )
 
-    # ── Stage (g): Grounded LLM Generation via Gemini ───────────
+    # ── Stage (g): Grounded LLM Generation via Groq/fallback provider ─
     try:
+        record_stage(
+            pipeline_trace,
+            "llm_prompt",
+            "completed",
+            "Structured grounded prompt prepared",
+            details={"context_chars": len(context_text), "answer_mode": answer_mode},
+        )
+        record_stage(pipeline_trace, "answer_generation", "started", "Generating grounded answer")
         answer = await generate_grounded_answer(
             query=scrubbed_query,
             context_str=context_text,
@@ -355,6 +425,13 @@ async def chat_endpoint(
             user_intent=user_intent,
             requested_information=requested_information,
         )
+        record_stage(
+            pipeline_trace,
+            "answer_generation",
+            "completed",
+            "Grounded answer generated",
+            details={"provider": getattr(answer, "provider", None), "model": getattr(answer, "model", None)},
+        )
     except Exception as gen_err:
         log.error("LLM generation failed: %s", gen_err, exc_info=True)
         elapsed_ms = (time.perf_counter() - start_time) * 1000
@@ -365,11 +442,15 @@ async def chat_endpoint(
                 "The cited sources below are still relevant to your query."
             ),
             citations=citations,
-            confidence=ConfidenceScore(
-                score=0,
-                label="Low",
-                reason="Answer generation service was temporarily unavailable.",
+            confidence=compute_composite_confidence(
+                dense_semantic_score=best_dense_score,
+                sparse_keyword_score=best_sparse_score,
+                reranker_score=top_rerank_score,
+                reranker_skipped=reranker_skipped,
+                status="degraded",
                 citation_scores=[],
+                citations_present=bool(citations),
+                intent=classification.intent,
             ),
             latency_ms=round(elapsed_ms, 2),
             status="degraded",
@@ -379,6 +460,7 @@ async def chat_endpoint(
             intent=classification.intent,
             intent_confidence=classification.confidence,
             rewritten_query_used=classification.rewritten_query if classification.rewritten_query else None,
+            pipeline_trace=pipeline_trace,
         )
 
     if not answer or not answer.strip():
@@ -390,11 +472,15 @@ async def chat_endpoint(
                 "or consult a qualified IP professional for authoritative guidance."
             ),
             citations=citations,
-            confidence=ConfidenceScore(
-                score=15,
-                label="Low",
-                reason="Generation returned no usable content.",
+            confidence=compute_composite_confidence(
+                dense_semantic_score=best_dense_score,
+                sparse_keyword_score=best_sparse_score,
+                reranker_score=top_rerank_score,
+                reranker_skipped=reranker_skipped,
+                status="no_data",
                 citation_scores=[],
+                citations_present=bool(citations),
+                intent=classification.intent,
             ),
             latency_ms=round(elapsed_ms, 2),
             status="no_data",
@@ -404,24 +490,31 @@ async def chat_endpoint(
             intent=classification.intent,
             intent_confidence=classification.confidence,
             rewritten_query_used=classification.rewritten_query if classification.rewritten_query else None,
+            pipeline_trace=pipeline_trace,
         )
 
-    # ── Stage (h): Claim Extraction & Citation Entailment ───────
+    # ── Stage (h): Claim Extraction & Citation Support Verification ───────
     citation_dicts = [{"source": c.source, "text": c.text} for c in citations]
-    citation_entailment, citation_coverage, citation_scores_list = (
+    citation_support, claim_coverage, citation_scores_list = (
         await claim_verifier.evaluate_citations(
             answer_text=answer,
             citations=citation_dicts,
         )
     )
 
-    # ── Stage (i): Composite Confidence Calculation ─────────────
+    # ── Stage (i): Deterministic Evidence Confidence Calculation ─────────
     confidence = compute_composite_confidence(
-        best_vector_distance=best_distance,
-        reranker_score=effective_rerank_score,
-        citation_entailment=citation_entailment,
-        citation_coverage=citation_coverage,
+        dense_semantic_score=best_dense_score,
+        sparse_keyword_score=best_sparse_score,
+        reranker_score=top_rerank_score,
+        reranker_skipped=reranker_skipped,
+        citation_support_score=citation_support,
+        claim_coverage_score=claim_coverage,
         citation_scores=citation_scores_list,
+        citations_present=bool(citations),
+        gate_failed=False,
+        status="answered",
+        intent=classification.intent,
     )
 
     # ── Stage (j): Post-Generation Claim Guardrails ─────────────
@@ -447,6 +540,7 @@ async def chat_endpoint(
 
     # Persist conversation turn to DB
     conv_id = request.conversation_id
+    record_stage(pipeline_trace, "persistence", "started", "Saving conversation and citation metadata")
     try:
         if not conv_id:
             conv = Conversation(
@@ -507,8 +601,21 @@ async def chat_endpoint(
         )
         db.add(msg)
         db.commit()
+        record_stage(
+            pipeline_trace,
+            "persistence",
+            "completed",
+            "Conversation, answer, and citations saved",
+            details={"conversation_id_present": bool(conv_id), "citation_count": len(citations)},
+        )
     except Exception as db_err:
         log.warning("Could not persist conversation turn to DB: %s", db_err)
+        record_stage(
+            pipeline_trace,
+            "persistence",
+            "failed",
+            "Conversation persistence failed; answer remains available",
+        )
 
     # ── Stage (l): Return ChatResponse ──────────────────────────
     return ChatResponse(
@@ -523,13 +630,14 @@ async def chat_endpoint(
         intent=classification.intent,
         intent_confidence=classification.confidence,
         rewritten_query_used=classification.rewritten_query if classification.rewritten_query else None,
+        pipeline_trace=pipeline_trace,
     )
 
 
 @router.post(
     "/chat/stream",
     summary="Streaming Grounded Legal Q&A with Intent Routing",
-    description="Streams real-time tokens from Gemini with intent-based early routing.",
+    description="Streams real-time tokens from Groq/fallback provider with intent-based early routing.",
 )
 async def chat_stream_endpoint(
     request: ChatRequest,
@@ -554,6 +662,20 @@ async def chat_stream_endpoint(
     source_filters = _resolve_source_filters(jurisdiction)
 
     scrubbed_query = scrub_pii(raw_query)
+    pipeline_trace: list[dict] = []
+    record_stage(
+        pipeline_trace,
+        "request_received",
+        "completed",
+        "Request received",
+        details={"endpoint": "/api/chat/stream"},
+    )
+    record_stage(
+        pipeline_trace,
+        "query_scrubbed",
+        "completed",
+        "Query privacy check completed",
+    )
 
     # Context profile extraction
     ctx_dict = request.context if isinstance(request.context, dict) else {}
@@ -592,6 +714,13 @@ async def chat_stream_endpoint(
         conversation_context="",
         jurisdiction=jurisdiction,
         language=language,
+    )
+    record_stage(
+        pipeline_trace,
+        "intent_classified",
+        "completed",
+        "Query intent classified",
+        details={"intent": classification.intent},
     )
 
     if classification.intent == "CHITCHAT":
@@ -691,6 +820,7 @@ async def chat_stream_endpoint(
             user_id=active_user_id,
             organisation_id=active_org_id,
             document_ids=target_doc_ids,  # Scope to user-uploaded docs if provided
+            trace=pipeline_trace,
         )
     except Exception:
         candidates = []
@@ -700,14 +830,23 @@ async def chat_stream_endpoint(
         candidates=candidates,
         similarity_threshold=settings.SIMILARITY_THRESHOLD,
     )
+    record_stage(
+        pipeline_trace,
+        "retrieval_gate",
+        "completed" if gate_result["is_sufficient"] else "failed",
+        "Evidence quality check passed" if gate_result["is_sufficient"] else "Evidence quality check failed",
+        details={"score_type": gate_result.get("score_type") or "mixed"},
+    )
     if not gate_result["is_sufficient"]:
         abstention = get_abstention_response()
 
         def _stream_abstention():
             yield f"data: {json.dumps({'type': 'meta', 'intent': 'KNOWLEDGE_SEEK', 'jurisdiction': jurisdiction, 'source_filters': source_filters})}\n\n"
+            for event in pipeline_trace:
+                yield f"data: {json.dumps(event)}\n\n"
             yield f"data: {json.dumps({'type': 'citations', 'citations': []})}\n\n"
             yield f"data: {json.dumps({'type': 'token', 'token': abstention['answer']})}\n\n"
-            yield f"data: {json.dumps({'type': 'done', 'done': True, 'status': 'no_data', 'completed': True})}\n\n"
+            yield f"data: {json.dumps({'type': 'done', 'done': True, 'status': 'no_data', 'completed': True, 'pipeline_trace': pipeline_trace})}\n\n"
 
         return StreamingResponse(_stream_abstention(), media_type="text/event-stream")
 
@@ -717,8 +856,22 @@ async def chat_stream_endpoint(
         skip_threshold=settings.RERANK_SKIP_THRESHOLD,
         final_k=3,
     )
+    record_stage(
+        pipeline_trace,
+        "reranking",
+        "completed",
+        "Relevant passages ranked",
+        details={"candidate_count": len(candidates)},
+    )
 
     context_text, cleaned_chunks = context_compressor.build_prompt_context(reranked, max_tokens=2500)
+    record_stage(
+        pipeline_trace,
+        "context_building",
+        "completed",
+        "Cited context prepared for the answer model",
+        details={"source_count": len(cleaned_chunks)},
+    )
 
     # Build citation items with SOURCE_IDs
     citations = []
@@ -743,6 +896,13 @@ async def chat_stream_endpoint(
                 context_after=chunk.get("context_after"),
             )
         )
+    record_stage(
+        pipeline_trace,
+        "citations_ready",
+        "completed",
+        "Source citations prepared",
+        details={"citation_count": len(citations)},
+    )
 
     # Persist turn metadata in DB for stream
     conv_id = request.conversation_id
@@ -793,12 +953,27 @@ async def chat_stream_endpoint(
         )
         db.add(user_msg)
         db.commit()
+        record_stage(
+            pipeline_trace,
+            "persistence",
+            "completed",
+            "Conversation turn initialized",
+            details={"conversation_id_present": bool(conv_id)},
+        )
     except Exception as stream_db_err:
         log.warning("Could not persist user turn in stream: %s", stream_db_err)
+        record_stage(
+            pipeline_trace,
+            "persistence",
+            "failed",
+            "Conversation persistence failed; answer remains available",
+        )
 
     def _generate_stream():
         # Emit metadata first (observability + intent + conversation_id)
         yield f"data: {json.dumps({'type': 'meta', 'intent': classification.intent, 'jurisdiction': jurisdiction, 'source_filters': source_filters, 'rewritten_query': classification.rewritten_query or None, 'conversation_id': conv_id})}\n\n"
+        for event in pipeline_trace:
+            yield f"data: {json.dumps(event)}\n\n"
         # Then send citation metadata payload
         citation_data = [c.model_dump() for c in citations]
         yield f"data: {json.dumps({'type': 'citations', 'citations': citation_data, 'conversation_id': conv_id})}\n\n"
@@ -806,6 +981,16 @@ async def chat_stream_endpoint(
         accumulated_tokens = []
         had_error = False
         try:
+            record_stage(
+                pipeline_trace,
+                "llm_prompt",
+                "completed",
+                "Structured grounded prompt prepared",
+                details={"context_chars": len(context_text), "answer_mode": answer_mode},
+            )
+            yield f"data: {json.dumps(pipeline_trace[-1])}\n\n"
+            record_stage(pipeline_trace, "answer_generation", "started", "Generating grounded answer")
+            yield f"data: {json.dumps(pipeline_trace[-1])}\n\n"
             for token in stream_grounded_answer(
                 question=scrubbed_query,
                 context=context_text,
@@ -819,6 +1004,8 @@ async def chat_stream_endpoint(
             ):
                 accumulated_tokens.append(token)
                 yield f"data: {json.dumps({'type': 'token', 'token': token})}\n\n"
+            record_stage(pipeline_trace, "answer_generation", "completed", "Grounded answer generated")
+            yield f"data: {json.dumps(pipeline_trace[-1])}\n\n"
         except Exception as stream_err:
             had_error = True
             log.error("Streaming generation failed: %s", stream_err, exc_info=True)
@@ -837,9 +1024,22 @@ async def chat_stream_endpoint(
                     )
                     db.add(ai_msg)
                     db.commit()
+                    record_stage(
+                        pipeline_trace,
+                        "persistence",
+                        "completed",
+                        "Streamed answer and citations saved",
+                        details={"conversation_id_present": bool(conv_id), "citation_count": len(citations)},
+                    )
             except Exception as stream_ai_err:
                 log.warning("Could not persist streamed assistant response: %s", stream_ai_err)
+                record_stage(
+                    pipeline_trace,
+                    "persistence",
+                    "failed",
+                    "Streamed answer persistence failed; answer remains available",
+                )
 
-        yield f"data: {json.dumps({'type': 'done', 'done': True, 'status': 'answered' if not had_error else 'degraded', 'completed': True, 'conversation_id': conv_id})}\n\n"
+        yield f"data: {json.dumps({'type': 'done', 'done': True, 'status': 'answered' if not had_error else 'degraded', 'completed': True, 'conversation_id': conv_id, 'pipeline_trace': pipeline_trace})}\n\n"
 
     return StreamingResponse(_generate_stream(), media_type="text/event-stream")

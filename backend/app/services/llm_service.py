@@ -43,8 +43,8 @@ async def generate_grounded_answer(
     requested_information: Optional[Union[list[str], str]] = None,
 ) -> GroundedAnswerText:
     """
-    Generates a grounded legal answer using Google Gemini
-    with automatic key rotation, master prompt architecture, and finish_reason detection.
+    Generates a grounded legal answer through the configured Groq-first
+    provider orchestrator with fallback handling and finish-reason detection.
     """
     try:
         return await async_generate_grounded_answer(
@@ -59,10 +59,10 @@ async def generate_grounded_answer(
             requested_information=requested_information,
         )
     except GeminiQuotaExceededError as e:
-        log.error("Gemini API quota exceeded in llm_service: %s", e)
+        log.error("LLM provider quota exceeded in llm_service: %s", e)
         raise
     except GeminiGenerationError as e:
-        log.error("Gemini generation error in llm_service: %s", e)
+        log.error("LLM provider generation error in llm_service: %s", e)
         raise
     except Exception as e:
         log.error("Unexpected error in generate_grounded_answer: %s", e, exc_info=True)

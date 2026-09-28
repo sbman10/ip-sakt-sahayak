@@ -47,7 +47,7 @@ class CitationScore(BaseModel):
         ...,
         ge=0.0,
         le=1.0,
-        description="NLI / entailment support score between 0.0 and 1.0.",
+        description="Lexical token and n-gram support score between 0.0 and 1.0.",
     )
     supported_claims: int = Field(
         default=0,
@@ -61,26 +61,73 @@ class CitationScore(BaseModel):
     )
 
 
-class ConfidenceScore(BaseModel):
-    """Structured confidence score with composite metrics and breakdown."""
+class ConfidenceBreakdown(BaseModel):
+    """Component breakdown of deterministic Evidence Confidence."""
 
-    score: int = Field(
-        ...,
+    dense_semantic_score: Optional[float] = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="Dense BGE-M3 cosine similarity (0.0 to 1.0), or None if unavailable.",
+    )
+    sparse_keyword_score: Optional[float] = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="Normalized BM25 keyword relevance score (0.0 to 1.0), or None if unavailable.",
+    )
+    reranker_score: Optional[float] = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="CrossEncoder relevance score (0.0 to 1.0), or None if skipped/unavailable.",
+    )
+    citation_support_score: Optional[float] = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="Lexical token and n-gram citation support score (0.0 to 1.0).",
+    )
+    claim_coverage_score: Optional[float] = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="Fraction of claims supported by cited passages (0.0 to 1.0).",
+    )
+    reranker_skipped: bool = Field(
+        default=False,
+        description="Whether the cross-encoder reranking stage was skipped.",
+    )
+
+
+class ConfidenceScore(BaseModel):
+    """Structured evidence confidence score with deterministic breakdown."""
+
+    score: Optional[int] = Field(
+        default=None,
         ge=0,
         le=100,
-        description="Overall numeric confidence score from 0 to 100.",
+        description="Overall numeric confidence score from 0 to 100, or None for non-grounded responses.",
     )
     label: str = Field(
         ...,
-        description="Confidence category label ('High', 'Moderate', 'Low').",
+        description="Confidence category label ('High', 'Moderate', 'Low', 'Not source-grounded', etc.).",
     )
     reason: str = Field(
         ...,
         description="Human-readable explanation of why this confidence level was assigned.",
     )
+    breakdown: Optional[ConfidenceBreakdown] = Field(
+        default=None,
+        description="Structured breakdown of retrieval, reranking, and verification metrics.",
+    )
+    limitations: list[str] = Field(
+        default_factory=list,
+        description="Identified limitations or caveats in statutory grounding.",
+    )
     citation_scores: list[CitationScore] = Field(
         default_factory=list,
-        description="Individual citation entailment and support scores.",
+        description="Individual citation support and claim verification scores.",
     )
 
 
@@ -402,6 +449,13 @@ class ChatResponse(BaseModel):
     rewritten_query_used: Optional[str] = Field(
         default=None,
         description="Context-resolved standalone query passed to retrieval, if applicable.",
+    )
+    pipeline_trace: list[dict] = Field(
+        default_factory=list,
+        description=(
+            "Safe, non-sensitive RAG stage trace for UI observability. It never contains "
+            "raw queries, vectors, document text, or credentials."
+        ),
     )
 
     model_config = {

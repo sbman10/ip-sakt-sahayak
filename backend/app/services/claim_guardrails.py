@@ -31,8 +31,8 @@ def enforce_claim_guardrails(
     """
     Enforces post-generation claim safety guardrails.
 
-    If confidence score is under 50 or total supported claims across citations is 0,
-    downgrades confidence to 'Low' and appends a legal verification disclaimer.
+    If confidence score is under 60 (Low) or total supported claims across citations is 0,
+    ensures confidence is categorized as 'Low' and appends a legal verification disclaimer.
 
     Parameters
     ----------
@@ -46,27 +46,29 @@ def enforce_claim_guardrails(
     tuple[str, ConfidenceScore]
         (sanitized_answer_text, updated_confidence)
     """
+    if confidence.score is None:
+        # Non-grounded or out-of-scope response, no disclaimer modification needed
+        return answer_text, confidence
+
     total_supported_claims = sum(
         cs.supported_claims for cs in (confidence.citation_scores or [])
     )
 
-    should_downgrade = (confidence.score < 50) or (
+    should_downgrade = (confidence.score < 60) or (
         bool(confidence.citation_scores) and total_supported_claims == 0
     )
 
     if should_downgrade:
         log.warning(
-            "Claim guardrail triggered: confidence=%d, supported_claims=%d. Downgrading label and appending warning.",
+            "Claim guardrail triggered: confidence=%d, supported_claims=%d. Ensuring Low label and warning.",
             confidence.score,
             total_supported_claims,
         )
 
-        # Downgrade label to Low
         updated_confidence = confidence.model_copy(
             update={"label": "Low"}
         )
 
-        # Avoid appending duplicate warning if already present
         if _STATUTORY_WARNING_CALLOUT.strip() not in answer_text:
             sanitized_text = answer_text.rstrip() + _STATUTORY_WARNING_CALLOUT
         else:

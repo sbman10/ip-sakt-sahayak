@@ -140,7 +140,7 @@ class ClaimVerifier:
         citations: list[dict],
     ) -> tuple[float, float, list[dict]]:
         """
-        Evaluates the support and coverage of cited passages against claims in answer_text.
+        Evaluates lexical citation support and coverage of cited passages against claims.
 
         Parameters
         ----------
@@ -152,8 +152,8 @@ class ClaimVerifier:
         Returns
         -------
         tuple[float, float, list[dict]]
-            - citation_entailment: average support score across supported claims.
-            - citation_coverage: ratio of total claims supported by at least one passage.
+            - citation_support: average lexical overlap support score across supported claims.
+            - claim_coverage: ratio of total claims supported by at least one passage (supported_claims / total_claims).
             - citation_scores: list of dicts with:
               `[{"source": str, "support_score": float, "supported_claims": int, "total_claims": int}]`
         """
@@ -201,16 +201,18 @@ class ClaimVerifier:
                 if best_source:
                     per_source_stats[best_source]["supported_claims"] += 1
 
-        # 1. Citation Coverage: supported_claims / total_claims
-        citation_coverage = round(supported_claims_count / float(total_claims), 4)
+        # 1. Claim Coverage: supported_claims / total_claims
+        claim_coverage = round(supported_claims_count / float(total_claims), 4)
 
-        # 2. Citation Entailment: average support score across supported claims
+        # 2. Citation Support: average support score across supported claims (or max supports)
         supported_scores = [s for s in claim_max_supports if s >= SUPPORT_THRESHOLD]
         if supported_scores:
-            citation_entailment = round(sum(supported_scores) / float(len(supported_scores)), 4)
+            citation_support = round(sum(supported_scores) / float(len(supported_scores)), 4)
         else:
-            # Fallback to mean of all max support scores if none strictly above threshold
-            citation_entailment = round(sum(claim_max_supports) / float(len(claim_max_supports)), 4) if claim_max_supports else 0.0
+            citation_support = round(sum(claim_max_supports) / float(len(claim_max_supports)), 4) if claim_max_supports else 0.0
+
+        citation_support = max(0.0, min(1.0, citation_support))
+        claim_coverage = max(0.0, min(1.0, claim_coverage))
 
         # 3. Format per-source citation_scores
         citation_scores_list: list[dict] = []
@@ -219,20 +221,20 @@ class ClaimVerifier:
             avg_src_score = round(sum(scores) / float(len(scores)), 4) if scores else 0.0
             citation_scores_list.append({
                 "source": src_name,
-                "support_score": avg_src_score,
+                "support_score": max(0.0, min(1.0, avg_src_score)),
                 "supported_claims": data["supported_claims"],
                 "total_claims": total_claims,
             })
 
         log.info(
-            "Claim verification completed: entailment=%.2f, coverage=%.2f (%d/%d claims supported)",
-            citation_entailment,
-            citation_coverage,
+            "Claim verification completed: citation_support=%.2f, coverage=%.2f (%d/%d claims supported)",
+            citation_support,
+            claim_coverage,
             supported_claims_count,
             total_claims,
         )
 
-        return citation_entailment, citation_coverage, citation_scores_list
+        return citation_support, claim_coverage, citation_scores_list
 
 
 # Global singleton instance

@@ -1,70 +1,34 @@
 /**
  * frontend/src/components/LoginPage.jsx
  * --------------------------------------
- * Unified Authentication Page for IP-SAKTI Sahayak.
+ * Unified Authentication Page for RAGVYN.
  * 
  * Features:
- * - Instant 1-Click Demo / Test Logins with 4 pre-configured persona accounts.
+ * - Optional single Admin prototype login.
  * - Direct ID & Password Authentication (bypasses email OTP for instant access).
  * - Optional Supabase Email OTP with 6/8 digit dynamic length support.
  * - Automatic session synchronization and reactive navigation.
  */
 
-import React, { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useLanguage } from '../App'
 import { useAuth } from '../context/AuthContext'
-import { IpSaktiLogo, IconCheck, IconGovt, IconLock, IconRefreshCw } from './Icons'
+import { IpSaktiLogo, IconCheck, IconLock, IconRefreshCw } from './Icons'
 
-// 4 Pre-seeded Dummy Test Accounts
-export const DUMMY_ACCOUNTS = [
+// Demo credentials are read from local environment variables and never rendered.
+const ADMIN_DEMO_ENABLED = import.meta.env.DEV || import.meta.env.VITE_ENABLE_ADMIN_DEMO === 'true'
+const ADMIN_DEMO_EMAIL = import.meta.env.VITE_ADMIN_DEMO_EMAIL || 'admin@ipsakti.gov.in'
+const ADMIN_DEMO_PASSWORD = import.meta.env.VITE_ADMIN_DEMO_PASSWORD || 'Password@123'
+
+// Keep exactly one frontend demo profile. This does not create or delete Supabase users.
+const DUMMY_ACCOUNTS = [
   {
     id: 'admin',
-    name: 'Admin Director',
-    roleBadge: 'Admin',
-    badgeBg: '#f3e8ff',
-    badgeColor: '#7e22ce',
+    name: 'Admin',
+    roleBadge: 'Administrator',
     icon: '🛡️',
-    email: 'admin@ipsakti.gov.in',
-    password: 'Password@123',
-    org: 'Ministry of AYUSH',
-    desc: 'System oversight, multi-tenant governance, and master controls.',
-  },
-  {
-    id: 'scientist',
-    name: 'Dr. Charaka Sharma',
-    roleBadge: 'AYUSH Scientist',
-    badgeBg: '#ecfdf5',
-    badgeColor: '#047857',
-    icon: '🔬',
-    email: 'scientist@ccras.nic.in',
-    password: 'Password@123',
-    org: 'CCRAS Research Council',
-    desc: 'Formulation research, TKDL citations, and patent novelty queries.',
-  },
-  {
-    id: 'attorney',
-    name: 'Adv. Meera Sen',
-    roleBadge: 'IP Attorney',
-    badgeBg: '#eff6ff',
-    badgeColor: '#1d4ed8',
-    icon: '⚖️',
-    email: 'attorney@ipfirm.in',
-    password: 'Password@123',
-    org: 'AYUSH IP Legal Services',
-    desc: 'Prior-art search, section 3(p) objections, and matter workspaces.',
-  },
-  {
-    id: 'innovator',
-    name: 'Rohit Verma',
-    roleBadge: 'Startup Innovator',
-    badgeBg: '#fef3c7',
-    badgeColor: '#b45309',
-    icon: '💡',
-    email: 'innovator@ayurstartup.co',
-    password: 'Password@123',
-    org: 'Patanjali Bio Innovations',
-    desc: 'Product patentability assessments and compliance roadmaps.',
+    desc: 'Prototype workspace access for demonstrations.',
   },
 ]
 
@@ -139,7 +103,10 @@ export default function LoginPage({ onLogin }) {
     setIsLoading(true)
     setLoadingAccountId(acc.id)
     try {
-      const sessionData = await loginWithPassword(acc.email, acc.password)
+      if (!ADMIN_DEMO_EMAIL || !ADMIN_DEMO_PASSWORD) {
+        throw new Error('Admin demo access is not configured for this environment.')
+      }
+      const sessionData = await loginWithPassword(ADMIN_DEMO_EMAIL, ADMIN_DEMO_PASSWORD)
       setSuccess(`Authenticated as ${acc.name}! Accessing workspace...`)
       if (onLogin && sessionData.user) {
         onLogin(sessionData.user.email, sessionData.user.user_metadata?.full_name || acc.name)
@@ -308,14 +275,18 @@ export default function LoginPage({ onLogin }) {
         {/* Left Panel - Branding */}
         <div className="login-branding">
           <div className="login-brand-content">
-            <Link to="/" className="login-logo">
+            <Link to="/" className="login-logo" aria-label="RAGVYN home">
               <IpSaktiLogo className="login-logo-svg" size={64} />
-              <span className="login-logo-text">IP-SAKTI Sahayak</span>
+              <span className="login-logo-text">RAGVYN</span>
             </Link>
 
             <h1 className="login-brand-title">
-              {t('heroSubtitle') || 'AI-Powered Intellectual Property & Patent Assistant'}
+              {t('heroSubtitle') || 'Know what comes next.'}
             </h1>
+
+            <p className="login-brand-description">
+              Source-backed IP guidance for innovation, AYUSH regulation, traditional knowledge, and biodiversity pathways.
+            </p>
 
             <div className="login-features">
               <div className="login-feature">
@@ -338,10 +309,6 @@ export default function LoginPage({ onLogin }) {
               </div>
             </div>
 
-            <div className="login-govt-badge">
-              <span style={{ display: 'flex' }}><IconGovt size={16} /></span>
-              <span>{t('ministry') || 'Ministry of AYUSH'} · {t('govtOf') || 'Government of India'}</span>
-            </div>
           </div>
         </div>
 
@@ -350,76 +317,28 @@ export default function LoginPage({ onLogin }) {
           <div className="login-form-container" style={{ maxWidth: '520px' }}>
             <div className="login-form-header">
               <h2>Workspace Authentication</h2>
-              <p>Select your testing persona or sign in with your credentials.</p>
+              <p>Sign in to continue to your RAGVYN workspace.</p>
             </div>
 
-            {/* Navigation Tabs */}
-            <div
-              style={{
-                display: 'flex',
-                background: 'var(--bg-card, #f1f5f9)',
-                padding: '4px',
-                borderRadius: '10px',
-                marginBottom: '20px',
-                gap: '4px',
-              }}
-            >
+            {/* Password login remains primary; OTP is intentionally a bottom action. */}
+            <div className="login-auth-tabs" role="tablist" aria-label="Authentication methods">
               <button
                 type="button"
+                role="tab"
+                aria-selected={authTab === 'demo'}
                 onClick={() => { setAuthTab('demo'); setError(''); setSuccess('') }}
-                style={{
-                  flex: 1,
-                  padding: '8px 12px',
-                  border: 'none',
-                  borderRadius: '7px',
-                  background: authTab === 'demo' ? 'var(--bg-input, #ffffff)' : 'transparent',
-                  color: authTab === 'demo' ? 'var(--brand-primary, #1e3a8a)' : '#64748b',
-                  fontWeight: authTab === 'demo' ? '700' : '500',
-                  boxShadow: authTab === 'demo' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                  cursor: 'pointer',
-                  fontSize: '0.85rem',
-                  transition: 'all 0.2s',
-                }}
+                className="login-auth-tab"
               >
-                🚀 Quick Test IDs
+                Admin demo
               </button>
               <button
                 type="button"
+                role="tab"
+                aria-selected={authTab === 'password'}
                 onClick={() => { setAuthTab('password'); setError(''); setSuccess('') }}
-                style={{
-                  flex: 1,
-                  padding: '8px 12px',
-                  border: 'none',
-                  borderRadius: '7px',
-                  background: authTab === 'password' ? 'var(--bg-input, #ffffff)' : 'transparent',
-                  color: authTab === 'password' ? 'var(--brand-primary, #1e3a8a)' : '#64748b',
-                  fontWeight: authTab === 'password' ? '700' : '500',
-                  boxShadow: authTab === 'password' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                  cursor: 'pointer',
-                  fontSize: '0.85rem',
-                  transition: 'all 0.2s',
-                }}
+                className="login-auth-tab"
               >
-                🔑 Password Login
-              </button>
-              <button
-                type="button"
-                onClick={() => { setAuthTab('otp'); setError(''); setSuccess('') }}
-                style={{
-                  flex: 1,
-                  padding: '8px 12px',
-                  border: 'none',
-                  borderRadius: '7px',
-                  background: authTab === 'otp' ? 'var(--bg-input, #ffffff)' : 'transparent',
-                  color: authTab === 'otp' ? 'var(--brand-primary, #1e3a8a)' : '#64748b',
-                  fontWeight: authTab === 'otp' ? '700' : '500',
-                  boxShadow: authTab === 'otp' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                  cursor: 'pointer',
-                  fontSize: '0.85rem',
-                  transition: 'all 0.2s',
-                }}
-              >
-                ✉️ Supabase OTP
+                Password login
               </button>
             </div>
 
@@ -427,83 +346,31 @@ export default function LoginPage({ onLogin }) {
             {error && <div className="login-error" role="alert">{error}</div>}
             {success && <div className="login-success" role="status">{success}</div>}
 
-            {/* Tab 1: 4 Instant Demo / Test Accounts */}
+            {/* Single Admin prototype entry; this does not create or delete users. */}
             {authTab === 'demo' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <p style={{ margin: '0 0 4px 0', fontSize: '0.88rem', color: '#64748b' }}>
-                  Click any profile below to instantly log in with that persona:
-                </p>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: '10px' }}>
+              <div className="login-demo-section">
+                <p className="login-demo-intro">Use the configured prototype profile to preview the workspace.</p>
+                <div className="login-demo-list">
                   {DUMMY_ACCOUNTS.map((acc) => {
                     const isCardLoading = isLoading && loadingAccountId === acc.id
                     return (
-                      <div
-                        key={acc.id}
-                        style={{
-                          border: '1px solid var(--border-color, #e2e8f0)',
-                          borderRadius: '10px',
-                          padding: '12px',
-                          background: 'var(--bg-card, #ffffff)',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          justifyContent: 'space-between',
-                          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-                        }}
-                      >
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                            <span style={{ fontSize: '1.2rem' }}>{acc.icon}</span>
-                            <span
-                              style={{
-                                fontSize: '0.72rem',
-                                fontWeight: '700',
-                                padding: '2px 8px',
-                                borderRadius: '12px',
-                                background: acc.badgeBg,
-                                color: acc.badgeColor,
-                              }}
-                            >
-                              {acc.roleBadge}
-                            </span>
-                          </div>
-                          <h4 style={{ margin: '0 0 2px 0', fontSize: '0.95rem', fontWeight: '700', color: 'var(--text-primary, #0f172a)' }}>
-                            {acc.name}
-                          </h4>
-                          <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '8px' }}>
-                            {acc.org}
-                          </div>
-                          <div
-                            style={{
-                              background: 'var(--bg-subtle, #f8fafc)',
-                              padding: '6px 8px',
-                              borderRadius: '6px',
-                              fontSize: '0.75rem',
-                              fontFamily: 'monospace',
-                              marginBottom: '10px',
-                              color: 'var(--text-secondary, #334155)',
-                            }}
-                          >
-                            <div><strong>ID:</strong> {acc.email}</div>
-                            <div><strong>Pass:</strong> {acc.password}</div>
+                      <div key={acc.id} className="login-demo-card">
+                        <div className="login-demo-card-copy">
+                          <span className="login-demo-icon" aria-hidden="true">{acc.icon}</span>
+                          <div>
+                            <h4>{acc.name}</h4>
+                            <p>{acc.roleBadge}</p>
+                            <span>{acc.desc}</span>
                           </div>
                         </div>
-
                         <button
                           type="button"
                           onClick={() => handleQuickLogin(acc)}
-                          disabled={isLoading}
+                          disabled={isLoading || !ADMIN_DEMO_ENABLED}
                           className="login-submit-btn"
-                          style={{
-                            padding: '8px',
-                            fontSize: '0.85rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '6px',
-                          }}
                         >
                           {isCardLoading ? <IconRefreshCw size={14} className="spin" /> : null}
-                          <span>{isCardLoading ? 'Entering...' : `Enter as ${acc.roleBadge} →`}</span>
+                          <span>{isCardLoading ? 'Entering...' : ADMIN_DEMO_ENABLED ? 'Continue as Admin →' : 'Demo unavailable'}</span>
                         </button>
                       </div>
                     )
@@ -514,7 +381,7 @@ export default function LoginPage({ onLogin }) {
 
             {/* Tab 2: Manual Password Login */}
             {authTab === 'password' && (
-              <form onSubmit={handlePasswordSubmit} className="login-form">
+              <form onSubmit={handlePasswordSubmit} className="login-form" noValidate>
                 <div className="login-field">
                   <label htmlFor="loginEmail">Email Address</label>
                   <input
@@ -559,7 +426,7 @@ export default function LoginPage({ onLogin }) {
             {/* Tab 3: Supabase Email OTP */}
             {authTab === 'otp' && (
               otpStep === 'email' ? (
-                <form onSubmit={handleSendOtp} className="login-form">
+                <form onSubmit={handleSendOtp} className="login-form" noValidate>
                   <div className="login-field">
                     <label htmlFor="otpEmail">Email for OTP Code</label>
                     <input
@@ -586,7 +453,7 @@ export default function LoginPage({ onLogin }) {
                   </button>
                 </form>
               ) : (
-                <form onSubmit={handleVerifyOtp} className="login-form">
+                <form onSubmit={handleVerifyOtp} className="login-form" noValidate>
                   <div className="login-field">
                     <label>{otpLength}-Digit Verification Code</label>
                     <div
@@ -706,6 +573,17 @@ export default function LoginPage({ onLogin }) {
               )
             )}
 
+            {authTab !== 'otp' && <div className="login-otp-action">
+              <span>Prefer a code instead?</span>
+              <button
+                type="button"
+                onClick={() => { setAuthTab('otp'); setError(''); setSuccess('') }}
+                aria-label="Sign in with email OTP"
+              >
+                Sign in with email OTP
+              </button>
+            </div>}
+
             {/* Terms Note */}
             <p className="login-terms" style={{ marginTop: '20px' }}>
               {t('termsNote') || 'By proceeding, you agree to the'}{' '}
@@ -717,7 +595,7 @@ export default function LoginPage({ onLogin }) {
             {/* Security Badge */}
             <div className="login-security" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
               <IconLock size={14} />
-              <span>Secured by IP-SAKTI Identity Engine & DPDP Compliance</span>
+              <span>Secure session handling</span>
             </div>
           </div>
         </div>

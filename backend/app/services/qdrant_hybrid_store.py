@@ -26,6 +26,7 @@ from qdrant_client import models as qmodels
 from qdrant_client.http.exceptions import UnexpectedResponse
 
 from app.core.config import settings
+from app.services.rag_trace import record_stage
 
 log = logging.getLogger("app.services.qdrant_hybrid_store")
 
@@ -519,6 +520,7 @@ class QdrantHybridStore:
         document_id: Optional[str] = None,
         document_ids: Optional[List[str]] = None,  # Support scoping to multiple docs
         section: Optional[str] = None,
+        trace: Optional[List[Dict[str, Any]]] = None,
     ) -> List[Dict[str, Any]]:
         """
         Executes end-to-end Qdrant Hybrid Search:
@@ -534,14 +536,63 @@ class QdrantHybridStore:
 
         target = collection_name or self.default_collection
         # 1. Validate collection schema
+        schema_started = time.perf_counter()
+        record_stage(
+            trace,
+            "qdrant_schema",
+            "started",
+            "Validating Qdrant hybrid collection",
+            details={"collection": target},
+        )
         self.verify_collection_schema(target)
+        record_stage(
+            trace,
+            "qdrant_schema",
+            "completed",
+            "Qdrant collection schema is compatible",
+            details={"collection": target},
+            started_at=schema_started,
+        )
 
         # 2 & 3. Embed query densely and sparsely
         from app.services.embedding_service import canonical_embedder
         from app.services.sparse_embedding_service import sparse_embedder
 
+        dense_started = time.perf_counter()
+        record_stage(
+            trace,
+            "embedding_dense",
+            "started",
+            "Creating dense BGE-M3 query embedding",
+            details={"model": "BAAI/bge-m3", "dimension": DENSE_DIMENSION},
+        )
         dense_vec = canonical_embedder.embed_query(query_text)
+        record_stage(
+            trace,
+            "embedding_dense",
+            "completed",
+            "Dense query embedding ready",
+            details={"dimension": len(dense_vec), "normalized": True},
+            started_at=dense_started,
+        )
+
+        sparse_started = time.perf_counter()
+        record_stage(
+            trace,
+            "embedding_sparse",
+            "started",
+            "Creating sparse BM25 query embedding",
+            details={"model": "Qdrant/bm25"},
+        )
         sparse_vec = sparse_embedder.embed_query(query_text)
+        record_stage(
+            trace,
+            "embedding_sparse",
+            "completed",
+            "Sparse query embedding ready",
+            details={"non_zero_terms": len(sparse_vec.indices)},
+            started_at=sparse_started,
+        )
 
         # 4. Resolve filters
         explicit_filter = self.build_filter(
@@ -573,6 +624,14 @@ class QdrantHybridStore:
             filter_conditions=active_filter,
         )
 
+        search_started = time.perf_counter()
+        record_stage(
+            trace,
+            "qdrant_search",
+            "started",
+            "Searching dense and sparse Qdrant branches",
+            details={"collection": target, "prefetch_limit": prefetch_limit},
+        )
         client = self.get_client()
         response = client.query_points(
             collection_name=target,
@@ -580,16 +639,54 @@ class QdrantHybridStore:
             query=qmodels.FusionQuery(fusion=qmodels.Fusion.RRF),
             limit=top_k,
             with_payload=True,
+            with_vectors=[DENSE_VECTOR_NAME, SPARSE_VECTOR_NAME],
+        )
+        record_stage(
+            trace,
+            "rrf_fusion",
+            "completed",
+            "Qdrant native RRF fusion completed",
+            details={"result_count": len(response.points), "score_type": "qdrant_rrf"},
+            started_at=search_started,
         )
 
-        # 6. Format and preserve native Qdrant scores
+        # 6. Format and preserve native Qdrant scores and real branch metrics
+        q_sparse_map = dict(zip(sparse_vec.indices, sparse_vec.values)) if (sparse_vec and hasattr(sparse_vec, "indices")) else {}
+
         results: List[Dict[str, Any]] = []
         for pt in response.points:
             p = pt.payload or {}
+            native_rrf = float(pt.score)
+
+            # Compute real dense cosine similarity if vector present
+            dense_score: Optional[float] = None
+            if pt.vector and isinstance(pt.vector, dict) and DENSE_VECTOR_NAME in pt.vector:
+                dv = pt.vector[DENSE_VECTOR_NAME]
+                if dv and len(dv) == len(dense_vec):
+                    # BGE-M3 query and doc vectors are unit-normalized; dot product is cosine similarity
+                    dot_val = sum(a * b for a, b in zip(dense_vec, dv))
+                    dense_score = round(max(0.0, min(1.0, float(dot_val))), 4)
+
+            # Compute real sparse BM25 score if sparse vector present
+            sparse_score: Optional[float] = None
+            raw_bm25_score: Optional[float] = None
+            if pt.vector and isinstance(pt.vector, dict) and SPARSE_VECTOR_NAME in pt.vector:
+                sv = pt.vector[SPARSE_VECTOR_NAME]
+                if sv and hasattr(sv, "indices") and hasattr(sv, "values"):
+                    doc_sparse_map = dict(zip(sv.indices, sv.values))
+                    raw_bm25 = sum(q_sparse_map[idx] * doc_sparse_map[idx] for idx in q_sparse_map if idx in doc_sparse_map)
+                    raw_bm25_score = round(float(raw_bm25), 4)
+                    # Hyperbolic saturation normalization: raw / (raw + 10.0)
+                    sparse_score = round(raw_bm25 / (raw_bm25 + 10.0), 4) if raw_bm25 > 0 else 0.0
+
             results.append({
                 "point_id": str(pt.id),
                 "id": str(pt.id),
-                "score": float(pt.score),  # Native RRF score preserved directly
+                "score": native_rrf,  # Native RRF score preserved directly
+                "rrf_score": native_rrf,
+                "dense_score": dense_score,
+                "sparse_score": sparse_score,
+                "raw_bm25": raw_bm25_score,
                 "text": p.get("text", ""),
                 "chunk_id": p.get("chunk_id", ""),
                 "document_id": p.get("document_id", ""),

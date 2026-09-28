@@ -7,9 +7,11 @@ from qdrant_client import QdrantClient
 
 load_dotenv()
 
+# Inspect the same collection used by the production retrieval router. Falling
+# back to QDRANT_COLLECTION keeps the utility compatible with local setups.
 COLLECTION_NAME = os.getenv(
-    "QDRANT_COLLECTION",
-    "ragvyn_hybrid_test",
+    "QDRANT_PRODUCTION_COLLECTION",
+    os.getenv("QDRANT_COLLECTION", "ragvyn_hybrid_test"),
 )
 
 EXPECTED_DENSE_NAME = "bge_m3"

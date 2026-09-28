@@ -68,7 +68,17 @@ async def conditional_rerank(
 
 
 
-    # Inspect the best vector distance among candidates
+    # Native Qdrant RRF scores are fusion scores, not cosine distances.
+    # Never compare them to a cosine-distance skip threshold: doing so can
+    # incorrectly bypass the cross-encoder and degrade ranking quality.
+    uses_native_rrf = any(
+        c.get("retrieval_score_type") == "qdrant_rrf"
+        or c.get("fusion_type") == "qdrant_native_rrf"
+        for c in candidates
+    )
+
+    # Inspect the best vector distance among candidates only for legacy dense
+    # retrieval, where the value really is a cosine distance.
     distances = [
         float(c.get("distance", c.get("vector_distance", 1.0)))
         for c in candidates
@@ -77,14 +87,15 @@ async def conditional_rerank(
     best_distance = min(distances) if distances else 1.0
 
     log.info(
-        "Candidate evaluation: %d items, best vector distance: %.4f (skip_threshold: %.2f)",
+        "Candidate evaluation: %d items, best vector distance: %.4f (skip_threshold: %.2f, native_rrf=%s)",
         len(candidates),
         best_distance,
         skip_threshold,
+        uses_native_rrf,
     )
 
     # Condition 1: High confidence match -> Skip CrossEncoder
-    if best_distance <= skip_threshold:
+    if not uses_native_rrf and best_distance <= skip_threshold:
         log.info(
             "High confidence vector match detected (%.4f <= %.2f). Bypassing CrossEncoder reranker.",
             best_distance,

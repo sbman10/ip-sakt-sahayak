@@ -22,12 +22,14 @@ from __future__ import annotations
 import concurrent.futures
 import hashlib
 import logging
+import re
 import threading
 import time
 import uuid
 from typing import Any, Dict, List, Optional, Tuple
 
 from app.core.config import settings
+from app.services.rag_trace import record_stage
 
 log = logging.getLogger("app.services.retrieval_router")
 
@@ -41,6 +43,16 @@ CATEGORY_EMPTY = "empty_results"
 CATEGORY_FILTER_MISMATCH = "filter_mismatch"
 CATEGORY_CITATION_FAILURE = "citation_validation_failure"
 CATEGORY_UNEXPECTED = "unexpected_exception"
+
+
+def _safe_exception_text(exc: Exception, limit: int = 280) -> str:
+    """Return a bounded exception summary with common secret formats redacted."""
+    message = re.sub(
+        r"(?i)(api[_-]?key|token|password|secret|authorization)\s*[:=]\s*[^\s,;]+",
+        r"\1=[REDACTED]",
+        str(exc),
+    )
+    return message[:limit]
 
 
 def _categorize_exception(exc: Exception) -> str:
@@ -80,6 +92,14 @@ def normalize_chroma_result(
     score = float(doc.get("rrf_score", doc.get("score", 0.0)))
     dist = float(doc.get("distance", doc.get("vector_distance", 1.0)))
     sim = float(doc.get("vector_similarity", max(0.0, min(1.0, 1.0 - dist))))
+    vector_rank = doc.get("vector_rank")
+    dense_score = doc.get("dense_score")
+    if dense_score is None and vector_rank is not None:
+        dense_score = sim
+    raw_bm25 = float(doc.get("bm25_score", doc.get("raw_bm25", 0.0)) or 0.0)
+    sparse_score = doc.get("sparse_score")
+    if sparse_score is None:
+        sparse_score = round(raw_bm25 / (raw_bm25 + 10.0), 4) if raw_bm25 > 0 else 0.0
 
     backend_label = "bm25_fallback" if fallback_used else "bm25"
 
@@ -97,17 +117,34 @@ def normalize_chroma_result(
         "document_type": doc.get("document_type", "statute"),
         "domain": meta.get("domain", "patents"),
         "language": meta.get("language", "en"),
+        "page": doc.get("page") or meta.get("page"),
+        "page_number": doc.get("page_number") or meta.get("page_number"),
+        "source_url": doc.get("source_url") or meta.get("source_url"),
+        "url": doc.get("url") or meta.get("url"),
+        "context_before": doc.get("context_before") or meta.get("context_before"),
+        "context_after": doc.get("context_after") or meta.get("context_after"),
         "score": score,
         "metadata": meta if meta else dict(doc),
+        # Real branch scores (deterministic metrics)
+        "dense_score": dense_score,
+        "sparse_score": sparse_score,
+        "raw_bm25": raw_bm25,
         # Compatibility fields for retrieval gate, reranker, and telemetry
         "distance": dist,
         "vector_distance": dist,
         "vector_similarity": sim,
         "rrf_score": score,
+        # Preserve the legacy score type for existing confidence/gate code;
+        # fusion_type carries the important distinction from native Qdrant RRF.
         "retrieval_score_type": "rrf",
+        "fusion_type": "legacy_manual_rrf",
         "retrieval_backend": backend_label,
         "fallback_used": fallback_used,
         "fallback_reason": fallback_reason,
+        "vector_rank": vector_rank,
+        "bm25_rank": doc.get("bm25_rank"),
+        "bm25_score": raw_bm25,
+        "has_dense_evidence": vector_rank is not None,
     }
 
 
@@ -161,14 +198,25 @@ def normalize_qdrant_result(doc: Dict[str, Any]) -> Dict[str, Any]:
         "document_type": doc_type_val,
         "domain": domain_val,
         "language": lang_val,
+        "page": doc.get("page") if doc.get("page") is not None else meta.get("page"),
+        "page_number": doc.get("page_number") if doc.get("page_number") is not None else meta.get("page_number"),
+        "source_url": doc.get("source_url") if doc.get("source_url") is not None else meta.get("source_url"),
+        "url": doc.get("url") if doc.get("url") is not None else meta.get("url"),
+        "context_before": doc.get("context_before") if doc.get("context_before") is not None else meta.get("context_before"),
+        "context_after": doc.get("context_after") if doc.get("context_after") is not None else meta.get("context_after"),
         "score": native_score,  # Native score preserved directly
         "metadata": meta,
+        # Real branch scores (deterministic metrics)
+        "dense_score": doc.get("dense_score"),
+        "sparse_score": doc.get("sparse_score"),
+        "raw_bm25": doc.get("raw_bm25"),
         # Compatibility fields for retrieval gate, reranker, and telemetry
         "distance": doc.get("distance", compat_dist),
         "vector_distance": doc.get("vector_distance", compat_dist),
         "vector_similarity": native_score,
         "rrf_score": native_score,
         "retrieval_score_type": "qdrant_rrf",
+        "fusion_type": "qdrant_native_rrf",
         "retrieval_backend": "qdrant_hybrid",
         "fallback_used": False,
         "fallback_reason": None,
@@ -404,6 +452,7 @@ class RetrievalRouter:
         query: str,
         jurisdiction: str,
         top_k: int,
+        trace: Optional[list[dict[str, Any]]] = None,
         **filters: Any,
     ) -> List[Dict[str, Any]]:
         """Call Qdrant hybrid store directly targeting the production collection."""
@@ -416,6 +465,7 @@ class RetrievalRouter:
             collection_name=target_collection,
             top_k=top_k,
             jurisdiction=jurisdiction,
+            trace=trace,
             **filters,
         )
 
@@ -440,6 +490,7 @@ class RetrievalRouter:
         request_id: Optional[str] = None,
         session_id: Optional[str] = None,
         user_id: Optional[str] = None,
+        trace: Optional[list[dict[str, Any]]] = None,
         **filters: Any,
     ) -> List[Dict[str, Any]]:
         """
@@ -452,6 +503,13 @@ class RetrievalRouter:
         req_id = request_id or str(uuid.uuid4())[:8]
         query_hash = hashlib.sha256(query.encode("utf-8")).hexdigest()[:8]
         start_time = time.perf_counter()
+        record_stage(
+            trace,
+            "retrieval_routing",
+            "started",
+            "Selecting verified retrieval backend",
+            details={"request_id": req_id},
+        )
 
         # Determine backend routing via deterministic canary selector
         use_qdrant, routing_reason = should_route_to_qdrant(
@@ -465,6 +523,13 @@ class RetrievalRouter:
         # Path A: Lexical BM25 (Non-Qdrant Traffic)
         # -------------------------------------------------------------
         if not use_qdrant:
+            record_stage(
+                trace,
+                "retrieval_routing",
+                "completed",
+                "Using legacy hybrid fallback",
+                details={"backend": "legacy_hybrid_rrf", "reason": routing_reason},
+            )
             try:
                 results = self._execute_fallback(
                     query=query,
@@ -490,11 +555,19 @@ class RetrievalRouter:
                 latency_ms = (time.perf_counter() - start_time) * 1000.0
                 canary_metrics_tracker.record_chroma_request(latency_ms)
                 log.error(
-                    "[%s] Primary fallback retrieval error: %s | query_hash: %s | latency: %.2fms",
+                    "[%s] Primary fallback retrieval error: %s (%s) | query_hash: %s | latency: %.2fms",
                     req_id,
                     type(exc).__name__,
+                    _safe_exception_text(exc),
                     query_hash,
                     latency_ms,
+                )
+                record_stage(
+                    trace,
+                    "retrieval_fallback",
+                    "failed",
+                    "Legacy fallback retrieval failed",
+                    details={"reason": _categorize_exception(exc)},
                 )
                 return []
 
@@ -509,6 +582,13 @@ class RetrievalRouter:
         fallback_enabled = bool(getattr(settings, "QDRANT_FALLBACK_ENABLED", True))
 
         canary_metrics_tracker.record_qdrant_attempt()
+        record_stage(
+            trace,
+            "qdrant_hybrid",
+            "started",
+            "Searching dense and sparse Qdrant indexes",
+            details={"collection": settings.QDRANT_PRODUCTION_COLLECTION, "top_k": top_k},
+        )
 
         try:
             future = self._executor.submit(
@@ -516,6 +596,7 @@ class RetrievalRouter:
                 query,
                 jurisdiction,
                 top_k,
+                trace=trace,
                 **filters,
             )
             qdrant_results = future.result(timeout=timeout_sec)
@@ -551,10 +632,11 @@ class RetrievalRouter:
             fallback_needed = True
             fallback_category = _categorize_exception(exc)
             log.warning(
-                "[%s] Qdrant retrieval exception [%s]: %s | query_hash: %s. Fallback enabled=%s.",
+                "[%s] Qdrant retrieval exception [%s]: %s (%s) | query_hash: %s. Fallback enabled=%s.",
                 req_id,
                 fallback_category,
                 type(exc).__name__,
+                _safe_exception_text(exc),
                 query_hash,
                 fallback_enabled,
             )
@@ -571,6 +653,18 @@ class RetrievalRouter:
                 query_hash,
                 len(qdrant_results),
                 latency_ms,
+            )
+            record_stage(
+                trace,
+                "qdrant_hybrid",
+                "completed",
+                "Qdrant native RRF returned verified evidence",
+                details={
+                    "backend": "qdrant_hybrid",
+                    "score_type": "qdrant_rrf",
+                    "result_count": len(qdrant_results),
+                },
+                started_at=start_time,
             )
             return qdrant_results
 
@@ -610,6 +704,20 @@ class RetrievalRouter:
                 len(fallback_results),
                 latency_ms,
             )
+            record_stage(
+                trace,
+                "qdrant_hybrid",
+                "failed",
+                "Qdrant native search unavailable; using safe fallback",
+                details={"reason": fallback_category, "fallback_backend": "legacy_hybrid_rrf"},
+            )
+            record_stage(
+                trace,
+                "retrieval_fallback",
+                "completed" if fallback_results else "failed",
+                "Legacy fallback retrieval completed" if fallback_results else "Legacy fallback returned no evidence",
+                details={"result_count": len(fallback_results), "reason": fallback_category},
+            )
             return fallback_results
         except Exception as fallback_exc:
             latency_ms = (time.perf_counter() - start_time) * 1000.0
@@ -621,6 +729,20 @@ class RetrievalRouter:
                 type(fallback_exc).__name__,
                 query_hash,
                 latency_ms,
+            )
+            record_stage(
+                trace,
+                "qdrant_hybrid",
+                "failed",
+                "Qdrant native search failed",
+                details={"reason": fallback_category},
+            )
+            record_stage(
+                trace,
+                "retrieval_fallback",
+                "failed",
+                "Both retrieval backends failed",
+                details={"reason": _categorize_exception(fallback_exc)},
             )
             return []
 
@@ -636,6 +758,7 @@ def retrieve(
     request_id: Optional[str] = None,
     session_id: Optional[str] = None,
     user_id: Optional[str] = None,
+    trace: Optional[list[dict[str, Any]]] = None,
     **filters: Any,
 ) -> List[Dict[str, Any]]:
     """Stable public API for retrieval router."""
@@ -646,5 +769,6 @@ def retrieve(
         request_id=request_id,
         session_id=session_id,
         user_id=user_id,
+        trace=trace,
         **filters,
     )
