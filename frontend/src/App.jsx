@@ -2341,221 +2341,221 @@ function FormulationWizardModal({ isOpen, onClose, onAskChat }) {
         ) : (
           <div className="modal-body">
             {/* Progress Bar */}
-          <div className="wizard-progress">
-            {[1, 2, 3, 4].map(s => (
-              <div
-                key={s}
-                className={`wizard-progress-step ${step === s ? 'active' : step > s ? 'completed' : ''}`}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              >
-                {step > s ? <IconCheck size={14} /> : s}
-              </div>
-            ))}
-          </div>
-
-          {/* STEP 1 */}
-          {step === 1 && (
-            <div>
-              <h3 className="wizard-question-title">{t('wizardStep1Title')}</h3>
-              <p className="wizard-question-desc">{t('wizardStep1Desc')}</p>
-
-              <div className="wizard-options-grid">
-                {[
-                  {
-                    id: 'classical',
-                    icon: <IconScroll size={22} />,
-                    title: 'Ancient Authoritative Text (First Schedule)',
-                    desc: 'Recipe taken directly from Charaka Samhita, Sushruta Samhita, Sahasrayogam, or Bhaishajya Ratnavali.',
-                  },
-                  {
-                    id: 'proprietary',
-                    icon: <IconMicroscope size={22} />,
-                    title: 'Modified / Novel Herbal Blend',
-                    desc: 'Unique combination, novel extract ratio, or new delivery mechanism developed by your R&D team.',
-                  },
-                  {
-                    id: 'nutra',
-                    icon: <IconLeaf size={22} />,
-                    title: 'Functional Dietary Supplement / Food',
-                    desc: 'Herbal beverage, tonic, or dietary pill meant for daily health maintenance (Ayurveda Aahar).',
-                  },
-                ].map(opt => (
-                  <button
-                    key={opt.id}
-                    className={`wizard-option-btn ${answers.q1 === opt.id ? 'selected' : ''}`}
-                    onClick={() => handleSelectOption('q1', opt.id)}
-                  >
-                    <span className="option-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{opt.icon}</span>
-                    <div>
-                      <div className="option-title">{opt.title}</div>
-                      <div className="option-desc">{opt.desc}</div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
-                <button
-                  className="btn-primary"
-                  disabled={!answers.q1}
-                  onClick={() => setStep(2)}
-                  style={{ opacity: answers.q1 ? 1 : 0.5, cursor: answers.q1 ? 'pointer' : 'not-allowed' }}
+            <div className="wizard-progress">
+              {[1, 2, 3, 4].map(s => (
+                <div
+                  key={s}
+                  className={`wizard-progress-step ${step === s ? 'active' : step > s ? 'completed' : ''}`}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 >
-                  Next Step →
-                </button>
-              </div>
+                  {step > s ? <IconCheck size={14} /> : s}
+                </div>
+              ))}
             </div>
-          )}
 
-          {/* STEP 2 */}
-          {step === 2 && (
-            <div>
-              <h3 className="wizard-question-title">Step 2: How is the formulation processed or prepared?</h3>
-              <p className="wizard-question-desc">Select the manufacturing method used for production.</p>
+            {/* STEP 1 */}
+            {step === 1 && (
+              <div>
+                <h3 className="wizard-question-title">{t('wizardStep1Title')}</h3>
+                <p className="wizard-question-desc">{t('wizardStep1Desc')}</p>
 
-              <div className="wizard-options-grid">
-                {[
-                  {
-                    id: 'traditional_proc',
-                    icon: <IconFlask size={22} />,
-                    title: 'Traditional Ayurvedic Processing Methods',
-                    desc: 'Standard Kwatha (decoction), Asava-Arishta (fermentation), Bhasma, or Churna preparation.',
-                  },
-                  {
-                    id: 'novel_proc',
-                    icon: <IconMicroscope size={22} />,
-                    title: 'Modern Extraction or Nanotechnology',
-                    desc: 'Supercritical CO2 extraction, targeted liposomal delivery, or standardized marker compound enrichment.',
-                  },
-                ].map(opt => (
-                  <button
-                    key={opt.id}
-                    className={`wizard-option-btn ${answers.q2 === opt.id ? 'selected' : ''}`}
-                    onClick={() => handleSelectOption('q2', opt.id)}
-                  >
-                    <span className="option-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{opt.icon}</span>
-                    <div>
-                      <div className="option-title">{opt.title}</div>
-                      <div className="option-desc">{opt.desc}</div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' }}>
-                <button className="btn-secondary" onClick={() => setStep(1)}>← Back</button>
-                <button
-                  className="btn-primary"
-                  disabled={!answers.q2}
-                  onClick={() => setStep(3)}
-                  style={{ opacity: answers.q2 ? 1 : 0.5, cursor: answers.q2 ? 'pointer' : 'not-allowed' }}
-                >
-                  Next Step →
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* STEP 3 */}
-          {step === 3 && (
-            <div>
-              <h3 className="wizard-question-title">Step 3: What is the primary intended use and claim?</h3>
-              <p className="wizard-question-desc">Select the marketing and therapeutic positioning of the product.</p>
-
-              <div className="wizard-options-grid">
-                {[
-                  {
-                    id: 'therapeutic',
-                    icon: <IconShieldCheck size={22} />,
-                    title: 'Specific Disease Treatment or Cure',
-                    desc: 'Claiming clinical cure or management for conditions like Arthritis, Diabetes, or Hypertension.',
-                  },
-                  {
-                    id: 'wellness',
-                    icon: <IconLeaf size={22} />,
-                    title: 'General Immunity & Wellness',
-                    desc: 'Promoting overall vitality, digestion, or stress relief without disease-specific claims.',
-                  },
-                ].map(opt => (
-                  <button
-                    key={opt.id}
-                    className={`wizard-option-btn ${answers.q3 === opt.id ? 'selected' : ''}`}
-                    onClick={() => handleSelectOption('q3', opt.id)}
-                  >
-                    <span className="option-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{opt.icon}</span>
-                    <div>
-                      <div className="option-title">{opt.title}</div>
-                      <div className="option-desc">{opt.desc}</div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' }}>
-                <button className="btn-secondary" onClick={() => setStep(2)}>← Back</button>
-                <button
-                  className="btn-primary"
-                  disabled={!answers.q3}
-                  onClick={() => setStep(4)}
-                  style={{ opacity: answers.q3 ? 1 : 0.5, cursor: answers.q3 ? 'pointer' : 'not-allowed' }}
-                >
-                  Generate IP Assessment →
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* STEP 4: OUTCOME */}
-          {step === 4 && outcome && (
-            <div className="wizard-outcome-box">
-              <div className={`outcome-badge ${outcome.cls}`}>
-                {outcome.badge}
-              </div>
-
-              <h3 style={{ fontSize: '1.2rem', color: 'var(--text-primary)', margin: 0 }}>
-                Classification: {outcome.type}
-              </h3>
-
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6 }}>
-                {outcome.summary}
-              </p>
-
-              <div style={{ background: 'var(--bg-elevated)', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--bg-border)' }}>
-                <h4 style={{ fontSize: '0.88rem', color: 'var(--primary-light)', marginBottom: '0.5rem' }}>
-                  Recommended IP & Licensing Actions:
-                </h4>
-                <ul style={{ paddingLeft: '1.2rem', fontSize: '0.83rem', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  {outcome.legalAction.map((action, idx) => (
-                    <li key={idx}>{action}</li>
+                <div className="wizard-options-grid">
+                  {[
+                    {
+                      id: 'classical',
+                      icon: <IconScroll size={22} />,
+                      title: 'Ancient Authoritative Text (First Schedule)',
+                      desc: 'Recipe taken directly from Charaka Samhita, Sushruta Samhita, Sahasrayogam, or Bhaishajya Ratnavali.',
+                    },
+                    {
+                      id: 'proprietary',
+                      icon: <IconMicroscope size={22} />,
+                      title: 'Modified / Novel Herbal Blend',
+                      desc: 'Unique combination, novel extract ratio, or new delivery mechanism developed by your R&D team.',
+                    },
+                    {
+                      id: 'nutra',
+                      icon: <IconLeaf size={22} />,
+                      title: 'Functional Dietary Supplement / Food',
+                      desc: 'Herbal beverage, tonic, or dietary pill meant for daily health maintenance (Ayurveda Aahar).',
+                    },
+                  ].map(opt => (
+                    <button
+                      key={opt.id}
+                      className={`wizard-option-btn ${answers.q1 === opt.id ? 'selected' : ''}`}
+                      onClick={() => handleSelectOption('q1', opt.id)}
+                    >
+                      <span className="option-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{opt.icon}</span>
+                      <div>
+                        <div className="option-title">{opt.title}</div>
+                        <div className="option-desc">{opt.desc}</div>
+                      </div>
+                    </button>
                   ))}
-                </ul>
-              </div>
+                </div>
 
-              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-                <button
-                  className="btn-primary"
-                  onClick={() => {
-                    handleClose()
-                    onAskChat(outcome.prompt)
-                  }}
-                >
-                  {t('askIpSaktiDetailed')} →
-                </button>
-                <Link
-                  to="/ip-calculator"
-                  className="btn-secondary"
-                  onClick={handleClose}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                >
-                  <IconCalculator size={16} /> Estimate Filing Fees
-                </Link>
-                <button className="btn-secondary" onClick={resetWizard} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                  <IconRotate size={16} /> {t('retestFormulation')}
-                </button>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+                  <button
+                    className="btn-primary"
+                    disabled={!answers.q1}
+                    onClick={() => setStep(2)}
+                    style={{ opacity: answers.q1 ? 1 : 0.5, cursor: answers.q1 ? 'pointer' : 'not-allowed' }}
+                  >
+                    Next Step →
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+
+            {/* STEP 2 */}
+            {step === 2 && (
+              <div>
+                <h3 className="wizard-question-title">Step 2: How is the formulation processed or prepared?</h3>
+                <p className="wizard-question-desc">Select the manufacturing method used for production.</p>
+
+                <div className="wizard-options-grid">
+                  {[
+                    {
+                      id: 'traditional_proc',
+                      icon: <IconFlask size={22} />,
+                      title: 'Traditional Ayurvedic Processing Methods',
+                      desc: 'Standard Kwatha (decoction), Asava-Arishta (fermentation), Bhasma, or Churna preparation.',
+                    },
+                    {
+                      id: 'novel_proc',
+                      icon: <IconMicroscope size={22} />,
+                      title: 'Modern Extraction or Nanotechnology',
+                      desc: 'Supercritical CO2 extraction, targeted liposomal delivery, or standardized marker compound enrichment.',
+                    },
+                  ].map(opt => (
+                    <button
+                      key={opt.id}
+                      className={`wizard-option-btn ${answers.q2 === opt.id ? 'selected' : ''}`}
+                      onClick={() => handleSelectOption('q2', opt.id)}
+                    >
+                      <span className="option-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{opt.icon}</span>
+                      <div>
+                        <div className="option-title">{opt.title}</div>
+                        <div className="option-desc">{opt.desc}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' }}>
+                  <button className="btn-secondary" onClick={() => setStep(1)}>← Back</button>
+                  <button
+                    className="btn-primary"
+                    disabled={!answers.q2}
+                    onClick={() => setStep(3)}
+                    style={{ opacity: answers.q2 ? 1 : 0.5, cursor: answers.q2 ? 'pointer' : 'not-allowed' }}
+                  >
+                    Next Step →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 3 */}
+            {step === 3 && (
+              <div>
+                <h3 className="wizard-question-title">Step 3: What is the primary intended use and claim?</h3>
+                <p className="wizard-question-desc">Select the marketing and therapeutic positioning of the product.</p>
+
+                <div className="wizard-options-grid">
+                  {[
+                    {
+                      id: 'therapeutic',
+                      icon: <IconShieldCheck size={22} />,
+                      title: 'Specific Disease Treatment or Cure',
+                      desc: 'Claiming clinical cure or management for conditions like Arthritis, Diabetes, or Hypertension.',
+                    },
+                    {
+                      id: 'wellness',
+                      icon: <IconLeaf size={22} />,
+                      title: 'General Immunity & Wellness',
+                      desc: 'Promoting overall vitality, digestion, or stress relief without disease-specific claims.',
+                    },
+                  ].map(opt => (
+                    <button
+                      key={opt.id}
+                      className={`wizard-option-btn ${answers.q3 === opt.id ? 'selected' : ''}`}
+                      onClick={() => handleSelectOption('q3', opt.id)}
+                    >
+                      <span className="option-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{opt.icon}</span>
+                      <div>
+                        <div className="option-title">{opt.title}</div>
+                        <div className="option-desc">{opt.desc}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' }}>
+                  <button className="btn-secondary" onClick={() => setStep(2)}>← Back</button>
+                  <button
+                    className="btn-primary"
+                    disabled={!answers.q3}
+                    onClick={() => setStep(4)}
+                    style={{ opacity: answers.q3 ? 1 : 0.5, cursor: answers.q3 ? 'pointer' : 'not-allowed' }}
+                  >
+                    Generate IP Assessment →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 4: OUTCOME */}
+            {step === 4 && outcome && (
+              <div className="wizard-outcome-box">
+                <div className={`outcome-badge ${outcome.cls}`}>
+                  {outcome.badge}
+                </div>
+
+                <h3 style={{ fontSize: '1.2rem', color: 'var(--text-primary)', margin: 0 }}>
+                  Classification: {outcome.type}
+                </h3>
+
+                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6 }}>
+                  {outcome.summary}
+                </p>
+
+                <div style={{ background: 'var(--bg-elevated)', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--bg-border)' }}>
+                  <h4 style={{ fontSize: '0.88rem', color: 'var(--primary-light)', marginBottom: '0.5rem' }}>
+                    Recommended IP & Licensing Actions:
+                  </h4>
+                  <ul style={{ paddingLeft: '1.2rem', fontSize: '0.83rem', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    {outcome.legalAction.map((action, idx) => (
+                      <li key={idx}>{action}</li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                  <button
+                    className="btn-primary"
+                    onClick={() => {
+                      handleClose()
+                      onAskChat(outcome.prompt)
+                    }}
+                  >
+                    {t('askIpSaktiDetailed')} →
+                  </button>
+                  <Link
+                    to="/ip-calculator"
+                    className="btn-secondary"
+                    onClick={handleClose}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    <IconCalculator size={16} /> Estimate Filing Fees
+                  </Link>
+                  <button className="btn-secondary" onClick={resetWizard} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <IconRotate size={16} /> {t('retestFormulation')}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>
@@ -2696,7 +2696,7 @@ function CitationCard({ citation, isExpanded, onToggle }) {
   const displayTitle = formatSourceName(citation.source || citation.title || '')
   const sectionLabel = citation.section || ''
   const snippetText = citation.text || ''
-  
+
   return (
     <div className={`citation-card ${isExpanded ? 'expanded' : ''}`}>
       <button
@@ -3033,13 +3033,13 @@ function SourcesPanel({
 function ConfidenceBadge({ level }) {
   // Handle both old string format and new object format
   let label, cls, icon, score, reason
-  
+
   if (typeof level === 'object' && level !== null) {
     // New structured format: { score, label, reason }
     score = level.score
     reason = level.reason || ''
     const levelLabel = (level.label || 'Medium').toLowerCase()
-    
+
     if (levelLabel === 'error') {
       label = `Connection Error`
       cls = 'low'
@@ -3072,7 +3072,7 @@ function ConfidenceBadge({ level }) {
     icon = m.icon
     reason = ''
   }
-  
+
   return (
     <div className="confidence-wrapper" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
       <span className={`confidence-badge ${cls}`} role="status" aria-label={label} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
@@ -3106,7 +3106,7 @@ function TypewriterText({ text, speed = 15, onComplete }) {
 
   useEffect(() => {
     if (!text) return
-    
+
     let currentIndex = 0
     setDisplayedText('')
     setIsComplete(false)
@@ -3143,7 +3143,7 @@ function DPDPProtectionBadge() {
   const [showTooltip, setShowTooltip] = useState(false)
 
   return (
-    <div 
+    <div
       className="dpdp-badge"
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
@@ -3202,12 +3202,12 @@ function VoiceInputIndicator({ isListening, interimText, confidence, voiceLang }
    ============================================================ */
 function ConfidenceMeter({ level }) {
   let label, fill, percent
-  
+
   if (typeof level === 'object' && level !== null) {
     // New structured format: { score, label, reason }
     percent = level.score || 0
     const levelLabel = (level.label || 'Medium').toLowerCase()
-    
+
     if (levelLabel === 'high' || percent >= 70) {
       label = 'High Confidence'
       fill = 'high'
@@ -4208,302 +4208,309 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, theme: propTheme, toggleTheme: 
 
   return (
     <>
-    <nav className={`ragvyn-float-nav${scrolled ? ' nav-scrolled' : ''}`} role="navigation" aria-label="Main Navigation">
-      <div className="ragvyn-float-nav-inner">
-        {/* Left: Brand */}
-        <Link
-          to="/"
-          id="tour-nav-brand"
-          className="ragvyn-nav-brand"
-          onClick={() => {
-            setMobileMenuOpen(false)
-            window.dispatchEvent(new CustomEvent('retrigger-hero-anim'))
-          }}
-        >
-          <IpSaktiLogo size={32} className="ragvyn-nav-logo" />
-          <span className="ragvyn-nav-wordmark">RAGVYN</span>
-        </Link>
+      <nav className={`ragvyn-float-nav${scrolled ? ' nav-scrolled' : ''}`} role="navigation" aria-label="Main Navigation">
+        <div className="ragvyn-float-nav-inner">
+          {/* Left: Brand */}
+          <Link
+            to="/"
+            id="tour-nav-brand"
+            className="ragvyn-nav-brand"
+            onClick={() => {
+              setMobileMenuOpen(false)
+              window.dispatchEvent(new CustomEvent('retrigger-hero-anim'))
+            }}
+          >
+            <IpSaktiLogo size={32} className="ragvyn-nav-logo" />
+            <span className="ragvyn-nav-wordmark">RAGVYN</span>
+          </Link>
 
-        {/* Center: Navigation Links */}
-        <ul className={`ragvyn-nav-links ${mobileMenuOpen ? 'mobile-open' : ''}`}>
-          <li>
-            <Link to="/" className="ragvyn-nav-link" onClick={() => { setMobileMenuOpen(false); window.dispatchEvent(new CustomEvent('retrigger-hero-anim')); }}>
-              Home
-            </Link>
-          </li>
+          {/* Center: Navigation Links */}
+          <ul className={`ragvyn-nav-links ${mobileMenuOpen ? 'mobile-open' : ''}`}>
+            <li>
+              <Link to="/" className="ragvyn-nav-link" onClick={() => { setMobileMenuOpen(false); window.dispatchEvent(new CustomEvent('retrigger-hero-anim')); }}>
+                Home
+              </Link>
+            </li>
 
-          {/* Services Dropdown — contains all tools */}
-          <li className="ragvyn-nav-dropdown" id="tour-services-menu" ref={servicesDropdownRef}>
-            <button
-              type="button"
-              className="ragvyn-nav-link ragvyn-nav-dropdown-trigger"
-              onClick={() => {
-                setServicesDropdownOpen(!servicesDropdownOpen)
-                setToolsDropdownOpen(false)
-              }}
-              aria-expanded={servicesDropdownOpen}
-            >
-              Services
-              <IconChevronDown size={12} className={`dropdown-chevron ${servicesDropdownOpen ? 'open' : ''}`} />
-            </button>
-            {servicesDropdownOpen && (
-              <div className="ragvyn-dropdown-menu">
-                <Link to="/formulation-wizard" className="ragvyn-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
-                  <span className="ragvyn-dropdown-icon">🧪</span>
-                  <div className="ragvyn-dropdown-text">
-                    <strong>Formulation Wizard</strong>
-                    <span>3-step IP & regulatory classification</span>
-                  </div>
-                </Link>
-                <Link to="/abs-checker" className="ragvyn-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
-                  <span className="ragvyn-dropdown-icon">🌿</span>
-                  <div className="ragvyn-dropdown-text">
-                    <strong>ABS Checker</strong>
-                    <span>Biodiversity & Nagoya compliance</span>
-                  </div>
-                </Link>
-                <Link to="/ip-calculator" className="ragvyn-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
-                  <span className="ragvyn-dropdown-icon">💰</span>
-                  <div className="ragvyn-dropdown-text">
-                    <strong>IP Calculator</strong>
-                    <span>Patent filing fees estimate</span>
-                  </div>
-                </Link>
-                <Link to="/deadline-calculator" className="ragvyn-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
-                  <span className="ragvyn-dropdown-icon">📅</span>
-                  <div className="ragvyn-dropdown-text">
-                    <strong>Deadline Calculator</strong>
-                    <span>Track RFE, FER & renewal deadlines</span>
-                  </div>
-                </Link>
-                <Link to="/sources" className="ragvyn-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
-                  <span className="ragvyn-dropdown-icon">📚</span>
-                  <div className="ragvyn-dropdown-text">
-                    <strong>Official Data Corpora</strong>
-                    <span>Authoritative legal source library</span>
-                  </div>
-                </Link>
-                <Link to="/patentability" className="ragvyn-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
-                  <span className="ragvyn-dropdown-icon">⚖️</span>
-                  <div className="ragvyn-dropdown-text">
-                    <strong>Patentability Assessment</strong>
-                    <span>Prior art & § 3(p)/3(d)/3(e)</span>
-                  </div>
-                </Link>
-                <Link to="/checklists" className="ragvyn-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
-                  <span className="ragvyn-dropdown-icon">✅</span>
-                  <div className="ragvyn-dropdown-text">
-                    <strong>Filing Checklists</strong>
-                    <span>Patent, TM, GI checklists</span>
-                  </div>
-                </Link>
-                <Link to="/drafts" className="ragvyn-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
-                  <span className="ragvyn-dropdown-icon">📝</span>
-                  <div className="ragvyn-dropdown-text">
-                    <strong>Draft Generator</strong>
-                    <span>Form-1, NBA templates</span>
-                  </div>
-                </Link>
-                <Link to="/workspace" className="ragvyn-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
-                  <span className="ragvyn-dropdown-icon">💼</span>
-                  <div className="ragvyn-dropdown-text">
-                    <strong>Matter Workspace</strong>
-                    <span>Track your IP cases</span>
-                  </div>
-                </Link>
-                <Link to="/experts" className="ragvyn-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
-                  <span className="ragvyn-dropdown-icon">👥</span>
-                  <div className="ragvyn-dropdown-text">
-                    <strong>Expert Connect</strong>
-                    <span>Find IP experts & FAQs</span>
-                  </div>
-                </Link>
-              </div>
-            )}
-          </li>
-
-          <li>
-            <Link to="/use-cases" id="tour-use-cases" className="ragvyn-nav-link" onClick={() => setMobileMenuOpen(false)}>
-              {t('navigation.useCases') || 'Use Cases'}
-            </Link>
-          </li>
-          <li>
-            <Link to="/sources" className="ragvyn-nav-link" onClick={() => setMobileMenuOpen(false)}>
-              {t('navigation.officialSources') || 'Official Sources'}
-            </Link>
-          </li>
-          <li className="gov-nav-item-secondary">
-            <button
-              type="button"
-              className="gov-nav-link-btn"
-              data-tour="about"
-              onClick={() => {
-                setMobileMenuOpen(false)
-                if (onOpenAbout) onOpenAbout()
-              }}
-            >
-              <IconInfo size={15} />
-              <span>{t('common.about') || 'About'}</span>
-            </button>
-          </li>
-          <li className="gov-nav-item-secondary">
-            <button
-              type="button"
-              className="gov-nav-link-btn"
-              onClick={() => {
-                setMobileMenuOpen(false)
-                handleStartTour()
-              }}
-              title="Take a guided tour"
-            >
-              <IconCompass size={15} />
-              <span>{t('navigation.tour') || 'Tour'}</span>
-            </button>
-          </li>
-
-          {/* Mobile-Only Actions */}
-          <li className="ragvyn-nav-mobile-actions">
-            {authLoggedIn ? (
-              <div className="ragvyn-nav-mobile-profile-card">
-                <div className="ragvyn-nav-mobile-profile-header">
-                  <div className="gov-profile-avatar-circle">
-                    <span className="gov-profile-avatar-initial">
-                      {(authUserName || 'U').charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                  <div className="welcome-text">
-                    <span className="welcome-label">Signed in as</span>
-                    <span className="welcome-name">{authUserName || 'Innovator'}</span>
-                  </div>
-                </div>
-                <div className="ragvyn-nav-mobile-profile-actions">
-                  <button type="button" className="ragvyn-nav-mobile-action" onClick={() => { setMobileMenuOpen(false); setEditProfileOpen(true); }}>✎ Edit Profile</button>
-                  <Link to="/chat" className="ragvyn-nav-mobile-action" onClick={() => setMobileMenuOpen(false)}>◉ My Consultations</Link>
-                  <button type="button" className="ragvyn-nav-mobile-action ragvyn-nav-mobile-logout" onClick={() => { setMobileMenuOpen(false); effectiveLogout(); }}>Logout</button>
-                </div>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '8px' }}>
-                <Link to="/login" className="ragvyn-nav-mobile-login" onClick={() => setMobileMenuOpen(false)}>
-                  <IconUser size={16} /> Login
-                </Link>
-                <Link to="/login?mode=register" state={{ register: true }} className="ragvyn-nav-mobile-register" onClick={() => setMobileMenuOpen(false)}>
-                  Register
-                </Link>
-              </div>
-            )}
-            <Link to="/chat" className="ragvyn-nav-mobile-cta" onClick={() => setMobileMenuOpen(false)}>
-              <span>Consult RAGVYN AI</span>
-              <IconArrowRight size={15} />
-            </Link>
-          </li>
-        </ul>
-
-        {/* Right: Actions */}
-        <div className="ragvyn-nav-right">
-          {/* Top-Right Header Compact Controls: Tour, Language, Theme, Accessibility */}
-          <div className="ragvyn-nav-tools-group">
-            <button
-              type="button"
-              id="tour-nav-btn"
-              className="ragvyn-nav-tour-btn"
-              onClick={handleStartTour}
-              aria-label="Start guided product tour"
-              title="Take a tour"
-            >
-              <IconCompass size={14} />
-              <span>Tour</span>
-            </button>
-
-            <div id="tour-lang-selector" className="ragvyn-nav-lang-wrapper">
-              <GlobalLanguageSelector className="ragvyn-nav-lang-select" />
-            </div>
-
-            <button
-              type="button"
-              id="tour-theme-toggle"
-              className="ragvyn-nav-tool-btn"
-              onClick={handleToggleTheme}
-              aria-label={`Switch to ${effectiveTheme === 'dark' ? 'light' : 'dark'} mode`}
-              title={`Switch to ${effectiveTheme === 'dark' ? 'light' : 'dark'} mode`}
-            >
-              {effectiveTheme === 'dark' ? <IconSun size={15} /> : <IconMoon size={15} />}
-            </button>
-
-            <div className="ragvyn-a11y-anchor">
+            {/* Services Dropdown — contains all tools */}
+            <li className="ragvyn-nav-dropdown" id="tour-services-menu" ref={servicesDropdownRef}>
               <button
-                ref={a11yTriggerRef}
                 type="button"
-                id="tour-a11y-btn"
-                className={`ragvyn-nav-tool-btn a11y-toggle-btn ${a11yOpen ? 'active' : ''}`}
-                onClick={() => setA11yOpen(prev => !prev)}
-                aria-haspopup="dialog"
-                aria-expanded={a11yOpen}
-                aria-controls="ragvyn-a11y-popover"
-                aria-label="Accessibility preferences"
-                title="Accessibility preferences"
+                className="ragvyn-nav-link ragvyn-nav-dropdown-trigger"
+                onClick={() => {
+                  setServicesDropdownOpen(!servicesDropdownOpen)
+                  setToolsDropdownOpen(false)
+                }}
+                aria-expanded={servicesDropdownOpen}
               >
-                <IconAccessibility size={16} />
+                Services
+                <IconChevronDown size={12} className={`dropdown-chevron ${servicesDropdownOpen ? 'open' : ''}`} />
               </button>
-              <AccessibilityDropdown
-                isOpen={a11yOpen}
-                onClose={() => setA11yOpen(false)}
-                triggerRef={a11yTriggerRef}
-              />
-            </div>
-          </div>
+              {servicesDropdownOpen && (
+                <div className="ragvyn-dropdown-menu">
+                  <Link to="/formulation-wizard" className="ragvyn-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
+                    <span className="ragvyn-dropdown-icon">🧪</span>
+                    <div className="ragvyn-dropdown-text">
+                      <strong>Formulation Wizard</strong>
+                      <span>3-step IP & regulatory classification</span>
+                    </div>
+                  </Link>
+                  <Link to="/abs-checker" className="ragvyn-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
+                    <span className="ragvyn-dropdown-icon">🌿</span>
+                    <div className="ragvyn-dropdown-text">
+                      <strong>ABS Checker</strong>
+                      <span>Biodiversity & Nagoya compliance</span>
+                    </div>
+                  </Link>
+                  <Link to="/ip-calculator" className="ragvyn-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
+                    <span className="ragvyn-dropdown-icon">💰</span>
+                    <div className="ragvyn-dropdown-text">
+                      <strong>IP Calculator</strong>
+                      <span>Patent filing fees estimate</span>
+                    </div>
+                  </Link>
+                  <Link to="/deadline-calculator" className="ragvyn-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
+                    <span className="ragvyn-dropdown-icon">📅</span>
+                    <div className="ragvyn-dropdown-text">
+                      <strong>Deadline Calculator</strong>
+                      <span>Track RFE, FER & renewal deadlines</span>
+                    </div>
+                  </Link>
+                  <Link to="/sources" className="ragvyn-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
+                    <span className="ragvyn-dropdown-icon">📚</span>
+                    <div className="ragvyn-dropdown-text">
+                      <strong>Official Data Corpora</strong>
+                      <span>Authoritative legal source library</span>
+                    </div>
+                  </Link>
+                  <Link to="/patentability" className="ragvyn-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
+                    <span className="ragvyn-dropdown-icon">⚖️</span>
+                    <div className="ragvyn-dropdown-text">
+                      <strong>Patentability Assessment</strong>
+                      <span>Prior art & § 3(p)/3(d)/3(e)</span>
+                    </div>
+                  </Link>
+                  <Link to="/checklists" className="ragvyn-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
+                    <span className="ragvyn-dropdown-icon">✅</span>
+                    <div className="ragvyn-dropdown-text">
+                      <strong>Filing Checklists</strong>
+                      <span>Patent, TM, GI checklists</span>
+                    </div>
+                  </Link>
+                  <Link to="/drafts" className="ragvyn-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
+                    <span className="ragvyn-dropdown-icon">📝</span>
+                    <div className="ragvyn-dropdown-text">
+                      <strong>Draft Generator</strong>
+                      <span>Form-1, NBA templates</span>
+                    </div>
+                  </Link>
+                  <Link to="/workspace" className="ragvyn-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
+                    <span className="ragvyn-dropdown-icon">💼</span>
+                    <div className="ragvyn-dropdown-text">
+                      <strong>Matter Workspace</strong>
+                      <span>Track your IP cases</span>
+                    </div>
+                  </Link>
+                  <Link to="/experts" className="ragvyn-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
+                    <span className="ragvyn-dropdown-icon">👥</span>
+                    <div className="ragvyn-dropdown-text">
+                      <strong>Expert Connect</strong>
+                      <span>Find IP experts & FAQs</span>
+                    </div>
+                  </Link>
+                </div>
+              )}
+            </li>
 
-          <div className="ragvyn-nav-desktop-actions">
-            {authLoggedIn ? (
-              <div className="ragvyn-nav-user-group">
-                <Link to="/chat" className="ragvyn-nav-cta-btn" id="gov-nav-consult-btn">
-                  RAGVYN AI
-                  <IconArrowRight size={14} />
-                </Link>
-                <UserProfileMenu
-                  userName={authUserName}
-                  userEmail={authUserEmail}
-                  onLogout={effectiveLogout}
-                  onSwitchAccount={effectiveSwitchAccount}
-                  onOpenEditProfile={() => setEditProfileOpen(true)}
+            {/* Direct Links */}
+            <li className="gov-nav-item-secondary">
+              <button
+                type="button"
+                className="gov-nav-link-btn"
+                onClick={handleSeeDemo}
+                aria-label="See Demo"
+              >
+                <IconEye size={15} />
+                <span>{t('seeDemo') || 'See Demo'}</span>
+              </button>
+            </li>
+            <li>
+              <Link to="/sources" className="gov-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                <IconBook size={15} />
+                <span>Sources</span>
+              </Link>
+            </li>
+            <li className="gov-nav-item-secondary">
+              <button
+                type="button"
+                className="gov-nav-link-btn"
+                onClick={() => {
+                  setMobileMenuOpen(false)
+                  if (onOpenAbout) onOpenAbout()
+                }}
+              >
+                <IconInfo size={15} />
+                <span>About</span>
+              </button>
+            </li>
+            <li className="gov-nav-item-secondary">
+              <button
+                type="button"
+                className="gov-nav-link-btn"
+                onClick={() => {
+                  setMobileMenuOpen(false)
+                  setTourRun(true)
+                }}
+                title="Take a guided tour"
+              >
+                <IconInfo size={15} />
+                <span>{t('tourNavBtn') || 'Tour'}</span>
+              </button>
+            </li>
+
+            {/* Mobile-Only Actions inside Hamburger Menu */}
+            <li className="gov-nav-mobile-actions">
+              {authLoggedIn ? (
+                <div className="ragvyn-nav-mobile-profile-card">
+                  <div className="ragvyn-nav-mobile-profile-header">
+                    <div className="gov-profile-avatar-circle">
+                      <span className="gov-profile-avatar-initial">
+                        {(authUserName || 'U').charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="welcome-text">
+                      <span className="welcome-label">Signed in as</span>
+                      <span className="welcome-name">{authUserName || 'Innovator'}</span>
+                    </div>
+                  </div>
+                  <div className="ragvyn-nav-mobile-profile-actions">
+                    <button type="button" className="ragvyn-nav-mobile-action" onClick={() => { setMobileMenuOpen(false); setEditProfileOpen(true); }}>✎ Edit Profile</button>
+                    <Link to="/chat" className="ragvyn-nav-mobile-action" onClick={() => setMobileMenuOpen(false)}>◉ My Consultations</Link>
+                    <button type="button" className="ragvyn-nav-mobile-action ragvyn-nav-mobile-logout" onClick={() => { setMobileMenuOpen(false); effectiveLogout(); }}>Logout</button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '8px' }}>
+                  <Link to="/login" className="ragvyn-nav-mobile-login" onClick={() => setMobileMenuOpen(false)}>
+                    <IconUser size={16} /> Login
+                  </Link>
+                  <Link to="/login?mode=register" state={{ register: true }} className="ragvyn-nav-mobile-register" onClick={() => setMobileMenuOpen(false)}>
+                    Register
+                  </Link>
+                </div>
+              )}
+              <Link to="/chat" className="ragvyn-nav-mobile-cta" onClick={() => setMobileMenuOpen(false)}>
+                <span>Consult RAGVYN AI</span>
+                <IconArrowRight size={15} />
+              </Link>
+            </li>
+          </ul>
+
+          {/* Right: Actions */}
+          <div className="ragvyn-nav-right">
+            {/* Top-Right Header Compact Controls: Tour, Language, Theme, Accessibility */}
+            <div className="ragvyn-nav-tools-group">
+              <button
+                type="button"
+                id="tour-nav-btn"
+                className="ragvyn-nav-tour-btn"
+                onClick={handleStartTour}
+                aria-label="Start guided product tour"
+                title="Take a tour"
+              >
+                <IconCompass size={14} />
+                <span>Tour</span>
+              </button>
+
+              <div id="tour-lang-selector" className="ragvyn-nav-lang-wrapper">
+                <GlobalLanguageSelector className="ragvyn-nav-lang-select" />
+              </div>
+
+              <button
+                type="button"
+                id="tour-theme-toggle"
+                className="ragvyn-nav-tool-btn"
+                onClick={handleToggleTheme}
+                aria-label={`Switch to ${effectiveTheme === 'dark' ? 'light' : 'dark'} mode`}
+                title={`Switch to ${effectiveTheme === 'dark' ? 'light' : 'dark'} mode`}
+              >
+                {effectiveTheme === 'dark' ? <IconSun size={15} /> : <IconMoon size={15} />}
+              </button>
+
+              <div className="ragvyn-a11y-anchor">
+                <button
+                  ref={a11yTriggerRef}
+                  type="button"
+                  id="tour-a11y-btn"
+                  className={`ragvyn-nav-tool-btn a11y-toggle-btn ${a11yOpen ? 'active' : ''}`}
+                  onClick={() => setA11yOpen(prev => !prev)}
+                  aria-haspopup="dialog"
+                  aria-expanded={a11yOpen}
+                  aria-controls="ragvyn-a11y-popover"
+                  aria-label="Accessibility preferences"
+                  title="Accessibility preferences"
+                >
+                  <IconAccessibility size={16} />
+                </button>
+                <AccessibilityDropdown
+                  isOpen={a11yOpen}
+                  onClose={() => setA11yOpen(false)}
+                  triggerRef={a11yTriggerRef}
                 />
               </div>
-            ) : (
-              <div className="ragvyn-nav-guest-group">
-                <Link to="/login" className="ragvyn-nav-login-link">
-                  Login
-                </Link>
-                <Link to="/chat" className="ragvyn-nav-cta-btn" id="gov-nav-consult-btn">
-                  RAGVYN AI
-                </Link>
-              </div>
-            )}
-          </div>
+            </div>
 
-          {/* Mobile hamburger toggle */}
-          <button
-            type="button"
-            className="ragvyn-mobile-toggle"
-            aria-label="Toggle navigation menu"
-            aria-expanded={mobileMenuOpen}
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? <IconX size={20} /> : <IconMenu size={20} />}
-          </button>
+            <div className="ragvyn-nav-desktop-actions">
+              {authLoggedIn ? (
+                <div className="ragvyn-nav-user-group">
+                  <Link to="/chat" className="ragvyn-nav-cta-btn" id="gov-nav-consult-btn">
+                    RAGVYN AI
+                    <IconArrowRight size={14} />
+                  </Link>
+                  <UserProfileMenu
+                    userName={authUserName}
+                    userEmail={authUserEmail}
+                    onLogout={effectiveLogout}
+                    onSwitchAccount={effectiveSwitchAccount}
+                    onOpenEditProfile={() => setEditProfileOpen(true)}
+                  />
+                </div>
+              ) : (
+                <div className="ragvyn-nav-guest-group">
+                  <Link to="/login" className="ragvyn-nav-login-link">
+                    Login
+                  </Link>
+                  <Link to="/chat" className="ragvyn-nav-cta-btn" id="gov-nav-consult-btn">
+                    RAGVYN AI
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {/* Mobile hamburger toggle */}
+            <button
+              type="button"
+              className="ragvyn-mobile-toggle"
+              aria-label="Toggle navigation menu"
+              aria-expanded={mobileMenuOpen}
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              {mobileMenuOpen ? <IconX size={20} /> : <IconMenu size={20} />}
+            </button>
+          </div>
         </div>
-      </div>
-      {mobileMenuOpen && (
-        <div className="ragvyn-mobile-backdrop" onClick={() => setMobileMenuOpen(false)} aria-hidden="true" />
-      )}
-    </nav>
-    <EditProfileModal
-      isOpen={editProfileOpen}
-      onClose={() => setEditProfileOpen(false)}
-    />
-    <OnboardingTour
-      run={tourRun}
-      onClose={() => setTourRun(false)}
-    />
+        {mobileMenuOpen && (
+          <div className="ragvyn-mobile-backdrop" onClick={() => setMobileMenuOpen(false)} aria-hidden="true" />
+        )}
+      </nav>
+      <EditProfileModal
+        isOpen={editProfileOpen}
+        onClose={() => setEditProfileOpen(false)}
+      />
+      <OnboardingTour
+        run={tourRun}
+        onClose={() => setTourRun(false)}
+      />
     </>
   )
 }
@@ -5211,7 +5218,7 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
   const [conversationId, setConversationId] = useState(null)
   const [sessions, setSessions] = useState([])
   const [loadingSessions, setLoadingSessions] = useState(false)
-  
+
   // File attachment state
   const [attachedFile, setAttachedFile] = useState(null)
 
@@ -5486,20 +5493,20 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0]
     if (!file) return
-    
+
     // Validate file type
     const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword', 'text/plain', 'image/png', 'image/jpeg']
     if (!allowedTypes.includes(file.type)) {
       alert('File type not supported. Please upload PDF, Word, Text, or Image files.')
       return
     }
-    
+
     // Validate file size (10MB max)
     if (file.size > 10 * 1024 * 1024) {
       alert('File too large. Maximum size is 10MB.')
       return
     }
-    
+
     setAttachedFile(file)
     e.target.value = '' // Reset input
   }
@@ -6647,84 +6654,84 @@ function ABSCheckerPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSiz
             <p className="page-subtitle">{t('absPageSubtitle')}</p>
           </header>
 
-      <main className="abs-form-card">
-        <form onSubmit={handleEvaluate} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          <div className="form-group">
-            <label className="form-label">1. {t('absApplicantType')}</label>
-            <select
-              className="form-select"
-              value={applicantType}
-              onChange={e => setApplicantType(e.target.value)}
-            >
-              <option value="indian_individual">{t('absIndianCitizen')}</option>
-              <option value="indian_company">{t('absIndianCompany')}</option>
-              <option value="foreign_entity">{t('absForeignEntity')}</option>
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">2. {t('absResourceOrigin')}</label>
-            <select
-              className="form-select"
-              value={resourceSource}
-              onChange={e => setResourceSource(e.target.value)}
-            >
-              <option value="india">{t('absSourcedIndia')}</option>
-              <option value="imported">{t('absImported')}</option>
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">3. {t('absIntendedPurpose')}</label>
-            <select
-              className="form-select"
-              value={activityIntent}
-              onChange={e => setActivityIntent(e.target.value)}
-            >
-              <option value="commercial">{t('absCommercial')}</option>
-              <option value="patent">{t('absPatent')}</option>
-              <option value="export">{t('absExport')}</option>
-            </select>
-          </div>
-
-          <button type="submit" className="btn-primary" style={{ marginTop: '0.5rem' }}>
-            {t('absCheckButton')} →
-          </button>
-        </form>
-
-        {evaluated && (
-          <div className="abs-result-card">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ display: 'flex', color: 'var(--primary-light)' }}><IconFileText size={22} /></span>
-              <h3 style={{ fontSize: '1.1rem', color: 'var(--text-primary)', margin: 0 }}>
-                NBA Approval & ABS Regulatory Assessment
-              </h3>
-            </div>
-
-            {applicantType === 'foreign_entity' ? (
-              <div style={{ fontSize: '0.88rem', color: 'var(--text-primary)', lineHeight: 1.6 }}>
-                <p><strong>Status:</strong> <span style={{ color: '#FCA5A5' }}>Mandatory Prior Approval Required (Section 3 of BD Act 2002)</span></p>
-                <p style={{ marginTop: '0.5rem' }}>Because the applicant involves foreign equity, NRIs, or foreign incorporation:</p>
-                <ul style={{ paddingLeft: '1.2rem', marginTop: '0.4rem', color: 'var(--text-secondary)' }}>
-                  <li>Must submit <strong>Form I</strong> application to the National Biodiversity Authority (NBA).</li>
-                  <li>Must sign an Access & Benefit Sharing (ABS) agreement before accessing Indian herbs.</li>
-                  <li>If filing a patent, <strong>Form III</strong> approval is mandatory before patent grant (Section 6).</li>
-                </ul>
+          <main className="abs-form-card">
+            <form onSubmit={handleEvaluate} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <div className="form-group">
+                <label className="form-label">1. {t('absApplicantType')}</label>
+                <select
+                  className="form-select"
+                  value={applicantType}
+                  onChange={e => setApplicantType(e.target.value)}
+                >
+                  <option value="indian_individual">{t('absIndianCitizen')}</option>
+                  <option value="indian_company">{t('absIndianCompany')}</option>
+                  <option value="foreign_entity">{t('absForeignEntity')}</option>
+                </select>
               </div>
-            ) : (
-              <div style={{ fontSize: '0.88rem', color: 'var(--text-primary)', lineHeight: 1.6 }}>
-                <p><strong>Status:</strong> <span style={{ color: '#86EFAC' }}>State Biodiversity Board (SBB) Intimation Required</span></p>
-                <p style={{ marginTop: '0.5rem' }}>For 100% Indian entities and domestic Vaidyas:</p>
-                <ul style={{ paddingLeft: '1.2rem', marginTop: '0.4rem', color: 'var(--text-secondary)' }}>
-                  <li>Local Vaidyas & traditional practitioners are EXEMPT from ABS fees for domestic practice.</li>
-                  <li>Commercial AYUSH manufacturers must notify the respective State Biodiversity Board (SBB) prior to commercial production.</li>
-                  <li>If filing for an international PCT patent, prior NBA notification via Form III is required.</li>
-                </ul>
+
+              <div className="form-group">
+                <label className="form-label">2. {t('absResourceOrigin')}</label>
+                <select
+                  className="form-select"
+                  value={resourceSource}
+                  onChange={e => setResourceSource(e.target.value)}
+                >
+                  <option value="india">{t('absSourcedIndia')}</option>
+                  <option value="imported">{t('absImported')}</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">3. {t('absIntendedPurpose')}</label>
+                <select
+                  className="form-select"
+                  value={activityIntent}
+                  onChange={e => setActivityIntent(e.target.value)}
+                >
+                  <option value="commercial">{t('absCommercial')}</option>
+                  <option value="patent">{t('absPatent')}</option>
+                  <option value="export">{t('absExport')}</option>
+                </select>
+              </div>
+
+              <button type="submit" className="btn-primary" style={{ marginTop: '0.5rem' }}>
+                {t('absCheckButton')} →
+              </button>
+            </form>
+
+            {evaluated && (
+              <div className="abs-result-card">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ display: 'flex', color: 'var(--primary-light)' }}><IconFileText size={22} /></span>
+                  <h3 style={{ fontSize: '1.1rem', color: 'var(--text-primary)', margin: 0 }}>
+                    NBA Approval & ABS Regulatory Assessment
+                  </h3>
+                </div>
+
+                {applicantType === 'foreign_entity' ? (
+                  <div style={{ fontSize: '0.88rem', color: 'var(--text-primary)', lineHeight: 1.6 }}>
+                    <p><strong>Status:</strong> <span style={{ color: '#FCA5A5' }}>Mandatory Prior Approval Required (Section 3 of BD Act 2002)</span></p>
+                    <p style={{ marginTop: '0.5rem' }}>Because the applicant involves foreign equity, NRIs, or foreign incorporation:</p>
+                    <ul style={{ paddingLeft: '1.2rem', marginTop: '0.4rem', color: 'var(--text-secondary)' }}>
+                      <li>Must submit <strong>Form I</strong> application to the National Biodiversity Authority (NBA).</li>
+                      <li>Must sign an Access & Benefit Sharing (ABS) agreement before accessing Indian herbs.</li>
+                      <li>If filing a patent, <strong>Form III</strong> approval is mandatory before patent grant (Section 6).</li>
+                    </ul>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '0.88rem', color: 'var(--text-primary)', lineHeight: 1.6 }}>
+                    <p><strong>Status:</strong> <span style={{ color: '#86EFAC' }}>State Biodiversity Board (SBB) Intimation Required</span></p>
+                    <p style={{ marginTop: '0.5rem' }}>For 100% Indian entities and domestic Vaidyas:</p>
+                    <ul style={{ paddingLeft: '1.2rem', marginTop: '0.4rem', color: 'var(--text-secondary)' }}>
+                      <li>Local Vaidyas & traditional practitioners are EXEMPT from ABS fees for domestic practice.</li>
+                      <li>Commercial AYUSH manufacturers must notify the respective State Biodiversity Board (SBB) prior to commercial production.</li>
+                      <li>If filing for an international PCT patent, prior NBA notification via Form III is required.</li>
+                    </ul>
+                  </div>
+                )}
               </div>
             )}
-          </div>
-        )}
-      </main>
+          </main>
         </>
       )}
     </div>
@@ -6742,8 +6749,8 @@ const PATENT_FEE_SCHEDULE = {
   //               earlyPub (Form 9), examReq (Form 18) }
   natural: { base: 1600, extraClaim: 320, extraPage: 160, earlyPub: 2500, examReq: 4000 },
   startup: { base: 4000, extraClaim: 800, extraPage: 400, earlyPub: 6250, examReq: 10000 },
-  small:   { base: 4000, extraClaim: 800, extraPage: 400, earlyPub: 6250, examReq: 10000 },
-  others:  { base: 8000, extraClaim: 1600, extraPage: 800, earlyPub: 12500, examReq: 20000 },
+  small: { base: 4000, extraClaim: 800, extraPage: 400, earlyPub: 6250, examReq: 10000 },
+  others: { base: 8000, extraClaim: 1600, extraPage: 800, earlyPub: 12500, examReq: 20000 },
 }
 
 // Convention / PCT National Phase applications carry the same First-Schedule
@@ -7251,124 +7258,124 @@ function DeadlineCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme,
             <p className="page-subtitle">{t('deadlineSubtitle')}</p>
           </header>
 
-      <main className="calc-main" style={{ display: 'grid', gap: '1.5rem' }}>
-        {/* Input card */}
-        <div style={cardStyle}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.1rem' }}>
-            <div>
-              <label htmlFor="dl-filing" style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>
-                {t('deadlineFilingLabel')}
-              </label>
-              <input
-                id="dl-filing"
-                type="date"
-                value={filingDate}
-                onChange={(e) => setFilingDate(e.target.value)}
-                style={inputStyle}
-                aria-label={t('deadlineFilingLabel')}
-              />
-            </div>
-            <div>
-              <label htmlFor="dl-priority" style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>
-                {t('deadlinePriorityLabel')}
-              </label>
-              <input
-                id="dl-priority"
-                type="date"
-                value={priorityDate}
-                onChange={(e) => setPriorityDate(e.target.value)}
-                style={inputStyle}
-                aria-label={t('deadlinePriorityLabel')}
-              />
-            </div>
-          </div>
-          <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary, #9aa0a6)', margin: '0.75rem 0 1.1rem', display: 'flex', gap: '6px', alignItems: 'flex-start' }}>
-            <IconInfo size={14} style={{ flexShrink: 0, marginTop: '2px' }} /> {t('deadlinePriorityHint')}
-          </p>
-          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-            <button
-              className="calc-btn-primary"
-              onClick={handleCalculate}
-              disabled={!filingDate}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center', opacity: filingDate ? 1 : 0.55, cursor: filingDate ? 'pointer' : 'not-allowed' }}
-            >
-              <IconCalculator size={16} /> {t('deadlineCalcBtn')}
-            </button>
-            <button
-              className="calc-btn-secondary"
-              onClick={handleReset}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
-            >
-              <IconRotate size={16} /> {t('deadlineResetBtn')}
-            </button>
-          </div>
-        </div>
-
-        {/* Results / timeline */}
-        {computed ? (
-          <div style={cardStyle}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
-              <h2 style={{ fontSize: '1.15rem', margin: 0, display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                <IconCalendar size={18} /> {t('deadlineTimelineTitle')}
-              </h2>
-              {urgentCount > 0 && (
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: 600, color: '#dc2626', background: 'rgba(220,38,38,0.12)', padding: '4px 10px', borderRadius: '999px' }}>
-                  <IconAlertTriangle size={14} /> {urgentCount} {t('deadlineUrgent')}
-                </span>
-              )}
+          <main className="calc-main" style={{ display: 'grid', gap: '1.5rem' }}>
+            {/* Input card */}
+            <div style={cardStyle}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.1rem' }}>
+                <div>
+                  <label htmlFor="dl-filing" style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>
+                    {t('deadlineFilingLabel')}
+                  </label>
+                  <input
+                    id="dl-filing"
+                    type="date"
+                    value={filingDate}
+                    onChange={(e) => setFilingDate(e.target.value)}
+                    style={inputStyle}
+                    aria-label={t('deadlineFilingLabel')}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="dl-priority" style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>
+                    {t('deadlinePriorityLabel')}
+                  </label>
+                  <input
+                    id="dl-priority"
+                    type="date"
+                    value={priorityDate}
+                    onChange={(e) => setPriorityDate(e.target.value)}
+                    style={inputStyle}
+                    aria-label={t('deadlinePriorityLabel')}
+                  />
+                </div>
+              </div>
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary, #9aa0a6)', margin: '0.75rem 0 1.1rem', display: 'flex', gap: '6px', alignItems: 'flex-start' }}>
+                <IconInfo size={14} style={{ flexShrink: 0, marginTop: '2px' }} /> {t('deadlinePriorityHint')}
+              </p>
+              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                <button
+                  className="calc-btn-primary"
+                  onClick={handleCalculate}
+                  disabled={!filingDate}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center', opacity: filingDate ? 1 : 0.55, cursor: filingDate ? 'pointer' : 'not-allowed' }}
+                >
+                  <IconCalculator size={16} /> {t('deadlineCalcBtn')}
+                </button>
+                <button
+                  className="calc-btn-secondary"
+                  onClick={handleReset}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
+                >
+                  <IconRotate size={16} /> {t('deadlineResetBtn')}
+                </button>
+              </div>
             </div>
 
-            {/* Legend */}
-            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', fontSize: '0.75rem', color: 'var(--text-secondary, #9aa0a6)', marginBottom: '1.25rem' }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span style={{ width: 10, height: 10, borderRadius: '50%', background: '#dc2626', display: 'inline-block' }} /> {t('deadlineLegendUrgent')}</span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--primary-light, #2f855a)', display: 'inline-block' }} /> {t('deadlineLegendUpcoming')}</span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span style={{ width: 10, height: 10, borderRadius: '50%', background: '#94a3b8', display: 'inline-block' }} /> {t('deadlineLegendPassed')}</span>
-            </div>
+            {/* Results / timeline */}
+            {computed ? (
+              <div style={cardStyle}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
+                  <h2 style={{ fontSize: '1.15rem', margin: 0, display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                    <IconCalendar size={18} /> {t('deadlineTimelineTitle')}
+                  </h2>
+                  {urgentCount > 0 && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: 600, color: '#dc2626', background: 'rgba(220,38,38,0.12)', padding: '4px 10px', borderRadius: '999px' }}>
+                      <IconAlertTriangle size={14} /> {urgentCount} {t('deadlineUrgent')}
+                    </span>
+                  )}
+                </div>
 
-            {/* Timeline */}
-            <div style={{ position: 'relative', paddingLeft: '1.75rem' }}>
-              <span style={{ position: 'absolute', left: '9px', top: '4px', bottom: '4px', width: '2px', background: 'var(--glass-border, rgba(255,255,255,0.18))' }} aria-hidden="true" />
-              {computed.items.map((item) => {
-                const c = statusColor(item.countdown.status)
-                return (
-                  <div key={item.id} style={{ position: 'relative', marginBottom: '1.1rem' }}>
-                    <span style={{ position: 'absolute', left: '-1.75rem', top: '4px', width: 18, height: 18, borderRadius: '50%', background: c.dot, border: '3px solid var(--glass-bg, rgba(0,0,0,0.2))', boxShadow: item.countdown.status === 'urgent' ? '0 0 0 4px rgba(220,38,38,0.18)' : 'none' }} aria-hidden="true" />
-                    <div style={{ background: c.bg, border: `1px solid ${c.dot}33`, borderRadius: '14px', padding: '0.9rem 1rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'baseline' }}>
-                        <strong style={{ fontSize: '0.95rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                          {item.countdown.status === 'urgent' && <IconAlertTriangle size={14} style={{ color: '#dc2626' }} />}
-                          {item.title}
-                        </strong>
-                        <span style={{ fontSize: '0.9rem', fontWeight: 700, color: c.fg }}>{formatDate(item.date)}</span>
+                {/* Legend */}
+                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', fontSize: '0.75rem', color: 'var(--text-secondary, #9aa0a6)', marginBottom: '1.25rem' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span style={{ width: 10, height: 10, borderRadius: '50%', background: '#dc2626', display: 'inline-block' }} /> {t('deadlineLegendUrgent')}</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--primary-light, #2f855a)', display: 'inline-block' }} /> {t('deadlineLegendUpcoming')}</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span style={{ width: 10, height: 10, borderRadius: '50%', background: '#94a3b8', display: 'inline-block' }} /> {t('deadlineLegendPassed')}</span>
+                </div>
+
+                {/* Timeline */}
+                <div style={{ position: 'relative', paddingLeft: '1.75rem' }}>
+                  <span style={{ position: 'absolute', left: '9px', top: '4px', bottom: '4px', width: '2px', background: 'var(--glass-border, rgba(255,255,255,0.18))' }} aria-hidden="true" />
+                  {computed.items.map((item) => {
+                    const c = statusColor(item.countdown.status)
+                    return (
+                      <div key={item.id} style={{ position: 'relative', marginBottom: '1.1rem' }}>
+                        <span style={{ position: 'absolute', left: '-1.75rem', top: '4px', width: 18, height: 18, borderRadius: '50%', background: c.dot, border: '3px solid var(--glass-bg, rgba(0,0,0,0.2))', boxShadow: item.countdown.status === 'urgent' ? '0 0 0 4px rgba(220,38,38,0.18)' : 'none' }} aria-hidden="true" />
+                        <div style={{ background: c.bg, border: `1px solid ${c.dot}33`, borderRadius: '14px', padding: '0.9rem 1rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'baseline' }}>
+                            <strong style={{ fontSize: '0.95rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                              {item.countdown.status === 'urgent' && <IconAlertTriangle size={14} style={{ color: '#dc2626' }} />}
+                              {item.title}
+                            </strong>
+                            <span style={{ fontSize: '0.9rem', fontWeight: 700, color: c.fg }}>{formatDate(item.date)}</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap', marginTop: '4px' }}>
+                            <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary, #9aa0a6)' }}>{item.section}</span>
+                            <span style={{ fontSize: '0.78rem', fontWeight: 600, color: c.fg }}>{item.countdown.label}</span>
+                          </div>
+                          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #9aa0a6)', margin: '0.5rem 0 0', lineHeight: 1.5 }}>{item.desc}</p>
+                        </div>
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap', marginTop: '4px' }}>
-                        <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary, #9aa0a6)' }}>{item.section}</span>
-                        <span style={{ fontSize: '0.78rem', fontWeight: 600, color: c.fg }}>{item.countdown.label}</span>
-                      </div>
-                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #9aa0a6)', margin: '0.5rem 0 0', lineHeight: 1.5 }}>{item.desc}</p>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
+                    )
+                  })}
+                </div>
 
-            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary, #9aa0a6)', marginTop: '1.25rem', padding: '0.85rem 1rem', borderRadius: '12px', background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.3)', display: 'flex', gap: '8px', alignItems: 'flex-start', lineHeight: 1.5 }}>
-              <IconAlertTriangle size={15} style={{ flexShrink: 0, marginTop: '1px', color: '#d97706' }} /> {t('deadlineDisclaimer')}
-            </p>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary, #9aa0a6)', marginTop: '1.25rem', padding: '0.85rem 1rem', borderRadius: '12px', background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.3)', display: 'flex', gap: '8px', alignItems: 'flex-start', lineHeight: 1.5 }}>
+                  <IconAlertTriangle size={15} style={{ flexShrink: 0, marginTop: '1px', color: '#d97706' }} /> {t('deadlineDisclaimer')}
+                </p>
 
-            <div style={{ marginTop: '1.1rem' }}>
-              <Link to="/chat" className="calc-btn-outline" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-                <IconMessageSquare size={16} /> {t('deadlineAskExpert')}
-              </Link>
-            </div>
-          </div>
-        ) : (
-          <div style={{ ...cardStyle, textAlign: 'center', color: 'var(--text-secondary, #9aa0a6)' }}>
-            <IconCalendar size={40} style={{ opacity: 0.4, marginBottom: '0.5rem' }} />
-            <p style={{ margin: 0 }}>{t('deadlineEmptyHint')}</p>
-          </div>
-        )}
-      </main>
+                <div style={{ marginTop: '1.1rem' }}>
+                  <Link to="/chat" className="calc-btn-outline" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                    <IconMessageSquare size={16} /> {t('deadlineAskExpert')}
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div style={{ ...cardStyle, textAlign: 'center', color: 'var(--text-secondary, #9aa0a6)' }}>
+                <IconCalendar size={40} style={{ opacity: 0.4, marginBottom: '0.5rem' }} />
+                <p style={{ margin: 0 }}>{t('deadlineEmptyHint')}</p>
+              </div>
+            )}
+          </main>
         </>
       )}
     </div>
@@ -8194,86 +8201,86 @@ function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, f
             </p>
           </header>
 
-      <main className="calc-main">
-        {/* Tools: Quick Patent Fee Calculator (Patents Rules 2003, First Schedule) */}
-        <PatentFeeCalculator />
+          <main className="calc-main">
+            {/* Tools: Quick Patent Fee Calculator (Patents Rules 2003, First Schedule) */}
+            <PatentFeeCalculator />
 
-        {currentStep <= TOTAL_STEPS ? (
-          <>
-            {/* Progress Bar */}
-            <div className="calc-progress">
-              <div className="calc-progress-bar">
-                <div
-                  className="calc-progress-fill"
-                  style={{ width: `${(currentStep / TOTAL_STEPS) * 100}%` }}
-                />
-              </div>
-              <div className="calc-progress-steps">
-                {[1, 2, 3, 4, 5].map(step => (
-                  <div
-                    key={step}
-                    className={`calc-progress-step ${currentStep >= step ? 'active' : ''} ${currentStep === step ? 'current' : ''}`}
-                  >
-                    <span className="calc-step-dot" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {currentStep > step ? <IconCheck size={14} /> : step}
-                    </span>
-                    <span className="calc-step-label">
-                      {step === 1 && 'IP Type'}
-                      {step === 2 && 'Jurisdiction'}
-                      {step === 3 && 'Applicant'}
-                      {step === 4 && 'Services'}
-                      {step === 5 && 'Review'}
-                    </span>
+            {currentStep <= TOTAL_STEPS ? (
+              <>
+                {/* Progress Bar */}
+                <div className="calc-progress">
+                  <div className="calc-progress-bar">
+                    <div
+                      className="calc-progress-fill"
+                      style={{ width: `${(currentStep / TOTAL_STEPS) * 100}%` }}
+                    />
                   </div>
-                ))}
-              </div>
-            </div>
+                  <div className="calc-progress-steps">
+                    {[1, 2, 3, 4, 5].map(step => (
+                      <div
+                        key={step}
+                        className={`calc-progress-step ${currentStep >= step ? 'active' : ''} ${currentStep === step ? 'current' : ''}`}
+                      >
+                        <span className="calc-step-dot" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {currentStep > step ? <IconCheck size={14} /> : step}
+                        </span>
+                        <span className="calc-step-label">
+                          {step === 1 && 'IP Type'}
+                          {step === 2 && 'Jurisdiction'}
+                          {step === 3 && 'Applicant'}
+                          {step === 4 && 'Services'}
+                          {step === 5 && 'Review'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
-            {/* Step Content */}
-            <div className="calc-content">
-              {renderStepContent()}
-            </div>
+                {/* Step Content */}
+                <div className="calc-content">
+                  {renderStepContent()}
+                </div>
 
-            {/* Navigation Buttons */}
-            <div className="calc-nav">
-              <button
-                className="calc-btn-back"
-                onClick={handleBack}
-                disabled={currentStep === 1}
-              >
-                ← Back
-              </button>
+                {/* Navigation Buttons */}
+                <div className="calc-nav">
+                  <button
+                    className="calc-btn-back"
+                    onClick={handleBack}
+                    disabled={currentStep === 1}
+                  >
+                    ← Back
+                  </button>
 
-              {currentStep < TOTAL_STEPS ? (
-                <button
-                  className="calc-btn-next"
-                  onClick={handleNext}
-                  disabled={!canProceed()}
-                >
-                  Next →
-                </button>
-              ) : (
-                <button
-                  className="calc-btn-calculate"
-                  onClick={handleCalculate}
-                  disabled={isCalculating || !canProceed()}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
-                >
-                  {isCalculating ? (
-                    <>
-                      <span className="calc-spinner" /> Calculating...
-                    </>
+                  {currentStep < TOTAL_STEPS ? (
+                    <button
+                      className="calc-btn-next"
+                      onClick={handleNext}
+                      disabled={!canProceed()}
+                    >
+                      Next →
+                    </button>
                   ) : (
-                    <>Calculate Estimate →</>
+                    <button
+                      className="calc-btn-calculate"
+                      onClick={handleCalculate}
+                      disabled={isCalculating || !canProceed()}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
+                    >
+                      {isCalculating ? (
+                        <>
+                          <span className="calc-spinner" /> Calculating...
+                        </>
+                      ) : (
+                        <>Calculate Estimate →</>
+                      )}
+                    </button>
                   )}
-                </button>
-              )}
-            </div>
-          </>
-        ) : (
-          renderResults()
-        )}
-      </main>
+                </div>
+              </>
+            ) : (
+              renderResults()
+            )}
+          </main>
         </>
       )}
     </div>
