@@ -3,7 +3,7 @@ backend/app/services/audit_service.py
 -------------------------------------
 Database Audit & Metrics Logging Service for IP-SAKTI Sahayak.
 Persists query telemetry, DPDP-compliant scrubbed representations,
-composite confidence metrics, and response latencies to SQLite/PostgreSQL.
+composite confidence metrics, and response latencies to PostgreSQL (Supabase).
 """
 
 from __future__ import annotations
@@ -38,6 +38,8 @@ def _sync_insert_audit(
     language: str,
     confidence_score: int,
     latency_ms: float,
+    user_id: Optional[str] = None,
+    organisation_id: Optional[str] = None,
     session: Optional[Any] = None,
 ) -> None:
     """Synchronously inserts an audit log record inside a dedicated session."""
@@ -55,15 +57,19 @@ def _sync_insert_audit(
             language=language,
             confidence_score=int(confidence_score),
             latency_ms=float(latency_ms),
+            user_id=user_id,
+            organisation_id=organisation_id,
             timestamp=datetime.utcnow(),
         )
         db.add(record)
         db.commit()
         log.info(
-            "Audit transaction logged successfully (ID: %s, confidence: %d, latency: %.1fms)",
+            "Audit transaction logged successfully (ID: %s, confidence: %d, latency: %.1fms, user: %s, org: %s)",
             getattr(record, "id", "new"),
             confidence_score,
             latency_ms,
+            user_id,
+            organisation_id,
         )
     except Exception as e:
         log.error("Failed to commit audit log transaction: %s", e, exc_info=True)
@@ -87,6 +93,8 @@ async def async_log_audit_transaction(
     language: str,
     confidence_score: int,
     latency_ms: float,
+    user_id: Optional[str] = None,
+    organisation_id: Optional[str] = None,
 ) -> None:
     """
     Asynchronously persists query telemetry and composite confidence metrics
@@ -108,10 +116,14 @@ async def async_log_audit_transaction(
         Composite confidence score (0-100).
     latency_ms : float
         End-to-end turn processing latency in milliseconds.
+    user_id : Optional[str]
+        Authenticated user ID if available.
+    organisation_id : Optional[str]
+        Authenticated organisation ID for tenant-scoped telemetry.
     """
     try:
         # If db_session is an active Session, use fresh SessionLocal in worker thread
-        # to avoid SQLite cross-thread concurrency contention.
+        # to ensure safe thread isolation.
         await run_in_threadpool(
             _sync_insert_audit,
             raw_query=raw_query,
@@ -120,7 +132,62 @@ async def async_log_audit_transaction(
             language=language,
             confidence_score=confidence_score,
             latency_ms=latency_ms,
+            user_id=user_id,
+            organisation_id=organisation_id,
             session=None,
         )
     except Exception as e:
         log.warning("Non-critical error in async_log_audit_transaction: %s", e)
+
+
+def log_admin_action(
+    action: str,
+    actor_user_id: str,
+    organisation_id: str,
+    details: str,
+    db: Optional[Any] = None,
+) -> None:
+    """
+    Synchronously records an administrative action (e.g., member add, role update, deletion)
+    in the audit_logs table for Phase 5 security and compliance auditing.
+    """
+    owns_session = False
+    session = db
+    if session is None:
+        session = SessionLocal()
+        owns_session = True
+
+    try:
+        record = AuditLog(
+            query_raw=f"ADMIN_ACTION: {action} | {details}",
+            query_scrubbed=f"ADMIN_ACTION: {action}",
+            jurisdiction="Administrative",
+            language="en",
+            confidence_score=100,
+            latency_ms=0.0,
+            user_id=actor_user_id,
+            organisation_id=organisation_id,
+            timestamp=datetime.utcnow(),
+        )
+        session.add(record)
+        session.commit()
+        log.info(
+            "Admin audit recorded: [%s] by user %s in org %s (%s)",
+            action,
+            actor_user_id,
+            organisation_id,
+            details,
+        )
+    except Exception as e:
+        log.error("Failed to commit admin audit log: %s", e, exc_info=True)
+        try:
+            session.rollback()
+        except Exception:
+            pass
+    finally:
+        if owns_session:
+            try:
+                session.close()
+            except Exception:
+                pass
+

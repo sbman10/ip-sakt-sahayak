@@ -1,0 +1,24 @@
+name: Bhashini-text-translation
+values:
+  - key: ulca_url
+    value: ''
+  - key: user_id
+    value: ''
+  - key: api_key
+    value: ''
+  - key: pipeline_id
+    value: ''
+  - key: callback_url
+    value: ''
+  - key: callback_url_feedback
+    value: ''
+  - key: compute_call_authorization_key
+    value: ''
+  - key: compute_call_authorization_value
+    value: ''
+  - key: nmt_service_id
+    value: ''
+  - key: source_language
+    value: ''
+  - key: target_language
+    value: ''

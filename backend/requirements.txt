@@ -11,7 +11,6 @@ python-multipart>=0.0.6
 
 # Database & ORM
 sqlalchemy>=2.0.28
-chromadb>=0.4.24
 qdrant-client==1.19.1
 psycopg[binary]>=3.1.18
 supabase>=2.4.0
@@ -20,7 +19,6 @@ supabase>=2.4.0
 # LangChain Ecosystem
 langchain>=0.1.14
 langchain-core>=0.1.38
-langchain-chroma>=0.1.0
 langchain-google-genai>=1.0.1
 langchain-text-splitters>=0.0.1
 

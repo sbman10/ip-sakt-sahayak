@@ -1,0 +1,33 @@
+$kind: http-request
+url: "{{callback_url}}"
+method: POST
+headers:
+  Accept: " */*"
+  User-Agent: " Thunder Client (https://www.thunderclient.com)"
+  "{{compute_call_authorization_key}}": "{{compute_call_authorization_value}}"
+body:
+  type: json
+  content: |-
+    {
+        "pipelineTasks": [
+            {
+                "taskType": "translation",
+                "config": {
+                    "language": {
+                        "sourceLanguage": "{{source_language}}",
+                        "targetLanguage": "{{target_language}}"
+                    },
+                    "serviceId": "{{nmt_service_id}}"
+                }
+            }
+        ],
+        "inputData": {
+            "input": [
+                {
+                    "source": "मेरा नाम विहिर है और मैं भाषाावर्ष यूज कर रहा हूँ"
+                }
+            ]
+        }
+    }
+settings: {}
+order: 6000

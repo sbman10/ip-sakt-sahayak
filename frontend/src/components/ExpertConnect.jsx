@@ -1,5 +1,17 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
+import {
+  IconHome,
+  IconFolder,
+  IconScroll,
+  IconSparkles,
+  IconUserRound,
+  IconUsers,
+  IconFileText,
+  IconHelpCircle,
+  IconCheckCircle,
+  IconChevronRight,
+} from './Icons'
 import { getApiBase } from '../api/config'
 import './ExpertConnect.css'
 
@@ -357,7 +369,7 @@ export default function ExpertConnect() {
         <div className="ec-top-strip">
           <div className="ec-breadcrumbs">
             <Link to="/" className="ec-breadcrumb-link">
-              <span>🏛️</span>
+              <IconHome size={14} />
               <span>IP-SAKTI Portal</span>
             </Link>
             <span className="ec-breadcrumb-sep">/</span>
@@ -368,15 +380,15 @@ export default function ExpertConnect() {
 
           <div className="ec-top-actions">
             <Link to="/workspace" className="ec-portal-link" title="Open Matter Workspace">
-              <span>📁</span>
+              <IconFolder size={14} />
               <span>Matter Workspace</span>
             </Link>
             <Link to="/drafts" className="ec-portal-link" title="Draft Generator">
-              <span>📝</span>
+              <IconScroll size={14} />
               <span>Draft Generator</span>
             </Link>
             <Link to="/chat" className="ec-portal-link" title="Consult RagVyn AI">
-              <span>✨</span>
+              <IconSparkles size={14} />
               <span>Ask RagVyn AI</span>
             </Link>
           </div>
@@ -386,7 +398,7 @@ export default function ExpertConnect() {
         <header className="ec-header">
           <div className="ec-header-left">
             <div className="ec-header-icon-box" aria-hidden="true">
-              👨‍⚖️
+              <IconUserRound size={22} />
             </div>
             <div className="ec-header-titles">
               <span className="ec-category-chip">IP EXPERT DIRECTORY</span>
@@ -415,7 +427,7 @@ export default function ExpertConnect() {
               onClick={() => setActiveTab('directory')}
               className={`ec-tab-btn ${activeTab === 'directory' ? 'active' : ''}`}
             >
-              <span>👥</span>
+              <IconUsers size={15} />
               <span>Expert Directory</span>
             </button>
             <button
@@ -425,7 +437,7 @@ export default function ExpertConnect() {
               onClick={() => setActiveTab('request')}
               className={`ec-tab-btn ${activeTab === 'request' ? 'active' : ''}`}
             >
-              <span>📝</span>
+              <IconFileText size={15} />
               <span>Request Consultation</span>
             </button>
             <button
@@ -435,7 +447,7 @@ export default function ExpertConnect() {
               onClick={() => setActiveTab('faqs')}
               className={`ec-tab-btn ${activeTab === 'faqs' ? 'active' : ''}`}
             >
-              <span>❓</span>
+              <IconHelpCircle size={15} />
               <span>FAQs</span>
             </button>
           </div>
@@ -513,7 +525,9 @@ export default function ExpertConnect() {
             ) : filteredExperts.length === 0 ? (
               /* Empty State */
               <div className="ec-empty-card">
-                <div className="ec-empty-icon" aria-hidden="true">🔍</div>
+                <div className="ec-empty-icon" aria-hidden="true">
+                  <IconSearch size={26} />
+                </div>
                 <h3 className="ec-empty-title">No experts found</h3>
                 <p className="ec-empty-desc">
                   No verified practitioners matched your search criteria. Try clearing filters or searching for alternative practice terms.
@@ -553,7 +567,7 @@ export default function ExpertConnect() {
                             <h3 className="ec-expert-name">{expert.name}</h3>
                             {expert.verified && (
                               <span className="ec-verified-pill" title="Verified registered practitioner">
-                                <IconCheck size={12} />
+                                <IconCheckCircle size={12} style={{ color: '#16A34A' }} />
                                 <span>Verified</span>
                               </span>
                             )}
@@ -619,7 +633,7 @@ export default function ExpertConnect() {
                       title={`Request consultation with ${expert.name}`}
                     >
                       <span>Request Consultation</span>
-                      <span className="ec-btn-arrow" aria-hidden="true">→</span>
+                      <IconChevronRight size={13} style={{ marginLeft: 4 }} />
                     </button>
                   </article>
                 ))}
@@ -871,7 +885,7 @@ export default function ExpertConnect() {
                       className="ec-btn-submit"
                     >
                       <span>{submitting ? 'Submitting Request…' : 'Submit Consultation Request'}</span>
-                      <span aria-hidden="true">→</span>
+                      <IconChevronRight size={13} style={{ marginLeft: 4 }} />
                     </button>
                   </div>
                 </form>

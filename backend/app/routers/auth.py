@@ -60,77 +60,13 @@ security = HTTPBearer(auto_error=False)
 
 
 # ---------------------------------------------------------------------------
-# Dependencies
+# Supabase Authentication Dependencies (Authoritative)
 # ---------------------------------------------------------------------------
-
-async def get_current_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
-    db: Session = Depends(get_db)
-) -> Optional[User]:
-    """Get current authenticated user from JWT token."""
-    if not credentials:
-        return None
-    
-    token = credentials.credentials
-    payload = decode_token(token)
-    
-    if not payload or payload.get("type") != "access":
-        return None
-    
-    user_id = payload.get("user_id")
-    if not user_id:
-        return None
-    
-    user = db.query(User).filter(User.id == user_id, User.is_active == True).first()
-    return user
-
-
-async def require_auth(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(get_db)
-) -> User:
-    """Require valid authentication - raises 401 if not authenticated."""
-    if not credentials:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    token = credentials.credentials
-    payload = decode_token(token)
-    
-    if not payload:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    if payload.get("type") != "access":
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token type",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    user_id = payload.get("user_id")
-    user = db.query(User).filter(User.id == user_id).first()
-    
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Account is deactivated",
-        )
-    
-    return user
+from app.core.supabase_auth import (
+    get_current_user,
+    require_auth,
+    verify_supabase_jwt,
+)
 
 
 # ---------------------------------------------------------------------------

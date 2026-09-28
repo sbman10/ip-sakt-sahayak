@@ -21,6 +21,8 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
+from app.core.dependencies import TenantContext, get_optional_tenant_context
+from app.core.permissions import Permission, check_permission_or_raise
 from app.models.database import PatentabilityAssessmentRecord, get_db
 from app.schemas.patentability import (
     AssessmentStatus,
@@ -63,8 +65,11 @@ def sanitize_untrusted_text(text: str) -> str:
 )
 async def assess_patentability(
     request: PatentabilityAssessmentRequest,
+    tenant: Optional[TenantContext] = Depends(get_optional_tenant_context),
     db: Session = Depends(get_db),
 ) -> PatentabilityReport:
+    if tenant and tenant.user.role != "super_admin":
+        check_permission_or_raise(tenant.role, Permission.PATENTABILITY_RUN)
     try:
         report = await patentability_orchestrator.execute_assessment(request)
 
@@ -73,6 +78,8 @@ async def assess_patentability(
             record = PatentabilityAssessmentRecord(
                 id=report.assessment_id,
                 matter_id=request.matter_id,
+                user_id=tenant.user_id if tenant else None,
+                organisation_id=tenant.organisation_id if tenant else None,
                 title=request.title,
                 jurisdiction=request.jurisdiction,
                 status=report.status.value,
@@ -103,9 +110,18 @@ async def assess_patentability(
 )
 def get_assessment(
     assessment_id: str,
+    tenant: Optional[TenantContext] = Depends(get_optional_tenant_context),
     db: Session = Depends(get_db),
 ) -> PatentabilityReport:
-    record = db.query(PatentabilityAssessmentRecord).filter(PatentabilityAssessmentRecord.id == assessment_id).first()
+    if tenant and tenant.user.role != "super_admin":
+        check_permission_or_raise(tenant.role, Permission.PATENTABILITY_READ)
+    query = db.query(PatentabilityAssessmentRecord).filter(PatentabilityAssessmentRecord.id == assessment_id)
+    if tenant and tenant.organisation_id:
+        query = query.filter(
+            (PatentabilityAssessmentRecord.organisation_id == tenant.organisation_id)
+            | (PatentabilityAssessmentRecord.organisation_id.is_(None))
+        )
+    record = query.first()
     if not record:
         raise HTTPException(status_code=404, detail="Assessment not found")
 
@@ -120,10 +136,20 @@ def get_assessment(
 )
 def list_assessments(
     limit: int = 20,
+    tenant: Optional[TenantContext] = Depends(get_optional_tenant_context),
     db: Session = Depends(get_db),
 ) -> List[AssessmentSummaryItem]:
+    if tenant and tenant.user.role != "super_admin":
+        check_permission_or_raise(tenant.role, Permission.PATENTABILITY_READ)
+    query = db.query(PatentabilityAssessmentRecord)
+    if tenant and tenant.organisation_id:
+        query = query.filter(
+            (PatentabilityAssessmentRecord.organisation_id == tenant.organisation_id)
+            | (PatentabilityAssessmentRecord.organisation_id.is_(None))
+        )
+
     records = (
-        db.query(PatentabilityAssessmentRecord)
+        query
         .order_by(PatentabilityAssessmentRecord.created_at.desc())
         .limit(limit)
         .all()

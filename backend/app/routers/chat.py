@@ -23,7 +23,9 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.models.database import Conversation, Message, User, get_db
+from app.core.dependencies import TenantContext, get_optional_tenant_context
+from app.core.permissions import Permission, check_permission_or_raise
+from app.models.database import Conversation, Message, User, UploadedDocument, get_db
 from app.routers.auth import get_current_user
 from app.schemas.chat import (
     ChatRequest,
@@ -64,7 +66,7 @@ router = APIRouter()
 
 
 def _resolve_source_filters(jurisdiction: str) -> list[str]:
-    """Map a jurisdiction value to the ChromaDB collections that will be queried.
+    """Map a jurisdiction value to the vector collections / partitions queried.
 
     Used for response observability so clients can see exactly which corpora a
     turn was grounded in. 'Both' fans out across both collections.
@@ -91,11 +93,18 @@ def _resolve_source_filters(jurisdiction: str) -> list[str]:
 async def chat_endpoint(
     request: ChatRequest,
     db: Session = Depends(get_db),
+    tenant: Optional[TenantContext] = Depends(get_optional_tenant_context),
     current_user: Optional[User] = Depends(get_current_user),
 ) -> ChatResponse:
     """
     Main dialogue turn endpoint executing intent-routed RAG pipeline.
     """
+    active_user_id = tenant.user_id if tenant else (current_user.id if current_user else None)
+    active_org_id = tenant.organisation_id if tenant else None
+
+    if tenant and tenant.user.role != "super_admin":
+        check_permission_or_raise(tenant.role, Permission.CHAT_QUERY)
+
     # ── Stage (a): Start latency timer ──────────────────────────
     start_time = time.perf_counter()
     raw_query = request.question.strip()
@@ -142,18 +151,23 @@ async def chat_endpoint(
     conversation_context = ""
     if request.conversation_id:
         try:
-            recent_msgs = (
-                db.query(Message)
-                .filter(Message.conversation_id == request.conversation_id)
-                .order_by(Message.id.desc())
-                .limit(4)
-                .all()
-            )
-            if recent_msgs:
-                chrono = list(reversed(recent_msgs))
-                conversation_context = "\n".join(
-                    f"{m.role.capitalize()}: {m.content[:300]}" for m in chrono
+            conv_query = db.query(Conversation).filter(Conversation.id == request.conversation_id)
+            if active_org_id:
+                conv_query = conv_query.filter(Conversation.organisation_id == active_org_id)
+            conv_obj = conv_query.first()
+            if conv_obj:
+                recent_msgs = (
+                    db.query(Message)
+                    .filter(Message.conversation_id == request.conversation_id)
+                    .order_by(Message.id.desc())
+                    .limit(4)
+                    .all()
                 )
+                if recent_msgs:
+                    chrono = list(reversed(recent_msgs))
+                    conversation_context = "\n".join(
+                        f"{m.role.capitalize()}: {m.content[:300]}" for m in chrono
+                    )
         except Exception as e:
             log.debug("Could not fetch conversation history for context: %s", e)
 
@@ -214,13 +228,37 @@ async def chat_endpoint(
     # For KNOWLEDGE_SEEK: use rewritten query for retrieval if available
     retrieval_query = classification.rewritten_query.strip() or scrubbed_query
 
-    # ── Stage (c): Hybrid RRF Retrieval (ChromaDB + BM25) ──────
+    # ── Stage (c): Hybrid RRF Retrieval (Qdrant + BM25) ──────
+    target_doc_ids = request.document_ids
+    if target_doc_ids and active_org_id:
+        # Validate that all requested document_ids belong to the caller's active organisation
+        valid_docs = (
+            db.query(UploadedDocument.id)
+            .filter(
+                UploadedDocument.id.in_(target_doc_ids),
+                UploadedDocument.organisation_id == active_org_id,
+            )
+            .all()
+        )
+        valid_doc_ids = [str(r[0]) for r in valid_docs]
+        if not valid_doc_ids:
+            log.warning(
+                "Security: Tenant %s requested document_ids %s but none belong to this organisation",
+                active_org_id,
+                target_doc_ids,
+            )
+            target_doc_ids = ["__BLOCKED_CROSS_TENANT__"]
+        else:
+            target_doc_ids = valid_doc_ids
+
     try:
         candidates = hybrid_rrf_search(
             query=retrieval_query,
             jurisdiction=jurisdiction,
             top_k=8,
-            document_ids=request.document_ids,  # Scope to user-uploaded docs if provided
+            user_id=active_user_id,
+            organisation_id=active_org_id,
+            document_ids=target_doc_ids,  # Scope to user-uploaded docs if provided
         )
     except Exception as e:
         log.error("Hybrid retrieval failed: %s", e, exc_info=True)
@@ -393,6 +431,8 @@ async def chat_endpoint(
             language=language,
             confidence_score=confidence.score,
             latency_ms=elapsed_ms,
+            user_id=active_user_id,
+            organisation_id=active_org_id,
         )
     except Exception as audit_err:
         log.warning("Audit log error: %s", audit_err)
@@ -406,18 +446,37 @@ async def chat_endpoint(
                 title=raw_query[:50] + ("..." if len(raw_query) > 50 else ""),
                 jurisdiction=jurisdiction,
                 language=language[:10] if language else "en",
-                user_id=current_user.id if current_user else None,
+                user_id=active_user_id,
+                organisation_id=active_org_id,
             )
             db.add(conv)
             db.commit()
             conv_id = conv.id
         else:
-            conv = db.query(Conversation).filter(Conversation.id == conv_id).first()
+            conv_query = db.query(Conversation).filter(Conversation.id == conv_id)
+            if active_org_id:
+                conv_query = conv_query.filter(Conversation.organisation_id == active_org_id)
+            conv = conv_query.first()
             if conv:
                 conv.updated_at = datetime.utcnow()
-                if not conv.user_id and current_user:
-                    conv.user_id = current_user.id
+                if not conv.user_id and active_user_id:
+                    conv.user_id = active_user_id
+                if not conv.organisation_id and active_org_id:
+                    conv.organisation_id = active_org_id
                 db.commit()
+            else:
+                # If foreign or missing, create fresh conversation scoped to caller's tenant
+                conv = Conversation(
+                    id=str(uuid.uuid4()),
+                    title=raw_query[:50] + ("..." if len(raw_query) > 50 else ""),
+                    jurisdiction=jurisdiction,
+                    language=language[:10] if language else "en",
+                    user_id=active_user_id,
+                    organisation_id=active_org_id,
+                )
+                db.add(conv)
+                db.commit()
+                conv_id = conv.id
 
         # Save user message
         user_msg = Message(
@@ -465,12 +524,19 @@ async def chat_endpoint(
 async def chat_stream_endpoint(
     request: ChatRequest,
     db: Session = Depends(get_db),
+    tenant: Optional[TenantContext] = Depends(get_optional_tenant_context),
     current_user: Optional[User] = Depends(get_current_user),
 ):
     """
     Streaming SSE endpoint with full intent-routing parity.
     Non-knowledge queries return their direct response without triggering retrieval.
     """
+    active_user_id = tenant.user_id if tenant else (current_user.id if current_user else None)
+    active_org_id = tenant.organisation_id if tenant else None
+
+    if tenant and tenant.user.role != "super_admin":
+        check_permission_or_raise(tenant.role, Permission.CHAT_QUERY)
+
     raw_query = request.question.strip()
     jurisdiction = request.jurisdiction or "India"
     language = request.language or "EN"
@@ -585,13 +651,36 @@ async def chat_stream_endpoint(
     # KNOWLEDGE_SEEK: use rewritten query for retrieval if present
     retrieval_query = classification.rewritten_query.strip() or scrubbed_query
 
-    # Hybrid retrieve
+    # Hybrid retrieve with tenant isolation
+    target_doc_ids = request.document_ids
+    if target_doc_ids and active_org_id:
+        valid_docs = (
+            db.query(UploadedDocument.id)
+            .filter(
+                UploadedDocument.id.in_(target_doc_ids),
+                UploadedDocument.organisation_id == active_org_id,
+            )
+            .all()
+        )
+        valid_doc_ids = [str(r[0]) for r in valid_docs]
+        if not valid_doc_ids:
+            log.warning(
+                "Security: Tenant %s requested document_ids %s but none belong to this organisation",
+                active_org_id,
+                target_doc_ids,
+            )
+            target_doc_ids = ["__BLOCKED_CROSS_TENANT__"]
+        else:
+            target_doc_ids = valid_doc_ids
+
     try:
         candidates = hybrid_rrf_search(
             query=retrieval_query,
             jurisdiction=jurisdiction,
             top_k=5,
-            document_ids=request.document_ids,  # Scope to user-uploaded docs if provided
+            user_id=active_user_id,
+            organisation_id=active_org_id,
+            document_ids=target_doc_ids,  # Scope to user-uploaded docs if provided
         )
     except Exception:
         candidates = []
@@ -646,18 +735,36 @@ async def chat_stream_endpoint(
                 title=raw_query[:50] + ("..." if len(raw_query) > 50 else ""),
                 jurisdiction=jurisdiction,
                 language=language[:10] if language else "en",
-                user_id=current_user.id if current_user else None,
+                user_id=active_user_id,
+                organisation_id=active_org_id,
             )
             db.add(conv)
             db.commit()
             conv_id = conv.id
         else:
-            conv = db.query(Conversation).filter(Conversation.id == conv_id).first()
+            conv_query = db.query(Conversation).filter(Conversation.id == conv_id)
+            if active_org_id:
+                conv_query = conv_query.filter(Conversation.organisation_id == active_org_id)
+            conv = conv_query.first()
             if conv:
                 conv.updated_at = datetime.utcnow()
-                if not conv.user_id and current_user:
-                    conv.user_id = current_user.id
+                if not conv.user_id and active_user_id:
+                    conv.user_id = active_user_id
+                if not conv.organisation_id and active_org_id:
+                    conv.organisation_id = active_org_id
                 db.commit()
+            else:
+                conv = Conversation(
+                    id=str(uuid.uuid4()),
+                    title=raw_query[:50] + ("..." if len(raw_query) > 50 else ""),
+                    jurisdiction=jurisdiction,
+                    language=language[:10] if language else "en",
+                    user_id=active_user_id,
+                    organisation_id=active_org_id,
+                )
+                db.add(conv)
+                db.commit()
+                conv_id = conv.id
 
         user_msg = Message(
             conversation_id=conv_id,

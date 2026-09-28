@@ -24,7 +24,6 @@ import time
 from typing import Any, Dict, List, Optional
 
 from app.core.config import settings
-from app.core.gemini_pool import gemini_key_pool
 from app.schemas.chat import (
     ChatResponse,
     CitationItem,
@@ -321,14 +320,78 @@ class IntentClassifier:
         jurisdiction: str = "India",
         language: str = "EN",
     ) -> IntentClassification:
-        """Invokes Gemini using google.genai client to obtain structured JSON classification."""
-        return await asyncio.to_thread(
-            _sync_llm_classify,
-            query=query,
-            context=context,
-            jurisdiction=jurisdiction,
-            language=language,
+        """Invokes LLM (Groq / active orchestrator provider) to obtain structured JSON classification."""
+        user_content = (
+            f"Jurisdiction: {jurisdiction}\n"
+            f"Language: {language}\n"
+            f"Previous conversation context:\n{context if context.strip() else 'None'}\n\n"
+            f"User Query: {query}\n\n"
+            "Return the classification JSON:"
         )
+
+        try:
+            from app.services.llm_providers import llm_orchestrator
+            resp = await llm_orchestrator.generate_answer(
+                system_prompt=_INTENT_CLASSIFIER_PROMPT,
+                user_prompt=user_content,
+                max_output_tokens=400,
+                temperature=0.0,
+                raise_on_failure=True,
+            )
+            raw_text = (resp.text or "").strip()
+            text = raw_text
+            fence = re.search(r"```(?:json)?\s*(.*?)\s*```", text, re.DOTALL | re.IGNORECASE)
+            if fence:
+                text = fence.group(1).strip()
+            start = text.find("{")
+            end = text.rfind("}")
+            if start != -1 and end != -1 and end > start:
+                text = text[start : end + 1]
+
+            parsed = json.loads(text, strict=False)
+
+            intent_val = str(parsed.get("intent", "KNOWLEDGE_SEEK")).upper().strip()
+            if intent_val not in (
+                "KNOWLEDGE_SEEK",
+                "CHITCHAT",
+                "CLARIFICATION_NEEDED",
+                "OUT_OF_SCOPE",
+                "UNSAFE_OR_DISALLOWED",
+            ):
+                intent_val = "KNOWLEDGE_SEEK"
+
+            confidence_val = float(parsed.get("confidence", 0.85))
+            confidence_val = max(0.0, min(1.0, confidence_val))
+
+            entities_raw = parsed.get("entities", {})
+            if not isinstance(entities_raw, dict):
+                entities_raw = {}
+
+            entities = ExtractedEntities(
+                jurisdiction=str(entities_raw.get("jurisdiction", "")),
+                legal_topic=str(entities_raw.get("legal_topic", "")),
+                act_or_law=str(entities_raw.get("act_or_law", "")),
+                section=str(entities_raw.get("section", "")),
+            )
+
+            return IntentClassification(
+                intent=intent_val,  # type: ignore[arg-type]
+                confidence=confidence_val,
+                reason=str(parsed.get("reason", "LLM classified intent")),
+                rewritten_query=str(parsed.get("rewritten_query", "")),
+                clarification_question=str(parsed.get("clarification_question", "")),
+                entities=entities,
+            )
+        except Exception as e:
+            log.warning("Primary orchestrator intent classifier failed: %s. Safe fallback to KNOWLEDGE_SEEK.", e)
+            return IntentClassification(
+                intent="KNOWLEDGE_SEEK",
+                confidence=0.5,
+                reason=f"Classifier fallback to RAG: {e}",
+                rewritten_query="",
+                clarification_question="",
+                entities=ExtractedEntities(),
+            )
 
 
 def _sync_llm_classify(

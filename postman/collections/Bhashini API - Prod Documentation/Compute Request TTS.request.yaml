@@ -1,0 +1,34 @@
+$kind: http-request
+url: "{{callback_url}}"
+method: POST
+headers:
+  Accept: " */*"
+  User-Agent: " Thunder Client (https://www.thunderclient.com)"
+  "{{compute_call_authorization_key}}": "{{compute_call_authorization_value}}"
+body:
+  type: json
+  content: |-
+    {
+        "pipelineTasks": [       
+            {
+                "taskType": "tts",
+                "config": {
+                    "language": {
+                        "sourceLanguage": "{{target_language}}"
+                    },
+                    "serviceId": "{{tts_service_id}}",
+                    "gender": "female",
+                    "samplingRate": 8000
+                }
+            }
+        ],
+        "inputData": {
+            "input": [
+                {
+                    "source": "મારું નામ વિહીર છે અને હું ભાષાવર્ષનો ઉપયોગ કરી રહ્યો છું"
+                }
+            ]
+        }
+    }
+settings: {}
+order: 7000

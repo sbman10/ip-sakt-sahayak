@@ -389,13 +389,14 @@ export default function RagvynSidebar({
 
   return (
     <>
-      {/* Mobile hamburger button — only visible on mobile when sidebar is hidden */}
-      {isMobile() && !mobileOpen && (
+      {/* Mobile hamburger remains available to both open and close the drawer. */}
+      {isMobile() && (
         <button
           className="ragvyn-sidebar-mobile-trigger"
           onClick={toggleCollapsed}
-          aria-label="Open navigation"
-          title="Open navigation"
+          aria-label={mobileOpen ? 'Close navigation' : 'Open navigation'}
+          title={mobileOpen ? 'Close navigation' : 'Open navigation'}
+          aria-expanded={mobileOpen}
         >
           <IconMenu size={22} />
         </button>

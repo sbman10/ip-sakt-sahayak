@@ -28,10 +28,18 @@ log = logging.getLogger("app.services.storage_service")
 DEFAULT_BUCKET = "legal-documents"
 
 
-def build_storage_key(user_id: str, document_id: str, filename: str) -> str:
+def build_storage_key(
+    user_id: str,
+    document_id: str,
+    filename: str,
+    organisation_id: Optional[str] = None,
+) -> str:
     """
     Generates a secure, sanitized Supabase storage object key.
-    Format: users/{user_id}/{document_id}/{filename}
+    Format:
+      organisations/{organisation_id}/users/{user_id}/documents/{document_id}/{filename}
+    Fallback (legacy):
+      users/{user_id}/{document_id}/{filename}
 
     Prevents directory traversal and characters that might break S3/Supabase pathing.
     """
@@ -44,7 +52,12 @@ def build_storage_key(user_id: str, document_id: str, filename: str) -> str:
     if not clean_filename or clean_filename.startswith("."):
         clean_filename = f"file_{clean_filename}" if clean_filename else "document.pdf"
 
+    if organisation_id and str(organisation_id).strip():
+        clean_org = re.sub(r"[^\w\-]", "", str(organisation_id).strip())
+        return f"organisations/{clean_org}/users/{clean_user}/documents/{clean_doc}/{clean_filename}"
+
     return f"users/{clean_user}/{clean_doc}/{clean_filename}"
+
 
 
 class SupabaseStorageService:

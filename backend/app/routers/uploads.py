@@ -20,8 +20,11 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
+from app.core.dependencies import TenantContext, get_tenant_context, require_permission
+from app.core.permissions import Permission
 from app.models.database import UploadedDocument, User, get_db
 from app.routers.auth import require_auth
+from app.services.audit_service import log_admin_action
 from app.services.storage_service import build_storage_key, storage_service
 
 log = logging.getLogger(__name__)
@@ -110,12 +113,13 @@ async def upload_document(
     file: UploadFile = File(...),
     conversation_id: Optional[str] = None,
     matter_id: Optional[str] = None,
-    user: User = Depends(require_auth),
+    tenant: TenantContext = Depends(require_permission(Permission.DOCUMENT_CREATE)),
     db: Session = Depends(get_db),
 ) -> UploadResponse:
     """
     Upload a document for chat context or matter workspace to Supabase Storage.
-    Stores object key `users/{user_id}/{document_id}/{filename}` in database records.
+    Stores hierarchical object key:
+      organisations/{organisation_id}/users/{user_id}/documents/{document_id}/{filename}
     """
     ext, content_type = validate_file(file)
 
@@ -129,10 +133,15 @@ async def upload_document(
         )
 
     doc_id = str(uuid.uuid4())
-    stored_filename = f"{user.id}_{uuid.uuid4().hex[:8]}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.{ext}"
+    stored_filename = f"{tenant.user_id}_{uuid.uuid4().hex[:8]}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.{ext}"
 
-    # Build Supabase Storage object key
-    storage_key = build_storage_key(user.id, doc_id, file.filename or "upload.pdf")
+    # Build Supabase Storage object key with organisation and user hierarchy
+    storage_key = build_storage_key(
+        user_id=tenant.user_id,
+        document_id=doc_id,
+        filename=file.filename or "upload.pdf",
+        organisation_id=tenant.organisation_id,
+    )
 
     try:
         storage_service.upload_file(
@@ -147,10 +156,11 @@ async def upload_document(
             detail="Failed to persist file in storage service",
         )
 
-    # Create database record storing object key (NOT local filesystem OS path)
+    # Create database record storing object key scoped by user and organisation
     doc = UploadedDocument(
         id=doc_id,
-        user_id=user.id,
+        user_id=tenant.user_id,
+        organisation_id=tenant.organisation_id,
         conversation_id=conversation_id,
         matter_id=matter_id,
         filename=stored_filename,
@@ -166,7 +176,7 @@ async def upload_document(
     db.commit()
     db.refresh(doc)
 
-    log.info("File uploaded: %s (key: %s) by user %s", stored_filename, storage_key, user.email)
+    log.info("File uploaded: %s (key: %s) by user %s", stored_filename, storage_key, tenant.user.email)
 
     return UploadResponse(
         id=doc.id,
@@ -183,14 +193,14 @@ async def upload_document(
 def list_user_uploads(
     conversation_id: Optional[str] = None,
     matter_id: Optional[str] = None,
-    user: User = Depends(require_auth),
+    tenant: TenantContext = Depends(require_permission(Permission.DOCUMENT_READ)),
     db: Session = Depends(get_db),
 ) -> list[DocumentOut]:
     """
-    List uploaded raw documents for the current user.
+    List uploaded raw documents for the current tenant.
     Optionally filter by conversation or matter.
     """
-    query = db.query(UploadedDocument).filter(UploadedDocument.user_id == user.id)
+    query = db.query(UploadedDocument).filter(UploadedDocument.organisation_id == tenant.organisation_id)
 
     if conversation_id:
         query = query.filter(UploadedDocument.conversation_id == conversation_id)
@@ -204,13 +214,13 @@ def list_user_uploads(
 @router.get("/uploads/{document_id}", response_model=DocumentOut, tags=["Document Uploads"], operation_id="get_user_upload")
 def get_user_upload(
     document_id: str,
-    user: User = Depends(require_auth),
+    tenant: TenantContext = Depends(require_permission(Permission.DOCUMENT_READ)),
     db: Session = Depends(get_db),
 ) -> DocumentOut:
-    """Get a specific uploaded document's metadata."""
+    """Get a specific uploaded document's metadata (tenant-isolated)."""
     doc = db.query(UploadedDocument).filter(
         UploadedDocument.id == document_id,
-        UploadedDocument.user_id == user.id,
+        UploadedDocument.organisation_id == tenant.organisation_id,
     ).first()
 
     if not doc:
@@ -226,16 +236,16 @@ def get_user_upload(
 def get_upload_signed_url(
     document_id: str,
     expires_in: int = 3600,
-    user: User = Depends(require_auth),
+    tenant: TenantContext = Depends(require_permission(Permission.DOCUMENT_READ)),
     db: Session = Depends(get_db),
 ) -> SignedUrlResponse:
     """
     Generate a secure, time-limited presigned download URL for private documents.
-    Does not expose service-role keys to the client.
+    Validates tenant ownership before URL generation.
     """
     doc = db.query(UploadedDocument).filter(
         UploadedDocument.id == document_id,
-        UploadedDocument.user_id == user.id,
+        UploadedDocument.organisation_id == tenant.organisation_id,
     ).first()
 
     if not doc:
@@ -264,13 +274,13 @@ def get_upload_signed_url(
 @router.get("/uploads/{document_id}/download", tags=["Document Uploads"], operation_id="download_user_upload")
 def download_user_upload(
     document_id: str,
-    user: User = Depends(require_auth),
+    tenant: TenantContext = Depends(require_permission(Permission.DOCUMENT_READ)),
     db: Session = Depends(get_db),
 ):
-    """Stream raw file bytes to client via server-side storage proxy."""
+    """Stream raw file bytes to client via server-side storage proxy with tenant verification."""
     doc = db.query(UploadedDocument).filter(
         UploadedDocument.id == document_id,
-        UploadedDocument.user_id == user.id,
+        UploadedDocument.organisation_id == tenant.organisation_id,
     ).first()
 
     if not doc:
@@ -299,13 +309,13 @@ def download_user_upload(
 @router.delete("/uploads/{document_id}", tags=["Document Uploads"], operation_id="delete_user_upload")
 def delete_user_upload(
     document_id: str,
-    user: User = Depends(require_auth),
+    tenant: TenantContext = Depends(require_permission(Permission.DOCUMENT_DELETE)),
     db: Session = Depends(get_db),
 ) -> dict:
-    """Delete an uploaded document from Supabase Storage and database."""
+    """Delete an uploaded document from Supabase Storage and database (tenant-isolated)."""
     doc = db.query(UploadedDocument).filter(
         UploadedDocument.id == document_id,
-        UploadedDocument.user_id == user.id,
+        UploadedDocument.organisation_id == tenant.organisation_id,
     ).first()
 
     if not doc:
@@ -327,9 +337,19 @@ def delete_user_upload(
     except Exception as exc:
         log.warning("Legacy file cleanup error: %s", exc)
 
+    filename_deleted = doc.original_filename
     # 3. Delete database record
     db.delete(doc)
     db.commit()
 
-    log.info("Document deleted: %s by user %s", document_id, user.email)
+    # Phase 5: Audit sensitive administrative action
+    log_admin_action(
+        action=Permission.DOCUMENT_DELETE.value,
+        actor_user_id=tenant.user_id,
+        organisation_id=tenant.organisation_id,
+        details=f"Deleted user upload {document_id} ({filename_deleted})",
+        db=db,
+    )
+
+    log.info("Document deleted: %s by user %s", document_id, tenant.user.email)
     return {"message": "Document deleted successfully", "id": document_id}

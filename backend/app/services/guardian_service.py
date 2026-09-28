@@ -22,15 +22,8 @@ import logging
 import re
 from typing import Any, Dict, List
 
-from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_google_genai import ChatGoogleGenerativeAI
-
 from app.core.config import settings
-from app.core.gemini_pool import (
-    ResourceExhaustedError,
-    gemini_key_pool,
-    execute_with_retry_and_fallback,
-)
+from app.services.llm_providers import llm_orchestrator
 
 log = logging.getLogger("app.services.guardian_service")
 
@@ -69,62 +62,6 @@ _GUARDIAN_SYSTEM_PROMPT = (
     "  ]\n"
     "}\n"
 )
-
-
-def _build_guardian_call(
-    product: str,
-    positioning: str,
-    context_str: str,
-    jurisdiction: str = "India",
-    api_key: str = "",
-) -> str:
-    llm = ChatGoogleGenerativeAI(
-        model=settings.PRIMARY_MODEL,
-        google_api_key=api_key,
-        temperature=0.15,
-        top_p=0.9,
-        max_output_tokens=1600,
-    )
-
-    jur_norm = (jurisdiction or "India").strip().lower()
-    selected_jurisdiction = (
-        "both" if jur_norm == "both"
-        else "international" if "international" in jur_norm
-        else "india"
-    )
-
-    user_content = (
-        f"selected_jurisdiction: {selected_jurisdiction}\n\n"
-        f"--- RETRIEVED LEGAL CONTEXT ---\n"
-        f"{context_str if context_str.strip() else '[No relevant passages retrieved]'}\n"
-        f"--- END CONTEXT ---\n\n"
-        f"PRODUCT:\n{product}\n\n"
-        f"POSITIONING / HOW SOLD:\n{positioning.strip() or '[not provided]'}\n\n"
-        f"Return ONLY the JSON compliance matrix object as specified. Ground every dimension, "
-        f"obligation and law reference in the retrieved context above."
-    )
-
-    messages = [
-        SystemMessage(content=_GUARDIAN_SYSTEM_PROMPT),
-        HumanMessage(content=user_content),
-    ]
-
-    try:
-        response = llm.invoke(messages)
-        content = response.content
-        if isinstance(content, list):
-            content = "".join(
-                block.get("text", "") if isinstance(block, dict) else str(block)
-                for block in content
-            )
-        return content or ""
-    except Exception as e:
-        err_msg = str(e).lower()
-        if "429" in err_msg or "resource_exhausted" in err_msg or "quota" in err_msg:
-            gemini_key_pool.mark_key_failed(api_key, status_code=429)
-        elif "500" in err_msg or "503" in err_msg:
-            gemini_key_pool.mark_key_failed(api_key, status_code=500)
-        raise
 
 
 def _safe_parse_json(raw: str) -> Dict[str, Any]:
@@ -168,21 +105,35 @@ async def generate_guardian(
     """
     _VALID_APPLIC = {"required", "likely", "conditional", "not_applicable", "unknown"}
 
+    jur_norm = (jurisdiction or "India").strip().lower()
+    selected_jurisdiction = (
+        "both" if jur_norm == "both"
+        else "international" if "international" in jur_norm
+        else "india"
+    )
+
+    user_content = (
+        f"selected_jurisdiction: {selected_jurisdiction}\n\n"
+        f"--- RETRIEVED LEGAL / COMPLIANCE CONTEXT ---\n"
+        f"{context_str if context_str.strip() else '[No relevant passages retrieved]'}\n"
+        f"--- END CONTEXT ---\n\n"
+        f"PRODUCT DESCRIPTION:\n{product}\n\n"
+        f"POSITIONING / HOW IT IS SOLD:\n{positioning.strip() or '[not provided]'}\n\n"
+        f"Return ONLY the JSON compliance guardian object as specified. Ground every "
+        f"obligation and reference in the retrieved context above."
+    )
+
     try:
-        raw = await execute_with_retry_and_fallback(
-            _build_guardian_call,
-            product=product,
-            positioning=positioning,
-            context_str=context_str,
-            jurisdiction=jurisdiction,
+        resp = await llm_orchestrator.generate_answer(
+            system_prompt=_GUARDIAN_SYSTEM_PROMPT,
+            user_prompt=user_content,
+            max_output_tokens=2000,
+            temperature=0.15,
+            raise_on_failure=True,
         )
-    except ResourceExhaustedError:
-        log.error("All Gemini keys exhausted during guardian generation.")
-        return _empty_matrix(
-            "The compliance service is temporarily rate-limited. Please try again shortly."
-        )
+        raw = resp.text
     except Exception as e:
-        log.error("Guardian generation failed: %s", e, exc_info=True)
+        log.error("Guardian generation failed via LLM orchestrator: %s", e)
         return _empty_matrix(
             "The compliance engine could not be reached right now. Please try again."
         )

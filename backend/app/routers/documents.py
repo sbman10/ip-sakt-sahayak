@@ -13,14 +13,14 @@ router turns a user-supplied PDF into a *searchable* knowledge source:
     4.  Chunk with a 500-word sliding window / 50-word overlap — identical to
         ``corpus/parser.py`` so retrieval behaviour matches the base corpus.
     5.  Embed each chunk with the local BAAI/bge-m3 bi-encoder and upsert
-        into a dedicated ChromaDB ``user_uploads`` collection, scoped per user
+        into the Qdrant Cloud ``user_uploads`` collection, scoped per user
         via chunk metadata + id prefix.
 
 Endpoints (mounted under /api/documents by main.py)
 ----------------------------------------------------
   POST   /api/documents/upload      ingest a PDF, return document_id + chunk_count
   GET    /api/documents             list the current user's ingested documents
-  DELETE /api/documents/{id}        remove a document (file + ChromaDB chunks + row)
+  DELETE /api/documents/{id}        remove a document (file + Qdrant chunks + row)
 
 Every route is scoped to the authenticated user (require_auth).
 """
@@ -34,15 +34,18 @@ import sys
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.dependencies import TenantContext, get_tenant_context, require_permission
+from app.core.permissions import Permission
 from app.models.database import UploadedDocument, User, get_db
 from app.routers.auth import require_auth
+from app.services.audit_service import log_admin_action
 from app.services.embedding_service import canonical_embedder
 from app.services.storage_service import build_storage_key, storage_service
 from app.services.qdrant_service import qdrant_service
@@ -57,11 +60,6 @@ try:
 except ImportError:  # pragma: no cover
     fitz = None  # type: ignore
 
-try:
-    import chromadb
-except ImportError:  # pragma: no cover
-    chromadb = None  # type: ignore
-
 log = logging.getLogger(__name__)
 router = APIRouter()
 
@@ -71,7 +69,6 @@ router = APIRouter()
 _PROJECT_ROOT = Path(__file__).resolve().parents[3]
 _KB_ROOT = _PROJECT_ROOT / "knowledge-base"
 UPLOAD_DIR = _KB_ROOT / "uploads"
-CHROMA_DB_PATH = settings.CHROMA_DB_DIR
 
 EMBEDDING_MODEL_NAME = settings.EMBEDDING_MODEL_NAME
 USER_UPLOADS_COLLECTION = getattr(settings, "QDRANT_USER_UPLOADS_COLLECTION", "user_uploads")
@@ -89,38 +86,20 @@ except Exception:
 
 
 # ---------------------------------------------------------------------------
-# Lazy singletons — Chroma client initialised once on first ingest request
-# ---------------------------------------------------------------------------
-_chroma_client: Any = None
-
-
-def _get_chroma_collection():
-    global _chroma_client
-    if chromadb is None:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="chromadb not installed on the server.",
-        )
-    if _chroma_client is None:
-        _chroma_client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
-    return _chroma_client.get_or_create_collection(
-        name=USER_UPLOADS_COLLECTION,
-        metadata={"hnsw:space": "cosine"},
-    )
-
-
-# ---------------------------------------------------------------------------
 # Response models
 # ---------------------------------------------------------------------------
 
 class DocumentIngestResponse(BaseModel):
     """Returned after a successful PDF ingest."""
     document_id: str
+    id: Optional[str] = None
     original_filename: str
     file_size: int
     chunk_count: int
     processing_status: str
     message: str
+    user_id: Optional[str] = None
+    organisation_id: Optional[str] = None
 
 
 class UploadedDocumentOut(BaseModel):
@@ -219,12 +198,12 @@ def _chunk_pages(
 )
 async def upload_and_ingest_document(
     file: UploadFile = File(...),
-    user: User = Depends(require_auth),
+    tenant: TenantContext = Depends(require_permission(Permission.DOCUMENT_CREATE)),
     db: Session = Depends(get_db),
 ) -> DocumentIngestResponse:
     """
     Upload a PDF, parse + chunk it, and index the chunks into the
-    ``user_uploads`` ChromaDB collection for retrieval.
+    ``user_uploads`` Qdrant collection scoped strictly to the caller's tenant.
 
     - Only ``.pdf`` accepted.
     - Max size 10MB.
@@ -258,9 +237,15 @@ async def upload_and_ingest_document(
 
     document_id = str(uuid.uuid4())
 
-    # Build Supabase Storage object key and filename
-    stored_filename = f"{user.id}_{document_id}.pdf"
-    storage_key = build_storage_key(user.id, document_id, original_name)
+    # Build Supabase Storage object key with hierarchical tenant isolation:
+    # organisations/{org_id}/users/{user_id}/documents/{doc_id}/{filename}
+    stored_filename = f"{tenant.user_id}_{document_id}.pdf"
+    storage_key = build_storage_key(
+        user_id=tenant.user_id,
+        document_id=document_id,
+        filename=original_name,
+        organisation_id=tenant.organisation_id,
+    )
 
     # 1. Upload original PDF directly to Supabase Storage (Stateless)
     try:
@@ -276,10 +261,11 @@ async def upload_and_ingest_document(
             detail="Failed to save the uploaded file to cloud storage.",
         )
 
-    # 2. Persist Document record to Supabase PostgreSQL
+    # 2. Persist Document record to Supabase PostgreSQL scoped by user and organisation
     doc = UploadedDocument(
         id=document_id,
-        user_id=user.id,
+        user_id=tenant.user_id,
+        organisation_id=tenant.organisation_id,
         filename=stored_filename,
         original_filename=original_name,
         file_type="pdf",
@@ -311,9 +297,6 @@ async def upload_and_ingest_document(
                 ),
             )
 
-        collection = _get_chroma_collection()
-
-
         texts = [c["text"] for c in chunks]
         embeddings = canonical_embedder.embed_documents(texts, batch_size=8)
 
@@ -322,10 +305,12 @@ async def upload_and_ingest_document(
             {
                 "source": c["source_title"],
                 "section": c["section"],
-                "user_id": user.id,
+                "user_id": tenant.user_id,
+                "organisation_id": tenant.organisation_id,
                 "document_id": document_id,
                 "original_filename": original_name,
                 "jurisdiction": "User Document",
+                "visibility": "private",
             }
             for c in chunks
         ]
@@ -384,7 +369,7 @@ async def upload_and_ingest_document(
 
         log.info(
             "Ingested document %s (%d chunks) for user %s",
-            document_id, len(chunks), user.email,
+            document_id, len(chunks), tenant.user.email,
         )
 
     except HTTPException:
@@ -401,24 +386,27 @@ async def upload_and_ingest_document(
 
     return DocumentIngestResponse(
         document_id=document_id,
+        id=document_id,
         original_filename=original_name,
         file_size=file_size,
         chunk_count=doc.chunk_count,
         processing_status=doc.processing_status,
         message=f"Document ingested successfully ({doc.chunk_count} chunks indexed).",
+        user_id=tenant.user_id,
+        organisation_id=tenant.organisation_id,
     )
 
 
 @router.get("", response_model=list[UploadedDocumentOut], tags=["Documents"], operation_id="list_rag_documents")
 def list_documents(
-    user: User = Depends(require_auth),
+    tenant: TenantContext = Depends(require_permission(Permission.DOCUMENT_READ)),
     db: Session = Depends(get_db),
 ) -> list[UploadedDocumentOut]:
-    """List the current user's ingested documents, newest first."""
+    """List the current tenant's ingested documents, newest first."""
     docs = (
         db.query(UploadedDocument)
         .filter(
-            UploadedDocument.user_id == user.id,
+            UploadedDocument.organisation_id == tenant.organisation_id,
             UploadedDocument.file_type == "pdf",
         )
         .order_by(UploadedDocument.created_at.desc())
@@ -430,15 +418,15 @@ def list_documents(
 @router.delete("/{document_id}", tags=["Documents"], operation_id="delete_rag_document")
 def delete_document(
     document_id: str,
-    user: User = Depends(require_auth),
+    tenant: TenantContext = Depends(require_permission(Permission.DOCUMENT_DELETE)),
     db: Session = Depends(get_db),
 ) -> dict:
-    """Delete an ingested document: its ChromaDB chunks, the file, and the row."""
+    """Delete an ingested document: its Qdrant chunks, the file, and the row."""
     doc = (
         db.query(UploadedDocument)
         .filter(
             UploadedDocument.id == document_id,
-            UploadedDocument.user_id == user.id,
+            UploadedDocument.organisation_id == tenant.organisation_id,
         )
         .first()
     )
@@ -465,16 +453,6 @@ def delete_document(
     except Exception as exc:  # pragma: no cover
         log.warning("Failed to remove chunks from BM25 index for %s: %s", document_id, exc)
 
-    # 3. Remove chunks from ChromaDB (if available)
-    try:
-        collection = _get_chroma_collection()
-        collection.delete(where={"document_id": document_id})
-    except HTTPException:
-        # ChromaDB unavailable — still allow file/row cleanup below
-        log.warning("ChromaDB unavailable during delete of %s", document_id)
-    except Exception as exc:  # pragma: no cover
-        log.warning("Failed to delete ChromaDB chunks for %s: %s", document_id, exc)
-
     # 3. Remove file from Supabase Storage
     try:
         storage_service.delete_file(doc.storage_path)
@@ -491,8 +469,20 @@ def delete_document(
     except Exception as exc:  # pragma: no cover
         log.warning("Failed to delete local file for %s: %s", document_id, exc)
 
+    filename_deleted = doc.original_filename
     db.delete(doc)
     db.commit()
-    log.info("Deleted document %s for user %s", document_id, user.email)
+
+    # Phase 5: Audit sensitive administrative action
+    log_admin_action(
+        action=Permission.DOCUMENT_DELETE.value,
+        actor_user_id=tenant.user_id,
+        organisation_id=tenant.organisation_id,
+        details=f"Deleted document {document_id} ({filename_deleted})",
+        db=db,
+    )
+
+    log.info("Deleted document %s for user %s", document_id, tenant.user.email)
 
     return {"message": "Document deleted successfully", "id": document_id}
+

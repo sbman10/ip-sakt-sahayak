@@ -17,10 +17,10 @@ from passlib.context import CryptContext
 from pydantic import BaseModel, EmailStr, validator
 
 # ---------------------------------------------------------------------------
-# Configuration
-# ---------------------------------------------------------------------------
-SECRET_KEY = os.getenv("JWT_SECRET_KEY", "ip-sakti-super-secret-key-change-in-production-2026")
-ALGORITHM = "HS256"
+from app.core.config import settings
+
+SECRET_KEY = settings.JWT_SECRET_KEY
+ALGORITHM = settings.ALGORITHM
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
 REFRESH_TOKEN_EXPIRE_DAYS = 7
 

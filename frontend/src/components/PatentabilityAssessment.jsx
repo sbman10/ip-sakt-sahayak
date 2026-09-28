@@ -466,7 +466,7 @@ export default function PatentabilityAssessment() {
                 <h3>Executing Grounded Patentability Analysis</h3>
                 <p style={styles.loadingStep}>1. Scrubbing PII for DPDP compliance...</p>
                 <p style={styles.loadingStep}>2. Extracting immutable invention fingerprint (F001, F002...)...</p>
-                <p style={styles.loadingStep}>3. Querying dual vector engine (Qdrant & ChromaDB) across 9 controlled angles...</p>
+                <p style={styles.loadingStep}>3. Querying Qdrant vector engine across 9 controlled angles...</p>
                 <p style={styles.loadingStep}>4. Building feature-by-feature prior-art comparison matrix...</p>
                 <p style={styles.loadingStep}>5. Evaluating Indian statutory exclusions (Section 3(p), 3(d), 3(e), NBA § 6)...</p>
                 <p style={styles.loadingStep}>6. Generating experimental evidence checklist and limitation notices...</p>

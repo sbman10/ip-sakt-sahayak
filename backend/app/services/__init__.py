@@ -1,3 +1,3 @@
-﻿# backend/app/services/__init__.py
+# backend/app/services/__init__.py
 # Services package for IP-SAKTI Sahayak.
-# Exposes: llm (Gemini 1.5 Flash), pii_scrubber (DPDP gateway), audit (SQLite logger)
+# Exposes: llm (Groq), pii_scrubber (DPDP gateway), audit_service (PostgreSQL/Supabase logger), qdrant_service

@@ -19,6 +19,11 @@ import UserProfileMenu from './components/UserProfileMenu'
 import EditProfileModal from './components/EditProfileModal'
 import ToolIntro from './components/ToolIntro'
 import { TOOL_INTRO_CONFIGS } from './data/toolIntroConfigs'
+import SiteFooter from './components/SiteFooter'
+import SitemapPage from './components/SitemapPage'
+import { AuthProvider, useAuth } from './context/AuthContext'
+import LoginPage from './components/LoginPage'
+import AuthCallbackPage from './components/AuthCallbackPage'
 import {
   IconHome,
   IconFlask,
@@ -163,7 +168,7 @@ const UI_TRANSLATIONS = {
     heroTitle: 'Protect your innovation.',
     heroSubtitle: 'Know what comes next.',
     heroDesc: 'Navigate intellectual property, regulation, traditional knowledge and biodiversity-related pathways through one guided assessment.',
-    startAssessment: 'Start Assessment →',
+    startAssessment: 'Start a New Task',
     startConsultation: 'Start Assessment →',
     howItWorksBtn: 'How it works',
     formulationWizard: 'Formulation Wizard',
@@ -1293,7 +1298,7 @@ function LanguageProvider({ children }) {
   )
 }
 
-function useLanguage() {
+export function useLanguage() {
   return useContext(LanguageContext)
 }
 
@@ -4111,10 +4116,16 @@ function IpSaktiLogo({ className = '', size = 36 }) {
 /* ============================================================
    GOVERNMENT PORTAL MAIN NAVIGATION BAR (CLEAN SINGLE ROW)
    ============================================================ */
-function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout }) {
+function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn: propLoggedIn, userName: propUserName, userEmail: propUserEmail, onLogout: propLogout, onSwitchAccount: propSwitchAccount }) {
   const { t } = useLanguage()
   const navigate = useNavigate()
   const location = useLocation()
+  let authCtx = null
+  try {
+    authCtx = useAuth()
+  } catch {
+    authCtx = null
+  }
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [toolsDropdownOpen, setToolsDropdownOpen] = useState(false)
@@ -4124,15 +4135,18 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout 
   const toolsDropdownRef = useRef(null)
   const servicesDropdownRef = useRef(null)
 
-  const authLoggedIn = isLoggedIn !== undefined
-    ? Boolean(isLoggedIn)
-    : (typeof window !== 'undefined' && localStorage.getItem('ip_sakti_logged_in') === 'true')
+  const authLoggedIn = authCtx ? authCtx.isLoggedIn : (propLoggedIn !== undefined
+    ? Boolean(propLoggedIn)
+    : (typeof window !== 'undefined' && localStorage.getItem('ip_sakti_logged_in') === 'true'))
 
-  const authUserName = userName || (typeof window !== 'undefined' ? localStorage.getItem('ip_sakti_user_name') : '') || ''
+  const authUserName = authCtx?.userName || propUserName || (typeof window !== 'undefined' ? localStorage.getItem('ip_sakti_user_name') : '') || ''
+  const authUserEmail = authCtx?.userEmail || propUserEmail || (typeof window !== 'undefined' ? (JSON.parse(localStorage.getItem('ip_sakti_user') || '{}')?.email || '') : '')
 
   const effectiveLogout = () => {
-    if (onLogout) {
-      onLogout()
+    if (authCtx?.signOut) {
+      authCtx.signOut()
+    } else if (propLogout) {
+      propLogout()
     } else {
       localStorage.removeItem('ip_sakti_logged_in')
       localStorage.removeItem('ip_sakti_user_name')
@@ -4142,6 +4156,17 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout 
       window.dispatchEvent(new CustomEvent('ip-sakti-user-updated', { detail: null }))
       window.location.reload()
     }
+  }
+
+  const effectiveSwitchAccount = () => {
+    if (authCtx?.switchAccount) {
+      authCtx.switchAccount()
+    } else if (propSwitchAccount) {
+      propSwitchAccount()
+    } else {
+      effectiveLogout()
+    }
+    navigate('/login')
   }
 
   const handleSeeDemo = (e) => {
@@ -4481,7 +4506,9 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout 
                 </Link>
                 <UserProfileMenu
                   userName={authUserName}
+                  userEmail={authUserEmail}
                   onLogout={effectiveLogout}
+                  onSwitchAccount={effectiveSwitchAccount}
                   onOpenEditProfile={() => setEditProfileOpen(true)}
                 />
               </div>
@@ -4508,7 +4535,9 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout 
               <UserProfileMenu
                 compact={true}
                 userName={authUserName}
+                userEmail={authUserEmail}
                 onLogout={effectiveLogout}
+                onSwitchAccount={effectiveSwitchAccount}
                 onOpenEditProfile={() => setEditProfileOpen(true)}
               />
             </div>
@@ -4555,104 +4584,15 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn, userName, onLogout 
   )
 }
 
-/* ============================================================
-   TRANSLATED FOOTER COMPONENT - Professional Government Style
-   ============================================================ */
+// TranslatedFooter replaced by institutional <SiteFooter />
 function TranslatedFooter() {
-  const { t } = useLanguage()
-
-  return (
-    <footer className="gov-footer" role="contentinfo">
-      {/* Main Footer Content */}
-      <div className="gov-footer-main">
-        <div className="gov-footer-container">
-          {/* Column 1: Brand & Ministry Info */}
-          <div className="gov-footer-col gov-footer-brand-col">
-            <div className="gov-footer-brand" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span className="gov-footer-logo" style={{ display: 'flex', color: 'var(--primary-light)' }}><IconLeaf size={24} /></span>
-              <div className="gov-footer-brand-text">
-                <h3 className="gov-footer-title">IP-SAKTI Sahayak</h3>
-                <span className="gov-footer-subtitle">आईपी-शक्ति सहायक</span>
-              </div>
-            </div>
-            <div className="gov-footer-ministry">
-              <p className="gov-footer-ministry-name">{t('ministry')}</p>
-              <p className="gov-footer-govt">{t('govtOf')}</p>
-            </div>
-            <p className="gov-footer-tagline">
-              Smart IP & Regulatory Assistance Portal for Traditional Knowledge
-            </p>
-          </div>
-
-          {/* Column 2: Quick Links */}
-          <div className="gov-footer-col">
-            <h4 className="gov-footer-col-title">Quick Links</h4>
-            <ul className="gov-footer-links">
-              <li><Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconHome size={14} /> Home</Link></li>
-              <li><Link to="/chat" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconMessageSquare size={14} /> AI Consultation</Link></li>
-              <li><Link to="/abs-checker" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconLeaf size={14} /> ABS Checker</Link></li>
-              <li><Link to="/ip-calculator" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconCalculator size={14} /> IP Calculator</Link></li>
-              <li><Link to="/deadline-calculator" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconCalendar size={14} /> {t('deadlineCalc')}</Link></li>
-              <li><Link to="/sources" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconBook size={14} /> Sources</Link></li>
-            </ul>
-          </div>
-
-          {/* Column 3: Resources */}
-          <div className="gov-footer-col">
-            <h4 className="gov-footer-col-title">Resources</h4>
-            <ul className="gov-footer-links">
-              <li><a href="https://www.ayush.gov.in" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconGovt size={14} /> AYUSH Portal</a></li>
-              <li><a href="https://tkdl.res.in" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconBook size={14} /> TKDL Database</a></li>
-              <li><a href="https://nbaindia.org" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconLeaf size={14} /> NBA India</a></li>
-              <li><a href="https://ipindia.gov.in" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconScales size={14} /> IP India</a></li>
-              <li><Link to="/privacy" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconLock size={14} /> Privacy Policy</Link></li>
-            </ul>
-          </div>
-
-          {/* Column 4: Contact & Social */}
-          <div className="gov-footer-col">
-            <h4 className="gov-footer-col-title">Contact Us</h4>
-            <div className="gov-footer-contact">
-              <p style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IconPin size={14} /> AYUSH Bhawan, B Block</p>
-              <p style={{ paddingLeft: '20px' }}>GPO Complex, INA, New Delhi - 110023</p>
-              <p style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IconMail size={14} /> info-ayush@gov.in</p>
-              <p style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IconPhone size={14} /> +91-11-24651950</p>
-            </div>
-            <div className="gov-footer-social">
-              <a href="https://twitter.com/moaboratory" target="_blank" rel="noopener noreferrer" aria-label="Twitter" className="gov-social-icon">X</a>
-              <a href="https://facebook.com/moaboratory" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="gov-social-icon">fb</a>
-              <a href="https://youtube.com/@ministryofayush" target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="gov-social-icon">yt</a>
-              <a href="https://instagram.com/ministryofayush" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="gov-social-icon">ig</a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Footer Bottom Bar */}
-      <div className="gov-footer-bottom">
-        <div className="gov-footer-container gov-footer-bottom-content">
-          <div className="gov-footer-legal">
-            <span>© 2026 Ministry of AYUSH, Government of India</span>
-            <span className="gov-footer-separator">|</span>
-            <Link to="/privacy">Privacy Policy</Link>
-            <span className="gov-footer-separator">|</span>
-            <Link to="/sources">Terms of Use</Link>
-            <span className="gov-footer-separator">|</span>
-            <span>Accessibility Statement</span>
-          </div>
-          <div className="gov-footer-credits">
-            <span className="gov-footer-made">National Digital Health & IP Mission • India</span>
-          </div>
-        </div>
-      </div>
-    </footer>
-  )
+  return null
 }
 
 /* ============================================================
    NAVBAR WRAPPER (COMMON)
    ============================================================ */
-function Navbar({ onOpenAbout, onOpenWizard, theme, toggleTheme, isLoggedIn, userName, onLogout }) {
+function Navbar({ onOpenAbout, onOpenWizard, theme, toggleTheme, isLoggedIn, userName, userEmail, onLogout, onSwitchAccount }) {
   return (
     <header className="gov-portal-header-wrapper" role="banner">
       <GovtAccessibilityBar
@@ -4664,613 +4604,11 @@ function Navbar({ onOpenAbout, onOpenWizard, theme, toggleTheme, isLoggedIn, use
         onOpenWizard={onOpenWizard}
         isLoggedIn={isLoggedIn}
         userName={userName}
+        userEmail={userEmail}
         onLogout={onLogout}
+        onSwitchAccount={onSwitchAccount}
       />
     </header>
-  )
-}
-
-/* ============================================================
-   INNOVATION ASSESSMENT CARD (HERO INTERACTIVE ENGINE)
-   ============================================================ */
-function InnovationAssessmentCard({ onStartAssessment }) {
-  const navigate = useNavigate()
-  const API_BASE = getApiBase()
-
-  // Step state: 1 to 4
-  const [currentStep, setCurrentStep] = useState(1)
-
-  // Selected option IDs for each of the 4 steps
-  const [selectedType, setSelectedType] = useState('formulation')
-  const [selectedPathway, setSelectedPathway] = useState('patent_novel')
-  const [selectedRegulation, setSelectedRegulation] = useState('ayush_proprietary')
-  const [selectedSource, setSelectedSource] = useState('classical_texts')
-
-  // Execution states: 'idle' | 'loading' | 'success' | 'error'
-  const [status, setStatus] = useState('idle')
-  const [result, setResult] = useState(null)
-  const [errorMsg, setErrorMsg] = useState('')
-  const [loadingStepIndex, setLoadingStepIndex] = useState(0)
-
-  // STEP 1: Innovation Options
-  const step1Options = [
-    {
-      id: 'formulation',
-      title: 'Ayurvedic formulation',
-      desc: 'Polyherbal composition, standardized extract, or modified classical recipe',
-      statute: 'Patents Act § 3(p) & TKDL Prior Art',
-      badge: 'TKDL Check',
-      route: 'Prior Art Screening + ASU Form 22 Licensing',
-    },
-    {
-      id: 'process',
-      title: 'New process / method',
-      desc: 'Novel extraction technique, bio-enhancement, or modernized delivery method',
-      statute: 'Patents Act § 3(e) & Technical Step',
-      badge: 'Process Patent',
-      route: 'Process Patentability + Biological Diversity Act Form 1',
-    },
-    {
-      id: 'brand',
-      title: 'Product or brand',
-      desc: 'Proprietary finished formulation, brand identity, or distinctive packaging',
-      statute: 'Trade Marks Act Class 5 & 30',
-      badge: 'Trademark & Design',
-      route: 'Distinctiveness Screening + Schedule T GMP Compliance',
-    },
-    {
-      id: 'research',
-      title: 'Research innovation',
-      desc: 'Clinical trial data, active phytoconstituent isolation, or collaborative discovery',
-      statute: 'Biological Diversity Act § 3, 4, 6',
-      badge: 'ABS Clearance',
-      route: 'NBA Prior Approval + TK Protection Clearance',
-    }
-  ]
-
-  // STEP 2: IP Pathway Options
-  const step2Options = [
-    {
-      id: 'patent_novel',
-      title: 'Patent Protection (§ 2(1)(j))',
-      desc: 'Novelty & non-obvious technical step with synergistic efficacy beyond mere admixture',
-      statute: 'Patents Act 1970 § 2(1)(j), 3(e)',
-      badge: 'Patent Route',
-      route: 'Synergy Proof + Non-Obviousness Technical Validation',
-    },
-    {
-      id: 'tkdl_clearance',
-      title: 'TKDL Prior Art Defensive Clearance',
-      desc: 'Defensive screening against 3.5L+ classical formulations to overcome Section 3(p)',
-      statute: 'Patents Act § 3(p) & TKDL',
-      badge: 'TKDL Screening',
-      route: 'Classical Literature Prior Art Search & Clearance',
-    },
-    {
-      id: 'trademark_brand',
-      title: 'Trademark & Trade Dress (Class 5/30)',
-      desc: 'Proprietary brand name registration avoiding generic Ayurvedic descriptor conflicts',
-      statute: 'Trade Marks Act 1999 Class 5/30',
-      badge: 'Brand Protection',
-      route: 'Distinctiveness Screening & Packaging Registration',
-    },
-    {
-      id: 'abs_clearance',
-      title: 'Biological Diversity ABS Approval',
-      desc: 'Mandatory statutory approval for Indian biological resources prior to IP filing',
-      statute: 'Biological Diversity Act 2002 § 3, 4, 6',
-      badge: 'NBA Clearance',
-      route: 'NBA Form I / III Application & ABS Agreement',
-    }
-  ]
-
-  // STEP 3: Regulation Options
-  const step3Options = [
-    {
-      id: 'ayush_shastriya',
-      title: 'AYUSH Classical License (Shastriya)',
-      desc: 'Manufactured strictly per First Schedule authoritative Ayurvedic classical texts',
-      statute: 'Drugs & Cosmetics Act Rule 158-B(1)',
-      badge: 'ASU Rule 158-B(1)',
-      route: 'State AYUSH Licensing Authority Shastriya Clearance',
-    },
-    {
-      id: 'ayush_proprietary',
-      title: 'AYUSH Proprietary License (Anubhavasiddha)',
-      desc: 'Patent/Proprietary ASU medicine with pilot safety & efficacy documentation',
-      statute: 'Drugs & Cosmetics Rules Rule 158-B(2)',
-      badge: 'ASU Rule 158-B(2)',
-      route: 'Safety & Efficacy Trial Dossier + State AYUSH License',
-    },
-    {
-      id: 'ayurveda_aahar',
-      title: 'FSSAI Ayurveda-Aahar Regime',
-      desc: 'Health & wellness dietary supplement governed by Ayurveda Aahar Regulations 2022',
-      statute: 'FSSAI Ayurveda Aahar Regulations 2022',
-      badge: 'FSSAI Regime',
-      route: 'Ayurveda Aahar Standards Compliance & Labelling Clearances',
-    },
-    {
-      id: 'gmp_clinical',
-      title: 'Schedule T GMP & Standardized Extract',
-      desc: 'Good Manufacturing Practice with heavy metal, microbial & chromatographic profiling',
-      statute: 'Drugs & Cosmetics Act Schedule T',
-      badge: 'Schedule T GMP',
-      route: 'Pharmacopoeial Quality Assurance & Monograph Compliance',
-    }
-  ]
-
-  // STEP 4: Source Verification Options
-  const step4Options = [
-    {
-      id: 'classical_texts',
-      title: '1st Schedule Classical Text Source',
-      desc: 'Formulations referenced in Charaka Samhita, Sushruta Samhita, or Sahasrayogam',
-      statute: 'Drugs & Cosmetics Act 1st Schedule',
-      badge: 'Classical Source',
-      route: 'Cross-Reference TKDL Prior Art Citation Database',
-    },
-    {
-      id: 'indigenous_bio',
-      title: 'Indigenous Indian Biological Resource',
-      desc: 'Botanicals and biological materials harvested or cultivated within India',
-      statute: 'Biological Diversity Act 2002 § 3',
-      badge: 'National Resource',
-      route: 'Mandatory State Biodiversity Board / NBA Prior Approval',
-    },
-    {
-      id: 'novel_extract',
-      title: 'Novel Processed Extract / Synthetic Compound',
-      desc: 'Enriched phytoconstituents, supercritical CO2 extracts, or novel drug delivery',
-      statute: 'Patents Act § 3(e) Synergism',
-      badge: 'Novel Extract',
-      route: 'Comparative In-Vitro / In-Vivo Efficacy & Synergism Proof',
-    },
-    {
-      id: 'authenticated_herbs',
-      title: 'Pharmacopoeially Authenticated Botanicals',
-      desc: 'Tested against Ayurvedic Pharmacopoeia of India (API) standards with HPTLC',
-      statute: 'Ayurvedic Pharmacopoeia of India',
-      badge: 'API Monograph',
-      route: 'Raw Material Traceability & Certificate of Analysis (CoA)',
-    }
-  ]
-
-  // Dynamic step configuration
-  const currentStepConfig = currentStep === 1
-    ? { title: 'What are you developing?', hint: 'Step 1 of 4: Select your innovation type', options: step1Options, selected: selectedType, setSelect: setSelectedType }
-    : currentStep === 2
-      ? { title: 'Target IP Protection Pathway', hint: 'Step 2 of 4: Select primary IP objective', options: step2Options, selected: selectedPathway, setSelect: setSelectedPathway }
-      : currentStep === 3
-        ? { title: 'Regulatory & Licensing Regime', hint: 'Step 3 of 4: Select applicable regulatory standard', options: step3Options, selected: selectedRegulation, setSelect: setSelectedRegulation }
-        : { title: 'Source Verification & Biological Origin', hint: 'Step 4 of 4: Select biological & traditional knowledge provenance', options: step4Options, selected: selectedSource, setSelect: setSelectedSource }
-
-  const activeOption = currentStepConfig.options.find(o => o.id === currentStepConfig.selected) || currentStepConfig.options[0]
-
-  // Dynamic retrieval progress messages for RagVyn AI RAG pipeline
-  const loadingMessages = [
-    'Compiling 4-step diagnostic parameters...',
-    'Querying Patents Act, Biodiversity Act & TKDL corpora...',
-    'Evaluating Section 3(p) prior art and Section 3(e) synergism...',
-    'Synthesizing grounded RagVyn AI statutory guidance...'
-  ]
-
-  useEffect(() => {
-    if (status !== 'loading') return
-    const timer = setInterval(() => {
-      setLoadingStepIndex(prev => (prev + 1) % loadingMessages.length)
-    }, 1600)
-    return () => clearInterval(timer)
-  }, [status, loadingMessages.length])
-
-  // Submit collected 4-step data to RagVyn AI existing API
-  const handleSubmitAssessment = async () => {
-    setStatus('loading')
-    setErrorMsg('')
-    setLoadingStepIndex(0)
-
-    const opt1 = step1Options.find(o => o.id === selectedType) || step1Options[0]
-    const opt2 = step2Options.find(o => o.id === selectedPathway) || step2Options[0]
-    const opt3 = step3Options.find(o => o.id === selectedRegulation) || step3Options[0]
-    const opt4 = step4Options.find(o => o.id === selectedSource) || step4Options[0]
-
-    const structuredContext = {
-      innovation_type: opt1.title,
-      formulation_details: opt1.desc,
-      ip_pathway: opt2.title + ' (' + opt2.statute + ')',
-      regulatory_regime: opt3.title + ' (' + opt3.statute + ')',
-      source_verification: opt4.title + ' (' + opt4.desc + ')',
-    }
-
-    const contextualQuestion = `The user completed an IP/regulatory assessment with the following information:
-- Innovation Type: ${opt1.title} (${opt1.desc})
-- Targeted IP Pathway: ${opt2.title} (${opt2.statute})
-- Regulatory Regime: ${opt3.title} (${opt3.statute})
-- Source Verification & TK Status: ${opt4.title} (${opt4.desc})
-
-Based on this information, provide comprehensive statutory-grounded IP and regulatory guidance using the verified Indian and international knowledge corpus. Assess patentability under Patents Act 1970 (specifically analyzing Section 3(p) traditional knowledge bar and Section 3(e) synergistic efficacy requirement), Traditional Knowledge Digital Library (TKDL) prior art implications, Biological Diversity Act 2002 Access and Benefit Sharing (ABS) compliance, and required licensing under Drugs & Cosmetics Rules.`
-
-    const payload = {
-      question: contextualQuestion,
-      jurisdiction: 'India',
-      language: 'EN',
-      product_description: opt1.desc,
-      formulation_type: opt1.title,
-      context: structuredContext,
-    }
-
-    try {
-      const res = await fetch(`${API_BASE}/api/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-
-      if (!res.ok) throw new Error(`Server returned HTTP ${res.status}`)
-      const data = await res.json()
-
-      const confidenceData = data.confidence && typeof data.confidence === 'object'
-        ? data.confidence
-        : { score: 78, label: 'High', reason: 'Diagnostic grounded in retrieved Patents Act & TKDL statutory corpus.' }
-
-      setResult({
-        answer: data.answer,
-        citations: data.citations || [],
-        confidence: confidenceData,
-        disclaimer: data.disclaimer,
-        conversation_id: data.conversation_id,
-        contextualQuestion,
-        structuredContext,
-      })
-      setStatus('success')
-
-      if (onStartAssessment) {
-        onStartAssessment(contextualQuestion)
-      }
-    } catch (err) {
-      console.error('[Assessment] RagVyn RAG execution failed:', err)
-      setErrorMsg('RagVyn AI was unable to complete the statutory diagnostic at this moment. Please check that the backend server is running and try again.')
-      setStatus('error')
-    }
-  }
-
-  // Navigate to full RagVyn AI consultation with this completed session pre-loaded
-  const handleContinueInRagVyn = () => {
-    if (!result) return
-    navigate('/chat', {
-      state: {
-        assessmentResult: {
-          prompt: result.contextualQuestion,
-          result: result,
-        }
-      }
-    })
-  }
-
-  // Reset diagnostic to retake
-  const handleRetake = () => {
-    setStatus('idle')
-    setResult(null)
-    setCurrentStep(1)
-  }
-
-  return (
-    <div className="hero-assessment-card" role="region" aria-label="Interactive Innovation Assessment Tool">
-      {/* Card Header */}
-      <div className="assessment-card-header">
-        <div className="assessment-card-title-group">
-          <span className="card-kicker-tag">INTERACTIVE DIAGNOSTIC</span>
-          <h2 className="assessment-card-heading">Is Your Innovation IP-Ready?</h2>
-        </div>
-        <div className="assessment-progress-pill" aria-label={`Step ${currentStep} of 4`}>
-          <span className="progress-num-active">
-            {status === 'success' ? 'READY' : status === 'loading' ? 'WAIT' : `0${currentStep}`}
-          </span>
-          {status !== 'success' && status !== 'loading' && (
-            <>
-              <span className="progress-num-divider">/</span>
-              <span className="progress-num-total">04</span>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Progress Stepper (Interactive 4-Step Pipeline) */}
-      <div className="assessment-pipeline-steps" aria-label="Assessment Progress Steps">
-        {[
-          { num: 1, label: 'Innovation' },
-          { num: 2, label: 'IP pathway' },
-          { num: 3, label: 'Regulation' },
-          { num: 4, label: 'Source verification' },
-        ].map((st, idx, arr) => {
-          const isCompleted = status === 'success' || currentStep > st.num
-          const isActive = status !== 'success' && currentStep === st.num
-          return (
-            <div key={st.num} style={{ display: 'contents' }}>
-              <div
-                className={`pipeline-step ${isActive ? 'step-active' : ''} ${isCompleted ? 'step-completed clickable' : ''}`}
-                onClick={() => {
-                  if (status !== 'loading') {
-                    if (status === 'success' || isCompleted) {
-                      setStatus('idle')
-                      setCurrentStep(st.num)
-                    }
-                  }
-                }}
-                title={isCompleted ? `Jump to Step ${st.num}: ${st.label}` : undefined}
-                role="button"
-                tabIndex={isCompleted ? 0 : -1}
-                aria-label={`Step ${st.num}: ${st.label}`}
-              >
-                <span className="step-bullet">{isCompleted && !isActive ? '✓' : st.num}</span>
-                <span className="step-label">{st.label}</span>
-              </div>
-              {idx < arr.length - 1 && (
-                <div className={`pipeline-connector ${currentStep > st.num + 1 || (status === 'success' && currentStep > st.num) ? 'active completed' : currentStep > st.num ? 'active' : ''}`} />
-              )}
-            </div>
-          )
-        })}
-      </div>
-
-      {/* ── STATE 1: LOADING (RAG Retrieval in progress) ── */}
-      {status === 'loading' && (
-        <div className="assessment-loading-box">
-          <div className="assessment-spinner" aria-hidden="true" />
-          <div className="assessment-loading-title">RagVyn AI Diagnostic in Progress</div>
-          <div className="assessment-loading-status">{loadingMessages[loadingStepIndex]}</div>
-          <div className="assessment-loading-subtext">
-            Evaluating Section 3(p) traditional knowledge exclusions, Section 3(e) synergistic efficacy, TKDL prior art, and Biological Diversity Act ABS clearance.
-          </div>
-        </div>
-      )}
-
-      {/* ── STATE 2: ERROR ── */}
-      {status === 'error' && (
-        <>
-          <div className="assessment-error-box">
-            <div className="assessment-error-header">
-              <IconAlertTriangle size={18} />
-              <span>Diagnostic Engine Notice</span>
-            </div>
-            <div className="assessment-error-text">
-              {errorMsg}
-            </div>
-          </div>
-          <div className="assessment-card-actions">
-            <div className="assessment-nav-row">
-              <button
-                type="button"
-                className="assessment-back-btn"
-                onClick={() => setStatus('idle')}
-              >
-                <span>Review Answers</span>
-              </button>
-              <button
-                type="button"
-                className="assessment-action-btn"
-                onClick={handleSubmitAssessment}
-              >
-                <IconRotate size={16} />
-                <span>Retry Diagnostic</span>
-              </button>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* ── STATE 3: SUCCESS (Grounded RagVyn AI Response) ── */}
-      {status === 'success' && result && (
-        <div className="assessment-result-view">
-          {/* Summary chips of user's 4-step assessment */}
-          <div className="assessment-result-summary">
-            <span className="assessment-summary-chip">
-              <span className="assessment-chip-key">Innovation:</span>
-              <span>{step1Options.find(o => o.id === selectedType)?.title}</span>
-            </span>
-            <span className="assessment-summary-chip">
-              <span className="assessment-chip-key">IP:</span>
-              <span>{step2Options.find(o => o.id === selectedPathway)?.badge}</span>
-            </span>
-            <span className="assessment-summary-chip">
-              <span className="assessment-chip-key">Reg:</span>
-              <span>{step3Options.find(o => o.id === selectedRegulation)?.badge}</span>
-            </span>
-            <span className="assessment-summary-chip">
-              <span className="assessment-chip-key">Source:</span>
-              <span>{step4Options.find(o => o.id === selectedSource)?.badge}</span>
-            </span>
-          </div>
-
-          {/* Scrollable grounded assessment output */}
-          <div className="assessment-result-scroll">
-            <div className="assessment-answer-card">
-              <JargonText text={result.answer} />
-            </div>
-
-            {result.citations && result.citations.length > 0 && (
-              <CollapsibleCitations citations={result.citations} />
-            )}
-
-            {result.confidence && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <ConfidenceBadge level={result.confidence} />
-                <ConfidenceMeter level={result.confidence} />
-              </div>
-            )}
-
-            <DisclaimerBanner />
-          </div>
-
-          {/* Action buttons */}
-          <div className="assessment-card-actions">
-            <div className="assessment-nav-row">
-              <button
-                type="button"
-                className="assessment-back-btn"
-                onClick={handleRetake}
-                title="Retake diagnostic with new parameters"
-              >
-                <IconRotate size={15} />
-                <span>Retake</span>
-              </button>
-              <button
-                type="button"
-                className="assessment-action-btn"
-                onClick={handleContinueInRagVyn}
-                id="continue-in-ragvyn-btn"
-              >
-                <span>Continue in RagVyn AI</span>
-                <IconArrowRight size={16} />
-              </button>
-            </div>
-            <div className="assessment-card-footnote">
-              <span>Source-backed legal intelligence • Zero hallucination protocol</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── STATE 4: IDLE (Interactive Questions for Step 1 - 4) ── */}
-      {status === 'idle' && (
-        <>
-          {/* Question Bar */}
-          <div className="assessment-question-bar">
-            <span className="assessment-q-label">{currentStepConfig.title}</span>
-            <span className="assessment-q-hint">{currentStepConfig.hint}</span>
-          </div>
-
-          {/* 4 Interactive Selectable Options for Active Step */}
-          <div className="assessment-options-list" role="radiogroup" aria-label={currentStepConfig.title}>
-            {currentStepConfig.options.map((opt) => {
-              const isSelected = currentStepConfig.selected === opt.id
-              return (
-                <button
-                  key={opt.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={isSelected}
-                  className={`assessment-option-btn ${isSelected ? 'selected' : ''}`}
-                  onClick={() => currentStepConfig.setSelect(opt.id)}
-                >
-                  <div className="option-radio-ring" aria-hidden="true">
-                    {isSelected && <div className="option-radio-dot" />}
-                  </div>
-                  <div className="option-text-group">
-                    <div className="option-header-row">
-                      <span className="option-title">{opt.title}</span>
-                      <span className="option-statute-badge">{opt.badge}</span>
-                    </div>
-                    <span className="option-desc">{opt.desc}</span>
-                  </div>
-                </button>
-              )
-            })}
-          </div>
-
-          {/* Dynamic Statutory Determination Preview */}
-          <div className="assessment-dynamic-preview">
-            <div className="preview-indicator-bar">
-              <span className="live-engine-pulse" />
-              <span className="preview-engine-label">STATUTORY ROUTING PREVIEW</span>
-              <span className="preview-source-tag">OFFICIAL ACTS</span>
-            </div>
-            <div className="preview-grid">
-              <div className="preview-item">
-                <span className="preview-item-label">Applicable Framework:</span>
-                <span className="preview-item-val">{activeOption.statute}</span>
-              </div>
-              <div className="preview-item">
-                <span className="preview-item-label">Recommended Pathway:</span>
-                <span className="preview-item-val">{activeOption.route}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Action Footer */}
-          <div className="assessment-card-actions">
-            {currentStep === 1 && (
-              <button
-                type="button"
-                className="assessment-action-btn"
-                onClick={() => setCurrentStep(2)}
-                id="step-1-next-btn"
-              >
-                <span>Next: IP Pathway</span>
-                <IconArrowRight size={16} />
-              </button>
-            )}
-
-            {currentStep === 2 && (
-              <div className="assessment-nav-row">
-                <button
-                  type="button"
-                  className="assessment-back-btn"
-                  onClick={() => setCurrentStep(1)}
-                >
-                  <span>← Back</span>
-                </button>
-                <button
-                  type="button"
-                  className="assessment-action-btn"
-                  onClick={() => setCurrentStep(3)}
-                  id="step-2-next-btn"
-                >
-                  <span>Next: Regulation</span>
-                  <IconArrowRight size={16} />
-                </button>
-              </div>
-            )}
-
-            {currentStep === 3 && (
-              <div className="assessment-nav-row">
-                <button
-                  type="button"
-                  className="assessment-back-btn"
-                  onClick={() => setCurrentStep(2)}
-                >
-                  <span>← Back</span>
-                </button>
-                <button
-                  type="button"
-                  className="assessment-action-btn"
-                  onClick={() => setCurrentStep(4)}
-                  id="step-3-next-btn"
-                >
-                  <span>Next: Source Verification</span>
-                  <IconArrowRight size={16} />
-                </button>
-              </div>
-            )}
-
-            {currentStep === 4 && (
-              <div className="assessment-nav-row">
-                <button
-                  type="button"
-                  className="assessment-back-btn"
-                  onClick={() => setCurrentStep(3)}
-                >
-                  <span>← Back</span>
-                </button>
-                <button
-                  type="button"
-                  className="assessment-action-btn"
-                  onClick={handleSubmitAssessment}
-                  id="submit-assessment-btn"
-                >
-                  <IconSparkles size={16} />
-                  <span>Assess with RagVyn AI</span>
-                </button>
-              </div>
-            )}
-
-            <div className="assessment-card-footnote">
-              <span>Source-backed legal intelligence • Zero hallucination protocol</span>
-            </div>
-          </div>
-        </>
-      )}
-    </div>
   )
 }
 
@@ -5284,12 +4622,23 @@ function HeroTypewriterTitle({ line1Text, line2Text, trigger }) {
 
   useEffect(() => {
     let isCancelled = false
+    const target1 = line1Text || 'Protect your innovation.'
+    const target2 = line2Text || 'Know what comes next.'
+
+    const reduceMotion = typeof window !== 'undefined'
+      && window.matchMedia
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    if (reduceMotion) {
+      setDisplayedLine1(target1)
+      setDisplayedLine2(target2)
+      setActiveLine(0)
+      return
+    }
+
     setDisplayedLine1('')
     setDisplayedLine2('')
     setActiveLine(1)
-
-    const target1 = line1Text || 'Protect your innovation.'
-    const target2 = line2Text || 'Know what comes next.'
 
     let idx1 = 0
     let idx2 = 0
@@ -5416,73 +4765,58 @@ function LandingPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, 
         onLogout={onLogout}
       />
 
-      {/* Hero Section - Two Column Split Composition */}
+      {/* Full-viewport editorial hero */}
       <section className="hero-section" id="hero" ref={heroRef} aria-labelledby="hero-title">
         <div className="hero-container">
-          <div className="hero-grid">
-            {/* Left Column: Narrative, Statues & CTAs */}
-            <div className="hero-content-col">
-              <HeroTypewriterTitle
-                line1Text={t('heroTitle')}
-                line2Text={t('heroSubtitle')}
-                trigger={animTrigger}
-              />
+          <div className="hero-content-col">
+            <p className="hero-eyebrow">
+              <span className="hero-eyebrow-text">{t('heroEyebrow')}</span>
+            </p>
 
-              <p className="hero-description">
-                {t('heroDesc')}
-              </p>
+            <HeroTypewriterTitle
+              line1Text={t('heroTitle')}
+              line2Text={t('heroSubtitle')}
+              trigger={animTrigger}
+            />
 
-              <div className="hero-cta-group">
-                <Link to="/chat" className="btn-primary hero-btn-main" id="hero-start-btn">
-                  <span>{t('startAssessment')}</span>
-                  <IconArrowRight size={16} />
-                </Link>
-                <a href="#how-it-works" className="btn-secondary hero-btn-sub">
-                  <span>{t('howItWorksBtn')}</span>
-                </a>
-              </div>
+            <p className="hero-description">
+              {t('heroDesc')}
+            </p>
 
-              {/* Verified Statutory Trust Badges */}
-              <div className="hero-trust-indicators">
-                <div className="hero-trust-item">
-                  <div className="trust-icon-box"><IconScales size={15} /></div>
-                  <div className="trust-text-box">
-                    <strong>{t('trustPatentsAct')}</strong>
-                    <span>{t('trustPatentsActDesc')}</span>
-                  </div>
-                </div>
-                <div className="hero-trust-item">
-                  <div className="trust-icon-box"><IconBook size={15} /></div>
-                  <div className="trust-text-box">
-                    <strong>{t('trustTkdl')}</strong>
-                    <span>{t('trustTkdlDesc')}</span>
-                  </div>
-                </div>
-                <div className="hero-trust-item">
-                  <div className="trust-icon-box"><IconLeaf size={15} /></div>
-                  <div className="trust-text-box">
-                    <strong>{t('trustBdAct')}</strong>
-                    <span>{t('trustBdActDesc')}</span>
-                  </div>
-                </div>
-                <div className="hero-trust-item">
-                  <div className="trust-icon-box"><IconShieldCheck size={15} /></div>
-                  <div className="trust-text-box">
-                    <strong>{t('trustDrugsRules')}</strong>
-                    <span>{t('trustDrugsRulesDesc')}</span>
-                  </div>
-                </div>
-              </div>
+            <div className="hero-cta-group">
+              <Link
+                to="/chat"
+                state={{ newChat: true }}
+                className="btn-primary hero-btn-main"
+                id="hero-start-btn"
+                aria-label={t('startAssessment')}
+              >
+                <span>{t('startAssessment')}</span>
+                <IconArrowRight size={16} aria-hidden="true" />
+              </Link>
+              <a href="#how-it-works" className="hero-btn-sub">
+                {t('howItWorksBtn')}
+              </a>
             </div>
 
-            {/* Right Column: Interactive Innovation Assessment Card */}
-            <div className="hero-card-col">
-              <InnovationAssessmentCard
-                onStartAssessment={(prompt) => {
-                  if (setPrefillPrompt) setPrefillPrompt(prompt)
-                }}
-              />
-            </div>
+            <ul className="hero-trust-indicators" aria-label="Statutory domains">
+              <li className="hero-trust-item">
+                <strong>{t('trustPatentsAct')}</strong>
+                <span>{t('trustPatentsActDesc')}</span>
+              </li>
+              <li className="hero-trust-item">
+                <strong>{t('trustTkdl')}</strong>
+                <span>{t('trustTkdlDesc')}</span>
+              </li>
+              <li className="hero-trust-item">
+                <strong>{t('trustBdAct')}</strong>
+                <span>{t('trustBdActDesc')}</span>
+              </li>
+              <li className="hero-trust-item">
+                <strong>{t('trustDrugsRules')}</strong>
+                <span>{t('trustDrugsRulesDesc')}</span>
+              </li>
+            </ul>
           </div>
         </div>
       </section>
@@ -5578,9 +4912,6 @@ function LandingPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, 
 
       {/* FAQ Section */}
       <FAQSection />
-
-      {/* Footer */}
-      <TranslatedFooter />
     </div>
   )
 }
@@ -7788,7 +7119,7 @@ import {
    ============================================================ */
 function DocumentsPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize, isLoggedIn, userName, onLogout }) {
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--doc-bg, #f8fafc)' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--doc-bg, #F7F5F0)' }}>
       <Navbar
         onOpenAbout={onOpenAbout}
         onOpenWizard={onOpenWizard}
@@ -7809,7 +7140,7 @@ function DraftsPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, s
   const navigate = useNavigate()
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--dg-bg, #f8fafc)' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--dg-bg, #F7F5F0)' }}>
       <Navbar
         onOpenAbout={onOpenAbout}
         onOpenWizard={onOpenWizard}
@@ -7828,7 +7159,7 @@ function DraftsPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, s
 
 function WorkspacePage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize, isLoggedIn, userName, onLogout }) {
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--mw-bg, #f8fafc)' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--mw-bg, #F7F5F0)' }}>
       <Navbar
         onOpenAbout={onOpenAbout}
         onOpenWizard={onOpenWizard}
@@ -7847,7 +7178,7 @@ function WorkspacePage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize
 
 function ExpertConnectPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize, isLoggedIn, userName, onLogout }) {
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--ec-bg, #f8fafc)' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--ec-bg, #F7F5F0)' }}>
       <Navbar
         onOpenAbout={onOpenAbout}
         onOpenWizard={onOpenWizard}
@@ -9421,588 +8752,54 @@ function PrivacyPolicyPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, font
           </section>
         </Reveal>
       </main>
-
-      <TranslatedFooter />
     </div>
   )
 }
 
 /* ============================================================
-   AUTH CALLBACK PAGE - Handles OAuth redirects
+   AUTH CALLBACK & LOGIN PAGES
+   Imported modularly from:
+   - src/components/AuthCallbackPage.jsx (Supabase session completion)
+   - src/components/LoginPage.jsx (Passwordless Email OTP login)
    ============================================================ */
-function AuthCallbackPage({ onLogin }) {
-  const navigate = useNavigate()
-  const [error, setError] = useState('')
-  const [processing, setProcessing] = useState(true)
-  const API_BASE = getApiBase()
-
-  useEffect(() => {
-    const handleOAuthCallback = async () => {
-      try {
-        // Get tokens from URL params
-        const params = new URLSearchParams(window.location.search)
-        const accessToken = params.get('access_token')
-        const refreshToken = params.get('refresh_token')
-        const errorParam = params.get('error')
-
-        if (errorParam) {
-          // Handle OAuth errors
-          const errorMessages = {
-            'invalid_state': 'Security verification failed. Please try again.',
-            'oauth_not_configured': 'Google login is not configured.',
-            'token_exchange_failed': 'Failed to complete login. Please try again.',
-            'userinfo_failed': 'Failed to get user info from Google.',
-            'oauth_error': 'An error occurred during login. Please try again.',
-            'no_email': 'No email received from Google.',
-            'account_deactivated': 'Your account has been deactivated.'
-          }
-          setError(errorMessages[errorParam] || 'Login failed. Please try again.')
-          setProcessing(false)
-          return
-        }
-
-        if (!accessToken) {
-          setError('No authentication token received.')
-          setProcessing(false)
-          return
-        }
-
-        // Store tokens
-        localStorage.setItem('ip_sakti_access_token', accessToken)
-        if (refreshToken) {
-          localStorage.setItem('ip_sakti_refresh_token', refreshToken)
-        }
-
-        // Get user info with the token
-        const response = await fetch(`${API_BASE}/api/auth/me`, {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`
-          }
-        })
-
-        if (response.ok) {
-          const user = await response.json()
-          localStorage.setItem('ip_sakti_user', JSON.stringify(user))
-          
-          // Trigger login
-          onLogin(user.email, user.full_name || user.email.split('@')[0])
-          
-          // Redirect to home
-          navigate('/')
-        } else {
-          setError('Failed to verify login. Please try again.')
-          setProcessing(false)
-        }
-      } catch (err) {
-        console.error('Auth callback error:', err)
-        setError('An error occurred. Please try again.')
-        setProcessing(false)
-      }
-    }
-
-    handleOAuthCallback()
-  }, [navigate, onLogin])
-
-  if (processing) {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(135deg, #1a472a 0%, #2d5a3d 50%, #1a472a 100%)',
-        color: 'white',
-        fontFamily: 'system-ui, -apple-system, sans-serif'
-      }}>
-        <div style={{
-          width: '60px',
-          height: '60px',
-          border: '4px solid rgba(255,255,255,0.3)',
-          borderTop: '4px solid #d4af37',
-          borderRadius: '50%',
-          animation: 'spin 1s linear infinite',
-          marginBottom: '24px'
-        }} />
-        <h2 style={{ margin: 0, fontSize: '1.5rem' }}>Completing sign in...</h2>
-        <p style={{ opacity: 0.8, marginTop: '8px' }}>Please wait</p>
-        <style>{`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}</style>
-      </div>
-    )
-  }
-
-  // Error state
-  return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'linear-gradient(135deg, #1a472a 0%, #2d5a3d 50%, #1a472a 100%)',
-      color: 'white',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
-      padding: '20px'
-    }}>
-      <div style={{
-        background: 'rgba(220, 53, 69, 0.2)',
-        border: '1px solid rgba(220, 53, 69, 0.5)',
-        borderRadius: '12px',
-        padding: '24px 32px',
-        textAlign: 'center',
-        maxWidth: '400px'
-      }}>
-        <div style={{ fontSize: '3rem', marginBottom: '16px' }}>⚠️</div>
-        <h2 style={{ margin: '0 0 12px 0', fontSize: '1.25rem' }}>Login Failed</h2>
-        <p style={{ opacity: 0.9, margin: '0 0 24px 0' }}>{error}</p>
-        <button
-          onClick={() => navigate('/login')}
-          style={{
-            background: '#d4af37',
-            color: '#1a472a',
-            border: 'none',
-            borderRadius: '8px',
-            padding: '12px 32px',
-            fontSize: '1rem',
-            fontWeight: '600',
-            cursor: 'pointer'
-          }}
-        >
-          Back to Login
-        </button>
-      </div>
-    </div>
-  )
-}
-
-/* ============================================================
-   LOGIN PAGE
-   ============================================================ */
-function LoginPage({ theme, toggleTheme, fontSize, setFontSize, onLogin }) {
-  const { t } = useLanguage()
-  const navigate = useNavigate()
-  const location = useLocation()
-  const [isRegister, setIsRegister] = useState(() => {
-    try {
-      const params = new URLSearchParams(window.location.search)
-      return params.get('mode') === 'register' || params.get('register') === 'true'
-    } catch {
-      return false
-    }
-  })
-
-  useEffect(() => {
-    const params = new URLSearchParams(location.search)
-    if (params.get('mode') === 'register' || params.get('register') === 'true' || location.state?.register === true) {
-      setIsRegister(true)
-    } else if (params.get('mode') === 'login' || location.state?.register === false) {
-      setIsRegister(false)
-    }
-  }, [location.search, location.state])
-
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [fullName, setFullName] = useState('')
-  const [organization, setOrganization] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
-  
-  // Password strength state
-  const [passwordStrength, setPasswordStrength] = useState({ score: 0, feedback: [], isValid: false })
-  const [showStrengthMeter, setShowStrengthMeter] = useState(false)
-
-  // Theme props available for future use
-  void theme; void toggleTheme; void fontSize; void setFontSize;
-
-  // Password strength checker
-  const checkPasswordStrength = (pwd) => {
-    const feedback = []
-    let score = 0
-    
-    if (pwd.length >= 8) score += 1
-    else feedback.push('At least 8 characters')
-    
-    if (pwd.length >= 12) score += 1
-    
-    if (/[A-Z]/.test(pwd)) score += 1
-    else feedback.push('At least 1 uppercase letter')
-    
-    if (/[a-z]/.test(pwd)) score += 1
-    else feedback.push('At least 1 lowercase letter')
-    
-    if (/\d/.test(pwd)) score += 1
-    else feedback.push('At least 1 number')
-    
-    if (/[!@#$%^&*(),.?":{}|<>\-_=+\[\]\\;'`~]/.test(pwd)) score += 1
-    else feedback.push('At least 1 special character')
-    
-    const commonPatterns = ['password', '123456', 'qwerty', 'abc123', 'letmein', 'welcome', 'admin']
-    if (commonPatterns.some(p => pwd.toLowerCase().includes(p))) {
-      feedback.push('Avoid common patterns')
-      score = Math.max(0, score - 2)
-    }
-    
-    return { score: Math.min(5, score), feedback, isValid: feedback.length === 0 }
-  }
-
-  const handlePasswordChange = (e) => {
-    const pwd = e.target.value
-    setPassword(pwd)
-    if (isRegister && pwd) {
-      setShowStrengthMeter(true)
-      setPasswordStrength(checkPasswordStrength(pwd))
-    } else {
-      setShowStrengthMeter(false)
-    }
-  }
-
-  const getStrengthLabel = (score) => {
-    if (score <= 1) return { label: 'Weak', color: '#ef4444' }
-    if (score <= 2) return { label: 'Fair', color: '#f97316' }
-    if (score <= 3) return { label: 'Good', color: '#eab308' }
-    if (score <= 4) return { label: 'Strong', color: '#22c55e' }
-    return { label: 'Very Strong', color: '#10b981' }
-  }
-
-  const API_BASE = getApiBase()
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError('')
-    setSuccess('')
-    setIsLoading(true)
-
-    // Validate password strength for registration
-    if (isRegister && !passwordStrength.isValid) {
-      setError('Please fix password issues: ' + passwordStrength.feedback.join(', '))
-      setIsLoading(false)
-      return
-    }
-
-    try {
-      const endpoint = isRegister ? '/api/auth/signup' : '/api/auth/login'
-      const payload = isRegister 
-        ? { email, password, full_name: fullName, organization: organization || null }
-        : { email, password }
-
-      const response = await fetch(`${API_BASE}${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.detail || 'Authentication failed')
-      }
-
-      // Store tokens and user data
-      localStorage.setItem('ip_sakti_access_token', data.tokens.access_token)
-      localStorage.setItem('ip_sakti_refresh_token', data.tokens.refresh_token)
-      localStorage.setItem('ip_sakti_user', JSON.stringify(data.user))
-      
-      // Call the onLogin callback
-      onLogin(data.user.email, data.user.full_name)
-      
-      setSuccess(data.message)
-      
-      // Navigate after short delay
-      setTimeout(() => navigate('/'), 1000)
-      
-    } catch (err) {
-      console.error('Auth error:', err)
-      // Provide user-friendly error messages
-      if (err.message === 'Failed to fetch' || err.name === 'TypeError') {
-        setError('Cannot connect to server. Please make sure the backend is running on port 8000.')
-      } else {
-        setError(err.message || 'Something went wrong. Please try again.')
-      }
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleSocialLogin = async (provider) => {
-    if (provider === 'apple') {
-      setError('Apple login coming soon! Please use Google or email/password for now.')
-      return
-    }
-    
-    // Google OAuth
-    setIsLoading(true)
-    setError('')
-    
-    try {
-      // Get OAuth URL from backend
-      const response = await fetch(`${API_BASE}/api/auth/google/url`)
-      
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.detail || 'Failed to initiate Google login')
-      }
-      
-      const data = await response.json()
-      
-      // Redirect to Google OAuth consent screen
-      window.location.href = data.url
-    } catch (err) {
-      console.error('Google OAuth error:', err)
-      if (err.message.includes('Failed to fetch')) {
-        setError('Backend not running. Start it with: python -m uvicorn app.main:app --reload --port 8000')
-      } else {
-        setError(err.message || 'Failed to start Google login. Please try email/password.')
-      }
-      setIsLoading(false)
-    }
-  }
-
-  // Password strength meter component
-  const PasswordStrengthMeter = () => {
-    if (!showStrengthMeter || !password) return null
-    
-    const { label, color } = getStrengthLabel(passwordStrength.score)
-    const percentage = (passwordStrength.score / 5) * 100
-    
-    return (
-      <div className="password-strength-meter">
-        <div className="strength-bar-container">
-          <div 
-            className="strength-bar-fill" 
-            style={{ width: `${percentage}%`, backgroundColor: color }}
-          />
-        </div>
-        <div className="strength-info">
-          <span className="strength-label" style={{ color }}>{label}</span>
-          {passwordStrength.feedback.length > 0 && (
-            <ul className="strength-feedback">
-              {passwordStrength.feedback.map((item, i) => (
-                <li key={i} className="feedback-item">
-                  <span className="feedback-x">✕</span> {item}
-                </li>
-              ))}
-            </ul>
-          )}
-          {passwordStrength.isValid && (
-            <div className="strength-valid">
-              <span className="feedback-check">✓</span> Password meets all requirements
-            </div>
-          )}
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="login-page">
-      <div className="login-container">
-        {/* Left Panel - Branding */}
-        <div className="login-branding">
-          <div className="login-brand-content">
-            <Link to="/" className="login-logo">
-              <IpSaktiLogo className="login-logo-svg" size={64} />
-              <span className="login-logo-text">IP-SAKTI Sahayak</span>
-            </Link>
-
-            <h1 className="login-brand-title">
-              {t('heroSubtitle')}
-            </h1>
-
-            <div className="login-features">
-              <div className="login-feature">
-                <span className="login-feature-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><IconCheck size={14} /></span>
-                <span>{t('zeroHallucination')}</span>
-              </div>
-              <div className="login-feature">
-                <span className="login-feature-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><IconCheck size={14} /></span>
-                <span>{t('sourceCited')}</span>
-              </div>
-              <div className="login-feature">
-                <span className="login-feature-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><IconCheck size={14} /></span>
-                <span>{t('multiLanguage')}</span>
-              </div>
-            </div>
-
-            <div className="login-govt-badge">
-              <span style={{ display: 'flex' }}><IconGovt size={16} /></span>
-              <span>{t('ministry')} · {t('govtOf')}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Panel - Form */}
-        <div className="login-form-panel">
-          <div className="login-form-container">
-            <div className="login-form-header">
-              <h2>{isRegister ? t('registerTitle') : t('loginTitle')}</h2>
-              <p>{isRegister ? t('registerSubtitle') : t('loginSubtitle')}</p>
-            </div>
-
-            {/* Google Login Button - Full Width Premium Style */}
-            <button
-              type="button"
-              className="login-google-btn-premium"
-              onClick={() => handleSocialLogin('google')}
-              disabled={isLoading}
-            >
-              <svg viewBox="0 0 24 24" width="20" height="20">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-              </svg>
-              <span>{t('loginWithGoogle')}</span>
-            </button>
-
-            {/* Divider */}
-            <div className="login-divider">
-              <span>{t('orContinueWith')}</span>
-            </div>
-
-            {/* Error/Success Messages */}
-            {error && <div className="login-error">{error}</div>}
-            {success && <div className="login-success">{success}</div>}
-
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="login-form">
-              {isRegister && (
-                <div className="login-field">
-                  <label htmlFor="fullName">{t('fullNameLabel')}</label>
-                  <input
-                    type="text"
-                    id="fullName"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder={t('fullNamePlaceholder')}
-                    required={isRegister}
-                    disabled={isLoading}
-                  />
-                </div>
-              )}
-
-              {isRegister && (
-                <div className="login-field">
-                  <label htmlFor="organization">Organization (Optional)</label>
-                  <input
-                    type="text"
-                    id="organization"
-                    value={organization}
-                    onChange={(e) => setOrganization(e.target.value)}
-                    placeholder="Company, University, or Firm"
-                    disabled={isLoading}
-                  />
-                </div>
-              )}
-
-              <div className="login-field">
-                <label htmlFor="email">{t('emailLabel')}</label>
-                <input
-                  type="email"
-                  id="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder={t('emailPlaceholder')}
-                  required
-                  disabled={isLoading}
-                  aria-label={t('emailLabel')}
-                />
-              </div>
-
-              <div className="login-field">
-                <label htmlFor="password">{t('passwordLabel')}</label>
-                <div className="login-password-wrap">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    id="password"
-                    value={password}
-                    onChange={handlePasswordChange}
-                    placeholder={isRegister ? 'Min 8 chars, upper, lower, number, special' : t('passwordPlaceholder')}
-                    required
-                    disabled={isLoading}
-                    aria-label={t('passwordLabel')}
-                    minLength={isRegister ? 8 : undefined}
-                  />
-                  <button
-                    type="button"
-                    className="login-password-toggle"
-                    onClick={() => setShowPassword(!showPassword)}
-                    aria-label={showPassword ? t('hidePassword') : t('showPassword')}
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                  >
-                    {showPassword ? <IconEyeOff size={16} /> : <IconEye size={16} />}
-                  </button>
-                </div>
-                <PasswordStrengthMeter />
-              </div>
-
-              {!isRegister && (
-                <a href="#" className="login-forgot">{t('forgotPassword')}</a>
-              )}
-
-              <button
-                type="submit"
-                className="login-submit-btn"
-                disabled={isLoading}
-              >
-                {isLoading
-                  ? (isRegister ? t('creating') : t('signingIn'))
-                  : (isRegister ? t('registerButton') : t('signInButton'))
-                }
-              </button>
-            </form>
-
-            {/* Toggle */}
-            <div className="login-toggle">
-              <span>{isRegister ? t('haveAccount') : t('noAccount')}</span>
-              <button
-                type="button"
-                onClick={() => { setIsRegister(!isRegister); setError(''); setSuccess(''); }}
-              >
-                {isRegister ? t('signInHere') : t('registerHere')}
-              </button>
-            </div>
-
-            {/* Terms */}
-            <p className="login-terms">
-              {t('termsNote')} <Link to="/privacy">{t('termsLink')}</Link> {t('andText')} <Link to="/privacy">{t('privacyLink')}</Link>
-            </p>
-
-            {/* Security Badge */}
-            <div className="login-security" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-              <IconLock size={14} />
-              <span>{t('secureLogin')}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 /* ============================================================
    PROTECTED ROUTE COMPONENT
    ============================================================ */
-function ProtectedRoute({ children, isLoggedIn }) {
+function ProtectedRoute({ children, isLoggedIn: propLoggedIn }) {
   const { t } = useLanguage()
+  let auth = null
+  try {
+    auth = useAuth()
+  } catch {
+    auth = null
+  }
 
-  if (!isLoggedIn) {
+  const authenticated = auth ? auth.isLoggedIn : Boolean(propLoggedIn)
+  const loading = auth ? auth.loading : false
+
+  if (loading) {
+    return (
+      <div className="protected-route-loading" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div className="gov-spinner" style={{ width: 40, height: 40, border: '3px solid rgba(22, 101, 52, 0.2)', borderTopColor: '#15803d', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 16px' }} />
+          <p style={{ color: '#475569', fontSize: '0.9rem' }}>Verifying session...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!authenticated) {
     return (
       <div className="protected-route-message">
         <div className="protected-content">
           <span className="protected-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
             <IconLock size={32} />
           </span>
-          <h2>{t('loginTitle')}</h2>
-          <p>Please login to access the AI consultation feature.</p>
+          <h2>{t('loginTitle') || 'Sign In Required'}</h2>
+          <p>Please enter your email to receive a secure one-time passcode (OTP) and continue.</p>
           <Link to="/login" className="btn-primary">
-            {t('loginOrRegister')} →
+            {t('loginOrRegister') || 'Continue to Sign In'} →
           </Link>
         </div>
       </div>
@@ -10015,10 +8812,13 @@ function ProtectedRoute({ children, isLoggedIn }) {
 /* ============================================================
    APP SHELL — Sidebar + Content Layout
    ============================================================ */
-function AppShell({ children, isLoggedIn, userName, onOpenAbout, onLogout }) {
+function AppShell({ children, isLoggedIn, userName, userEmail, onOpenAbout, onLogout, onSwitchAccount }) {
   const { lang, setLang, languages } = useLanguage()
   const location = useLocation()
   const navigate = useNavigate()
+  const [isMobile, setIsMobile] = useState(() => (
+    typeof window !== 'undefined' && window.innerWidth <= 768
+  ))
 
   // Track sidebar hidden state (synced with RagvynSidebar via custom event)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -10046,10 +8846,18 @@ function AppShell({ children, isLoggedIn, userName, onOpenAbout, onLogout }) {
     }
   }, [])
 
+  // Keep shell layout and the desktop toggle in sync when the viewport changes.
+  useEffect(() => {
+    const updateViewport = () => setIsMobile(window.innerWidth <= 768)
+    updateViewport()
+    window.addEventListener('resize', updateViewport)
+    return () => window.removeEventListener('resize', updateViewport)
+  }, [])
+
   // Keep the application shell available on the landing page as well.
   // Login and auth callback remain distraction-free and outside the app shell.
   const hideSidebar = location.pathname === '/login' || location.pathname === '/auth/callback'
-  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768
+  const hideFooter = location.pathname === '/login' || location.pathname === '/auth/callback' || location.pathname === '/chat'
 
   const handleNewChat = () => {
     navigate('/chat', { state: { newChat: true } })
@@ -10101,7 +8909,18 @@ function AppShell({ children, isLoggedIn, userName, onOpenAbout, onLogout }) {
           !hideSidebar && !isMobile && sidebarCollapsed ? 'ragvyn-app-content--sidebar-collapsed' : '',
         ].filter(Boolean).join(' ')}
       >
-        {children}
+        <div className="ragvyn-shell-flow">
+          <div className="ragvyn-shell-main">
+            {children}
+          </div>
+          {!hideFooter && (
+            <SiteFooter
+              isLoggedIn={isLoggedIn}
+              userName={userName}
+              onOpenAbout={onOpenAbout}
+            />
+          )}
+        </div>
       </div>
     </>
   )
@@ -10110,39 +8929,16 @@ function AppShell({ children, isLoggedIn, userName, onOpenAbout, onLogout }) {
 /* ============================================================
    MAIN APP ROUTER
    ============================================================ */
-export default function App() {
+/* ============================================================
+   MAIN APP ROUTER CONTENT
+   ============================================================ */
+function AppContent() {
   const [isAboutOpen, setIsAboutOpen] = useState(false)
   const [isWizardOpen, setIsWizardOpen] = useState(false)
   const [prefillPrompt, setPrefillPrompt] = useState('')
   const { theme, toggleTheme } = useTheme()
   const { fontSize, setFontSize } = useFontSize()
-
-  // Authentication state
-  const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    return localStorage.getItem('ip_sakti_logged_in') === 'true'
-  })
-  const [userName, setUserName] = useState(() => {
-    return localStorage.getItem('ip_sakti_user_name') || ''
-  })
-
-  const handleLogin = (email, name) => {
-    setIsLoggedIn(true)
-    setUserName(name)
-    localStorage.setItem('ip_sakti_logged_in', 'true')
-    localStorage.setItem('ip_sakti_user_name', name)
-  }
-
-  const handleLogout = () => {
-    setIsLoggedIn(false)
-    setUserName('')
-    localStorage.removeItem('ip_sakti_logged_in')
-    localStorage.removeItem('ip_sakti_user_name')
-    localStorage.removeItem('ip_sakti_access_token')
-    localStorage.removeItem('ip_sakti_refresh_token')
-    localStorage.removeItem('ip_sakti_user')
-    localStorage.removeItem('ip_sakti_logged_in')
-    localStorage.removeItem('ip_sakti_user_name')
-  }
+  const { isLoggedIn, userName, userEmail, signOut, switchAccount } = useAuth()
 
   const handleAskChatFromWizard = (prompt) => {
     setPrefillPrompt(prompt)
@@ -10150,23 +8946,24 @@ export default function App() {
   }
 
   return (
-    <LanguageProvider>
-      <BrowserRouter>
-        <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
-        <AccessibilityPanel hideFab={true} />
-        <FormulationWizardModal
-          isOpen={isWizardOpen}
-          onClose={() => setIsWizardOpen(false)}
-          onAskChat={handleAskChatFromWizard}
-        />
+    <BrowserRouter>
+      <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
+      <AccessibilityPanel hideFab={true} />
+      <FormulationWizardModal
+        isOpen={isWizardOpen}
+        onClose={() => setIsWizardOpen(false)}
+        onAskChat={handleAskChatFromWizard}
+      />
 
-        <AppShell
-          isLoggedIn={isLoggedIn}
-          userName={userName}
-          onLogout={handleLogout}
-          onOpenAbout={() => setIsAboutOpen(true)}
-        >
-          <Routes>
+      <AppShell
+        isLoggedIn={isLoggedIn}
+        userName={userName}
+        userEmail={userEmail}
+        onLogout={signOut}
+        onSwitchAccount={switchAccount}
+        onOpenAbout={() => setIsAboutOpen(true)}
+      >
+        <Routes>
           <Route
             path="/"
             element={
@@ -10180,7 +8977,9 @@ export default function App() {
                 setPrefillPrompt={setPrefillPrompt}
                 isLoggedIn={isLoggedIn}
                 userName={userName}
-                onLogout={handleLogout}
+                userEmail={userEmail}
+                onLogout={signOut}
+                onSwitchAccount={switchAccount}
               />
             }
           />
@@ -10280,7 +9079,9 @@ export default function App() {
                 setFontSize={setFontSize}
                 isLoggedIn={isLoggedIn}
                 userName={userName}
-                onLogout={handleLogout}
+                userEmail={userEmail}
+                onLogout={signOut}
+                onSwitchAccount={switchAccount}
               />
             }
           />
@@ -10292,7 +9093,6 @@ export default function App() {
                 toggleTheme={toggleTheme}
                 fontSize={fontSize}
                 setFontSize={setFontSize}
-                onLogin={handleLogin}
               />
             }
           />
@@ -10309,7 +9109,9 @@ export default function App() {
                   setFontSize={setFontSize}
                   isLoggedIn={isLoggedIn}
                   userName={userName}
-                  onLogout={handleLogout}
+                  userEmail={userEmail}
+                  onLogout={signOut}
+                  onSwitchAccount={switchAccount}
                 />
               </ProtectedRoute>
             }
@@ -10327,7 +9129,9 @@ export default function App() {
                   setFontSize={setFontSize}
                   isLoggedIn={isLoggedIn}
                   userName={userName}
-                  onLogout={handleLogout}
+                  userEmail={userEmail}
+                  onLogout={signOut}
+                  onSwitchAccount={switchAccount}
                 />
               </ProtectedRoute>
             }
@@ -10335,8 +9139,12 @@ export default function App() {
           <Route
             path="/auth/callback"
             element={
-              <AuthCallbackPage onLogin={handleLogin} />
+              <AuthCallbackPage />
             }
+          />
+          <Route
+            path="/auth"
+            element={<Navigate to="/login" replace />}
           />
           <Route
             path="/patentability"
@@ -10380,7 +9188,9 @@ export default function App() {
                 setFontSize={setFontSize}
                 isLoggedIn={isLoggedIn}
                 userName={userName}
-                onLogout={handleLogout}
+                userEmail={userEmail}
+                onLogout={signOut}
+                onSwitchAccount={switchAccount}
               />
             }
           />
@@ -10404,6 +9214,12 @@ export default function App() {
               />
             }
           />
+          <Route
+            path="/sitemap"
+            element={
+              <SitemapPage />
+            }
+          />
           {/* Legacy route redirects */}
           <Route path="/agent" element={<Navigate to="/formulation-wizard" replace />} />
           <Route path="/customize" element={<Navigate to="/abs-checker" replace />} />
@@ -10412,6 +9228,18 @@ export default function App() {
         </Routes>
       </AppShell>
     </BrowserRouter>
-  </LanguageProvider>
-)
+  )
+}
+
+/* ============================================================
+   MAIN APP ROUTER ROOT
+   ============================================================ */
+export default function App() {
+  return (
+    <LanguageProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </LanguageProvider>
+  )
 }

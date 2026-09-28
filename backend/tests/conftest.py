@@ -3,13 +3,14 @@ backend/tests/conftest.py
 -------------------------
 Pytest configuration hooks and session fixtures for test isolation.
 Runs BEFORE any test modules are collected or imported to ensure:
-- ChromaDB is cloned into an isolated temporary directory.
-- SQLite database is cloned into an isolated temporary database.
-- Production/development files (chroma_db, ip_sakti.db, bm25_index.pkl) are NEVER modified by test runs.
+- An isolated ephemeral SQLite database is created in a temporary directory for unit testing.
+- Singletons and settings target this isolated test environment.
+- Production and development databases are never modified by test runs.
 """
 
 import os
 import shutil
+import sys
 import tempfile
 from pathlib import Path
 import pytest
@@ -17,6 +18,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
+
 _ISOLATION_CONTEXT = {}
 
 
@@ -27,30 +31,58 @@ def pytest_configure(config):
     singletons (like settings, database engines, or vector stores) initialize.
     """
     temp_dir = Path(tempfile.mkdtemp(prefix="ip_sakti_test_"))
-    temp_chroma_dir = temp_dir / "chroma_db"
     temp_sqlite_path = temp_dir / "ip_sakti_test.db"
     test_db_url = f"sqlite:///{temp_sqlite_path}"
-    
-    # 1. Copy real ChromaDB if present
-    real_chroma_dir = BACKEND_DIR / "chroma_db"
-    if real_chroma_dir.exists():
-        shutil.copytree(str(real_chroma_dir), str(temp_chroma_dir))
-    else:
-        temp_chroma_dir.mkdir(parents=True, exist_ok=True)
-        
-    # 2. Copy real SQLite DB if present
-    real_sqlite_path = BACKEND_DIR / "ip_sakti.db"
-    if real_sqlite_path.exists():
-        shutil.copy2(str(real_sqlite_path), str(temp_sqlite_path))
 
-    # 3. Export environment variables before settings/modules are imported
-    os.environ["CHROMA_DB_DIR"] = str(temp_chroma_dir)
+    # Export environment variables before settings/modules are imported
     os.environ["DATABASE_URL"] = test_db_url
+    os.environ["RETRIEVAL_BACKEND"] = "qdrant_hybrid"
+    os.environ["ENABLE_LOCAL_BGE_PRELOAD"] = "false"
+    os.environ["ENABLE_CROSS_ENCODER"] = "false"
+
+    from app.core.config import settings
+    settings.DATABASE_URL = test_db_url
+    settings.RETRIEVAL_BACKEND = "qdrant_hybrid"
+    settings.ENABLE_LOCAL_BGE_PRELOAD = False
+    settings.ENABLE_CROSS_ENCODER = False
+
+    test_engine = create_engine(
+        test_db_url,
+        connect_args={"check_same_thread": False},
+        echo=False,
+    )
+    TestSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
+
+    import app.models.database as app_database
+    import app.services.audit_service as audit_service
+
+    app_database.engine = test_engine
+    app_database.SessionLocal = TestSessionLocal
+    app_database.DATABASE_URL = test_db_url
+
+    audit_service.engine = test_engine
+    audit_service.SessionLocal = TestSessionLocal
+
+    try:
+        from unittest.mock import MagicMock
+        from app.services.qdrant_service import qdrant_service
+        from app.core.models import model_registry
+        qdrant_service.ensure_collections = MagicMock(return_value={
+            "india_statutes": "exists",
+            "international_treaties": "exists",
+            "user_uploads": "exists",
+        })
+        model_registry.load_models = MagicMock(return_value=None)
+    except Exception:
+        pass
+
+    app_database.init_db(test_engine)
 
     _ISOLATION_CONTEXT["temp_dir"] = temp_dir
-    _ISOLATION_CONTEXT["chroma_dir"] = temp_chroma_dir
     _ISOLATION_CONTEXT["sqlite_path"] = temp_sqlite_path
     _ISOLATION_CONTEXT["test_db_url"] = test_db_url
+    _ISOLATION_CONTEXT["test_engine"] = test_engine
+    _ISOLATION_CONTEXT["TestSessionLocal"] = TestSessionLocal
 
 
 def pytest_unconfigure(config):
@@ -67,21 +99,12 @@ def apply_runtime_test_patches():
     database engines, sessionmakers, and vector stores target the isolated test environment.
     """
     test_db_url = _ISOLATION_CONTEXT.get("test_db_url")
-    temp_chroma_dir = _ISOLATION_CONTEXT.get("chroma_dir")
+    test_engine = _ISOLATION_CONTEXT.get("test_engine")
+    TestSessionLocal = _ISOLATION_CONTEXT.get("TestSessionLocal")
 
-    test_engine = create_engine(
-        test_db_url,
-        connect_args={"check_same_thread": False},
-        echo=False,
-    )
-    TestSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
-
-    # Patch settings
     from app.core.config import settings
-    settings.CHROMA_DB_DIR = str(temp_chroma_dir)
     settings.DATABASE_URL = test_db_url
 
-    # Patch database engines and sessionmakers
     import app.models.database as app_database
     import app.services.audit_service as audit_service
 
@@ -91,20 +114,5 @@ def apply_runtime_test_patches():
 
     audit_service.engine = test_engine
     audit_service.SessionLocal = TestSessionLocal
-
-    # Patch documents router if already loaded
-    try:
-        import app.routers.documents as docs_router
-        docs_router.CHROMA_DB_PATH = str(temp_chroma_dir)
-        docs_router._chroma_client = None
-    except Exception:
-        pass
-
-    # Patch unified vector store if loaded
-    try:
-        from app.services.patentability.vector_store import unified_vector_store
-        unified_vector_store.chroma_path = str(temp_chroma_dir)
-    except Exception:
-        pass
 
     yield _ISOLATION_CONTEXT

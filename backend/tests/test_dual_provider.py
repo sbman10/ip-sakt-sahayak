@@ -44,6 +44,7 @@ from app.services.llm_providers.base import (
 )
 from app.services.llm_providers.cerebras_provider import CerebrasProvider
 from app.services.llm_providers.gemini_provider import GeminiProvider
+from app.services.llm_providers.groq_provider import GroqProvider
 from app.services.llm_providers.orchestrator import DualProviderOrchestrator, _trim_to_sentence_boundary
 
 
@@ -254,11 +255,13 @@ async def test_missing_gemini_key_graceful_fallback():
 
 @pytest.mark.anyio
 async def test_both_keys_missing_fails_at_request_time():
-    """If both keys are missing, generation returns degraded status without startup crash."""
+    """If all keys are missing, generation returns degraded status without startup crash."""
+    groq_mock = MockProvider("groq", available=False)
     cerebras_mock = MockProvider("cerebras", available=False)
     gemini_mock = MockProvider("gemini", available=False)
 
     orchestrator = DualProviderOrchestrator(
+        groq_provider=groq_mock,
         cerebras_provider=cerebras_mock,
         gemini_provider=gemini_mock,
     )
@@ -535,14 +538,66 @@ def test_api_keys_not_in_logs_or_responses():
     diag_str = str(diag)
 
     # Check that boolean presence flags are used instead of key strings
+    assert "groq_key_present" in diag
     assert "cerebras_key_present" in diag
     assert "gemini_key_present" in diag
+    assert "GROQ_API_KEY" not in diag
     assert "CEREBRAS_API_KEY" not in diag
     assert "GEMINI_API_KEY" not in diag
 
     # Simulated secret
-    secret = "sk-cerebras-super-secret-key-12345"
-    with patch.object(settings, "CEREBRAS_API_KEY", secret):
+    secret = "gsk_super_secret_groq_key_12345"
+    with patch.object(settings, "GROQ_API_KEY", secret):
         clean_diag = get_llm_diagnostics()
         assert secret not in str(clean_diag)
-        assert clean_diag["cerebras_key_present"] is True
+        assert clean_diag["groq_key_present"] is True
+
+
+# ============================================================================
+# 18. Groq Provider Specific Tests
+# ============================================================================
+
+@pytest.mark.anyio
+async def test_groq_only_operation():
+    """Verify operation when Groq is the primary provider."""
+    groq_mock = MockProvider(
+        "groq",
+        available=True,
+        generate_response=LLMResponse(
+            text="Precise answer from Groq LLM.",
+            provider="groq",
+            model="openai/gpt-oss-120b",
+        ),
+    )
+    orchestrator = DualProviderOrchestrator(groq_provider=groq_mock)
+
+    with patch.object(settings, "LLM_PRIMARY_PROVIDER", "groq"):
+        resp = await orchestrator.generate_answer("System", "User")
+        assert resp.provider == "groq"
+        assert resp.text == "Precise answer from Groq LLM."
+        assert resp.status == "answered"
+        assert groq_mock.generate_call_count == 1
+
+
+def test_groq_streaming_success():
+    """Verify streaming token delivery via Groq."""
+    groq_mock = MockProvider(
+        "groq",
+        available=True,
+        stream_tokens=["Section ", "3(p) ", "prohibits ", "patents."],
+    )
+    orchestrator = DualProviderOrchestrator(groq_provider=groq_mock)
+
+    with patch.object(settings, "LLM_PRIMARY_PROVIDER", "groq"):
+        tokens = list(orchestrator.stream_answer("System", "User"))
+        assert tokens == ["Section ", "3(p) ", "prohibits ", "patents."]
+        assert groq_mock.stream_call_count == 1
+
+
+def test_groq_provider_adapter_properties():
+    """Verify GroqProvider initialization and attributes."""
+    provider = GroqProvider(api_key="gsk_test123", model="openai/gpt-oss-120b")
+    assert provider.name == "groq"
+    assert provider.default_model == "openai/gpt-oss-120b"
+    assert provider.is_available is True
+

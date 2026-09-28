@@ -110,7 +110,8 @@ def test_no_retry_on_429():
     mock_client = MagicMock()
     mock_client.models.generate_content.side_effect = Exception("429 RESOURCE_EXHAUSTED: Quota exceeded")
 
-    with patch.object(settings, "LLM_PRIMARY_PROVIDER", "gemini"), \
+    with patch.object(settings, "GEMINI_API_KEY", "fake-key"), \
+         patch.object(settings, "LLM_PRIMARY_PROVIDER", "gemini"), \
          patch.object(settings, "LLM_FALLBACK_PROVIDER", "gemini"):
         with patch("app.services.llm._get_client_and_key", return_value=(mock_client, "fake-key-123")):
             with patch("app.services.llm.key_manager.mark_rate_limited") as mock_mark:
@@ -129,7 +130,8 @@ def test_single_retry_on_503():
     mock_client = MagicMock()
     mock_client.models.generate_content.side_effect = Exception("503 Service Unavailable: High load")
 
-    with patch.object(settings, "LLM_PRIMARY_PROVIDER", "gemini"), \
+    with patch.object(settings, "GEMINI_API_KEY", "fake-key"), \
+         patch.object(settings, "LLM_PRIMARY_PROVIDER", "gemini"), \
          patch.object(settings, "LLM_FALLBACK_PROVIDER", "gemini"):
         with patch("app.services.llm._get_client_and_key", return_value=(mock_client, "fake-key-123")):
             with patch("time.sleep") as mock_sleep:
@@ -168,19 +170,22 @@ def test_finish_reason_max_tokens_truncation():
     mock_client = MagicMock()
     mock_client.models.generate_content.return_value = mock_response
 
-    with patch("app.services.llm._get_client_and_key", return_value=(mock_client, "fake-key-123")):
-        result = generate_grounded_answer(
-            question="Explain Section 3(p).",
-            context="[SRC-001] Text",
-            answer_mode="brief",
-        )
+    with patch.object(settings, "GEMINI_API_KEY", "fake-key"), \
+         patch.object(settings, "LLM_PRIMARY_PROVIDER", "gemini"), \
+         patch.object(settings, "LLM_FALLBACK_PROVIDER", "gemini"):
+        with patch("app.services.llm._get_client_and_key", return_value=(mock_client, "fake-key-123")):
+            result = generate_grounded_answer(
+                question="Explain Section 3(p).",
+                context="[SRC-001] Text",
+                answer_mode="brief",
+            )
 
-        assert isinstance(result, GroundedAnswerText)
-        assert result.completed is False
-        assert result.finish_reason == "MAX_TOKENS"
-        assert "[The answer was shortened by the generation limit. Please ask for a shorter answer.]" in result
-        assert "Extra words cut of" not in result
-        assert "An applicant cannot claim known formulations." in result
+            assert isinstance(result, GroundedAnswerText)
+            assert result.completed is False
+            assert result.finish_reason == "MAX_TOKENS"
+            assert "[The answer was shortened by the generation limit. Please ask for a shorter answer.]" in result
+            assert "Extra words cut of" not in result
+            assert "An applicant cannot claim known formulations." in result
 
 
 def test_finish_reason_stop_normal():
@@ -195,17 +200,20 @@ def test_finish_reason_stop_normal():
     mock_client = MagicMock()
     mock_client.models.generate_content.return_value = mock_response
 
-    with patch("app.services.llm._get_client_and_key", return_value=(mock_client, "fake-key-123")):
-        result = generate_grounded_answer(
-            question="Explain Section 3(p).",
-            context="[SRC-001] Text",
-        )
+    with patch.object(settings, "GEMINI_API_KEY", "fake-key"), \
+         patch.object(settings, "LLM_PRIMARY_PROVIDER", "gemini"), \
+         patch.object(settings, "LLM_FALLBACK_PROVIDER", "gemini"):
+        with patch("app.services.llm._get_client_and_key", return_value=(mock_client, "fake-key-123")):
+            result = generate_grounded_answer(
+                question="Explain Section 3(p).",
+                context="[SRC-001] Text",
+            )
 
-        assert isinstance(result, GroundedAnswerText)
-        assert result.completed is True
-        assert result.finish_reason == "STOP"
-        assert "[The answer was shortened" not in result
-        assert result == "This is a full, complete legal response."
+            assert isinstance(result, GroundedAnswerText)
+            assert result.completed is True
+            assert result.finish_reason == "STOP"
+            assert "[The answer was shortened" not in result
+            assert result == "This is a full, complete legal response."
 
 
 # ============================================================================
@@ -273,9 +281,12 @@ def test_streaming_error_raises_exception():
     mock_client = MagicMock()
     mock_client.models.generate_content_stream.side_effect = Exception("Connection reset by peer")
 
-    with patch("app.services.llm._get_client_and_key", return_value=(mock_client, "fake-key-123")):
-        with pytest.raises(GeminiGenerationError):
-            list(stream_grounded_answer(
-                question="Tell me about biological diversity act",
-                context="[SRC-001] Context",
-            ))
+    with patch.object(settings, "GEMINI_API_KEY", "fake-key"), \
+         patch.object(settings, "LLM_PRIMARY_PROVIDER", "gemini"), \
+         patch.object(settings, "LLM_FALLBACK_PROVIDER", "gemini"):
+        with patch("app.services.llm._get_client_and_key", return_value=(mock_client, "fake-key-123")):
+            with pytest.raises(GeminiGenerationError):
+                list(stream_grounded_answer(
+                    question="Tell me about biological diversity act",
+                    context="[SRC-001] Context",
+                ))

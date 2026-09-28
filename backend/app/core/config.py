@@ -11,7 +11,7 @@ import os
 from pathlib import Path
 from typing import List, Optional, Union
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -35,8 +35,8 @@ class Settings(BaseSettings):
     EMBEDDING_PROVIDER: str = "hf_inference"
     HF_TOKEN: str = ""
     HF_EMBEDDING_MODEL: str = "BAAI/bge-m3"
-    HF_INFERENCE_PROVIDER: str = "auto"
-    HF_EMBEDDING_TIMEOUT: float = 60.0
+    HF_INFERENCE_PROVIDER: str = "hf-inference"
+    HF_EMBEDDING_TIMEOUT: float = 90.0
     HF_EMBEDDING_NORMALIZE: bool = True
     LOCAL_BGE_FALLBACK: bool = False
     ENABLE_LOCAL_BGE_PRELOAD: bool = False
@@ -67,12 +67,15 @@ class Settings(BaseSettings):
     QDRANT_CANARY_ENABLED: bool = False
     QDRANT_TRAFFIC_PERCENT: int = 0
 
-    CHROMA_DB_DIR: str = str(_BASE_DIR / "chroma_db")
     BM25_INDEX_PATH: str = str(_BASE_DIR / "bm25_index.pkl")
 
-    # API Keys & LLM settings (Dual-Provider Architecture)
-    LLM_PRIMARY_PROVIDER: str = "gemini"
-    LLM_FALLBACK_PROVIDER: str = "cerebras"
+    # API Keys & LLM settings (Multi-Provider Architecture)
+    LLM_PRIMARY_PROVIDER: str = "groq"
+    LLM_FALLBACK_PROVIDER: str = "groq"
+
+    GROQ_API_KEY: str = ""
+    GROQ_BASE_URL: str = "https://api.groq.com/openai/v1"
+    GROQ_MODEL: str = "openai/gpt-oss-120b"
 
     CEREBRAS_API_KEY: str = ""
     CEREBRAS_BASE_URL: str = "https://api.cerebras.ai/v1"
@@ -81,7 +84,7 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = ""
     GEMINI_API_KEYS: Union[List[str], str] = []
     GEMINI_MODEL: str = "gemini-3.6-flash"
-    PRIMARY_MODEL: str = "gemini-3.6-flash"
+    PRIMARY_MODEL: str = "openai/gpt-oss-120b"
 
     GENERATION_MAX_RETRIES: int = 1
     GENERATION_TIMEOUT_SECONDS: float = 60.0
@@ -97,7 +100,7 @@ class Settings(BaseSettings):
 
     # Intent Classification & Early Routing (Requirement 5: disabled by default in production)
     INTENT_CLASSIFICATION_ENABLED: bool = False
-    INTENT_CLASSIFIER_MODEL: str = "gemini-3.6-flash"
+    INTENT_CLASSIFIER_MODEL: str = "openai/gpt-oss-120b"
     INTENT_CLASSIFIER_TIMEOUT_SECONDS: float = 3.0
     INTENT_CONFIDENCE_THRESHOLD: float = 0.60
 
@@ -122,14 +125,20 @@ class Settings(BaseSettings):
     # override this in the ignored backend/.env file.
     GOOGLE_REDIRECT_URI: str = "https://ragvyn.onrender.com/api/auth/google/callback"
 
-    # Database URLs
-    DATABASE_URL: str = "sqlite:///./ip_sakti.db"
-    AUDIT_DB_PATH: str = str(_BASE_DIR / "audit.db")
+    # Database URLs (Supabase PostgreSQL)
+    DATABASE_URL: str = (
+        "postgresql+psycopg://postgres.dvutvnmskqcrvsjtufwm:ShinraBanshouMan2809@"
+        "aws-0-ap-northeast-2.pooler.supabase.com:5432/postgres"
+    )
 
-    # Supabase PostgreSQL & Storage
-    SUPABASE_URL: str = ""
+    # Supabase PostgreSQL, Auth & Storage
+    SUPABASE_URL: str = "https://dvutvnmskqcrvsjtufwm.supabase.co"
+    SUPABASE_ANON_KEY: str = ""
     SUPABASE_SERVICE_ROLE_KEY: str = ""
     SUPABASE_STORAGE_BUCKET: str = "legal-documents"
+    FRONTEND_URL: str = "https://ragvynai.vercel.app"
+    TESTING: bool = False
+    MOCK_SUPABASE_AUTH: bool = False
 
     # Additional Qdrant collection names used by specialized features.
     QDRANT_INDIA_COLLECTION: str = "india_statutes"
@@ -137,13 +146,15 @@ class Settings(BaseSettings):
     QDRANT_USER_UPLOADS_COLLECTION: str = "user_uploads"
 
     # CORS
-    ALLOWED_ORIGINS: List[str] = [
+    ALLOWED_ORIGINS: Union[List[str], str] = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "http://localhost:5174",
         "http://127.0.0.1:5174",
         "http://localhost:3000",
         "http://127.0.0.1:3000",
+        "https://ragvynai.vercel.app",
+        "https://ragvyn.vercel.app",
     ]
 
     model_config = SettingsConfigDict(
@@ -152,7 +163,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    @field_validator("CHROMA_DB_DIR", "BM25_INDEX_PATH", mode="after")
+    @field_validator("BM25_INDEX_PATH", mode="after")
     @classmethod
     def resolve_paths(cls, v: str) -> str:
         p = Path(v)
@@ -175,11 +186,12 @@ class Settings(BaseSettings):
     @field_validator("RETRIEVAL_BACKEND", mode="after")
     @classmethod
     def validate_retrieval_backend(cls, v: str) -> str:
-        allowed = {"chroma_bm25", "qdrant_hybrid"}
         val_clean = v.strip().lower()
-        if val_clean not in allowed:
+        if val_clean in {"chroma_bm25", "chroma"}:
+            return "qdrant_hybrid"
+        if val_clean != "qdrant_hybrid":
             raise ValueError(
-                f"Invalid RETRIEVAL_BACKEND: '{v}'. Must be one of: {sorted(allowed)}"
+                f"Invalid RETRIEVAL_BACKEND: '{v}'. Must be 'qdrant_hybrid'"
             )
         return val_clean
 
@@ -200,6 +212,52 @@ class Settings(BaseSettings):
             )
         return v
 
+    @field_validator("ALLOWED_ORIGINS", mode="before")
+    @classmethod
+    def parse_allowed_origins(cls, v: Union[str, List[str]], info) -> List[str]:
+        """
+        Safely parse ALLOWED_ORIGINS whether passed as JSON array string,
+        comma-separated string, single origin string, or List[str].
+        """
+        default_origins = [
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "http://localhost:5174",
+            "http://127.0.0.1:5174",
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "https://ragvynai.vercel.app",
+            "https://ragvyn.vercel.app",
+        ]
+        if not v:
+            return default_origins
+        if isinstance(v, str):
+            clean_str = v.strip()
+            # Handle JSON array format e.g. '["http://localhost:5173", "https://ragvynai.vercel.app"]'
+            if clean_str.startswith("[") and clean_str.endswith("]"):
+                try:
+                    import json
+                    parsed = json.loads(clean_str)
+                    if isinstance(parsed, list):
+                        return [str(item).strip() for item in parsed if str(item).strip()]
+                except Exception:
+                    pass
+            # Handle comma or newline separated strings e.g. 'https://ragvynai.vercel.app,http://localhost:5173'
+            origins = [item.strip().strip("'\"") for item in clean_str.replace("\n", ",").split(",") if item.strip()]
+            if "*" in origins:
+                return ["*"]
+            for d in default_origins:
+                if d not in origins:
+                    origins.append(d)
+            return origins
+        elif isinstance(v, list):
+            origins = [str(item).strip() for item in v if str(item).strip()]
+            for d in default_origins:
+                if d not in origins:
+                    origins.append(d)
+            return origins
+        return default_origins
+
     @field_validator("GEMINI_API_KEYS", mode="before")
     @classmethod
     def parse_gemini_api_keys(cls, v: Union[str, List[str]], info) -> List[str]:
@@ -218,11 +276,59 @@ class Settings(BaseSettings):
     @field_validator("LLM_PRIMARY_PROVIDER", "LLM_FALLBACK_PROVIDER", mode="after")
     @classmethod
     def validate_llm_provider(cls, v: str) -> str:
-        allowed = {"gemini", "cerebras"}
+        allowed = {"groq", "gemini", "cerebras"}
         val_clean = v.strip().lower()
         if val_clean not in allowed:
             raise ValueError(f"Invalid LLM provider: '{v}'. Must be one of: {sorted(allowed)}")
         return val_clean
+
+    @field_validator("HF_INFERENCE_PROVIDER", mode="after")
+    @classmethod
+    def validate_hf_inference_provider(cls, v: str) -> str:
+        clean = (v or "").strip().lower()
+        if clean != "hf-inference":
+            raise ValueError(
+                f"Invalid HF_INFERENCE_PROVIDER: '{v}'. Must be exactly 'hf-inference' for Hugging Face free serverless inference."
+            )
+        return "hf-inference"
+
+    @field_validator("HF_EMBEDDING_MODEL", mode="after")
+    @classmethod
+    def validate_hf_embedding_model(cls, v: str) -> str:
+        clean = (v or "").strip()
+        if clean != "BAAI/bge-m3":
+            raise ValueError(
+                f"Invalid HF_EMBEDDING_MODEL: '{v}'. Dense model must remain 'BAAI/bge-m3'."
+            )
+        return clean
+
+    @field_validator("EMBEDDING_PROVIDER", mode="after")
+    @classmethod
+    def validate_embedding_provider(cls, v: str) -> str:
+        clean = (v or "").strip().lower()
+        allowed = {"hf_inference", "local"}
+        if clean not in allowed:
+            raise ValueError(
+                f"Invalid EMBEDDING_PROVIDER: '{v}'. Allowed providers are: {sorted(allowed)}."
+            )
+        return clean
+
+    @model_validator(mode="after")
+    def validate_production_hf_contract(self) -> Settings:
+        env = (self.ENVIRONMENT or "").strip().lower()
+        if env == "production":
+            if not self.HF_TOKEN or not self.HF_TOKEN.strip():
+                raise ValueError("Production environment requires a non-empty HF_TOKEN.")
+            if self.HF_EMBEDDING_MODEL != "BAAI/bge-m3":
+                raise ValueError("Production requires HF_EMBEDDING_MODEL='BAAI/bge-m3'.")
+            if self.HF_INFERENCE_PROVIDER != "hf-inference":
+                raise ValueError("Production requires HF_INFERENCE_PROVIDER='hf-inference'.")
+        return self
+
+    @property
+    def is_groq_configured(self) -> bool:
+        """True if Groq API key is set and non-empty."""
+        return bool(self.GROQ_API_KEY and self.GROQ_API_KEY.strip())
 
     @property
     def is_cerebras_configured(self) -> bool:

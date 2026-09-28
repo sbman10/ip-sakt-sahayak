@@ -21,15 +21,8 @@ import logging
 import re
 from typing import Any, Dict, List
 
-from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_google_genai import ChatGoogleGenerativeAI
-
 from app.core.config import settings
-from app.core.gemini_pool import (
-    ResourceExhaustedError,
-    gemini_key_pool,
-    execute_with_retry_and_fallback,
-)
+from app.services.llm_providers import llm_orchestrator
 
 log = logging.getLogger("app.services.roadmap_service")
 
@@ -66,62 +59,6 @@ _ROADMAP_SYSTEM_PROMPT = (
     "  ]\n"
     "}\n"
 )
-
-
-def _build_roadmap_call(
-    innovation: str,
-    stage: str,
-    context_str: str,
-    jurisdiction: str = "India",
-    api_key: str = "",
-) -> str:
-    llm = ChatGoogleGenerativeAI(
-        model=settings.PRIMARY_MODEL,
-        google_api_key=api_key,
-        temperature=0.15,
-        top_p=0.9,
-        max_output_tokens=1600,
-    )
-
-    jur_norm = (jurisdiction or "India").strip().lower()
-    selected_jurisdiction = (
-        "both" if jur_norm == "both"
-        else "international" if "international" in jur_norm
-        else "india"
-    )
-
-    user_content = (
-        f"selected_jurisdiction: {selected_jurisdiction}\n\n"
-        f"--- RETRIEVED LEGAL CONTEXT ---\n"
-        f"{context_str if context_str.strip() else '[No relevant passages retrieved]'}\n"
-        f"--- END CONTEXT ---\n\n"
-        f"INNOVATION:\n{innovation}\n\n"
-        f"CURRENT STAGE:\n{stage.strip() or '[not provided]'}\n\n"
-        f"Return ONLY the JSON roadmap object as specified. Ground every stage, timeline and "
-        f"law reference in the retrieved context above."
-    )
-
-    messages = [
-        SystemMessage(content=_ROADMAP_SYSTEM_PROMPT),
-        HumanMessage(content=user_content),
-    ]
-
-    try:
-        response = llm.invoke(messages)
-        content = response.content
-        if isinstance(content, list):
-            content = "".join(
-                block.get("text", "") if isinstance(block, dict) else str(block)
-                for block in content
-            )
-        return content or ""
-    except Exception as e:
-        err_msg = str(e).lower()
-        if "429" in err_msg or "resource_exhausted" in err_msg or "quota" in err_msg:
-            gemini_key_pool.mark_key_failed(api_key, status_code=429)
-        elif "500" in err_msg or "503" in err_msg:
-            gemini_key_pool.mark_key_failed(api_key, status_code=500)
-        raise
 
 
 def _safe_parse_json(raw: str) -> Dict[str, Any]:
@@ -165,21 +102,35 @@ async def generate_roadmap(
     """
     _VALID_STATUS = {"required", "conditional", "optional", "info"}
 
+    jur_norm = (jurisdiction or "India").strip().lower()
+    selected_jurisdiction = (
+        "both" if jur_norm == "both"
+        else "international" if "international" in jur_norm
+        else "india"
+    )
+
+    user_content = (
+        f"selected_jurisdiction: {selected_jurisdiction}\n\n"
+        f"--- RETRIEVED LEGAL CONTEXT ---\n"
+        f"{context_str if context_str.strip() else '[No relevant passages retrieved]'}\n"
+        f"--- END CONTEXT ---\n\n"
+        f"INNOVATION:\n{innovation}\n\n"
+        f"CURRENT STAGE:\n{stage.strip() or '[not provided]'}\n\n"
+        f"Return ONLY the JSON roadmap object as specified. Ground every stage, timeline and "
+        f"law reference in the retrieved context above."
+    )
+
     try:
-        raw = await execute_with_retry_and_fallback(
-            _build_roadmap_call,
-            innovation=innovation,
-            stage=stage,
-            context_str=context_str,
-            jurisdiction=jurisdiction,
+        resp = await llm_orchestrator.generate_answer(
+            system_prompt=_ROADMAP_SYSTEM_PROMPT,
+            user_prompt=user_content,
+            max_output_tokens=1600,
+            temperature=0.15,
+            raise_on_failure=True,
         )
-    except ResourceExhaustedError:
-        log.error("All Gemini keys exhausted during roadmap generation.")
-        return _empty_roadmap(
-            "The roadmap service is temporarily rate-limited. Please try again shortly."
-        )
+        raw = resp.text
     except Exception as e:
-        log.error("Roadmap generation failed: %s", e, exc_info=True)
+        log.error("Roadmap generation failed via LLM orchestrator: %s", e)
         return _empty_roadmap(
             "The roadmap engine could not be reached right now. Please try again."
         )

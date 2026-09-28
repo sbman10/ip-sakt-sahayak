@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { getApiBase } from '../api/config'
 
 // SVGs for menu items
 const IconEditProfile = ({ size = 16 }) => (
@@ -31,27 +32,81 @@ const IconLogout = ({ size = 16 }) => (
   </svg>
 )
 
+const IconSwitchAccount = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+    <circle cx="9" cy="7" r="4" />
+    <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+  </svg>
+)
+
 const IconChevronDown = ({ size = 12, className = '' }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
     <polyline points="6 9 12 15 18 9" />
   </svg>
 )
 
+const ROLE_LABELS = {
+  super_admin: 'Super Admin',
+  organisation_admin: 'Org Admin',
+  reviewer: 'Reviewer',
+  user: 'Member',
+}
+
+const ROLE_COLORS = {
+  super_admin: '#fbbf24',
+  organisation_admin: '#38bdf8',
+  reviewer: '#c084fc',
+  user: '#34d399',
+}
+
 export default function UserProfileMenu({
   userName,
+  userEmail,
   onLogout,
+  onSwitchAccount,
   onOpenEditProfile,
   compact = false,
 }) {
   const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(false)
   const [userProfile, setUserProfile] = useState(null)
+  const [identityData, setIdentityData] = useState(null)
   const [imgError, setImgError] = useState(false)
   const menuRef = useRef(null)
   const triggerRef = useRef(null)
 
+  // Fetch verified database-backed identity & organisation overview
+  const fetchProfileIdentity = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('ip_sakti_access_token')
+      if (!token) return
+      const API_BASE = getApiBase()
+      const resp = await fetch(`${API_BASE}/api/profile`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      if (resp.ok) {
+        const data = await resp.json()
+        setIdentityData(data)
+        if (data.profile) {
+          setUserProfile((prev) => ({
+            ...prev,
+            full_name: data.profile.full_name || prev?.full_name,
+            avatar_url: data.profile.avatar_url || prev?.avatar_url,
+            preferred_language: data.profile.preferred_language,
+          }))
+        }
+      }
+    } catch {
+      // Fallback silently to localStorage on network or offline state
+    }
+  }, [])
+
   // Load user data from localStorage
-  const loadUser = () => {
+  const loadUser = useCallback(() => {
     try {
       const raw = localStorage.getItem('ip_sakti_user')
       if (raw) {
@@ -64,11 +119,12 @@ export default function UserProfileMenu({
     }
     const name = localStorage.getItem('ip_sakti_user_name') || userName || ''
     setUserProfile({ full_name: name })
-  }
+  }, [userName])
 
   useEffect(() => {
     loadUser()
-  }, [userName])
+    fetchProfileIdentity()
+  }, [userName, loadUser, fetchProfileIdentity])
 
   // Listen for user updates across components
   useEffect(() => {
@@ -79,6 +135,7 @@ export default function UserProfileMenu({
       } else {
         loadUser()
       }
+      fetchProfileIdentity()
     }
     window.addEventListener('ip-sakti-user-updated', handleUpdate)
     window.addEventListener('storage', handleUpdate)
@@ -86,7 +143,7 @@ export default function UserProfileMenu({
       window.removeEventListener('ip-sakti-user-updated', handleUpdate)
       window.removeEventListener('storage', handleUpdate)
     }
-  }, [])
+  }, [loadUser, fetchProfileIdentity])
 
   // Close when clicking outside
   useEffect(() => {
@@ -122,10 +179,13 @@ export default function UserProfileMenu({
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [isOpen])
 
-  const displayName = userProfile?.full_name || userName || 'Innovator'
-  const displayEmail = userProfile?.email || userProfile?.organization || 'Account'
-  const avatarUrl = userProfile?.avatar_url
+  const primaryOrg = identityData?.primary_organisation
+  const verifiedRole = primaryOrg?.my_role
+  const displayName = identityData?.profile?.full_name || userProfile?.full_name || userName || 'Innovator'
+  const displayEmail = identityData?.email || userProfile?.email || userEmail || userProfile?.organization || 'Account'
+  const avatarUrl = identityData?.profile?.avatar_url || userProfile?.avatar_url
   const initial = (displayName.trim() || 'U').charAt(0).toUpperCase()
+
 
   const handleToggle = () => {
     setIsOpen((prev) => !prev)
@@ -148,10 +208,20 @@ export default function UserProfileMenu({
     navigate('/pricing')
   }
 
-  const handleLogoutAction = () => {
+  const handleSwitchAccountAction = async () => {
+    setIsOpen(false)
+    if (onSwitchAccount) {
+      await onSwitchAccount()
+    } else if (onLogout) {
+      await onLogout()
+    }
+    navigate('/login')
+  }
+
+  const handleLogoutAction = async () => {
     setIsOpen(false)
     if (onLogout) {
-      onLogout()
+      await onLogout()
     }
   }
 
@@ -217,9 +287,41 @@ export default function UserProfileMenu({
               <span className="gov-profile-dropdown-sub" title={displayEmail}>
                 {displayEmail}
               </span>
-              <span className="gov-profile-status-badge">
-                <span className="status-dot" />
-                <span>Ayurveda Innovator</span>
+              {primaryOrg && (
+                <div
+                  className="gov-profile-org-pill"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    fontSize: '0.70rem',
+                    color: '#94a3b8',
+                    marginTop: '2px',
+                    maxWidth: '180px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                  title={`Organisation: ${primaryOrg.name}`}
+                >
+                  <span style={{ fontSize: '0.75rem' }}>🏛️</span>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{primaryOrg.name}</span>
+                </div>
+              )}
+              <span
+                className="gov-profile-status-badge"
+                style={{
+                  color: ROLE_COLORS[verifiedRole] || '#34d399',
+                }}
+              >
+                <span
+                  className="status-dot"
+                  style={{
+                    background: ROLE_COLORS[verifiedRole] || '#10B981',
+                    boxShadow: `0 0 6px ${ROLE_COLORS[verifiedRole] || '#10B981'}`,
+                  }}
+                />
+                <span>{ROLE_LABELS[verifiedRole] || 'Ayurveda Innovator'}</span>
               </span>
             </div>
           </div>
@@ -273,8 +375,20 @@ export default function UserProfileMenu({
 
           <div className="gov-profile-menu-divider" />
 
-          {/* Logout Action */}
+          {/* Account Actions */}
           <div className="gov-profile-menu-footer">
+            <button
+              type="button"
+              role="menuitem"
+              className="gov-profile-menu-item"
+              onClick={handleSwitchAccountAction}
+              style={{ marginBottom: '4px' }}
+            >
+              <span className="gov-profile-item-icon">
+                <IconSwitchAccount size={16} />
+              </span>
+              <span className="gov-profile-item-label">Switch Account</span>
+            </button>
             <button
               type="button"
               role="menuitem"
@@ -284,7 +398,7 @@ export default function UserProfileMenu({
               <span className="gov-profile-item-icon">
                 <IconLogout size={16} />
               </span>
-              <span className="gov-profile-item-label">Logout</span>
+              <span className="gov-profile-item-label">Sign Out</span>
             </button>
           </div>
         </div>

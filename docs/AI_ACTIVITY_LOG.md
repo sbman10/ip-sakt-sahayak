@@ -1,5 +1,81 @@
 # AI Activity Log
 
+## 2026-09-27 — Milestone: Phase 4 Tenant and Document Isolation
+
+### User request
+
+Implement Phase 4: Tenant and Document Isolation under the `/feature` and `/execute` workflows:
+- Audit every table and storage bucket containing conversations, messages, uploaded documents, document chunks, citations, audit events, and organisation data.
+- Ensure every tenant-owned record carries `user_id` and `organisation_id` resolved server-side from verified Supabase JWTs.
+- Reject/ignore client-provided ownership fields.
+- Apply consistent tenant scoping across database queries, Supabase Storage paths, Qdrant payload filters, document ingestion, retrieval, citation generation, and conversation history.
+- Qdrant private points must carry `visibility: "private"`, `user_id`, `organisation_id`, `document_id`.
+- Supabase Storage paths: `organisations/{organisation_id}/users/{user_id}/documents/{document_id}/{filename}` with pre-action ownership verification.
+- Empirical automated proof: test cross-user isolation, cross-org isolation, citation non-leakage, Qdrant filtering, storage isolation, and request parameter tampering rejection.
+
+### Changes made
+
+- **Database models** (`backend/app/models/database.py`):
+  - Added `organisation_id` ForeignKeys (referencing `organisations.id`) and relationships to `Conversation`, `MatterWorkspace`, `UploadedDocument`, `AuditLog`, and `PatentabilityAssessmentRecord`.
+- **SQL Migration & Row-Level Security** (`scripts/migrations/phase4_tenant_document_isolation.sql`):
+  - Added DDL adding `organisation_id` to all 5 tenant tables with indexes.
+  - Enabled RLS on `conversations`, `uploaded_documents`, and `matter_workspace` with scoped policies linking to `organisation_members`.
+- **Tenant Context Dependency** (`backend/app/core/dependencies.py`):
+  - Created `TenantContext` dataclass containing verified `user`, `organisation`, `membership`, `user_id`, `organisation_id`, `role`.
+  - Created `get_or_create_personal_organisation` to guarantee a default isolated workspace for every user.
+  - Created `get_tenant_context` to identify caller via JWT, resolve active membership, enforce `X-Organisation-ID` header permissions (403 on invalid org), and ignore client ownership tampering.
+  - Created `get_optional_tenant_context` for public and backwards-compatible routes.
+- **Hierarchical Storage Isolation** (`backend/app/services/storage_service.py`):
+  - Enforced `build_storage_key(organisation_id, user_id, document_id, filename)` generating `organisations/{org_id}/users/{user_id}/documents/{doc_id}/{filename}` with path traversal sanitization.
+- **Qdrant Vector Isolation** (`backend/app/services/qdrant_service.py`):
+  - Indexed `organisation_id` and `visibility` in Qdrant payloads.
+  - Required server-generated tenant filters (`organisation_id`) on all searches targeting `user_uploads`. Unfiltered searches are blocked at the vector service level.
+- **Retrieval Pipeline Scoping** (`backend/app/services/retrieval_service.py`):
+  - Updated `hybrid_rrf_search` to accept and pass `organisation_id` to vector queries on `user_uploads`.
+- **Router Protections**:
+  - `backend/app/routers/documents.py`: Ingestion, chunking, listing, and deletion scoped by `tenant.organisation_id`. Returns 404 on cross-tenant access.
+  - `backend/app/routers/uploads.py`: Upload retrieval and presigned URLs scoped by `tenant.organisation_id`.
+  - `backend/app/routers/chat.py`: In `/api/chat` and `/api/chat/stream`, validated requested `document_ids` against database `organisation_id`. Strip foreign IDs to prevent cross-tenant vector retrieval.
+  - `backend/app/routers/conversations.py`: Conversation CRUD scoped by `tenant.organisation_id`; cross-tenant lookups return 404.
+  - `backend/app/routers/matters.py`: Legal matter workspace and events scoped by `tenant.organisation_id`; foreign lookups return 404.
+  - `backend/app/routers/patentability.py`: Patentability assessments scoped by `tenant.organisation_id`.
+  - `backend/app/services/audit_service.py`: Audit logs record `user_id` and `organisation_id`.
+- **Automated Verification**:
+  - `backend/tests/test_phase4_tenant_isolation.py`: 8 comprehensive tests proving cross-user document isolation, cross-org document isolation, storage paths & ownership verification, client parameter tampering rejection, Qdrant payload tagging & filtering, citation non-leakage, 404 enumeration resistance, and matter workspace isolation.
+  - Full test suite: 120/120 tests passed.
+  - Frontend: `npm run build` completed cleanly in 1.68s with 0 errors.
+
+---
+
+## 2026-09-27 — Milestone: Phase 3 Profiles, Organisations, and Membership Identity
+
+### User request
+
+Implement Phase 3: Profiles, Organisations, and Membership Identity under the `/feature` workflow.
+Ensure database-backed identity and multi-tenant organisation membership without altering the Supabase OTP flow.
+Enforce non-negotiable security boundaries:
+- Never allow client self-promotion.
+- Never use email domains as organisation IDs (use UUID + unique slug).
+- Never trust client-supplied organisation IDs without verified membership.
+- Zero client modification to `auth.users`.
+- Row Level Security (RLS) policies for all tables.
+- Typed FastAPI dependencies for membership and RBAC checks.
+- Clean UI integration in `UserProfileMenu` displaying verified organisation and role badges.
+
+### Changes made
+
+- **Database models** (`backend/app/models/database.py`): Added `Profile`, `Organisation`, `OrganisationMember` models with bidirectional relationships on `User`.
+- **SQL Migration & RLS** (`scripts/migrations/phase3_profiles_organisations_rls.sql`): DDL, timestamp triggers, `handle_new_user()` trigger for automated profile provisioning, and RLS policies on all three tables.
+- **Pydantic schemas** (`backend/app/schemas/identity.py`): Created `ProfileResponse`, `ProfileUpdate`, `OrganisationCreate`, `OrganisationResponse`, `OrganisationMemberResponse`, `MemberAddRequest`, `MemberRoleUpdate`, and `UserIdentityOverview`.
+- **Typed dependencies** (`backend/app/core/dependencies.py`): `get_or_create_profile`, `get_current_org_membership` (404 on unauthenticated/cross-tenant to prevent tenant enumeration), `require_org_role`, and `require_super_admin`.
+- **FastAPI router** (`backend/app/routers/organisations.py`): Profile endpoints (`GET/PATCH /api/profile`), organisation endpoints (`POST /api/organisations`, `GET /api/organisations/me`, `GET /api/organisations/{id}`), and member management endpoints (`GET/POST /api/organisations/{id}/members`, `PATCH/DELETE /api/organisations/{id}/members/{user_id}`).
+- **Registered router** in `backend/app/main.py` and `backend/app/routers/__init__.py`.
+- **Frontend** (`frontend/src/components/UserProfileMenu.jsx` & `EditProfileModal.jsx`): Fetches verified database profile from `/api/profile`, displays primary institution name and verified role badge (`Org Admin`, `Reviewer`, `Member`, `Super Admin`), and guards administrative capabilities.
+- **Automated test suite** (`backend/tests/test_phase3_identity.py`): 11 tests verifying auto-provisioning, profile isolation, organization creation, slug collisions, cross-tenant isolation (404), RBAC enforcement, self-promotion blocking, sole-admin protection, and chat backwards compatibility.
+- **Verification**: Ran `pytest backend/tests/ -v` (88/88 tests passed) and `npm run build` in `frontend/` (built in 1.40s with 0 errors).
+
+---
+
 ## 2026-09-01 — Milestone: six-member research sprint documentation
 
 ### User request
@@ -217,17 +293,27 @@ Build the modular, production-ready Python backend and PDF ingestion pipeline fo
 
 ---
 
-## Migration: BAAI/bge-m3 (1024-dimensional Multilingual Embeddings)
+---
 
-- **Date:** 2026-09-16
-- **Summary:** Upgraded vector search pipeline from `all-MiniLM-L6-v2` (384-dim) to `BAAI/bge-m3` (1024-dim multilingual embeddings).
-- **Key Changes:**
-  - Added `EMBEDDING_MODEL_NAME=BAAI/bge-m3` and switched ChromaDB path to `backend/chroma_db_bge_m3`.
-  - Updated `model_registry.py` to be configuration-driven and pass `settings.EMBEDDING_MODEL_NAME`.
-  - Updated `main.py` lifespan model preloading.
-  - Updated user upload document ingestion in `documents.py` to use `settings.EMBEDDING_MODEL_NAME`.
-  - Updated `knowledge-base/ingest.py` to index into `chroma_db_bge_m3` with `batch_size=8` for CPU execution.
-  - Updated diagnostics scripts (`check_embeddings.py`, `search_diagnostic.py`) to test 1024-dim BGE-M3 embeddings.
+## Phase 5: Explicit RBAC and Permissions
+
+- **Date:** 2026-09-27
+- **Summary:** Implemented fine-grained permission-based authorization on top of verified-user and organisation-membership layers without custom Supabase JWT claims.
+- **Key Deliverables:**
+  - **Central Permission Registry** (`backend/app/core/permissions.py`): Granular `Permission` enum (22 permissions covering organisations, members, documents, conversations, matters, patentability, and audit), `ROLE_PERMISSIONS` dictionary for 4 standard roles (`super_admin`, `organisation_admin`, `reviewer`, `user`), and helper evaluators `has_permission`, `get_role_permissions`, and `check_permission_or_raise`.
+  - **FastAPI Core Dependencies** (`backend/app/core/dependencies.py`): `require_permission(permission)` enforcing active tenant role checks; `require_org_permission(permission)` for path-scoped org actions while preventing tenant enumeration (404 on unauthenticated/non-member access).
+  - **Administrative Audit Trail** (`backend/app/services/audit_service.py`): `log_admin_action` recording member modifications, role changes, and matter/document deletions in `audit_logs` table.
+  - **Protected Endpoints**:
+    - `organisations.py`: `MEMBER_CREATE`, `MEMBER_UPDATE_ROLE`, `MEMBER_DELETE`, `MEMBER_READ`, `ORG_READ`.
+    - `matters.py`: `MATTER_READ`, `MATTER_CREATE`, `MATTER_UPDATE`, `MATTER_DELETE`.
+    - `documents.py` & `uploads.py`: `DOCUMENT_CREATE`, `DOCUMENT_READ`, `DOCUMENT_DELETE`.
+    - `patentability.py`: `PATENTABILITY_RUN`, `PATENTABILITY_READ`.
+    - `conversations.py`: `CONVERSATION_CREATE`, `CONVERSATION_READ`, `CONVERSATION_UPDATE`, `CONVERSATION_DELETE`.
+  - **Automated Verification**:
+    - Created `backend/tests/test_phase5_rbac_permissions.py` with 9 comprehensive tests validating registry completeness, 401 unauthenticated errors, 403 forbidden errors, reviewer boundaries, organisation admin privileges, super admin cross-tenant bypass, organisation-scoped role checks, and DB audit logging.
+    - Verified entire backend test suite: 105/105 passed.
+    - Verified frontend build: `npm run build` completed with 0 errors.
+
 
 
 
