@@ -305,6 +305,23 @@ export function AuthProvider({ children }) {
   }, [signOut])
 
   /**
+   * Resend signup verification email via Supabase.
+   */
+  const resendVerificationEmail = useCallback(async (email) => {
+    const cleanEmail = (email || '').trim().toLowerCase()
+    const redirectTarget = `${siteUrl}/auth/callback`
+    const { data, error } = await supabase.auth.resend({
+      type: 'signup',
+      email: cleanEmail,
+      options: {
+        emailRedirectTo: redirectTarget,
+      },
+    })
+    if (error) throw error
+    return data
+  }, [])
+
+  /**
    * Prototype / Dev Demo Bypass
    * Creates an authenticated local session for demonstration purposes.
    */
