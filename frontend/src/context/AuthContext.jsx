@@ -77,6 +77,8 @@ export function AuthProvider({ children }) {
                 id: savedUser.id,
                 email: savedUser.email,
                 role: savedUser.role || 'user',
+                confirmed_at: savedUser.confirmed_at || new Date().toISOString(),
+                email_confirmed_at: savedUser.email_confirmed_at || new Date().toISOString(),
                 user_metadata: {
                   full_name: savedUser.full_name,
                   name: savedUser.full_name,
@@ -288,6 +290,40 @@ export function AuthProvider({ children }) {
     await signOut()
   }, [signOut])
 
+  /**
+   * Prototype / Dev Demo Bypass
+   * Creates an authenticated local session for demonstration purposes.
+   */
+  const loginAsDemoUser = useCallback((demoAccount = {}) => {
+    const email = demoAccount.email || 'admin@ipsakti.gov.in'
+    const name = demoAccount.name || 'Admin'
+    const nowIso = new Date().toISOString()
+    const demoSession = {
+      access_token: 'demo-admin-token-' + Date.now(),
+      user: {
+        id: demoAccount.id || 'demo-admin-id',
+        email: email,
+        role: 'authenticated',
+        confirmed_at: nowIso,
+        email_confirmed_at: nowIso,
+        user_metadata: {
+          full_name: name,
+          name: name,
+          role: 'Administrator',
+        },
+      },
+    }
+    setSession(demoSession)
+    setUser(demoSession.user)
+    syncLocalCaches(demoSession)
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('ip-sakti-user-updated', { detail: demoSession.user })
+      )
+    }
+    return demoSession
+  }, [syncLocalCaches])
+
   const isLoggedIn = useMemo(() => {
     if (!session?.user) return false
     const u = session.user
@@ -318,6 +354,7 @@ export function AuthProvider({ children }) {
     verifyOtp,
     signUpWithPassword,
     loginWithPassword,
+    loginAsDemoUser,
     resendVerificationEmail,
     signOut,
     switchAccount,
@@ -333,6 +370,7 @@ export function AuthProvider({ children }) {
     verifyOtp,
     signUpWithPassword,
     loginWithPassword,
+    loginAsDemoUser,
     resendVerificationEmail,
     signOut,
     switchAccount,

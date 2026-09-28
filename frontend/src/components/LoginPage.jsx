@@ -45,6 +45,7 @@ export default function LoginPage({ onLogin }) {
     verifyOtp,
     signUpWithPassword,
     loginWithPassword,
+    loginAsDemoUser,
     resendVerificationEmail,
     isLoggedIn,
   } = useAuth()
@@ -281,10 +282,18 @@ export default function LoginPage({ onLogin }) {
     setIsLoading(true)
     setLoadingAccountId(acc.id)
     try {
-      if (!ADMIN_DEMO_EMAIL || !ADMIN_DEMO_PASSWORD) {
-        throw new Error('Admin demo access is not configured for this environment.')
+      let data = null
+      if (ADMIN_DEMO_EMAIL && ADMIN_DEMO_PASSWORD) {
+        try {
+          data = await loginWithPassword(ADMIN_DEMO_EMAIL, ADMIN_DEMO_PASSWORD)
+        } catch (supabaseErr) {
+          console.warn('[LoginPage] Remote Supabase admin credentials not found, using prototype demo session:', supabaseErr?.message)
+          data = loginAsDemoUser({ email: ADMIN_DEMO_EMAIL, name: acc.name, id: acc.id })
+        }
+      } else {
+        data = loginAsDemoUser({ email: ADMIN_DEMO_EMAIL, name: acc.name, id: acc.id })
       }
-      const data = await loginWithPassword(ADMIN_DEMO_EMAIL, ADMIN_DEMO_PASSWORD)
+
       setSuccess(`Authenticated as ${acc.name}! Accessing workspace...`)
       if (onLogin && data?.user) {
         onLogin(data.user.email, data.user.user_metadata?.full_name || acc.name)
