@@ -65,10 +65,6 @@ export default function RagvynSidebar({
   // Mobile overlay open state (separate from collapsed — mobile is overlay-based)
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  // Search panel open
-  const [searchOpen, setSearchOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-
   // Conversation sessions (loaded from API, same source as ChatPage)
   const [sessions, setSessions] = useState([])
   const [loadingSessions, setLoadingSessions] = useState(false)
@@ -226,6 +222,7 @@ export default function RagvynSidebar({
   }, [location.pathname, refreshSessions])
 
   // ---------- Navigation items ----------
+  // Chat-only sidebar: New Task action + Recent Tasks list. Tool shortcuts removed.
   const primaryNav = [
     {
       id: 'new-task',
@@ -239,63 +236,10 @@ export default function RagvynSidebar({
       },
       isAction: true,
     },
-    {
-      id: 'search-tasks',
-      label: 'Search Tasks',
-      icon: <IconSearch size={20} />,
-      action: () => setSearchOpen(prev => !prev),
-      isAction: true,
-    },
-    {
-      id: 'formulation-wizard',
-      label: 'Formulation Wizard',
-      icon: <IconFlask size={20} />,
-      path: '/formulation-wizard',
-    },
-    {
-      id: 'abs-checker',
-      label: 'ABS Checker',
-      icon: <IconLeaf size={20} />,
-      path: '/abs-checker',
-    },
-    {
-      id: 'ip-calculator',
-      label: 'IP Calculator',
-      icon: <IconCalculator size={20} />,
-      path: '/ip-calculator',
-    },
-    {
-      id: 'sources',
-      label: 'Official Data Corpora',
-      icon: <IconBook size={20} />,
-      path: '/sources',
-    },
   ]
 
-  const secondaryNav = [
-    {
-      id: 'deadline-calculator',
-      label: 'Deadline Calculator',
-      icon: <IconCalendar size={18} />,
-      path: '/deadline-calculator',
-    },
-    {
-      id: 'about-ip-sakti',
-      label: 'About IP-SAKTI',
-      icon: <IconInfo size={18} />,
-      action: () => {
-        if (onOpenAbout) onOpenAbout()
-      },
-      isAction: true,
-    },
-  ]
-
-  // Filtered sessions for search
-  const filteredSessions = searchQuery.trim()
-    ? sessions.filter(s =>
-      s.title.toLowerCase().includes(searchQuery.trim().toLowerCase())
-    )
-    : sessions
+  // Recent tasks list (no in-sidebar search filter)
+  const filteredSessions = sessions
 
   const handleSessionClick = (id) => {
     setCurrentActiveId(id)
@@ -451,7 +395,6 @@ export default function RagvynSidebar({
                       className={[
                         'ragvyn-sidebar__nav-btn',
                         isCurrentChat ? 'ragvyn-sidebar__nav-btn--active' : '',
-                        item.id === 'search-tasks' && searchOpen ? 'ragvyn-sidebar__nav-btn--active' : '',
                       ].filter(Boolean).join(' ')}
                       onClick={() => handleNavAction(item)}
                       title={collapsed && !isMobile() ? item.label : undefined}
@@ -485,21 +428,6 @@ export default function RagvynSidebar({
           </ul>
         </nav>
 
-        {/* ---- Search Tasks Panel ---- */}
-        {isExpanded && searchOpen && (
-          <div className="ragvyn-sidebar__search-panel">
-            <input
-              type="text"
-              className="ragvyn-sidebar__search-input"
-              placeholder="Search tasks…"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              autoFocus
-              aria-label="Search tasks"
-            />
-          </div>
-        )}
-
         {/* ---- Recents ---- */}
         {isExpanded && (
           <div className="ragvyn-sidebar__recents">
@@ -510,7 +438,7 @@ export default function RagvynSidebar({
               )}
               {!loadingSessions && filteredSessions.length === 0 && (
                 <div className="ragvyn-sidebar__recents-empty">
-                  {searchQuery.trim() ? 'No matching tasks.' : 'No recent tasks.'}
+                  No recent tasks.
                 </div>
               )}
               {!loadingSessions && filteredSessions.map(s => (
@@ -540,64 +468,8 @@ export default function RagvynSidebar({
         {/* ---- Spacer ---- */}
         <div className="ragvyn-sidebar__spacer" />
 
-        {/* ---- Lower Navigation Section ---- */}
-        <div className="ragvyn-sidebar__secondary-nav">
-          <ul className="ragvyn-sidebar__nav-list" role="list">
-            {secondaryNav.map(item => {
-              const isActive = item.path && location.pathname === item.path
-
-              if (item.isAction) {
-                return (
-                  <li key={item.id} className="ragvyn-sidebar__nav-item">
-                    <button
-                      className="ragvyn-sidebar__nav-btn"
-                      onClick={() => handleNavAction(item)}
-                      title={collapsed && !isMobile() ? item.label : undefined}
-                      aria-label={item.label}
-                    >
-                      <span className="ragvyn-sidebar__nav-icon">{item.icon}</span>
-                      {isExpanded && <span className="ragvyn-sidebar__nav-label">{item.label}</span>}
-                    </button>
-                  </li>
-                )
-              }
-
-              return (
-                <li key={item.id} className="ragvyn-sidebar__nav-item">
-                  <Link
-                    to={item.path}
-                    className={[
-                      'ragvyn-sidebar__nav-btn',
-                      isActive ? 'ragvyn-sidebar__nav-btn--active' : '',
-                    ].filter(Boolean).join(' ')}
-                    title={collapsed && !isMobile() ? item.label : undefined}
-                    aria-label={item.label}
-                    aria-current={isActive ? 'page' : undefined}
-                    onClick={() => { if (isMobile()) closeMobile() }}
-                  >
-                    <span className="ragvyn-sidebar__nav-icon">{item.icon}</span>
-                    {isExpanded && <span className="ragvyn-sidebar__nav-label">{item.label}</span>}
-                  </Link>
-                </li>
-              )
-            })}
-          </ul>
-        </div>
-
         {/* ---- Bottom Section ---- */}
         <div className="ragvyn-sidebar__bottom">
-          {/* Upgrade button */}
-          <Link
-            to="/pricing"
-            className="ragvyn-sidebar__upgrade-btn"
-            title={!isExpanded ? 'Upgrade' : undefined}
-            aria-label="Upgrade subscription"
-            onClick={() => { if (isMobile()) closeMobile() }}
-          >
-            <IconZap size={16} />
-            {isExpanded && <span>Upgrade</span>}
-          </Link>
-
           {/* Bottom icons row */}
           <div className="ragvyn-sidebar__bottom-row">
             {/* User profile trigger */}

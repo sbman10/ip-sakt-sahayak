@@ -39,14 +39,19 @@ export default function LoginPage({ onLogin }) {
   const { t } = useLanguage()
   const navigate = useNavigate()
   const location = useLocation()
-  const { signInWithOtp, verifyOtp, loginWithPassword, isLoggedIn } = useAuth()
+  const { signInWithOtp, verifyOtp, signUp, loginWithPassword, isLoggedIn } = useAuth()
 
-  // Tabs: 'demo' | 'password' | 'otp'
+  // Tabs: 'demo' | 'password' | 'otp' | 'register'
   const [authTab, setAuthTab] = useState('demo')
 
   // Password Login State
   const [loginEmail, setLoginEmail] = useState('')
   const [loginPassword, setLoginPassword] = useState('')
+
+  // Registration State
+  const [registerFullName, setRegisterFullName] = useState('')
+  const [registerEmail, setRegisterEmail] = useState('')
+  const [registerPassword, setRegisterPassword] = useState('')
 
   // OTP Login State
   const [otpStep, setOtpStep] = useState('email')
@@ -94,6 +99,36 @@ export default function LoginPage({ onLogin }) {
     setOtpLength(newLen)
     setOtpCode(Array(newLen).fill(''))
     setError('')
+  }
+
+  // 0. Google OAuth - Redirect to backend OAuth URL
+  const handleGoogleLogin = async () => {
+    setError('')
+    setSuccess('')
+    setIsLoading(true)
+    try {
+      const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
+      const res = await fetch(`${apiBase}/api/auth/google/url`)
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        throw new Error(errData.detail || 'Failed to initiate Google login')
+      }
+      const data = await res.json()
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        throw new Error('No OAuth URL returned from server')
+      }
+    } catch (err) {
+      console.error('[LoginPage] Google OAuth error:', err)
+      const msg = err.message || ''
+      if (msg.includes('not configured') || msg.includes('Client ID')) {
+        setError('Google OAuth is not configured. Please use email/password login.')
+      } else {
+        setError(msg || 'Unable to start Google login. Please try email/password.')
+      }
+      setIsLoading(false)
+    }
   }
 
   // 1. Instant Demo / Test Account Login
@@ -158,7 +193,59 @@ export default function LoginPage({ onLogin }) {
     }
   }
 
-  // 3. Send Supabase Email OTP
+  // 3. Registration with full name, email, password
+  const handleRegisterSubmit = async (e) => {
+    if (e) e.preventDefault()
+    setError('')
+    setSuccess('')
+
+    const cleanName = registerFullName.trim()
+    const cleanEmail = registerEmail.trim().toLowerCase()
+    const cleanPassword = registerPassword
+
+    if (!cleanName) {
+      setError('Please enter your full name.')
+      return
+    }
+    if (!cleanEmail || !EMAIL_REGEX.test(cleanEmail)) {
+      setError('Please enter a valid email address.')
+      return
+    }
+    if (!cleanPassword || cleanPassword.length < 8) {
+      setError('Password must be at least 8 characters.')
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const sessionData = await signUp(cleanEmail, cleanPassword, cleanName)
+      setSuccess('Account created successfully! Welcome to RAGVYN.')
+      if (onLogin && sessionData.user) {
+        onLogin(
+          sessionData.user.email,
+          sessionData.user.user_metadata?.full_name || cleanName
+        )
+      }
+      setTimeout(() => {
+        const redirectUrl = location.state?.from || '/'
+        navigate(redirectUrl, { replace: true })
+      }, 500)
+    } catch (err) {
+      console.error('[LoginPage] Registration error:', err)
+      const msg = err.message || ''
+      if (msg.includes('already exists') || msg.includes('409')) {
+        setError('An account with this email already exists. Please login instead.')
+      } else if (msg.includes('password') || msg.includes('weak')) {
+        setError('Password is too weak. Use at least 8 characters with uppercase, lowercase, number, and special character.')
+      } else {
+        setError(msg || 'Registration failed. Please try again.')
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // 4. Send Supabase Email OTP
   const handleSendOtp = async (e) => {
     if (e) e.preventDefault()
     setError('')
@@ -329,7 +416,7 @@ export default function LoginPage({ onLogin }) {
                 onClick={() => { setAuthTab('demo'); setError(''); setSuccess('') }}
                 className="login-auth-tab"
               >
-                Admin demo
+                Demo
               </button>
               <button
                 type="button"
@@ -338,7 +425,16 @@ export default function LoginPage({ onLogin }) {
                 onClick={() => { setAuthTab('password'); setError(''); setSuccess('') }}
                 className="login-auth-tab"
               >
-                Password login
+                Login
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={authTab === 'register'}
+                onClick={() => { setAuthTab('register'); setError(''); setSuccess('') }}
+                className="login-auth-tab"
+              >
+                Register
               </button>
             </div>
 
@@ -420,10 +516,122 @@ export default function LoginPage({ onLogin }) {
                   {isLoading && <IconRefreshCw size={16} className="spin" />}
                   <span>{isLoading ? 'Authenticating...' : 'Sign In with Password →'}</span>
                 </button>
+
+                {/* Divider */}
+                <div style={{ display: 'flex', alignItems: 'center', margin: '16px 0' }}>
+                  <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }}></div>
+                  <span style={{ padding: '0 12px', color: '#64748b', fontSize: '0.85rem' }}>or</span>
+                  <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }}></div>
+                </div>
+
+                {/* Google OAuth Button */}
+                <button
+                  type="button"
+                  onClick={handleGoogleLogin}
+                  disabled={isLoading}
+                  className="login-google-btn"
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '10px',
+                    padding: '12px 20px',
+                    background: '#fff',
+                    border: '1px solid #dadce0',
+                    borderRadius: '8px',
+                    fontSize: '0.95rem',
+                    fontWeight: '500',
+                    color: '#3c4043',
+                    cursor: isLoading ? 'not-allowed' : 'pointer',
+                    transition: 'box-shadow 0.2s, border-color 0.2s',
+                  }}
+                  onMouseOver={(e) => { if (!isLoading) e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.12)' }}
+                  onMouseOut={(e) => e.currentTarget.style.boxShadow = 'none'}
+                >
+                  {/* Google "G" logo SVG */}
+                  <svg width="18" height="18" viewBox="0 0 48 48">
+                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                  </svg>
+                  <span>{isLoading ? 'Redirecting...' : 'Continue with Google'}</span>
+                </button>
               </form>
             )}
 
-            {/* Tab 3: Supabase Email OTP */}
+            {/* Tab 3: Registration with Full Name */}
+            {authTab === 'register' && (
+              <form onSubmit={handleRegisterSubmit} className="login-form" noValidate>
+                <div className="login-field">
+                  <label htmlFor="registerFullName">Full Name</label>
+                  <input
+                    type="text"
+                    id="registerFullName"
+                    value={registerFullName}
+                    onChange={(e) => setRegisterFullName(e.target.value)}
+                    placeholder="Dr. Anshuman Sharma"
+                    required
+                    autoFocus
+                    disabled={isLoading}
+                    autoComplete="name"
+                  />
+                </div>
+
+                <div className="login-field">
+                  <label htmlFor="registerEmail">Email Address</label>
+                  <input
+                    type="email"
+                    id="registerEmail"
+                    value={registerEmail}
+                    onChange={(e) => setRegisterEmail(e.target.value.toLowerCase())}
+                    placeholder="name@organization.gov.in"
+                    required
+                    disabled={isLoading}
+                    autoComplete="email"
+                  />
+                </div>
+
+                <div className="login-field">
+                  <label htmlFor="registerPassword">Password</label>
+                  <input
+                    type="password"
+                    id="registerPassword"
+                    value={registerPassword}
+                    onChange={(e) => setRegisterPassword(e.target.value)}
+                    placeholder="Minimum 8 characters"
+                    required
+                    disabled={isLoading}
+                    autoComplete="new-password"
+                  />
+                  <span className="login-field-hint">Use uppercase, lowercase, number, and special character.</span>
+                </div>
+
+                <button
+                  type="submit"
+                  className="login-submit-btn"
+                  disabled={isLoading || !registerFullName.trim() || !registerEmail.trim() || !registerPassword}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                >
+                  {isLoading && <IconRefreshCw size={16} className="spin" />}
+                  <span>{isLoading ? 'Creating Account...' : 'Create Account →'}</span>
+                </button>
+
+                <p className="login-register-note" style={{ fontSize: '0.85rem', color: 'var(--text-secondary, #666)', marginTop: '12px', textAlign: 'center' }}>
+                  Already have an account?{' '}
+                  <button
+                    type="button"
+                    onClick={() => { setAuthTab('password'); setError(''); setSuccess('') }}
+                    style={{ background: 'none', border: 'none', color: 'var(--primary, #1a5f2a)', cursor: 'pointer', textDecoration: 'underline' }}
+                  >
+                    Sign in here
+                  </button>
+                </p>
+              </form>
+            )}
+
+            {/* Tab 4: Supabase Email OTP */}
             {authTab === 'otp' && (
               otpStep === 'email' ? (
                 <form onSubmit={handleSendOtp} className="login-form" noValidate>

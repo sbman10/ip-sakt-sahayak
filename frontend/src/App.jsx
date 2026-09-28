@@ -543,8 +543,6 @@ const UI_TRANSLATIONS = {
     tourAbsDesc: 'Check if your biological resource needs NBA / ABS approval under the Biodiversity Act before you commercialise.',
     tourChecklistTitle: '✅ Filing Checklists',
     tourChecklistDesc: 'Step-by-step interactive checklists for Patent, Trademark, GI and ABS filings with docs, time and fees.',
-    tourFtoTitle: 'FTO',
-    tourFtoDesc: 'It helps users identify relevant existing patents and potential infringement risks before commercializing an Ayurvedic product or formulation.',
     tourServicesTitle: '💼 Services',
     tourServicesDesc: 'Open this menu for hands-on services — draft generation, your case workspace, document upload and expert help.',
     tourDraftsTitle: '📝 Draft Generator',
@@ -4389,13 +4387,6 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn: propLoggedIn, userN
             )}
           </li>
 
-          {/* Freedom to Operate */}
-          <li>
-            <button type="button" className="gov-nav-link-btn" data-tour="fto">
-              <span>FTO</span>
-            </button>
-          </li>
-
           {/* Services Dropdown */}
           <li className="gov-nav-dropdown" ref={servicesDropdownRef}>
             <button
@@ -4562,15 +4553,7 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn: propLoggedIn, userN
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <IconUser size={16} />
-                  <span>Login</span>
-                </Link>
-                <Link
-                  to="/login?mode=register"
-                  state={{ register: true }}
-                  className="gov-nav-mobile-register-btn"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <span>Register</span>
+                  <span>Login/Register</span>
                 </Link>
               </div>
             )}
@@ -4607,10 +4590,7 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn: propLoggedIn, userN
               <div className="gov-nav-guest-group">
                 <Link to="/login" className="gov-nav-login-btn">
                   <IconUser size={14} />
-                  <span>Login</span>
-                </Link>
-                <Link to="/login?mode=register" state={{ register: true }} className="gov-nav-register-btn">
-                  <span>Register</span>
+                  <span>Login/Register</span>
                 </Link>
                 <Link to="/chat" className="gov-nav-cta" id="gov-nav-consult-btn">
                   <span>RagVyn AI</span>
@@ -5508,14 +5488,7 @@ function LandingPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, 
               </div>
             </div>
 
-            {/* Right Column: Interactive Innovation Assessment Card */}
-            <div className="hero-card-col">
-              <InnovationAssessmentCard
-                onStartAssessment={(prompt) => {
-                  if (setPrefillPrompt) setPrefillPrompt(prompt)
-                }}
-              />
-            </div>
+            {/* Right Column: Removed - Interactive diagnostic was here */}
           </div>
         </div>
       </section>
@@ -9591,9 +9564,9 @@ function AppShell({ children, isLoggedIn, userName, userEmail, onOpenAbout, onLo
     return () => window.removeEventListener('resize', updateViewport)
   }, [])
 
-  // Keep the application shell available on the landing page as well.
-  // Login and auth callback remain distraction-free and outside the app shell.
-  const hideSidebar = location.pathname === '/login' || location.pathname === '/auth/callback'
+  // The RagvynSidebar is chat-only: it renders exclusively on the /chat route.
+  // Every other page (landing, login, sources, pricing, patentability, etc.) has no sidebar.
+  const showSidebar = location.pathname === '/chat'
   const hideFooter = location.pathname === '/login' || location.pathname === '/auth/callback' || location.pathname === '/chat'
 
   const handleNewChat = () => {
@@ -9610,7 +9583,7 @@ function AppShell({ children, isLoggedIn, userName, userEmail, onOpenAbout, onLo
 
   return (
     <>
-      {!hideSidebar && (
+      {showSidebar && (
         <RagvynSidebar
           isLoggedIn={isLoggedIn}
           userName={userName}
@@ -9627,8 +9600,8 @@ function AppShell({ children, isLoggedIn, userName, userEmail, onOpenAbout, onLo
         />
       )}
 
-      {/* Persistent sidebar toggle — always visible on desktop (like Codex) */}
-      {!hideSidebar && !isMobile && (
+      {/* Persistent sidebar toggle — chat-only, desktop only */}
+      {showSidebar && !isMobile && (
         <button
           className="ragvyn-sidebar-restore-toggle"
           onClick={handleToggleSidebar}
@@ -9642,8 +9615,8 @@ function AppShell({ children, isLoggedIn, userName, userEmail, onOpenAbout, onLo
       <div
         className={[
           'ragvyn-app-content',
-          !hideSidebar && !isMobile && !sidebarCollapsed ? 'ragvyn-app-content--sidebar-expanded' : '',
-          !hideSidebar && !isMobile && sidebarCollapsed ? 'ragvyn-app-content--sidebar-collapsed' : '',
+          showSidebar && !isMobile && !sidebarCollapsed ? 'ragvyn-app-content--sidebar-expanded' : '',
+          showSidebar && !isMobile && sidebarCollapsed ? 'ragvyn-app-content--sidebar-collapsed' : '',
         ].filter(Boolean).join(' ')}
       >
         <div className="ragvyn-shell-flow">

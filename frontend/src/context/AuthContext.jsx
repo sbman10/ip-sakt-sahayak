@@ -176,6 +176,58 @@ export function AuthProvider({ children }) {
   }, [syncLocalCaches])
 
   /**
+   * Register a new user with email, password, and full name.
+   * Uses backend /api/auth/signup endpoint.
+   */
+  const signUp = useCallback(async (email, password, fullName) => {
+    const apiBase = getApiBase()
+    const res = await fetch(`${apiBase}/api/auth/signup`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: (email || '').trim().toLowerCase(),
+        password: password,
+        full_name: (fullName || '').trim(),
+      }),
+    })
+
+    const data = await res.json()
+    if (!res.ok) {
+      throw new Error(data.detail || 'Registration failed. Please try again.')
+    }
+
+    const newSession = {
+      access_token: data.tokens.access_token,
+      refresh_token: data.tokens.refresh_token,
+      user: {
+        id: data.user.id,
+        email: data.user.email,
+        role: data.user.role || 'user',
+        user_metadata: {
+          full_name: data.user.full_name,
+          name: data.user.full_name,
+          organization: data.user.organization,
+          role: data.user.role,
+        },
+      },
+    }
+
+    setSession(newSession)
+    setUser(newSession.user)
+    syncLocalCaches(newSession)
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('ip-sakti-user-updated', { detail: newSession.user })
+      )
+    }
+
+    return newSession
+  }, [syncLocalCaches])
+
+  /**
    * Direct password login (for dummy test accounts & local auth).
    */
   const loginWithPassword = useCallback(async (email, password) => {
@@ -268,6 +320,7 @@ export function AuthProvider({ children }) {
     loading,
     signInWithOtp,
     verifyOtp,
+    signUp,
     loginWithPassword,
     signOut,
     switchAccount,
@@ -281,6 +334,7 @@ export function AuthProvider({ children }) {
     loading,
     signInWithOtp,
     verifyOtp,
+    signUp,
     loginWithPassword,
     signOut,
     switchAccount,
