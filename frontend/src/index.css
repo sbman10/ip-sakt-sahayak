@@ -1292,6 +1292,235 @@ h6 {
   color: var(--text-muted);
 }
 
+/* ============================================================
+   HERO SECTION — Centered Editorial Composition
+   ============================================================ */
+.hero-content-centered {
+  align-items: center;
+  text-align: center;
+  margin: 0 auto;
+  max-width: 980px;
+}
+
+.hero-content-centered .hero-title {
+  text-align: center;
+  font-size: clamp(2.5rem, 4.8vw, 4rem);
+  margin-bottom: 1.5rem;
+}
+
+.hero-content-centered .hero-title-line-1 {
+  display: block;
+}
+
+.hero-content-centered .hero-title-highlight {
+  display: inline-block;
+  background: linear-gradient(135deg, var(--primary) 0%, #10b981 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+[data-theme="dark"] .hero-content-centered .hero-title-highlight {
+  background: linear-gradient(135deg, #2dd4bf 0%, #6ee7b7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero-live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-left: 0.6rem;
+  padding: 0.15rem 0.6rem;
+  background: rgba(16, 185, 129, 0.14);
+  border: 1px solid rgba(16, 185, 129, 0.32);
+  border-radius: var(--radius-full);
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #065f46;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+[data-theme="dark"] .hero-live-pill {
+  background: rgba(45, 212, 191, 0.15);
+  border-color: rgba(45, 212, 191, 0.35);
+  color: #a7f3d0;
+}
+
+.live-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #10b981;
+  box-shadow: 0 0 8px #10b981;
+  animation: liveDotPulse 2s infinite ease-in-out;
+}
+
+@keyframes liveDotPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.35);
+    opacity: 0.55;
+  }
+}
+
+.hero-content-centered .hero-description {
+  text-align: center;
+  max-width: 760px;
+  margin: 0 auto 2.2rem;
+  border-left: none;
+  border: 1px solid rgba(20, 61, 48, 0.12);
+  border-radius: 14px;
+  padding: 1.1rem 1.8rem;
+  font-size: clamp(1.05rem, 1.3vw, 1.18rem);
+  line-height: 1.68;
+}
+
+[data-theme="dark"] .hero-content-centered .hero-description {
+  border-color: rgba(45, 212, 191, 0.18);
+}
+
+.hero-content-centered .hero-cta-group {
+  justify-content: center;
+  margin-bottom: 2rem;
+  gap: 1.25rem;
+}
+
+/* Quick Prompts Container */
+.hero-quick-prompts {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 3.25rem;
+  max-width: 920px;
+}
+
+.hero-quick-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-right: 0.25rem;
+}
+
+.hero-quick-chips {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.hero-chip {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(196, 217, 208, 0.7);
+  border-radius: var(--radius-full);
+  padding: 0.45rem 0.95rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--secondary-dark);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.hero-chip:hover {
+  background: #ffffff;
+  border-color: var(--primary);
+  color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(20, 61, 48, 0.12);
+}
+
+[data-theme="dark"] .hero-chip {
+  background: rgba(21, 34, 46, 0.8);
+  border-color: rgba(45, 212, 191, 0.2);
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .hero-chip:hover {
+  background: rgba(30, 48, 64, 0.95);
+  border-color: var(--primary);
+  color: var(--primary-light);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+/* 4-Column Statutory Trust Cards */
+.hero-trust-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+  width: 100%;
+  max-width: 1060px;
+  margin: 0 auto;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(229, 224, 214, 0.8);
+}
+
+[data-theme="dark"] .hero-trust-grid-4 {
+  border-top-color: rgba(30, 45, 60, 0.8);
+}
+
+.hero-trust-grid-4 .hero-trust-item {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(220, 215, 204, 0.8);
+  border-radius: var(--radius-lg, 12px);
+  padding: 0.95rem 1.05rem;
+  text-align: left;
+  transition: all var(--transition-fast);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.hero-trust-grid-4 .hero-trust-item:hover {
+  transform: translateY(-3px);
+  border-color: var(--primary);
+  background: #ffffff;
+  box-shadow: 0 6px 18px rgba(20, 61, 48, 0.1);
+}
+
+[data-theme="dark"] .hero-trust-grid-4 .hero-trust-item {
+  background: rgba(17, 26, 34, 0.75);
+  border-color: rgba(45, 60, 75, 0.6);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="dark"] .hero-trust-grid-4 .hero-trust-item:hover {
+  background: rgba(22, 34, 45, 0.9);
+  border-color: rgba(45, 212, 191, 0.4);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+}
+
+@media (max-width: 992px) {
+  .hero-trust-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .hero-trust-grid-4 {
+    grid-template-columns: 1fr;
+  }
+  .hero-quick-chips {
+    flex-direction: column;
+    width: 100%;
+  }
+  .hero-chip {
+    width: 100%;
+    text-align: center;
+  }
+}
+
 /* Right Column: Innovation Assessment Card */
 .hero-card-col {
   position: relative;
