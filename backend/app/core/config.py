@@ -87,7 +87,7 @@ class Settings(BaseSettings):
     PRIMARY_MODEL: str = "openai/gpt-oss-120b"
 
     GENERATION_MAX_RETRIES: int = 1
-    GENERATION_TIMEOUT_SECONDS: float = 60.0
+    GENERATION_TIMEOUT_SECONDS: float = 30.0
 
     # Hybrid Search & Reranking Thresholds
     SIMILARITY_THRESHOLD: float = 0.65
