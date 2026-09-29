@@ -40,7 +40,7 @@ class Settings(BaseSettings):
     HF_EMBEDDING_NORMALIZE: bool = True
     LOCAL_BGE_FALLBACK: bool = False
     ENABLE_LOCAL_BGE_PRELOAD: bool = False
-    ENABLE_CROSS_ENCODER: bool = True
+    ENABLE_CROSS_ENCODER: bool = False
 
     # Qdrant Cloud settings
     QDRANT_URL: str = ""
@@ -162,6 +162,15 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore",
     )
+
+    @field_validator("ENABLE_CROSS_ENCODER", mode="after")
+    @classmethod
+    def validate_cross_encoder_memory(cls, v: bool) -> bool:
+        # Render Free Tier provides 512MB RAM total. CrossEncoder requires loading
+        # neural weights (ONNX/PyTorch) which causes OOM crash loops.
+        if os.environ.get("RENDER"):
+            return False
+        return v
 
     @field_validator("BM25_INDEX_PATH", mode="after")
     @classmethod
