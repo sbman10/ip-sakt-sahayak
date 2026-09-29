@@ -87,10 +87,16 @@ export default function EditProfileModal({ isOpen, onClose, onUserUpdated }) {
         organization: finalOrg,
         phone: finalPhone,
       }
-      localStorage.setItem('ip_sakti_user', JSON.stringify(updatedUser))
+      const serialized = JSON.stringify(updatedUser)
+      if (sessionStorage.getItem('ip_sakti_user')) {
+        sessionStorage.setItem('ip_sakti_user', serialized)
+      }
+      if (localStorage.getItem('ip_sakti_user') || localStorage.getItem('ragvyn_remember_me') === 'true') {
+        localStorage.setItem('ip_sakti_user', serialized)
+      }
 
       // 2. If access token exists, update backend profile & user
-      const token = localStorage.getItem('ip_sakti_access_token')
+      const token = sessionStorage.getItem('ip_sakti_access_token') || localStorage.getItem('ip_sakti_access_token')
       if (token) {
         try {
           const API_BASE = getApiBase()

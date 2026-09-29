@@ -461,8 +461,41 @@ def test_conversation_history_cross_tenant_isolation():
     assert patch_resp.status_code == 404, f"Expected 404 on cross-tenant conversation update, got {patch_resp.status_code}"
 
     # 4. User B deletes Conv A -> 404
-    del_resp = client.delete(f"/api/conversations/{conv_a_id}", headers=headers_b)
-    assert del_resp.status_code == 404, f"Expected 404 on cross-tenant conversation delete, got {del_resp.status_code}"
+    del_resp_b = client.delete(f"/api/conversations/{conv_a_id}", headers=headers_b)
+    assert del_resp_b.status_code == 404, f"Expected 404 on cross-tenant conversation delete, got {del_resp_b.status_code}"
+
+    # 5. User A adds message and feedback, then deletes Conv A -> 200 with cascade cleanup
+    from app.models.database import SessionLocal, Message, Feedback, Conversation
+    db = SessionLocal()
+    try:
+        msg = Message(conversation_id=conv_a_id, role="ai", content="Section 3(p) prior art analysis.")
+        db.add(msg)
+        db.commit()
+        db.refresh(msg)
+        fb = Feedback(message_id=msg.id, rating="thumbs_up", comment="Helpful")
+        db.add(fb)
+        db.commit()
+        msg_id = msg.id
+        fb_id = fb.id
+    finally:
+        db.close()
+
+    del_resp_a = client.delete(f"/api/conversations/{conv_a_id}", headers=headers_a)
+    assert del_resp_a.status_code == 200, f"Expected 200 on owner conversation delete, got {del_resp_a.status_code}: {del_resp_a.text}"
+    assert del_resp_a.json()["status"] == "deleted"
+
+    # Verify conversation, message, and feedback are completely purged
+    verify_db = SessionLocal()
+    try:
+        assert verify_db.query(Conversation).filter(Conversation.id == conv_a_id).first() is None
+        assert verify_db.query(Message).filter(Message.id == msg_id).first() is None
+        assert verify_db.query(Feedback).filter(Feedback.id == fb_id).first() is None
+    finally:
+        verify_db.close()
+
+    # 6. Subsequent read or delete of already-deleted Conv A returns 404
+    assert client.get(f"/api/conversations/{conv_a_id}", headers=headers_a).status_code == 404
+    assert client.delete(f"/api/conversations/{conv_a_id}", headers=headers_a).status_code == 404
 
 
 # ---------------------------------------------------------------------------

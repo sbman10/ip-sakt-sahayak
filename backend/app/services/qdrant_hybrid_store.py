@@ -648,6 +648,13 @@ class QdrantHybridStore:
         )
         record_stage(
             trace,
+            "qdrant_search",
+            "completed",
+            "Dense and sparse Qdrant branches searched",
+            started_at=search_started,
+        )
+        record_stage(
+            trace,
             "rrf_fusion",
             "completed",
             "Qdrant native RRF fusion completed",

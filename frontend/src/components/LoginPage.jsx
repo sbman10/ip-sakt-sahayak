@@ -45,13 +45,15 @@ export default function LoginPage({ onLogin }) {
     signUp,
     signUpWithPassword,
     loginWithPassword,
-    loginAsDemoUser,
-    resendVerificationEmail,
     isLoggedIn,
+    loading: authLoading,
   } = useAuth()
 
   // Tabs: 'demo' | 'password' | 'otp' | 'register'
   const [authTab, setAuthTab] = useState('demo')
+
+  // Remember Me State (strictly opt-in; never pre-selected without explicit user consent)
+  const [rememberMe, setRememberMe] = useState(false)
 
   // Password Login State
   const [loginEmail, setLoginEmail] = useState('')
@@ -76,6 +78,24 @@ export default function LoginPage({ onLogin }) {
   const [success, setSuccess] = useState('')
 
   const otpInputsRef = useRef([])
+
+  // Helper to render accessible Remember Me checkbox
+  const renderRememberMe = (id) => (
+    <div className="login-remember-me">
+      <label htmlFor={id} className="login-remember-label">
+        <input
+          type="checkbox"
+          id={id}
+          checked={rememberMe}
+          onChange={(e) => setRememberMe(e.target.checked)}
+          disabled={isLoading}
+          className="login-remember-checkbox"
+          aria-label="Remember me"
+        />
+        <span className="login-remember-text">Remember me</span>
+      </label>
+    </div>
+  )
 
   // If already logged in, redirect away
   useEffect(() => {
@@ -150,7 +170,7 @@ export default function LoginPage({ onLogin }) {
       if (!ADMIN_DEMO_EMAIL || !ADMIN_DEMO_PASSWORD) {
         throw new Error('Admin demo access is not configured for this environment.')
       }
-      const sessionData = await loginWithPassword(ADMIN_DEMO_EMAIL, ADMIN_DEMO_PASSWORD)
+      const sessionData = await loginWithPassword(ADMIN_DEMO_EMAIL, ADMIN_DEMO_PASSWORD, rememberMe)
       setSuccess(`Authenticated as ${acc.name}! Accessing workspace...`)
       if (onLogin && sessionData.user) {
         onLogin(sessionData.user.email, sessionData.user.user_metadata?.full_name || acc.name)
@@ -182,7 +202,7 @@ export default function LoginPage({ onLogin }) {
 
     setIsLoading(true)
     try {
-      const sessionData = await loginWithPassword(cleanEmail, loginPassword)
+      const sessionData = await loginWithPassword(cleanEmail, loginPassword, rememberMe)
       setSuccess('Login successful! Entering workspace...')
       if (onLogin && sessionData.user) {
         onLogin(
@@ -228,7 +248,7 @@ export default function LoginPage({ onLogin }) {
     setIsLoading(true)
     try {
       const registerFn = signUp || signUpWithPassword
-      const sessionData = await registerFn(cleanEmail, cleanPassword, cleanName)
+      const sessionData = await registerFn(cleanEmail, cleanPassword, cleanName, rememberMe)
       setSuccess('Account created successfully! Entering workspace...')
       if (onLogin && sessionData?.user) {
         onLogin(
@@ -339,7 +359,7 @@ export default function LoginPage({ onLogin }) {
 
     setIsLoading(true)
     try {
-      const data = await verifyOtp(otpEmail.trim().toLowerCase(), code)
+      const data = await verifyOtp(otpEmail.trim().toLowerCase(), code, rememberMe)
       setSuccess('Verification successful! Accessing workspace...')
       if (onLogin && data.user) {
         onLogin(
@@ -366,6 +386,17 @@ export default function LoginPage({ onLogin }) {
     }
   }
 
+  if (authLoading) {
+    return (
+      <div className="login-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div className="gov-spinner" style={{ width: 44, height: 44, border: '3px solid rgba(22, 101, 52, 0.2)', borderTopColor: '#15803d', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 16px' }} />
+          <p style={{ color: '#475569', fontSize: '0.95rem', fontWeight: 500 }}>Checking authentication session...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="login-page">
       <div className="login-container">
@@ -378,7 +409,7 @@ export default function LoginPage({ onLogin }) {
             </Link>
 
             <h1 className="login-brand-title">
-              {t('heroSubtitle') || 'Know what comes next.'}
+              {t('') || 'Know what comes next.'}
             </h1>
 
             <p className="login-brand-description">
@@ -390,13 +421,13 @@ export default function LoginPage({ onLogin }) {
                 <span className="login-feature-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                   <IconCheck size={14} />
                 </span>
-                <span>{t('zeroHallucination') || 'Zero-Hallucination Legal Grounding'}</span>
+                <span>{t('Close to Zero Hallucination') || 'Zero-Hallucination Legal Grounding'}</span>
               </div>
               <div className="login-feature">
                 <span className="login-feature-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                   <IconCheck size={14} />
                 </span>
-                <span>{t('sourceCited') || 'Statutory Section & Treaty Citations'}</span>
+                <span>{t('Source cited') || 'Statutory Section & Treaty Citations'}</span>
               </div>
               <div className="login-feature">
                 <span className="login-feature-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -469,6 +500,7 @@ export default function LoginPage({ onLogin }) {
                             <span>{acc.desc}</span>
                           </div>
                         </div>
+                        {renderRememberMe(`rememberMe-demo-${acc.id}`)}
                         <button
                           type="button"
                           onClick={() => handleQuickLogin(acc)}
@@ -516,6 +548,8 @@ export default function LoginPage({ onLogin }) {
                     autoComplete="current-password"
                   />
                 </div>
+
+                {renderRememberMe('rememberMe-password')}
 
                 <button
                   type="submit"
@@ -617,6 +651,8 @@ export default function LoginPage({ onLogin }) {
                   />
                   <span className="login-field-hint">Use uppercase, lowercase, number, and special character.</span>
                 </div>
+
+                {renderRememberMe('rememberMe-register')}
 
                 <button
                   type="submit"
@@ -731,6 +767,8 @@ export default function LoginPage({ onLogin }) {
                       </button>
                     </div>
                   </div>
+
+                  {renderRememberMe('rememberMe-otp')}
 
                   <button
                     type="submit"

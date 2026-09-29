@@ -321,10 +321,15 @@ def delete_conversation(
     if not conv:
         raise HTTPException(status_code=404, detail="Conversation not found")
     _assert_owner(conv, current_user, tenant)
-    
+
+    # Delete any feedback associated with messages in this conversation
+    msg_ids = [m[0] for m in db.query(Message.id).filter(Message.conversation_id == conversation_id).all()]
+    if msg_ids:
+        db.query(Feedback).filter(Feedback.message_id.in_(msg_ids)).delete(synchronize_session=False)
+
     db.delete(conv)
     db.commit()
-    
+
     log.info("Deleted conversation: %s", conversation_id)
     return {"status": "deleted", "id": conversation_id}
 

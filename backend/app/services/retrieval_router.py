@@ -574,6 +574,13 @@ class RetrievalRouter:
         # -------------------------------------------------------------
         # Path B: Qdrant Hybrid Production Retrieval with Safe Fallback
         # -------------------------------------------------------------
+        record_stage(
+            trace,
+            "retrieval_routing",
+            "completed",
+            "Verified retrieval backend selected",
+            details={"backend": "qdrant_hybrid", "reason": routing_reason},
+        )
         fallback_needed = False
         fallback_category: Optional[str] = None
         qdrant_results: List[Dict[str, Any]] = []

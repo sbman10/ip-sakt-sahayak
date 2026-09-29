@@ -9,6 +9,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js'
+import { authStorage } from './authStorage'
 
 const supabaseUrl = (
   import.meta.env.VITE_SUPABASE_URL ||
@@ -36,7 +37,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey || 'placeholde
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+    storage: typeof window !== 'undefined' ? authStorage : undefined,
   },
 })
 

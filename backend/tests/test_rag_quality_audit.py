@@ -214,8 +214,7 @@ def test_deduplication_by_text_hash():
 # 6. Cross-Encoder Fallback
 # ============================================================================
 
-@pytest.mark.asyncio
-async def test_cross_encoder_fallback_on_failure():
+def test_cross_encoder_fallback_on_failure():
     """Cross-encoder failure should fall back to original order, not crash."""
     with patch("app.services.reranker.ConditionalReranker") as MockReranker:
         mock_instance = MagicMock()
