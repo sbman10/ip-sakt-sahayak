@@ -2811,31 +2811,220 @@ function CollapsibleCitations({ citations }) {
 }
 
 /* ============================================================
-   RENDER TEXT WITH INLINE CITATION LINKS
+   RAGVYN SLEEK PROSE & ZERO-MARKDOWN MESSAGE FORMATTER
    ============================================================ */
-function renderTextWithCitations(text, onCitationClick) {
-  if (!text || !onCitationClick) return text
-  // Match [SRC-001], [SRC-002], etc.
-  const parts = text.split(/(\[SRC-\d+\])/g)
-  if (parts.length <= 1) return text
-  return parts.map((part, i) => {
-    const match = part.match(/^\[(SRC-\d+)\]$/)
-    if (match) {
-      const srcId = match[1]
-      return (
-        <button
-          key={i}
-          className="inline-citation-link"
-          onClick={(e) => { e.stopPropagation(); onCitationClick(srcId) }}
-          title={`View source ${srcId}`}
-          aria-label={`Jump to source ${srcId}`}
-        >
-          [{srcId}]
-        </button>
-      )
+function FormattedMessageText({ text, citations = [], onCitationClick, isStreaming = false }) {
+  if (!text) return null;
+
+  // 1. Normalize line endings and filter out raw horizontal markdown dividers (---, ===)
+  const normalized = text.replace(/\r\n/g, '\n');
+  const rawLines = normalized.split('\n');
+
+  const filteredLines = [];
+  for (let line of rawLines) {
+    const trimmed = line.trim();
+    if (/^[-*_]{3,}$/.test(trimmed) || /^={3,}$/.test(trimmed)) {
+      continue;
     }
-    return part
-  })
+    filteredLines.push(line);
+  }
+
+  // 2. Parse into blocks: headers and clean paragraphs
+  const blocks = [];
+  let currentParaLines = [];
+
+  const flushPara = () => {
+    if (currentParaLines.length > 0) {
+      const paraText = currentParaLines.join(' ').trim();
+      if (paraText) {
+        blocks.push({ type: 'paragraph', text: paraText });
+      }
+      currentParaLines = [];
+    }
+  };
+
+  for (let i = 0; i < filteredLines.length; i++) {
+    const rawLine = filteredLines[i];
+    const trimmed = rawLine.trim();
+
+    if (!trimmed) {
+      flushPara();
+      continue;
+    }
+
+    // Check if line is a Section Header:
+    // e.g. "### TITLE", "**TITLE:**", "**TITLE**", or short uppercase lines like "TKDL PRIOR-ART DEFENSE"
+    const isMarkdownHeader = /^#{1,6}\s+(.+)$/.test(trimmed);
+    const isBoldHeader = /^\*{2}([A-Za-z0-9\s()—–&/,-]{3,70}:?)\*{2}:?$/.test(trimmed);
+    const isAllCapsHeader = /^[A-Z0-9\s()—–&/,-]{4,60}:?$/.test(trimmed) &&
+                            !trimmed.endsWith('.') &&
+                            trimmed === trimmed.toUpperCase() &&
+                            trimmed.length >= 4 &&
+                            !trimmed.includes('[SRC-');
+
+    if (isMarkdownHeader || isBoldHeader || isAllCapsHeader) {
+      flushPara();
+      let headerText = trimmed;
+      if (isMarkdownHeader) {
+        headerText = trimmed.replace(/^#{1,6}\s+/, '');
+      } else if (isBoldHeader) {
+        headerText = trimmed.replace(/^\*{2}/, '').replace(/\*{2}:?$/, '');
+      }
+      headerText = headerText.replace(/\*{1,2}/g, '').replace(/:$/, '').trim().toUpperCase();
+      blocks.push({ type: 'header', text: headerText });
+      continue;
+    }
+
+    // Check if line starts with a list bullet (- , * , • , 1. )
+    const bulletMatch = trimmed.match(/^[-*•]\s+(.+)$/) || trimmed.match(/^\d+\.\s+(.+)$/);
+    if (bulletMatch) {
+      flushPara();
+      let itemContent = bulletMatch[1].trim();
+      blocks.push({ type: 'paragraph', text: itemContent });
+      continue;
+    }
+
+    // Regular line in paragraph
+    currentParaLines.push(trimmed);
+  }
+  flushPara();
+
+  // Helper to render inline elements: citations, bold (no asterisks), and jargon
+  const renderInlineContent = (str) => {
+    if (!str) return null;
+
+    // Matches: [SRC-xxx], [1], or **bold**
+    const regex = /(\[SRC-\d+\]|\[\d+\]|\*\*[^*]+\*\*)/g;
+    const parts = str.split(regex);
+
+    return parts.map((part, idx) => {
+      if (!part) return null;
+
+      // Citation tag: [SRC-001]
+      const srcMatch = part.match(/^\[(SRC-\d+)\]$/);
+      if (srcMatch) {
+        const srcId = srcMatch[1];
+        const foundIndex = Array.isArray(citations) ? citations.findIndex(c => c.source_id === srcId) : -1;
+        const displayNum = foundIndex !== -1 ? (foundIndex + 1) : parseInt(srcId.replace(/\D/g, ''), 10) || 1;
+        const matchedCit = foundIndex !== -1 ? citations[foundIndex] : null;
+        const tooltip = matchedCit ? `${matchedCit.source}${matchedCit.section && matchedCit.section !== 'General' ? ` (${matchedCit.section})` : ''}` : `Source [${displayNum}]`;
+
+        return (
+          <button
+            key={`cit-${idx}`}
+            type="button"
+            className="ragvyn-inline-citation-pill"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onCitationClick) onCitationClick(srcId);
+            }}
+            title={tooltip}
+            aria-label={`Jump to source ${displayNum}`}
+          >
+            [{displayNum}]
+          </button>
+        );
+      }
+
+      // Citation tag: [1]
+      const numMatch = part.match(/^\[(\d+)\]$/);
+      if (numMatch) {
+        const displayNum = numMatch[1];
+        const citIdx = parseInt(displayNum, 10) - 1;
+        const matchedCit = Array.isArray(citations) && citations[citIdx] ? citations[citIdx] : null;
+        const srcId = matchedCit?.source_id || `SRC-${String(displayNum).padStart(3, '0')}`;
+        const tooltip = matchedCit ? `${matchedCit.source}${matchedCit.section && matchedCit.section !== 'General' ? ` (${matchedCit.section})` : ''}` : `Source [${displayNum}]`;
+
+        return (
+          <button
+            key={`num-${idx}`}
+            type="button"
+            className="ragvyn-inline-citation-pill"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onCitationClick) onCitationClick(srcId);
+            }}
+            title={tooltip}
+            aria-label={`Jump to source ${displayNum}`}
+          >
+            [{displayNum}]
+          </button>
+        );
+      }
+
+      // Bold text: **phrase** (strip asterisks, render clean strong)
+      const boldMatch = part.match(/^\*\*(.+)\*\*$/);
+      if (boldMatch) {
+        const innerText = boldMatch[1].replace(/\*/g, '');
+        return (
+          <strong key={`b-${idx}`} className="ragvyn-strong">
+            <JargonText text={innerText} />
+          </strong>
+        );
+      }
+
+      // Clean plain text: strip any stray single asterisks
+      const cleanPart = part.replace(/\*/g, '');
+      return <JargonText key={`t-${idx}`} text={cleanPart} />;
+    });
+  };
+
+  return (
+    <div className="ragvyn-prose-container">
+      {blocks.map((block, bIdx) => {
+        if (block.type === 'header') {
+          return (
+            <div key={`h-${bIdx}`} className="ragvyn-section-title">
+              {block.text}
+            </div>
+          );
+        }
+        return (
+          <p key={`p-${bIdx}`} className="ragvyn-prose-p">
+            {renderInlineContent(block.text)}
+          </p>
+        );
+      })}
+
+      {/* Sleek inline SOURCES section matching screenshot */}
+      {!isStreaming && citations && citations.length > 0 && (
+        <div className="ragvyn-sources-block">
+          <div className="ragvyn-sources-header">SOURCES</div>
+          <div className="ragvyn-sources-list">
+            {citations.map((c, cIdx) => {
+              const srcId = c.source_id || `SRC-${String(cIdx + 1).padStart(3, '0')}`;
+              return (
+                <button
+                  key={cIdx}
+                  type="button"
+                  className="ragvyn-source-chip"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onCitationClick) onCitationClick(srcId);
+                  }}
+                  title={c.text ? `${c.text.slice(0, 200)}...` : c.source}
+                  aria-label={`Open source ${cIdx + 1}: ${c.source}`}
+                >
+                  <span className="ragvyn-source-chip-index">{cIdx + 1}</span>
+                  <span className="ragvyn-source-chip-name">{c.source}</span>
+                  {c.section && c.section !== 'General' && (
+                    <span className="ragvyn-source-chip-sec">({c.section})</span>
+                  )}
+                  {c.authority && (
+                    <span className="ragvyn-source-chip-auth">({c.authority})</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function renderTextWithCitations(text, onCitationClick, citations = []) {
+  return <FormattedMessageText text={text} citations={citations} onCitationClick={onCitationClick} />;
 }
 
 /* ============================================================
@@ -3135,17 +3324,26 @@ function ConfidenceBadge({ level }) {
   const limitations = (typeof level === 'object' && Array.isArray(level.limitations)) ? level.limitations : []
 
   const cat = getConfidenceCategory(score, backendLabel)
+  const labelRaw = (backendLabel || cat.label || 'Medium')
+  const cleanTitle = `${labelRaw.charAt(0).toUpperCase() + labelRaw.slice(1).toLowerCase()} Confidence`
   const displayLabel = (score !== null && score !== undefined)
-    ? `Evidence Confidence: ${score}% (${backendLabel || cat.label})`
-    : `Evidence Confidence: ${backendLabel || cat.label}`
+    ? `Evidence Confidence: ${score}% (${cleanTitle})`
+    : cleanTitle
 
   return (
-    <div className="confidence-wrapper" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+    <div className="confidence-wrapper" style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-        <span className={`confidence-badge ${cat.cls}`} role="status" aria-label={displayLabel} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
-          {cat.icon}
-          <span>{displayLabel}</span>
-        </span>
+        <button
+          type="button"
+          onClick={() => setShowBreakdown(prev => !prev)}
+          className="ragvyn-minimal-confidence"
+          title={`${displayLabel} — Click to view evidence breakdown`}
+          aria-expanded={showBreakdown}
+          style={{ background: 'transparent', border: 'none', padding: 0 }}
+        >
+          <span className={`ragvyn-confidence-dot ${cat.cls}`} />
+          <span>{cleanTitle}</span>
+        </button>
         {(breakdown || limitations.length > 0) && (
           <button
             type="button"
@@ -3652,18 +3850,19 @@ function MessageBubble({ msg, onFollowUp, onRegenerate, onFeedback, isLatestAI, 
           <span className="ai-sender-tag">Statute-Grounded</span>
         </div>
         {msg.pipelineTrace?.length > 0 && <RagPipelineTrace events={msg.pipelineTrace} />}
-        <div className="bubble ai-bubble" style={{ whiteSpace: 'pre-line' }}>
-          {renderBubbleContent()}
+        <div className="bubble ai-bubble">
+          <FormattedMessageText
+            text={msg.text}
+            citations={msg.citations}
+            onCitationClick={onCitationClick}
+            isStreaming={msg.streaming}
+          />
           {msg.streaming && <span className="typewriter-cursor" aria-hidden="true">|</span>}
         </div>
 
-        {/* Show inline citations only for historical messages, not the latest (which uses the Sources panel) */}
-        {!isLatestAI && <CollapsibleCitations citations={msg.citations} />}
-
         {msg.confidence && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <ConfidenceBadge level={msg.confidence} />
-            <ConfidenceMeter level={msg.confidence} />
           </div>
         )}
         {msg.showDisclaimer && <DisclaimerBanner />}
@@ -5151,7 +5350,7 @@ Based on this information, provide comprehensive statutory-grounded IP and regul
           {/* Scrollable grounded assessment output */}
           <div className="assessment-result-scroll">
             <div className="assessment-answer-card">
-              <JargonText text={result.answer} />
+              <FormattedMessageText text={result.answer} citations={result.citations} />
             </div>
 
             {result.citations && result.citations.length > 0 && (

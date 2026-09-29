@@ -17694,3 +17694,191 @@ button[type='submit'].login-submit-btn:hover {
     transition: none;
   }
 }
+
+/* ============================================================
+   RAGVYN SLEEK PROSE & ZERO-MARKDOWN MESSAGE FORMATTING
+   Matches official publication & research portal styling
+   ============================================================ */
+
+.ragvyn-prose-container {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
+  line-height: 1.72 !important;
+  font-size: 0.94rem !important;
+  letter-spacing: -0.01em !important;
+  color: inherit !important;
+  word-break: break-word !important;
+}
+
+/* Section Title: Uppercase, sleek muted steel styling matching screenshot */
+.ragvyn-section-title {
+  display: block !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  color: #94A3B8 !important;
+  margin-top: 18px !important;
+  margin-bottom: 4px !important;
+  padding-bottom: 2px !important;
+}
+
+.ragvyn-section-title:first-child {
+  margin-top: 0 !important;
+}
+
+/* Prose Paragraph: Clean block margins, high legibility, zero raw hyphens */
+.ragvyn-prose-p {
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1.72 !important;
+  color: inherit !important;
+  word-break: break-word !important;
+}
+
+/* Bold / Strong highlights without asterisks */
+.ragvyn-strong {
+  font-weight: 600 !important;
+  color: inherit !important;
+}
+
+/* Inline Citation Pill: [1], [2] matching screenshot */
+.ragvyn-inline-citation-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  vertical-align: baseline !important;
+  margin: 0 4px !important;
+  padding: 1px 7px !important;
+  font-size: 0.74rem !important;
+  font-weight: 600 !important;
+  line-height: 1.25 !important;
+  border-radius: 4px !important;
+  background: rgba(16, 185, 129, 0.12) !important;
+  color: #10B981 !important;
+  border: 1px solid rgba(16, 185, 129, 0.28) !important;
+  cursor: pointer !important;
+  text-decoration: none !important;
+  transition: all 0.18s ease !important;
+  user-select: none !important;
+  font-family: inherit !important;
+}
+
+.ragvyn-inline-citation-pill:hover {
+  background: rgba(16, 185, 129, 0.22) !important;
+  border-color: #10B981 !important;
+  color: #059669 !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Sources Block at bottom of bubble matching screenshot */
+.ragvyn-sources-block {
+  margin-top: 18px !important;
+  padding-top: 12px !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.ragvyn-sources-header {
+  font-size: 0.7rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  color: #64748B !important;
+  margin-bottom: 8px !important;
+}
+
+.ragvyn-sources-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+}
+
+.ragvyn-source-chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 6px !important;
+  padding: 6px 10px !important;
+  font-size: 0.8rem !important;
+  color: #CBD5E1 !important;
+  cursor: pointer !important;
+  text-align: left !important;
+  transition: all 0.18s ease !important;
+  max-width: 100% !important;
+  font-family: inherit !important;
+}
+
+.ragvyn-source-chip:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(16, 185, 129, 0.4) !important;
+  color: #F8FAFC !important;
+}
+
+.ragvyn-source-chip-index {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 18px !important;
+  height: 18px !important;
+  border-radius: 4px !important;
+  background: rgba(0, 0, 0, 0.45) !important;
+  color: #94A3B8 !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  flex-shrink: 0 !important;
+}
+
+.ragvyn-source-chip-name {
+  font-weight: 500 !important;
+  color: inherit !important;
+}
+
+.ragvyn-source-chip-sec {
+  color: #94A3B8 !important;
+  font-size: 0.75rem !important;
+}
+
+.ragvyn-source-chip-auth {
+  color: #64748B !important;
+  font-size: 0.72rem !important;
+}
+
+/* Minimal Sleek Confidence Tag (Screenshot 2: "● Medium Confidence") */
+.ragvyn-minimal-confidence {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-size: 0.78rem !important;
+  font-weight: 500 !important;
+  margin-top: 6px !important;
+  cursor: pointer !important;
+  color: #94A3B8 !important;
+  user-select: none !important;
+}
+
+.ragvyn-confidence-dot {
+  width: 7px !important;
+  height: 7px !important;
+  border-radius: 50% !important;
+  display: inline-block !important;
+  flex-shrink: 0 !important;
+}
+
+.ragvyn-confidence-dot.high {
+  background-color: #10B981 !important;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6) !important;
+}
+
+.ragvyn-confidence-dot.medium {
+  background-color: #F59E0B !important;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.6) !important;
+}
+
+.ragvyn-confidence-dot.low {
+  background-color: #EF4444 !important;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.6) !important;
+}
+

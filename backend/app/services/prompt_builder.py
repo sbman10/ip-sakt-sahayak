@@ -57,6 +57,15 @@ CORE OPERATIONAL PRINCIPLES:
 
 4. MANDATORY DISCLAIMER:
 - Always include the brief notice that the response provides general statutory information for research purposes and does not constitute formal legal advice or a binding patent office opinion.
+
+5. STRICT PROSE FORMATTING & ZERO-MARKDOWN DIRECTIVES (CRITICAL):
+- Write in clean, flowing, elegant prose paragraphs.
+- NEVER use markdown asterisks ('**' or '*') anywhere in your response. Do not use '**bold**'.
+- NEVER use markdown list dashes ('- ') or bullet asterisks ('* ') to start lines.
+- NEVER use markdown horizontal divider lines ('---' or '===').
+- For distinct thematic sections, put the section title on its own line in ALL-CAPS with NO markdown syntax (e.g., TKDL PRIOR-ART DEFENSE, ABS COMPLIANCE (INDIA), STATUTORY EXCLUSIONS, RECOMMENDED ACTION).
+- Separate paragraphs with a single blank line.
+- For all statutory claims, cite the evidence using [SRC-001], [SRC-002], etc.
 """
 
     @classmethod
@@ -214,15 +223,16 @@ CORE OPERATIONAL PRINCIPLES:
                 "- Discuss novelty, inventive step, and statutory exclusions (e.g., Section 3(p), Section 3(e), Section 3(d)) ONLY as relevant.\n"
                 "- Highlight evidence gaps and prior art uncertainties.\n"
                 "- NEVER assert that an invention is 'patentable' with certainty. Use cautious phrasing such as:\n"
-                "  'may have potential subject to prior-art verification', 'appears limited by statutory exclusions', or 'requires professional assessment'."
+                "  'may have potential subject to prior-art verification', 'appears limited by statutory exclusions', or 'requires professional assessment'.\n"
+                "- Write in full, articulate prose paragraphs. Do NOT use markdown asterisks ('**') or bullet dashes ('- '). Use ALL-CAPS headers for sections."
             )
         else:
             intent_directive = (
                 "INTENT DIRECTIVE: FACTUAL STATUTORY QUERY\n"
-                "- Provide a comprehensive, fully articulated, and well-structured answer.\n"
+                "- Provide a comprehensive, fully articulated answer written in clean, elegant prose paragraphs.\n"
                 "- Clearly articulate all relevant statutory requirements, provisions, procedures, and authorities to full completion.\n"
                 "- Cite each key claim with [SRC-XXX].\n"
-                "- Ensure every requirement or bullet point is fully written out and completed without cutting off mid-sentence."
+                "- Do NOT use markdown asterisks ('**') or bullet dashes ('- '). Put section headers in ALL-CAPS on their own line."
             )
 
         # ── 6. Requested Information Block ──────────────────────────
@@ -254,10 +264,11 @@ CORE OPERATIONAL PRINCIPLES:
             f"Language: {language_instruction}\n"
             f"{jurisdiction_instruction}\n\n"
             "REMINDERS:\n"
-            "1. Use ONLY facts from the retrieved evidence. If facts are missing, say 'The available sources do not establish this.'\n"
-            "2. Cite every material claim using [SRC-XXX] citing only existing source IDs.\n"
-            "3. Ensure the response is complete from beginning to end; do not truncate, cut off, or leave sentences unfinished.\n"
-            "4. Conclude with a brief disclaimer that this is general statutory information and not legal advice."
+            "1. STRICT CLEAN FORMAT: Write clean, elegant prose paragraphs with NO markdown asterisks ('**' or '*') and NO bullet dashes ('- '). Use ALL-CAPS lines for section headers.\n"
+            "2. Use ONLY facts from the retrieved evidence. If facts are missing, say 'The available sources do not establish this.'\n"
+            "3. Cite every material claim using [SRC-XXX] citing only existing source IDs.\n"
+            "4. Ensure the response is complete from beginning to end; do not truncate, cut off, or leave sentences unfinished.\n"
+            "5. Conclude with a brief disclaimer that this is general statutory information and not legal advice."
         )
 
         prompt = (

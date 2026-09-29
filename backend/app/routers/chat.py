@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import time
 import uuid
 from datetime import datetime
@@ -64,6 +65,74 @@ from app.services.llm import stream_grounded_answer
 log = logging.getLogger("app.routers.chat")
 
 router = APIRouter()
+
+
+def sanitize_answer_formatting(text: str) -> str:
+    """
+    Sanitizes LLM answer text to enforce sleek, clean prose:
+    - Strips markdown divider lines (---, ***, ===)
+    - Converts markdown headers (### Header, **Header:**) to clean uppercase headers
+    - Strips all asterisks (**bold**, *italic*)
+    - Strips leading bullet dashes (- ), asterisks (* ), or bullets (• ) from lines
+    - Normalizes paragraph spacing without raw markdown noise
+    """
+    if not text:
+        return text
+
+    lines = text.split("\n")
+    cleaned_lines = []
+
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            cleaned_lines.append("")
+            continue
+
+        # Drop markdown horizontal rules
+        if re.match(r"^[-*_]{3,}$", stripped) or re.match(r"^={3,}$", stripped):
+            continue
+
+        # Markdown headers: e.g. "### Title" or "## Title"
+        hdr_match = re.match(r"^#{1,6}\s+(.+)$", stripped)
+        if hdr_match:
+            hdr_text = hdr_match.group(1).strip().replace("**", "").replace("*", "")
+            cleaned_lines.append("")
+            cleaned_lines.append(hdr_text.upper())
+            cleaned_lines.append("")
+            continue
+
+        # Standalone bold headers: e.g. "**TKDL Prior-Art Defense:**" or "**ABS COMPLIANCE (INDIA)**"
+        bold_hdr_match = re.match(r"^\*{2}([A-Za-z0-9\s()—–&/,-]{3,70}:?)\*{2}:?$", stripped)
+        if bold_hdr_match:
+            hdr_text = bold_hdr_match.group(1).rstrip(":").strip()
+            cleaned_lines.append("")
+            cleaned_lines.append(hdr_text.upper())
+            cleaned_lines.append("")
+            continue
+
+        # Strip leading bullet dashes (- ), asterisks (* ), or bullets (• )
+        bullet_match = re.match(r"^(\s*)[-*•]\s+(.+)$", line)
+        if bullet_match:
+            content = bullet_match.group(2)
+            content = re.sub(r"\*{1,2}", "", content)
+            cleaned_lines.append(content)
+            continue
+
+        # Strip numbered bullet markers if at start of line
+        num_bullet_match = re.match(r"^\s*\d+\.\s+(.+)$", line)
+        if num_bullet_match:
+            content = num_bullet_match.group(1)
+            content = re.sub(r"\*{1,2}", "", content)
+            cleaned_lines.append(content)
+            continue
+
+        # Normal line: strip any residual asterisks
+        clean_line = re.sub(r"\*{1,2}", "", line)
+        cleaned_lines.append(clean_line)
+
+    result = "\n".join(cleaned_lines)
+    result = re.sub(r"\n{3,}", "\n\n", result).strip()
+    return result
 
 
 def _resolve_source_filters(jurisdiction: str) -> list[str]:
@@ -519,6 +588,7 @@ async def chat_endpoint(
 
     # ── Stage (j): Post-Generation Claim Guardrails ─────────────
     answer, confidence = enforce_claim_guardrails(answer, confidence)
+    answer = sanitize_answer_formatting(answer)
 
     # ── Stage (k): Audit Logging (Background) ──────────────────
     elapsed_ms = (time.perf_counter() - start_time) * 1000
@@ -1013,7 +1083,7 @@ async def chat_stream_endpoint(
 
         if not had_error and conv_id:
             try:
-                full_text = "".join(accumulated_tokens)
+                full_text = sanitize_answer_formatting("".join(accumulated_tokens))
                 if full_text:
                     ai_msg = Message(
                         conversation_id=conv_id,
