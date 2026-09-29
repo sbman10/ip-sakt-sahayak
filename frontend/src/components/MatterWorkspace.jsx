@@ -86,7 +86,7 @@ const SORT_OPTIONS = [
 const EVENT_TYPES = ['filing', 'office_action', 'response', 'deadline', 'grant', 'note']
 
 function authHeaders() {
-  const token = localStorage.getItem(TOKEN_KEY)
+  const token = typeof window !== 'undefined' ? (sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY)) : null
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),

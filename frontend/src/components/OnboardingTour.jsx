@@ -33,6 +33,8 @@ const TOUR_FALLBACK = {
   tourWelcomeDesc: 'Your AI guide for Ayurveda IP, patents, TKDL and regulatory questions. Let us show you around in 30 seconds.',
   tourChatTitle: '💬 Ask RagVyn AI',
   tourChatDesc: 'Ask any Ayurveda IP question in your language and get a cited, trustworthy answer — the heart of the app.',
+  tourDemoTitle: '🎬 Interactive Demo & Sandbox',
+  tourDemoDesc: 'Experience live patent screening, dual-use checks, and statutory RAG queries before starting your assessment.',
   tourToolsTitle: '🧰 IP Tools',
   tourToolsDesc: 'Open this menu for our smart tools that go beyond chat. Let us highlight the top three next.',
   tourVerdictTitle: '🛡️ Patentability Verdict',
@@ -81,6 +83,12 @@ const STEPS = [
     selector: '.gov-nav-cta',
     titleKey: 'tourChatTitle',
     descKey: 'tourChatDesc',
+    placement: 'bottom',
+  },
+  {
+    selector: '#hero-see-demo-btn, a[href="#demo"]',
+    titleKey: 'tourDemoTitle',
+    descKey: 'tourDemoDesc',
     placement: 'bottom',
   },
   {

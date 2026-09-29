@@ -10,9 +10,19 @@
  * - Handles email OTP sign-in, verification, sign-out, and clean switch-account.
  */
 
-import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react'
 import { supabase, siteUrl } from '../api/supabaseClient'
 import { getApiBase } from '../api/config'
+import {
+  isRememberMeEnabled,
+  setRememberMePreference,
+  syncAuthCaches,
+  clearAllAuthStorage,
+  isTokenExpired,
+  getStoredToken,
+  getStoredRefreshToken,
+  getStoredUser,
+} from '../api/authStorage'
 
 const AuthContext = createContext(null)
 
@@ -20,91 +30,140 @@ export function AuthProvider({ children }) {
   const [session, setSession] = useState(null)
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [rememberMe, setRememberMeState] = useState(() => isRememberMeEnabled())
 
-  // Sync token to localStorage only for compatibility with auxiliary fetchers
-  const syncLocalCaches = useCallback((currentSession) => {
-    if (typeof window === 'undefined') return
-    if (currentSession?.access_token) {
-      localStorage.setItem('ip_sakti_access_token', currentSession.access_token)
-      if (currentSession.refresh_token) {
-        localStorage.setItem('ip_sakti_refresh_token', currentSession.refresh_token)
-      }
-      const u = currentSession.user
-      const uName =
-        u?.user_metadata?.full_name ||
-        u?.user_metadata?.name ||
-        u?.email?.split('@')[0] ||
-        'Innovator'
-      localStorage.setItem('ip_sakti_user_name', uName)
-      localStorage.setItem('ip_sakti_user', JSON.stringify({
-        id: u?.id,
-        email: u?.email,
-        full_name: uName,
-        role: u?.role || 'user',
-      }))
-      localStorage.setItem('ip_sakti_logged_in', 'true')
-    } else {
-      localStorage.removeItem('ip_sakti_access_token')
-      localStorage.removeItem('ip_sakti_refresh_token')
-      localStorage.removeItem('ip_sakti_user_name')
-      localStorage.removeItem('ip_sakti_user')
-      localStorage.removeItem('ip_sakti_logged_in')
-    }
+  const setRememberMe = useCallback((enabled) => {
+    setRememberMePreference(enabled)
+    setRememberMeState(Boolean(enabled))
   }, [])
 
-  // Initial session restoration
+  // Sync token to storage according to active Remember Me preference
+  const syncLocalCaches = useCallback((currentSession, rememberMeOverride) => {
+    syncAuthCaches(currentSession, rememberMeOverride)
+  }, [])
+
+  // Initial session restoration (race-condition free)
   useEffect(() => {
     let mounted = true
 
-    supabase.auth.getSession().then(({ data: { session: initialSession }, error }) => {
-      if (!mounted) return
-      if (error) {
-        console.warn('[AuthContext] Session retrieval error:', error.message)
-      }
-      if (initialSession) {
-        setSession(initialSession)
-        setUser(initialSession?.user || null)
-        syncLocalCaches(initialSession)
-      } else {
-        // Fallback: check stored local session for test accounts / password login
-        const savedToken = localStorage.getItem('ip_sakti_access_token')
-        const savedUserStr = localStorage.getItem('ip_sakti_user')
-        if (savedToken && savedToken !== 'undefined' && savedToken !== 'null' && savedUserStr) {
-          try {
-            const savedUser = JSON.parse(savedUserStr)
-            const fallbackSession = {
-              access_token: savedToken,
-              user: {
-                id: savedUser.id,
-                email: savedUser.email,
-                role: savedUser.role || 'user',
-                confirmed_at: savedUser.confirmed_at || new Date().toISOString(),
-                email_confirmed_at: savedUser.email_confirmed_at || new Date().toISOString(),
-                user_metadata: {
-                  full_name: savedUser.full_name,
-                  name: savedUser.full_name,
-                },
-              },
-            }
-            setSession(fallbackSession)
-            setUser(fallbackSession.user)
-          } catch {
-            // invalid json
-          }
-        } else if (savedToken === 'undefined' || savedToken === 'null') {
-          localStorage.removeItem('ip_sakti_access_token')
+    async function bootstrapSession() {
+      try {
+        // 1. Check Supabase session first
+        const { data: { session: initialSession }, error: sbError } = await supabase.auth.getSession()
+        if (sbError) {
+          console.warn('[AuthContext] Supabase session retrieval error:', sbError.message)
         }
+
+        if (initialSession?.user) {
+          if (!mounted) return
+          setSession(initialSession)
+          setUser(initialSession.user)
+          syncAuthCaches(initialSession)
+          setLoading(false)
+          return
+        }
+
+        // 2. Check stored session from authStorage (localStorage or sessionStorage)
+        const savedToken = getStoredToken()
+        const savedUser = getStoredUser()
+        const savedRefreshToken = getStoredRefreshToken()
+
+        if (savedToken && savedToken !== 'undefined' && savedToken !== 'null' && savedUser) {
+          // If the token is expired, attempt refresh via backend
+          if (isTokenExpired(savedToken)) {
+            console.log('[AuthContext] Cached token expired, attempting refresh...')
+            if (savedRefreshToken && savedRefreshToken !== 'undefined' && savedRefreshToken !== 'null') {
+              try {
+                const apiBase = getApiBase()
+                const refreshRes = await fetch(`${apiBase}/api/auth/refresh?refresh_token=${encodeURIComponent(savedRefreshToken)}`, {
+                  method: 'POST',
+                })
+                if (refreshRes.ok) {
+                  const tokenData = await refreshRes.json()
+                  const refreshedSession = {
+                    access_token: tokenData.access_token,
+                    refresh_token: tokenData.refresh_token || savedRefreshToken,
+                    user: savedUser,
+                  }
+                  if (!mounted) return
+                  setSession(refreshedSession)
+                  setUser(savedUser)
+                  syncAuthCaches(refreshedSession)
+                  setLoading(false)
+                  return
+                }
+              } catch (refreshErr) {
+                console.warn('[AuthContext] Token refresh failed:', refreshErr.message)
+              }
+            }
+
+            // If refresh fails on expired token, clean up safely
+            console.log('[AuthContext] Session expired and cannot be refreshed. Clearing storage.')
+            clearAllAuthStorage()
+            if (!mounted) return
+            setSession(null)
+            setUser(null)
+            setLoading(false)
+            return
+          }
+
+          // Token is valid
+          const fallbackSession = {
+            access_token: savedToken,
+            refresh_token: savedRefreshToken || '',
+            user: savedUser,
+          }
+          if (!mounted) return
+          setSession(fallbackSession)
+          setUser(savedUser)
+          syncAuthCaches(fallbackSession)
+          setLoading(false)
+          return
+        }
+
+        // 3. No session found
+        if (!mounted) return
+        setSession(null)
+        setUser(null)
+        setLoading(false)
+      } catch (err) {
+        console.error('[AuthContext] Session bootstrap error:', err)
+        if (!mounted) return
+        setSession(null)
+        setUser(null)
+        setLoading(false)
       }
-      setLoading(false)
-    })
+    }
+
+    bootstrapSession()
 
     // Listen to reactive auth state changes (sign in, sign out, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
       if (!mounted) return
-      setSession(newSession)
-      setUser(newSession?.user || null)
-      syncLocalCaches(newSession)
-      setLoading(false)
+      console.log('[AuthContext] onAuthStateChange event:', event, Boolean(newSession))
+
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+        if (newSession) {
+          setSession(newSession)
+          setUser(newSession.user || null)
+          syncAuthCaches(newSession)
+          setLoading(false)
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setSession(null)
+        setUser(null)
+        clearAllAuthStorage()
+        setLoading(false)
+      } else if (event === 'INITIAL_SESSION') {
+        // If Supabase has an active session, use it
+        if (newSession) {
+          setSession(newSession)
+          setUser(newSession.user || null)
+          syncAuthCaches(newSession)
+          setLoading(false)
+        }
+        // If newSession is null, DO NOT wipe caches or set loading to false; bootstrapSession is running.
+      }
 
       // Notify other components if needed
       if (typeof window !== 'undefined' && newSession?.user) {
@@ -118,7 +177,7 @@ export function AuthProvider({ children }) {
       mounted = false
       subscription.unsubscribe()
     }
-  }, [syncLocalCaches])
+  }, [])
 
   /**
    * Request email OTP verification code.
@@ -142,11 +201,16 @@ export function AuthProvider({ children }) {
   }, [])
 
   /**
-   * Verify six-digit email OTP.
+   * Verify six-digit or eight-digit email OTP.
    */
-  const verifyOtp = useCallback(async (email, token) => {
+  const verifyOtp = useCallback(async (email, token, rememberMeOverride) => {
     const normalizedEmail = (email || '').trim().toLowerCase()
     const normalizedToken = (token || '').trim()
+
+    if (typeof rememberMeOverride === 'boolean') {
+      setRememberMePreference(rememberMeOverride)
+      setRememberMeState(rememberMeOverride)
+    }
 
     // Try standard email OTP type, fallback to magiclink if rejected by server config
     let res = await supabase.auth.verifyOtp({
@@ -173,7 +237,7 @@ export function AuthProvider({ children }) {
     if (res.data?.session) {
       setSession(res.data.session)
       setUser(res.data.session.user)
-      syncLocalCaches(res.data.session)
+      syncLocalCaches(res.data.session, rememberMeOverride)
     }
 
     return res.data
@@ -183,7 +247,12 @@ export function AuthProvider({ children }) {
    * Register a new user with email, password, and full name.
    * Uses backend /api/auth/signup endpoint.
    */
-  const signUp = useCallback(async (email, password, fullName) => {
+  const signUp = useCallback(async (email, password, fullName, rememberMeOverride) => {
+    if (typeof rememberMeOverride === 'boolean') {
+      setRememberMePreference(rememberMeOverride)
+      setRememberMeState(rememberMeOverride)
+    }
+
     const apiBase = getApiBase()
     const res = await fetch(`${apiBase}/api/auth/signup`, {
       method: 'POST',
@@ -220,7 +289,7 @@ export function AuthProvider({ children }) {
 
     setSession(newSession)
     setUser(newSession.user)
-    syncLocalCaches(newSession)
+    syncLocalCaches(newSession, rememberMeOverride)
 
     if (typeof window !== 'undefined') {
       window.dispatchEvent(
@@ -234,7 +303,12 @@ export function AuthProvider({ children }) {
   /**
    * Direct password login (for dummy test accounts & local auth).
    */
-  const loginWithPassword = useCallback(async (email, password) => {
+  const loginWithPassword = useCallback(async (email, password, rememberMeOverride) => {
+    if (typeof rememberMeOverride === 'boolean') {
+      setRememberMePreference(rememberMeOverride)
+      setRememberMeState(rememberMeOverride)
+    }
+
     const apiBase = getApiBase()
     const res = await fetch(`${apiBase}/api/auth/login`, {
       method: 'POST',
@@ -270,7 +344,7 @@ export function AuthProvider({ children }) {
 
     setSession(newSession)
     setUser(newSession.user)
-    syncLocalCaches(newSession)
+    syncLocalCaches(newSession, rememberMeOverride)
 
     if (typeof window !== 'undefined') {
       window.dispatchEvent(
@@ -292,9 +366,16 @@ export function AuthProvider({ children }) {
     } finally {
       setSession(null)
       setUser(null)
-      syncLocalCaches(null)
+      clearAllAuthStorage()
+      setRememberMePreference(false)
+      setRememberMeState(false)
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('ip-sakti-user-updated', { detail: null })
+        )
+      }
     }
-  }, [syncLocalCaches])
+  }, [])
 
   /**
    * Switch Account: Clears the current session and prepares the UI for a fresh login.
@@ -325,7 +406,12 @@ export function AuthProvider({ children }) {
    * Prototype / Dev Demo Bypass
    * Creates an authenticated local session for demonstration purposes.
    */
-  const loginAsDemoUser = useCallback((demoAccount = {}) => {
+  const loginAsDemoUser = useCallback((demoAccount = {}, rememberMeOverride) => {
+    if (typeof rememberMeOverride === 'boolean') {
+      setRememberMePreference(rememberMeOverride)
+      setRememberMeState(rememberMeOverride)
+    }
+
     const email = demoAccount.email || 'admin@ipsakti.gov.in'
     const name = demoAccount.name || 'Admin Director'
     const nowIso = new Date().toISOString()
@@ -346,7 +432,7 @@ export function AuthProvider({ children }) {
     }
     setSession(demoSession)
     setUser(demoSession.user)
-    syncLocalCaches(demoSession)
+    syncLocalCaches(demoSession, rememberMeOverride)
     if (typeof window !== 'undefined') {
       window.dispatchEvent(
         new CustomEvent('ip-sakti-user-updated', { detail: demoSession.user })
@@ -381,6 +467,8 @@ export function AuthProvider({ children }) {
     userEmail,
     userName,
     loading,
+    rememberMe,
+    setRememberMe,
     signInWithOtp,
     verifyOtp,
     signUp,
@@ -398,6 +486,8 @@ export function AuthProvider({ children }) {
     userEmail,
     userName,
     loading,
+    rememberMe,
+    setRememberMe,
     signInWithOtp,
     verifyOtp,
     signUp,
@@ -415,6 +505,7 @@ export function AuthProvider({ children }) {
   )
 }
 
+/* eslint-disable react-refresh/only-export-components */
 export function useAuth() {
   const context = useContext(AuthContext)
   if (!context) {

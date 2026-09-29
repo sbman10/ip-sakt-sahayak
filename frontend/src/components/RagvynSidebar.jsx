@@ -20,6 +20,8 @@ import {
   IconCheck,
   IconMessageSquare,
   IconSparkles,
+  IconX,
+  IconTrash,
 } from './Icons'
 import { getApiBase } from '../api/config'
 
@@ -68,6 +70,149 @@ export default function RagvynSidebar({
   // Conversation sessions (loaded from API, same source as ChatPage)
   const [sessions, setSessions] = useState([])
   const [loadingSessions, setLoadingSessions] = useState(false)
+
+  // Delete Task confirmation modal state
+  const [confirmModal, setConfirmModal] = useState({
+    open: false,
+    session: null,
+    isDeleting: false,
+    error: null,
+  })
+  const [deletingSessionId, setDeletingSessionId] = useState(null)
+  const [toastMessage, setToastMessage] = useState(null)
+  const toastTimerRef = useRef(null)
+  const lastActiveElementRef = useRef(null)
+  const cancelBtnRef = useRef(null)
+  const deleteBtnRef = useRef(null)
+  const dialogRef = useRef(null)
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    }
+  }, [])
+
+  const promptDeleteSession = (session) => {
+    lastActiveElementRef.current = document.activeElement
+    setConfirmModal({
+      open: true,
+      session,
+      isDeleting: false,
+      error: null,
+    })
+  }
+
+  const closeDeleteModal = useCallback(() => {
+    if (confirmModal.isDeleting) return
+    setConfirmModal({
+      open: false,
+      session: null,
+      isDeleting: false,
+      error: null,
+    })
+    if (lastActiveElementRef.current && typeof lastActiveElementRef.current.focus === 'function') {
+      lastActiveElementRef.current.focus()
+    }
+  }, [confirmModal.isDeleting])
+
+  // Focus cancel button on modal open (safe default: pressing Enter won't delete)
+  useEffect(() => {
+    if (confirmModal.open && cancelBtnRef.current) {
+      const t = setTimeout(() => {
+        cancelBtnRef.current?.focus()
+      }, 50)
+      return () => clearTimeout(t)
+    }
+  }, [confirmModal.open])
+
+  // Trap focus and handle Escape inside modal
+  useEffect(() => {
+    if (!confirmModal.open) return
+    const handleModalKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        e.stopPropagation()
+        closeDeleteModal()
+      } else if (e.key === 'Tab') {
+        const focusable = dialogRef.current?.querySelectorAll('button:not([disabled])')
+        if (!focusable || focusable.length === 0) return
+        const first = focusable[0]
+        const last = focusable[focusable.length - 1]
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault()
+          last.focus()
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault()
+          first.focus()
+        }
+      }
+    }
+    document.addEventListener('keydown', handleModalKeyDown, true)
+    return () => document.removeEventListener('keydown', handleModalKeyDown, true)
+  }, [confirmModal.open, closeDeleteModal])
+
+  const executeDelete = async () => {
+    const session = confirmModal.session
+    if (!session || confirmModal.isDeleting) return
+
+    setConfirmModal(prev => ({ ...prev, isDeleting: true, error: null }))
+    setDeletingSessionId(session.id)
+    const API_BASE = getApiBase()
+
+    try {
+      const token = sessionStorage.getItem('ip_sakti_access_token') || localStorage.getItem('ip_sakti_access_token')
+      const headers = (token && token !== 'undefined' && token !== 'null') ? { Authorization: `Bearer ${token}` } : {}
+      const res = await fetch(`${API_BASE}/api/conversations/${session.id}`, {
+        method: 'DELETE',
+        headers,
+      })
+
+      // Idempotent: 200/204 or 404 (already deleted) are treated as successful cleanup
+      if (res.ok || res.status === 404) {
+        // Optimistically remove from state
+        setSessions(prev => prev.filter(s => s.id !== session.id))
+        const wasActive = session.id === effectiveActiveId
+
+        // If the user deleted the task currently open:
+        if (wasActive) {
+          setCurrentActiveId(null)
+          window.dispatchEvent(new CustomEvent('ragvyn_active_session_changed', { detail: { id: null } }))
+          if (onNewChat) onNewChat()
+          navigate('/chat', { state: { newChat: true } })
+        }
+
+        // Notify other listeners (e.g. ChatPage to clear current messages if open)
+        window.dispatchEvent(new CustomEvent('ragvyn_session_deleted', { detail: { id: session.id, wasActive } }))
+        window.dispatchEvent(new Event('ragvyn_sessions_updated'))
+
+        // Close modal
+        const deletedTitle = session.title || 'Task'
+        setConfirmModal({ open: false, session: null, isDeleting: false, error: null })
+        setDeletingSessionId(null)
+
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        setToastMessage(`Task "${deletedTitle}" deleted`)
+        toastTimerRef.current = setTimeout(() => setToastMessage(null), 3500)
+      } else {
+        let errMessage = 'Failed to delete task. Please try again.'
+        try {
+          const data = await res.json()
+          if (data?.detail) errMessage = data.detail
+        } catch {
+          // ignore json parse error
+        }
+        setConfirmModal(prev => ({ ...prev, isDeleting: false, error: errMessage }))
+        setDeletingSessionId(null)
+      }
+    } catch (err) {
+      setConfirmModal(prev => ({
+        ...prev,
+        isDeleting: false,
+        error: err.message || 'Network error occurred while deleting task.',
+      }))
+      setDeletingSessionId(null)
+    }
+  }
 
   const isMobile = () => typeof window !== 'undefined' && window.innerWidth <= 768
 
@@ -133,6 +278,9 @@ export default function RagvynSidebar({
     const handleExternalToggle = (e) => {
       const hidden = !!e.detail?.hidden
       setCollapsed(hidden)
+      if (isMobile()) {
+        setMobileOpen(!hidden)
+      }
     }
     window.addEventListener('ragvyn_sidebar_toggled', handleExternalToggle)
     return () => window.removeEventListener('ragvyn_sidebar_toggled', handleExternalToggle)
@@ -182,7 +330,7 @@ export default function RagvynSidebar({
     const API_BASE = getApiBase()
     setLoadingSessions(true)
     try {
-      const token = localStorage.getItem('ip_sakti_access_token')
+      const token = sessionStorage.getItem('ip_sakti_access_token') || localStorage.getItem('ip_sakti_access_token')
       const headers = (token && token !== 'undefined' && token !== 'null') ? { Authorization: `Bearer ${token}` } : {}
       const res = await fetch(`${API_BASE}/api/conversations?limit=30`, { headers })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -238,8 +386,61 @@ export default function RagvynSidebar({
     },
   ]
 
-  // Recent tasks list (no in-sidebar search filter)
-  const filteredSessions = sessions
+  // ---- Search Tasks state ----
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const searchInputRef = useRef(null)
+  const searchBtnRef = useRef(null)
+
+  const toggleSearch = useCallback(() => {
+    if (collapsed && !isMobile()) {
+      setCollapsed(false)
+      localStorage.setItem('ragvyn_nav_collapsed', 'false')
+      window.dispatchEvent(new CustomEvent('ragvyn_sidebar_toggled', { detail: { hidden: false } }))
+      setSearchOpen(true)
+      return
+    }
+    setSearchOpen(prev => {
+      const next = !prev
+      if (!next) setSearchQuery('')
+      return next
+    })
+  }, [collapsed])
+
+  // Auto-focus search input when opened
+  useEffect(() => {
+    if (searchOpen && searchInputRef.current) {
+      searchInputRef.current.focus()
+    }
+  }, [searchOpen])
+
+  // Filter sessions by title and available metadata (case-insensitive)
+  const filteredSessions = useMemo(() => {
+    if (!searchQuery.trim()) return sessions
+    const q = searchQuery.toLowerCase().trim()
+    return sessions.filter(s =>
+      (s.title || '').toLowerCase().includes(q) ||
+      (s.jurisdiction || '').toLowerCase().includes(q) ||
+      (s.date || '').toLowerCase().includes(q)
+    )
+  }, [sessions, searchQuery])
+
+  // Search input keyboard management: Escape clears or closes, ArrowDown jumps to list
+  const handleSearchKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      e.stopPropagation()
+      if (searchQuery) {
+        setSearchQuery('')
+      } else {
+        setSearchOpen(false)
+        searchBtnRef.current?.focus()
+      }
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      const firstItem = document.querySelector('.ragvyn-sidebar__recent-item')
+      if (firstItem) firstItem.focus()
+    }
+  }
 
   const handleSessionClick = (id) => {
     setCurrentActiveId(id)
@@ -333,19 +534,6 @@ export default function RagvynSidebar({
 
   return (
     <>
-      {/* Mobile hamburger remains available to both open and close the drawer. */}
-      {isMobile() && (
-        <button
-          className="ragvyn-sidebar-mobile-trigger"
-          onClick={toggleCollapsed}
-          aria-label={mobileOpen ? 'Close navigation' : 'Open navigation'}
-          title={mobileOpen ? 'Close navigation' : 'Open navigation'}
-          aria-expanded={mobileOpen}
-        >
-          <IconMenu size={22} />
-        </button>
-      )}
-
       {/* Mobile backdrop overlay */}
       {isMobile() && mobileOpen && (
         <div
@@ -426,38 +614,143 @@ export default function RagvynSidebar({
               )
             })}
           </ul>
+
+          {/* Search Tasks button */}
+          <ul className="ragvyn-sidebar__nav-list" role="list" style={{ marginTop: '2px' }}>
+            <li className="ragvyn-sidebar__nav-item">
+              <button
+                ref={searchBtnRef}
+                type="button"
+                className={[
+                  'ragvyn-sidebar__nav-btn',
+                  searchOpen ? 'ragvyn-sidebar__nav-btn--active' : '',
+                ].filter(Boolean).join(' ')}
+                onClick={toggleSearch}
+                title={collapsed && !isMobile() ? 'Search Tasks' : undefined}
+                aria-label="Search Tasks"
+                aria-expanded={searchOpen}
+              >
+                <span className="ragvyn-sidebar__nav-icon"><IconSearch size={20} /></span>
+                {isExpanded && <span className="ragvyn-sidebar__nav-label">Search Tasks</span>}
+              </button>
+            </li>
+          </ul>
         </nav>
+
+        {/* ---- Search Input (collapsible) ---- */}
+        {isExpanded && searchOpen && (
+          <div className="ragvyn-sidebar__search-panel" role="search" aria-label="Task search">
+            <div className="ragvyn-sidebar__search-input-wrap">
+              <span className="ragvyn-sidebar__search-inner-icon" aria-hidden="true">
+                <IconSearch size={14} />
+              </span>
+              <input
+                ref={searchInputRef}
+                type="text"
+                className="ragvyn-sidebar__search-input"
+                placeholder="Search tasks..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
+                aria-label="Search task history"
+                autoComplete="off"
+                spellCheck="false"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  className="ragvyn-sidebar__search-clear-btn"
+                  onClick={() => {
+                    setSearchQuery('')
+                    searchInputRef.current?.focus()
+                  }}
+                  aria-label="Clear search"
+                  title="Clear search"
+                >
+                  <IconX size={13} />
+                </button>
+              )}
+            </div>
+            {searchQuery && (
+              <div className="ragvyn-sidebar__search-meta">
+                <span>{filteredSessions.length} {filteredSessions.length === 1 ? 'task found' : 'tasks found'}</span>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ---- Recents ---- */}
         {isExpanded && (
           <div className="ragvyn-sidebar__recents">
-            <div className="ragvyn-sidebar__recents-heading">Recent Tasks</div>
+            <div className="ragvyn-sidebar__recents-heading">
+              {searchOpen && searchQuery ? 'Search Results' : 'Recent Tasks'}
+            </div>
             <div className="ragvyn-sidebar__recents-list">
               {loadingSessions && (
                 <div className="ragvyn-sidebar__recents-empty">Loading…</div>
               )}
               {!loadingSessions && filteredSessions.length === 0 && (
                 <div className="ragvyn-sidebar__recents-empty">
-                  No recent tasks.
+                  {searchOpen && searchQuery ? (
+                    <div className="ragvyn-sidebar__search-empty-state">
+                      <p>No tasks matching &ldquo;{searchQuery}&rdquo;</p>
+                      <button
+                        type="button"
+                        className="ragvyn-sidebar__search-clear-action"
+                        onClick={() => {
+                          setSearchQuery('')
+                          searchInputRef.current?.focus()
+                        }}
+                      >
+                        Clear search
+                      </button>
+                    </div>
+                  ) : (
+                    'No recent tasks.'
+                  )}
                 </div>
               )}
               {!loadingSessions && filteredSessions.map(s => (
-                <button
+                <div
                   key={s.id}
                   className={[
-                    'ragvyn-sidebar__recent-item',
-                    effectiveActiveId === s.id ? 'ragvyn-sidebar__recent-item--active' : '',
+                    'ragvyn-sidebar__recent-row',
+                    effectiveActiveId === s.id ? 'ragvyn-sidebar__recent-row--active' : '',
+                    deletingSessionId === s.id ? 'ragvyn-sidebar__recent-row--deleting' : '',
                   ].filter(Boolean).join(' ')}
-                  onClick={() => handleSessionClick(s.id)}
-                  title={s.title}
-                  aria-label={`Open task: ${s.title}`}
-                  aria-current={effectiveActiveId === s.id ? 'true' : undefined}
                 >
-                  <span className="ragvyn-sidebar__recent-icon">
-                    <IconMessageSquare size={16} />
-                  </span>
-                  <span className="ragvyn-sidebar__recent-title">{s.title}</span>
-                </button>
+                  <button
+                    type="button"
+                    className={[
+                      'ragvyn-sidebar__recent-item',
+                      effectiveActiveId === s.id ? 'ragvyn-sidebar__recent-item--active' : '',
+                    ].filter(Boolean).join(' ')}
+                    onClick={() => handleSessionClick(s.id)}
+                    title={s.title}
+                    aria-label={`Open task: ${s.title}`}
+                    aria-current={effectiveActiveId === s.id ? 'true' : undefined}
+                    disabled={deletingSessionId === s.id}
+                  >
+                    <span className="ragvyn-sidebar__recent-icon">
+                      <IconMessageSquare size={16} />
+                    </span>
+                    <span className="ragvyn-sidebar__recent-title">{s.title}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="ragvyn-sidebar__delete-btn"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      promptDeleteSession(s)
+                    }}
+                    aria-label={`Delete task: ${s.title}`}
+                    title="Delete task"
+                    disabled={deletingSessionId === s.id}
+                  >
+                    <IconTrash size={14} />
+                  </button>
+                </div>
               ))}
             </div>
           </div>
@@ -670,6 +963,87 @@ export default function RagvynSidebar({
 
         </div>
       </aside>
+
+      {/* Confirmation Modal */}
+      {confirmModal.open && confirmModal.session && (
+        <div
+          className="ragvyn-delete-modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeDeleteModal()
+          }}
+          role="presentation"
+        >
+          <div
+            ref={dialogRef}
+            className="ragvyn-delete-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="ragvyn-delete-modal-title"
+            aria-describedby="ragvyn-delete-modal-desc"
+          >
+            <div className="ragvyn-delete-modal__header">
+              <div className="ragvyn-delete-modal__icon-wrap" aria-hidden="true">
+                <IconTrash size={20} />
+              </div>
+              <h3 id="ragvyn-delete-modal-title" className="ragvyn-delete-modal__title">
+                Delete Task
+              </h3>
+            </div>
+
+            <div className="ragvyn-delete-modal__body">
+              <p id="ragvyn-delete-modal-desc" className="ragvyn-delete-modal__warning">
+                Are you sure you want to delete <strong className="ragvyn-delete-modal__task-title">&ldquo;{confirmModal.session.title}&rdquo;</strong>?
+              </p>
+              <p className="ragvyn-delete-modal__sub-warning">
+                Its messages, legal citations, and saved history will be permanently removed. This action cannot be undone.
+              </p>
+
+              {confirmModal.error && (
+                <div className="ragvyn-delete-modal__error" role="alert">
+                  {confirmModal.error}
+                </div>
+              )}
+            </div>
+
+            <div className="ragvyn-delete-modal__actions">
+              <button
+                ref={cancelBtnRef}
+                type="button"
+                className="ragvyn-delete-modal__btn ragvyn-delete-modal__btn--cancel"
+                onClick={closeDeleteModal}
+                disabled={confirmModal.isDeleting}
+              >
+                Cancel
+              </button>
+              <button
+                ref={deleteBtnRef}
+                type="button"
+                className="ragvyn-delete-modal__btn ragvyn-delete-modal__btn--delete"
+                onClick={executeDelete}
+                disabled={confirmModal.isDeleting}
+                aria-busy={confirmModal.isDeleting}
+              >
+                {confirmModal.isDeleting ? (
+                  <>
+                    <span className="ragvyn-delete-modal__spinner" aria-hidden="true" />
+                    <span>Deleting…</span>
+                  </>
+                ) : (
+                  <span>Delete</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Transient Success Toast */}
+      {toastMessage && (
+        <div className="ragvyn-sidebar__toast" role="status" aria-live="polite">
+          <IconCheck size={14} />
+          <span>{toastMessage}</span>
+        </div>
+      )}
     </>
   )
 }

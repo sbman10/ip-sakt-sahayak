@@ -217,31 +217,135 @@
 
 /* ---------- Search Panel ---------- */
 .ragvyn-sidebar__search-panel {
-  padding: 6px 12px 8px;
+  padding: 6px 14px 8px;
   flex-shrink: 0;
+  animation: ragvynSearchReveal 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes ragvynSearchReveal {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ragvyn-sidebar__search-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.ragvyn-sidebar__search-inner-icon {
+  position: absolute;
+  left: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.45);
+  pointer-events: none;
+  z-index: 1;
 }
 
 .ragvyn-sidebar__search-input {
   width: 100%;
-  padding: 8px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 7px 30px 7px 30px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
   color: #fff;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-family: inherit;
   outline: none;
-  transition: border-color 150ms, background 150ms;
+  transition: border-color 150ms, background 150ms, box-shadow 150ms;
   box-sizing: border-box;
 }
 
 .ragvyn-sidebar__search-input::placeholder {
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.4);
 }
 
 .ragvyn-sidebar__search-input:focus {
-  border-color: rgba(255, 255, 255, 0.45);
-  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+}
+
+.ragvyn-sidebar__search-clear-btn {
+  position: absolute;
+  right: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: background 150ms, color 150ms;
+}
+
+.ragvyn-sidebar__search-clear-btn:hover {
+  background: rgba(255, 255, 255, 0.28);
+  color: #fff;
+}
+
+.ragvyn-sidebar__search-clear-btn:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.6);
+  outline-offset: 1px;
+}
+
+.ragvyn-sidebar__search-meta {
+  padding: 4px 4px 0;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.ragvyn-sidebar__search-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 10px;
+  text-align: center;
+}
+
+.ragvyn-sidebar__search-empty-state p {
+  margin: 0;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.ragvyn-sidebar__search-clear-action {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 0.72rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 150ms, border-color 150ms;
+}
+
+.ragvyn-sidebar__search-clear-action:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ragvyn-sidebar__search-panel {
+    animation: none;
+  }
 }
 
 /* ---------- Recents ---------- */
@@ -291,30 +395,51 @@
   color: var(--rs-text-muted);
 }
 
+/* ---------- Recent Item Row with Safe Delete Action ---------- */
+.ragvyn-sidebar__recent-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  border-radius: 8px;
+  margin-bottom: 2px;
+  background: transparent;
+  transition: background 150ms ease, opacity 150ms ease;
+}
+
+.ragvyn-sidebar__recent-row:hover {
+  background: var(--rs-bg-hover);
+}
+
+.ragvyn-sidebar__recent-row--active {
+  background: var(--rs-bg-active);
+}
+
+.ragvyn-sidebar__recent-row--deleting {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
 .ragvyn-sidebar__recent-item {
   display: flex;
   align-items: center;
   gap: 10px;
-  width: 100%;
-  padding: 8px 12px;
+  flex: 1;
+  min-width: 0;
+  padding: 8px 6px 8px 12px;
   border: none;
-  border-radius: 8px;
+  border-radius: 8px 0 0 8px;
   background: transparent;
   color: var(--rs-text);
   cursor: pointer;
   font-size: 0.84rem;
   font-family: inherit;
   text-align: left;
-  transition: background 150ms;
-  margin-bottom: 1px;
-}
-
-.ragvyn-sidebar__recent-item:hover {
-  background: var(--rs-bg-hover);
+  transition: color 150ms;
+  margin-bottom: 0;
 }
 
 .ragvyn-sidebar__recent-item--active {
-  background: var(--rs-bg-active);
   font-weight: 600;
   color: #ffffff;
   box-shadow: inset 3px 0 0 var(--rs-accent);
@@ -323,6 +448,7 @@
 .ragvyn-sidebar__recent-item:focus-visible {
   outline: 2px solid rgba(255, 255, 255, 0.5);
   outline-offset: -2px;
+  border-radius: 8px;
 }
 
 .ragvyn-sidebar__recent-icon {
@@ -338,6 +464,61 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   min-width: 0;
+}
+
+/* Delete task action button */
+.ragvyn-sidebar__delete-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  margin-right: 6px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+  opacity: 0;
+  transform: scale(0.95);
+  transition: opacity 160ms cubic-bezier(0.16, 1, 0.3, 1),
+              background 150ms ease,
+              color 150ms ease,
+              transform 150ms ease;
+}
+
+.ragvyn-sidebar__recent-row:hover .ragvyn-sidebar__delete-btn,
+.ragvyn-sidebar__recent-row:focus-within .ragvyn-sidebar__delete-btn,
+.ragvyn-sidebar__delete-btn:focus-visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Touch and mobile devices always display the delete action */
+@media (hover: none) {
+  .ragvyn-sidebar__delete-btn {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+}
+
+.ragvyn-sidebar__delete-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.ragvyn-sidebar__delete-btn:focus-visible {
+  outline: 2px solid #ef4444;
+  outline-offset: 1px;
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  opacity: 1;
+}
+
+.ragvyn-sidebar__delete-btn:active {
+  transform: scale(0.9);
 }
 
 /* ---------- Collapsed Recents (icon mode) ---------- */
@@ -811,33 +992,10 @@
   padding: 8px 6px 14px;
 }
 
-/* ---------- Mobile Trigger ---------- */
+/* ---------- Mobile Trigger (Deprecated - unified into Navbar) ---------- */
 .ragvyn-sidebar-mobile-trigger {
-  display: none;
-  position: fixed;
-  top: 12px;
-  left: 12px;
-  z-index: 1101;
-  width: 40px;
-  height: 40px;
-  border: 1px solid rgba(52, 211, 153, 0.3);
-  border-radius: 10px;
-  background: #0d3d2e;
-  color: #fff;
-  cursor: pointer;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
-  transition: background 150ms;
-}
-
-.ragvyn-sidebar-mobile-trigger:hover {
-  background: #06241a;
-}
-
-.ragvyn-sidebar-mobile-trigger:focus-visible {
-  outline: 2px solid rgba(255, 255, 255, 0.5);
-  outline-offset: 2px;
+  display: none !important;
+  pointer-events: none !important;
 }
 
 /* ---------- Mobile Backdrop ---------- */
@@ -868,47 +1026,27 @@
   margin-left: 0;
 }
 
-/* ---------- Sidebar Toggle (always-visible Codex-style top-left button) ---------- */
+/* ---------- Sidebar Toggle (Deprecated - unified into Navbar) ---------- */
 .ragvyn-sidebar-restore-toggle {
-  position: fixed;
-  top: 14px;
-  left: 14px;
-  z-index: 1200;
-  width: 38px;
-  height: 38px;
-  border: none;
-  border-radius: 10px;
-  background: rgba(13, 61, 46, 0.85);
-  color: #fff;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
-  transition: background 150ms, transform 150ms, box-shadow 150ms, left 220ms cubic-bezier(0.4, 0, 0.2, 1);
-  font-family: inherit;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  display: none !important;
+  pointer-events: none !important;
 }
 
-/* Keep the desktop control just outside the visible sidebar, never over its brand. */
-.ragvyn-sidebar--expanded ~ .ragvyn-sidebar-restore-toggle {
-  left: 272px;
+/* ---------- Search Panel Animation ---------- */
+.ragvyn-sidebar__search-panel {
+  animation: ragvynSearchReveal 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.ragvyn-sidebar-restore-toggle:hover {
-  background: rgba(27, 94, 72, 0.95);
-  transform: scale(1.06);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+@keyframes ragvynSearchReveal {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.ragvyn-sidebar-restore-toggle:focus-visible {
-  outline: 2px solid rgba(255, 255, 255, 0.5);
-  outline-offset: 2px;
-}
-
-.ragvyn-sidebar-restore-toggle:active {
-  transform: scale(0.96);
+.ragvyn-sidebar__search-meta {
+  padding: 3px 12px 0;
+  font-size: 0.7rem;
+  color: var(--rs-text-muted);
+  letter-spacing: 0.02em;
 }
 
 /* ============================================================
@@ -931,7 +1069,7 @@
 /* Mobile (<=768px) */
 @media (max-width: 768px) {
   .ragvyn-sidebar-mobile-trigger {
-    display: flex;
+    display: none !important;
   }
 
   .ragvyn-sidebar-backdrop {
@@ -1058,5 +1196,238 @@
   .ragvyn-app-content--sidebar-expanded,
   .ragvyn-app-content--sidebar-collapsed {
     margin-left: 0 !important;
+  }
+}
+
+/* ============================================================
+   Delete Task Confirmation Modal
+   ============================================================ */
+.ragvyn-delete-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: ragvynFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ragvyn-delete-modal {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  border-radius: 16px;
+  background: linear-gradient(160deg, #13271f 0%, #0c1914 100%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  padding: 24px;
+  color: #e5e7eb;
+  font-family: inherit;
+  animation: ragvynModalScaleIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+.ragvyn-delete-modal__header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.ragvyn-delete-modal__icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  flex-shrink: 0;
+}
+
+.ragvyn-delete-modal__title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+.ragvyn-delete-modal__body {
+  margin-bottom: 24px;
+}
+
+.ragvyn-delete-modal__warning {
+  margin: 0 0 10px 0;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.ragvyn-delete-modal__task-title {
+  color: #ffffff;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.ragvyn-delete-modal__sub-warning {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.ragvyn-delete-modal__error {
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.14);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.ragvyn-delete-modal__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.ragvyn-delete-modal__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-size: 0.86rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.ragvyn-delete-modal__btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ragvyn-delete-modal__btn--cancel {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.ragvyn-delete-modal__btn--cancel:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.32);
+}
+
+.ragvyn-delete-modal__btn--cancel:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.6);
+  outline-offset: 2px;
+}
+
+.ragvyn-delete-modal__btn--delete {
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  background: #dc2626;
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35);
+}
+
+.ragvyn-delete-modal__btn--delete:hover:not(:disabled) {
+  background: #b91c1c;
+  border-color: #b91c1c;
+  box-shadow: 0 4px 18px rgba(185, 28, 28, 0.45);
+}
+
+.ragvyn-delete-modal__btn--delete:focus-visible {
+  outline: 2px solid #ef4444;
+  outline-offset: 2px;
+}
+
+.ragvyn-delete-modal__spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: ragvynSpin 0.7s linear infinite;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+@keyframes ragvynFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes ragvynModalScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes ragvynSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ragvyn-delete-modal-overlay,
+  .ragvyn-delete-modal {
+    animation: none;
+  }
+  .ragvyn-delete-modal__spinner {
+    animation-duration: 1.5s;
+  }
+}
+
+/* Toast Notification for Sidebar Actions */
+.ragvyn-sidebar__toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10002;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: #092e22;
+  border: 1px solid rgba(52, 211, 153, 0.45);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 15px rgba(52, 211, 153, 0.2);
+  border-radius: 30px;
+  color: #86efac;
+  font-size: 0.85rem;
+  font-weight: 500;
+  animation: ragvynToastIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+@keyframes ragvynToastIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 10px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
   }
 }

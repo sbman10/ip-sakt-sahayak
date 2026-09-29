@@ -165,12 +165,12 @@ const UI_TRANSLATIONS = {
 
     // Hero Section
     heroEyebrow: 'AYUSH INNOVATION GUIDANCE',
-    heroTitle: 'Protect your innovation.',
-    heroSubtitle: 'Know what comes next.',
+    heroTitle: 'Providing IP and Regulatory guidance',
+    heroSubtitle: 'Saving your time.',
     heroDesc: 'Navigate intellectual property, regulation, traditional knowledge and biodiversity-related pathways through one guided assessment.',
     startAssessment: 'Start Assessment →',
     startConsultation: 'Start Assessment →',
-    howItWorksBtn: 'How it works',
+    howItWorksBtn: 'See Demo',
     formulationWizard: 'Formulation Wizard',
     seeDemo: 'See Demo',
 
@@ -667,7 +667,7 @@ const UI_TRANSLATIONS = {
     heroDesc: 'एक निर्देशित मूल्यांकन के माध्यम से बौद्धिक संपदा, विनियम, पारंपरिक ज्ञान और जैव विविधता से संबंधित मार्गों का पता लगाएं।',
     startAssessment: 'मूल्यांकन शुरू करें →',
     startConsultation: 'मूल्यांकन शुरू करें →',
-    howItWorksBtn: 'यह कैसे काम करता है',
+    howItWorksBtn: 'डेमो देखें',
     formulationWizard: 'फॉर्मूलेशन विज़ार्ड',
     seeDemo: 'डेमो देखें',
 
@@ -2369,221 +2369,221 @@ function FormulationWizardModal({ isOpen, onClose, onAskChat }) {
         ) : (
           <div className="modal-body">
             {/* Progress Bar */}
-          <div className="wizard-progress">
-            {[1, 2, 3, 4].map(s => (
-              <div
-                key={s}
-                className={`wizard-progress-step ${step === s ? 'active' : step > s ? 'completed' : ''}`}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              >
-                {step > s ? <IconCheck size={14} /> : s}
-              </div>
-            ))}
-          </div>
-
-          {/* STEP 1 */}
-          {step === 1 && (
-            <div>
-              <h3 className="wizard-question-title">{t('wizardStep1Title')}</h3>
-              <p className="wizard-question-desc">{t('wizardStep1Desc')}</p>
-
-              <div className="wizard-options-grid">
-                {[
-                  {
-                    id: 'classical',
-                    icon: <IconScroll size={22} />,
-                    title: 'Ancient Authoritative Text (First Schedule)',
-                    desc: 'Recipe taken directly from Charaka Samhita, Sushruta Samhita, Sahasrayogam, or Bhaishajya Ratnavali.',
-                  },
-                  {
-                    id: 'proprietary',
-                    icon: <IconMicroscope size={22} />,
-                    title: 'Modified / Novel Herbal Blend',
-                    desc: 'Unique combination, novel extract ratio, or new delivery mechanism developed by your R&D team.',
-                  },
-                  {
-                    id: 'nutra',
-                    icon: <IconLeaf size={22} />,
-                    title: 'Functional Dietary Supplement / Food',
-                    desc: 'Herbal beverage, tonic, or dietary pill meant for daily health maintenance (Ayurveda Aahar).',
-                  },
-                ].map(opt => (
-                  <button
-                    key={opt.id}
-                    className={`wizard-option-btn ${answers.q1 === opt.id ? 'selected' : ''}`}
-                    onClick={() => handleSelectOption('q1', opt.id)}
-                  >
-                    <span className="option-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{opt.icon}</span>
-                    <div>
-                      <div className="option-title">{opt.title}</div>
-                      <div className="option-desc">{opt.desc}</div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
-                <button
-                  className="btn-primary"
-                  disabled={!answers.q1}
-                  onClick={() => setStep(2)}
-                  style={{ opacity: answers.q1 ? 1 : 0.5, cursor: answers.q1 ? 'pointer' : 'not-allowed' }}
+            <div className="wizard-progress">
+              {[1, 2, 3, 4].map(s => (
+                <div
+                  key={s}
+                  className={`wizard-progress-step ${step === s ? 'active' : step > s ? 'completed' : ''}`}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 >
-                  Next Step →
-                </button>
-              </div>
+                  {step > s ? <IconCheck size={14} /> : s}
+                </div>
+              ))}
             </div>
-          )}
 
-          {/* STEP 2 */}
-          {step === 2 && (
-            <div>
-              <h3 className="wizard-question-title">Step 2: How is the formulation processed or prepared?</h3>
-              <p className="wizard-question-desc">Select the manufacturing method used for production.</p>
+            {/* STEP 1 */}
+            {step === 1 && (
+              <div>
+                <h3 className="wizard-question-title">{t('wizardStep1Title')}</h3>
+                <p className="wizard-question-desc">{t('wizardStep1Desc')}</p>
 
-              <div className="wizard-options-grid">
-                {[
-                  {
-                    id: 'traditional_proc',
-                    icon: <IconFlask size={22} />,
-                    title: 'Traditional Ayurvedic Processing Methods',
-                    desc: 'Standard Kwatha (decoction), Asava-Arishta (fermentation), Bhasma, or Churna preparation.',
-                  },
-                  {
-                    id: 'novel_proc',
-                    icon: <IconMicroscope size={22} />,
-                    title: 'Modern Extraction or Nanotechnology',
-                    desc: 'Supercritical CO2 extraction, targeted liposomal delivery, or standardized marker compound enrichment.',
-                  },
-                ].map(opt => (
-                  <button
-                    key={opt.id}
-                    className={`wizard-option-btn ${answers.q2 === opt.id ? 'selected' : ''}`}
-                    onClick={() => handleSelectOption('q2', opt.id)}
-                  >
-                    <span className="option-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{opt.icon}</span>
-                    <div>
-                      <div className="option-title">{opt.title}</div>
-                      <div className="option-desc">{opt.desc}</div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' }}>
-                <button className="btn-secondary" onClick={() => setStep(1)}>← Back</button>
-                <button
-                  className="btn-primary"
-                  disabled={!answers.q2}
-                  onClick={() => setStep(3)}
-                  style={{ opacity: answers.q2 ? 1 : 0.5, cursor: answers.q2 ? 'pointer' : 'not-allowed' }}
-                >
-                  Next Step →
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* STEP 3 */}
-          {step === 3 && (
-            <div>
-              <h3 className="wizard-question-title">Step 3: What is the primary intended use and claim?</h3>
-              <p className="wizard-question-desc">Select the marketing and therapeutic positioning of the product.</p>
-
-              <div className="wizard-options-grid">
-                {[
-                  {
-                    id: 'therapeutic',
-                    icon: <IconShieldCheck size={22} />,
-                    title: 'Specific Disease Treatment or Cure',
-                    desc: 'Claiming clinical cure or management for conditions like Arthritis, Diabetes, or Hypertension.',
-                  },
-                  {
-                    id: 'wellness',
-                    icon: <IconLeaf size={22} />,
-                    title: 'General Immunity & Wellness',
-                    desc: 'Promoting overall vitality, digestion, or stress relief without disease-specific claims.',
-                  },
-                ].map(opt => (
-                  <button
-                    key={opt.id}
-                    className={`wizard-option-btn ${answers.q3 === opt.id ? 'selected' : ''}`}
-                    onClick={() => handleSelectOption('q3', opt.id)}
-                  >
-                    <span className="option-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{opt.icon}</span>
-                    <div>
-                      <div className="option-title">{opt.title}</div>
-                      <div className="option-desc">{opt.desc}</div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' }}>
-                <button className="btn-secondary" onClick={() => setStep(2)}>← Back</button>
-                <button
-                  className="btn-primary"
-                  disabled={!answers.q3}
-                  onClick={() => setStep(4)}
-                  style={{ opacity: answers.q3 ? 1 : 0.5, cursor: answers.q3 ? 'pointer' : 'not-allowed' }}
-                >
-                  Generate IP Assessment →
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* STEP 4: OUTCOME */}
-          {step === 4 && outcome && (
-            <div className="wizard-outcome-box">
-              <div className={`outcome-badge ${outcome.cls}`}>
-                {outcome.badge}
-              </div>
-
-              <h3 style={{ fontSize: '1.2rem', color: 'var(--text-primary)', margin: 0 }}>
-                Classification: {outcome.type}
-              </h3>
-
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6 }}>
-                {outcome.summary}
-              </p>
-
-              <div style={{ background: 'var(--bg-elevated)', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--bg-border)' }}>
-                <h4 style={{ fontSize: '0.88rem', color: 'var(--primary-light)', marginBottom: '0.5rem' }}>
-                  Recommended IP & Licensing Actions:
-                </h4>
-                <ul style={{ paddingLeft: '1.2rem', fontSize: '0.83rem', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  {outcome.legalAction.map((action, idx) => (
-                    <li key={idx}>{action}</li>
+                <div className="wizard-options-grid">
+                  {[
+                    {
+                      id: 'classical',
+                      icon: <IconScroll size={22} />,
+                      title: 'Ancient Authoritative Text (First Schedule)',
+                      desc: 'Recipe taken directly from Charaka Samhita, Sushruta Samhita, Sahasrayogam, or Bhaishajya Ratnavali.',
+                    },
+                    {
+                      id: 'proprietary',
+                      icon: <IconMicroscope size={22} />,
+                      title: 'Modified / Novel Herbal Blend',
+                      desc: 'Unique combination, novel extract ratio, or new delivery mechanism developed by your R&D team.',
+                    },
+                    {
+                      id: 'nutra',
+                      icon: <IconLeaf size={22} />,
+                      title: 'Functional Dietary Supplement / Food',
+                      desc: 'Herbal beverage, tonic, or dietary pill meant for daily health maintenance (Ayurveda Aahar).',
+                    },
+                  ].map(opt => (
+                    <button
+                      key={opt.id}
+                      className={`wizard-option-btn ${answers.q1 === opt.id ? 'selected' : ''}`}
+                      onClick={() => handleSelectOption('q1', opt.id)}
+                    >
+                      <span className="option-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{opt.icon}</span>
+                      <div>
+                        <div className="option-title">{opt.title}</div>
+                        <div className="option-desc">{opt.desc}</div>
+                      </div>
+                    </button>
                   ))}
-                </ul>
-              </div>
+                </div>
 
-              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-                <button
-                  className="btn-primary"
-                  onClick={() => {
-                    handleClose()
-                    onAskChat(outcome.prompt)
-                  }}
-                >
-                  {t('askIpSaktiDetailed')} →
-                </button>
-                <Link
-                  to="/ip-calculator"
-                  className="btn-secondary"
-                  onClick={handleClose}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                >
-                  <IconCalculator size={16} /> Estimate Filing Fees
-                </Link>
-                <button className="btn-secondary" onClick={resetWizard} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                  <IconRotate size={16} /> {t('retestFormulation')}
-                </button>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+                  <button
+                    className="btn-primary"
+                    disabled={!answers.q1}
+                    onClick={() => setStep(2)}
+                    style={{ opacity: answers.q1 ? 1 : 0.5, cursor: answers.q1 ? 'pointer' : 'not-allowed' }}
+                  >
+                    Next Step →
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+
+            {/* STEP 2 */}
+            {step === 2 && (
+              <div>
+                <h3 className="wizard-question-title">Step 2: How is the formulation processed or prepared?</h3>
+                <p className="wizard-question-desc">Select the manufacturing method used for production.</p>
+
+                <div className="wizard-options-grid">
+                  {[
+                    {
+                      id: 'traditional_proc',
+                      icon: <IconFlask size={22} />,
+                      title: 'Traditional Ayurvedic Processing Methods',
+                      desc: 'Standard Kwatha (decoction), Asava-Arishta (fermentation), Bhasma, or Churna preparation.',
+                    },
+                    {
+                      id: 'novel_proc',
+                      icon: <IconMicroscope size={22} />,
+                      title: 'Modern Extraction or Nanotechnology',
+                      desc: 'Supercritical CO2 extraction, targeted liposomal delivery, or standardized marker compound enrichment.',
+                    },
+                  ].map(opt => (
+                    <button
+                      key={opt.id}
+                      className={`wizard-option-btn ${answers.q2 === opt.id ? 'selected' : ''}`}
+                      onClick={() => handleSelectOption('q2', opt.id)}
+                    >
+                      <span className="option-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{opt.icon}</span>
+                      <div>
+                        <div className="option-title">{opt.title}</div>
+                        <div className="option-desc">{opt.desc}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' }}>
+                  <button className="btn-secondary" onClick={() => setStep(1)}>← Back</button>
+                  <button
+                    className="btn-primary"
+                    disabled={!answers.q2}
+                    onClick={() => setStep(3)}
+                    style={{ opacity: answers.q2 ? 1 : 0.5, cursor: answers.q2 ? 'pointer' : 'not-allowed' }}
+                  >
+                    Next Step →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 3 */}
+            {step === 3 && (
+              <div>
+                <h3 className="wizard-question-title">Step 3: What is the primary intended use and claim?</h3>
+                <p className="wizard-question-desc">Select the marketing and therapeutic positioning of the product.</p>
+
+                <div className="wizard-options-grid">
+                  {[
+                    {
+                      id: 'therapeutic',
+                      icon: <IconShieldCheck size={22} />,
+                      title: 'Specific Disease Treatment or Cure',
+                      desc: 'Claiming clinical cure or management for conditions like Arthritis, Diabetes, or Hypertension.',
+                    },
+                    {
+                      id: 'wellness',
+                      icon: <IconLeaf size={22} />,
+                      title: 'General Immunity & Wellness',
+                      desc: 'Promoting overall vitality, digestion, or stress relief without disease-specific claims.',
+                    },
+                  ].map(opt => (
+                    <button
+                      key={opt.id}
+                      className={`wizard-option-btn ${answers.q3 === opt.id ? 'selected' : ''}`}
+                      onClick={() => handleSelectOption('q3', opt.id)}
+                    >
+                      <span className="option-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{opt.icon}</span>
+                      <div>
+                        <div className="option-title">{opt.title}</div>
+                        <div className="option-desc">{opt.desc}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' }}>
+                  <button className="btn-secondary" onClick={() => setStep(2)}>← Back</button>
+                  <button
+                    className="btn-primary"
+                    disabled={!answers.q3}
+                    onClick={() => setStep(4)}
+                    style={{ opacity: answers.q3 ? 1 : 0.5, cursor: answers.q3 ? 'pointer' : 'not-allowed' }}
+                  >
+                    Generate IP Assessment →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 4: OUTCOME */}
+            {step === 4 && outcome && (
+              <div className="wizard-outcome-box">
+                <div className={`outcome-badge ${outcome.cls}`}>
+                  {outcome.badge}
+                </div>
+
+                <h3 style={{ fontSize: '1.2rem', color: 'var(--text-primary)', margin: 0 }}>
+                  Classification: {outcome.type}
+                </h3>
+
+                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6 }}>
+                  {outcome.summary}
+                </p>
+
+                <div style={{ background: 'var(--bg-elevated)', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--bg-border)' }}>
+                  <h4 style={{ fontSize: '0.88rem', color: 'var(--primary-light)', marginBottom: '0.5rem' }}>
+                    Recommended IP & Licensing Actions:
+                  </h4>
+                  <ul style={{ paddingLeft: '1.2rem', fontSize: '0.83rem', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    {outcome.legalAction.map((action, idx) => (
+                      <li key={idx}>{action}</li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                  <button
+                    className="btn-primary"
+                    onClick={() => {
+                      handleClose()
+                      onAskChat(outcome.prompt)
+                    }}
+                  >
+                    {t('askIpSaktiDetailed')} →
+                  </button>
+                  <Link
+                    to="/ip-calculator"
+                    className="btn-secondary"
+                    onClick={handleClose}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    <IconCalculator size={16} /> Estimate Filing Fees
+                  </Link>
+                  <button className="btn-secondary" onClick={resetWizard} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <IconRotate size={16} /> {t('retestFormulation')}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>
@@ -2724,7 +2724,7 @@ function CitationCard({ citation, isExpanded, onToggle }) {
   const displayTitle = formatSourceName(citation.source || citation.title || '')
   const sectionLabel = citation.section || ''
   const snippetText = citation.text || ''
-  
+
   return (
     <div className={`citation-card ${isExpanded ? 'expanded' : ''}`}>
       <button
@@ -2889,7 +2889,20 @@ function SourcesPanel({
     setExpandedIds(prev => ({ ...prev, [id]: !prev[id] }))
   }
 
+  const expandAll = () => {
+    if (!Array.isArray(citations)) return
+    const allIds = {}
+    citations.forEach((c, i) => { allIds[c.source_id || `src-${i}`] = true })
+    setExpandedIds(allIds)
+  }
+
+  const collapseAll = () => {
+    setExpandedIds({})
+  }
+
   const hasCitations = Array.isArray(citations) && citations.length > 0
+  const expandedCount = Object.values(expandedIds).filter(Boolean).length
+  const allAreExpanded = hasCitations && expandedCount === citations.length
 
   return (
     <>
@@ -2908,12 +2921,25 @@ function SourcesPanel({
         role="region"
         aria-hidden={!isOpen}
       >
+        {/* ---- Header ---- */}
         <div className="sources-panel-header">
-          <span className="sources-panel-title">
-            <IconScroll size={16} />
-            Sources
-            {hasCitations && <span className="sources-count">{citations.length}</span>}
-          </span>
+          <div className="sources-panel-title-group">
+            <span className="sources-panel-title">
+              <IconScroll size={16} />
+              <span>Sources</span>
+              {hasCitations && <span className="sources-count">{citations.length}</span>}
+            </span>
+            {hasCitations && (
+              <button
+                className="sources-panel-expand-toggle"
+                onClick={allAreExpanded ? collapseAll : expandAll}
+                title={allAreExpanded ? 'Collapse all' : 'Expand all'}
+                aria-label={allAreExpanded ? 'Collapse all sources' : 'Expand all sources'}
+              >
+                {allAreExpanded ? 'Collapse all' : 'Expand all'}
+              </button>
+            )}
+          </div>
           <button
             className="sources-panel-close"
             onClick={handleClose}
@@ -2924,6 +2950,7 @@ function SourcesPanel({
           </button>
         </div>
 
+        {/* ---- Body ---- */}
         <div className="sources-panel-body" tabIndex={0} role="region" aria-label="Sources content">
           {isLoading ? (
             <div className="sources-loading-state" role="status" aria-live="polite">
@@ -2943,7 +2970,6 @@ function SourcesPanel({
           ) : (
             citations.map((c, i) => {
               const id = c.source_id || `src-${i}`
-              const citationNum = c.source_id || `[${i + 1}]`
               const displayTitle = formatSourceName(c.source || c.title || '')
               const sectionLabel = c.section || c.article || ''
               const authority = c.authority || ''
@@ -2970,81 +2996,94 @@ function SourcesPanel({
                     className="source-card-header"
                     onClick={() => toggleExpand(id)}
                     aria-expanded={isExpanded}
-                    aria-label={`Source ${citationNum}: ${displayTitle}`}
+                    aria-controls={`source-card-body-${id}`}
+                    aria-label={`Source ${c.source_id || i + 1}: ${displayTitle}`}
                   >
-                    <span className="source-card-icon" aria-hidden="true">
-                      {getSourceIcon(c.source || c.title)}
-                    </span>
-                    <div className="source-card-meta">
-                      <div className="source-card-title-row">
-                        <span className="source-card-num-badge">{citationNum}</span>
-                        <span className="source-card-title">{displayTitle}</span>
+                    {/* Level 1: Source ID & Source Type Kicker */}
+                    <div className="source-card-kicker">
+                      <div className="source-card-kicker-badges">
+                        <span className="source-card-id-badge">
+                          {c.source_id || `SRC-${String(i + 1).padStart(3, '0')}`}
+                        </span>
+                        {docType && (
+                          <span className="source-card-type-badge">{docType}</span>
+                        )}
+                        {authority && (
+                          <span className="source-card-authority-badge">{authority}</span>
+                        )}
                       </div>
-
-                      {/* Clean metadata tags — rendered only when present */}
-                      {(sectionLabel || authority || jurisdiction || docType || pageNumber || pubDate) && (
-                        <div className="source-card-tags-row">
-                          {sectionLabel && (
-                            <span className="source-card-tag source-card-tag--section">
-                              {sectionLabel}
-                            </span>
-                          )}
-                          {authority && (
-                            <span className="source-card-tag source-card-tag--authority">
-                              {authority}
-                            </span>
-                          )}
-                          {jurisdiction && (
-                            <span className="source-card-tag">
-                              {jurisdiction}
-                            </span>
-                          )}
-                          {docType && (
-                            <span className="source-card-tag">
-                              {docType}
-                            </span>
-                          )}
-                          {pageNumber && (
-                            <span className="source-card-tag">
-                              Page {pageNumber}
-                            </span>
-                          )}
-                          {pubDate && (
-                            <span className="source-card-tag">
-                              {pubDate}
-                            </span>
-                          )}
-                        </div>
-                      )}
+                      <span className={`source-card-chevron ${isExpanded ? 'expanded' : ''}`} aria-hidden="true">
+                        <IconChevronDown size={14} />
+                      </span>
                     </div>
-                    <span className={`source-card-chevron ${isExpanded ? 'expanded' : ''}`} aria-hidden="true">
-                      <IconChevronDown size={14} />
-                    </span>
+
+                    {/* Level 2: Source Title (uncollided, cleanly displayed) */}
+                    <div className="source-card-title-row">
+                      <span className={`source-card-title ${isExpanded ? 'is-expanded' : ''}`} title={displayTitle}>
+                        {displayTitle}
+                      </span>
+                    </div>
+
+                    {/* Level 3: Section / Article / Page Metadata */}
+                    {(sectionLabel || pageNumber || pubDate || jurisdiction) && (
+                      <div className="source-card-meta-row">
+                        {sectionLabel && (
+                          <span className="source-meta-tag source-meta-tag--section">
+                            {sectionLabel}
+                          </span>
+                        )}
+                        {pageNumber && (
+                          <span className="source-meta-tag">
+                            Page {pageNumber}
+                          </span>
+                        )}
+                        {pubDate && (
+                          <span className="source-meta-tag">
+                            {pubDate}
+                          </span>
+                        )}
+                        {jurisdiction && !authority && (
+                          <span className="source-meta-tag">
+                            {jurisdiction}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </button>
 
+                  {/* Level 4 & 5: Expandable Source Content & Open Link Action */}
                   {isExpanded && (
-                    <div className="source-card-content">
+                    <div id={`source-card-body-${id}`} className="source-card-content">
+                      {/* Level 4: Expandable Content */}
                       {snippetText ? (
-                        <p className="source-card-snippet">{snippetText}</p>
+                        <blockquote className="source-card-snippet">
+                          {snippetText}
+                        </blockquote>
                       ) : (
                         <p className="source-card-snippet source-unavailable">Source text unavailable.</p>
                       )}
+
                       {c.relevance && (
-                        <p className="source-card-relevance">
-                          <strong>Relevance:</strong> {c.relevance}
-                        </p>
+                        <div className="source-card-relevance">
+                          <span className="source-card-relevance-label">Relevance:</span>
+                          <span className="source-card-relevance-text">{c.relevance}</span>
+                        </div>
                       )}
+
+                      {/* Level 5: Open-source Link Action */}
                       {docLink && (
-                        <a
-                          href={docLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="source-card-link"
-                          aria-label={`Open source document: ${displayTitle}`}
-                        >
-                          <IconExternalLink size={13} />
-                          <span>{docLink}</span>
-                        </a>
+                        <div className="source-card-action-row">
+                          <a
+                            href={docLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="source-card-link-btn"
+                            aria-label={`Open source document: ${displayTitle}`}
+                          >
+                            <span>Open Source Document</span>
+                            <IconExternalLink size={13} />
+                          </a>
+                        </div>
                       )}
                     </div>
                   )}
@@ -3201,7 +3240,7 @@ function TypewriterText({ text, speed = 15, onComplete }) {
 
   useEffect(() => {
     if (!text) return
-    
+
     let currentIndex = 0
     setDisplayedText('')
     setIsComplete(false)
@@ -3238,7 +3277,7 @@ function DPDPProtectionBadge() {
   const [showTooltip, setShowTooltip] = useState(false)
 
   return (
-    <div 
+    <div
       className="dpdp-badge"
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
@@ -3498,7 +3537,10 @@ function MessageActions({ msg, onRegenerate, onFeedback }) {
 }
 
 // Welcome/Empty state component (Guided Assessment)
-function ChatWelcome({ onPromptClick }) {
+function ChatWelcome({ onPromptClick, onOpenWizard }) {
+  const { userName, isLoggedIn } = useAuth()
+  const displayName = isLoggedIn && userName ? userName : 'Innovator'
+
   const exampleQuestions = [
     { icon: <IconScroll size={18} />, text: 'Can I patent my Ayurvedic formulation with novel extraction?', category: 'Patent / IP' },
     { icon: <IconLeaf size={18} />, text: 'What are the ABS compliance requirements under Biological Diversity Act?', category: 'Biodiversity / ABS' },
@@ -3510,9 +3552,9 @@ function ChatWelcome({ onPromptClick }) {
     <div className="chat-welcome">
       <div className="welcome-brand-badge">
         <IconSparkles size={14} />
-        <span>RagVyn AI • Intelligent IP Guidance</span>
+        {/*<span>RagVyn AI • Intelligent IP Guidance</span>*/}
       </div>
-      <h2 className="welcome-title">How can RagVyn AI assist your IP journey?</h2>
+      <h2 className="welcome-title">Hello, {displayName}</h2>
       <p className="welcome-subtitle">
         Select a structured assessment pathway below, or describe your formulation, research, or compliance question for statute-grounded guidance.
       </p>
@@ -4192,7 +4234,7 @@ function IpSaktiLogo({ className = '', size = 36 }) {
 /* ============================================================
    GOVERNMENT PORTAL MAIN NAVIGATION BAR (CLEAN SINGLE ROW)
    ============================================================ */
-function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn: propLoggedIn, userName: propUserName, userEmail: propUserEmail, onLogout: propLogout, onSwitchAccount: propSwitchAccount }) {
+function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn: propLoggedIn, userName: propUserName, userEmail: propUserEmail, onLogout: propLogout, onSwitchAccount: propSwitchAccount, showSidebar, sidebarCollapsed, onToggleSidebar }) {
   const { t } = useLanguage()
   const navigate = useNavigate()
   const location = useLocation()
@@ -4213,11 +4255,11 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn: propLoggedIn, userN
 
   const authLoggedIn = authCtx ? authCtx.isLoggedIn : (propLoggedIn !== undefined
     ? Boolean(propLoggedIn)
-    : (typeof window !== 'undefined' && localStorage.getItem('ip_sakti_logged_in') === 'true'))
+    : (typeof window !== 'undefined' && (sessionStorage.getItem('ip_sakti_logged_in') === 'true' || localStorage.getItem('ip_sakti_logged_in') === 'true')))
   const isLoggedIn = authLoggedIn
 
-  const authUserName = authCtx?.userName || propUserName || (typeof window !== 'undefined' ? localStorage.getItem('ip_sakti_user_name') : '') || ''
-  const authUserEmail = authCtx?.userEmail || propUserEmail || (typeof window !== 'undefined' ? (JSON.parse(localStorage.getItem('ip_sakti_user') || '{}')?.email || '') : '')
+  const authUserName = authCtx?.userName || propUserName || (typeof window !== 'undefined' ? (sessionStorage.getItem('ip_sakti_user_name') || localStorage.getItem('ip_sakti_user_name')) : '') || ''
+  const authUserEmail = authCtx?.userEmail || propUserEmail || (typeof window !== 'undefined' ? (JSON.parse(sessionStorage.getItem('ip_sakti_user') || localStorage.getItem('ip_sakti_user') || '{}')?.email || '') : '')
 
   const effectiveLogout = () => {
     if (authCtx?.signOut) {
@@ -4225,11 +4267,10 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn: propLoggedIn, userN
     } else if (propLogout) {
       propLogout()
     } else {
-      localStorage.removeItem('ip_sakti_logged_in')
-      localStorage.removeItem('ip_sakti_user_name')
-      localStorage.removeItem('ip_sakti_access_token')
-      localStorage.removeItem('ip_sakti_refresh_token')
-      localStorage.removeItem('ip_sakti_user')
+      ['ip_sakti_logged_in', 'ip_sakti_user_name', 'ip_sakti_access_token', 'ip_sakti_refresh_token', 'ip_sakti_user'].forEach((k) => {
+        localStorage.removeItem(k)
+        sessionStorage.removeItem(k)
+      })
       window.dispatchEvent(new CustomEvent('ip-sakti-user-updated', { detail: null }))
       window.location.reload()
     }
@@ -4291,294 +4332,329 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn: propLoggedIn, userN
 
   return (
     <>
-    <nav className={`gov-nav-bar${scrolled ? ' nav-scrolled' : ''}`} role="navigation" aria-label="Main Portal Navigation">
-      <div className="gov-nav-container">
-        {/* Left: Brand Identity */}
-        <Link
-          to="/"
-          className="gov-brand-wrap"
-          onClick={() => {
-            setMobileMenuOpen(false)
-            window.dispatchEvent(new CustomEvent('retrigger-hero-anim'))
-          }}
-        >
-          <IpSaktiLogo size={36} className="gov-brand-icon" />
-          <div className="gov-brand-text">
-            <div className="gov-brand-title">
-              IP-SAKTI <span className="title-highlight">Sahayak</span>
-            </div>
-            <div className="gov-brand-subtitle">
-              <span className="ayush-dot" />
-              <span>Ayurveda IP & Regulatory Guidance</span>
-            </div>
-          </div>
-        </Link>
-
-        {/* Center: Professional navigation with dropdowns */}
-        <ul className={`gov-nav-menu ${mobileMenuOpen ? 'mobile-open' : ''}`}>
-          {/* Tools Dropdown */}
-          <li className="gov-nav-dropdown" ref={toolsDropdownRef}>
-            <button
-              type="button"
-              className="gov-nav-link-btn gov-nav-dropdown-trigger"
-              data-tour="ip-tools"
-              onClick={() => {
-                setToolsDropdownOpen(!toolsDropdownOpen)
-                setServicesDropdownOpen(false)
-              }}
-              aria-expanded={toolsDropdownOpen}
-            >
-              <IconCalculator size={15} />
-              <span>IP Tools</span>
-              <IconChevronDown size={12} className={`dropdown-chevron ${toolsDropdownOpen ? 'open' : ''}`} />
-            </button>
-            {toolsDropdownOpen && (
-              <div className="gov-nav-dropdown-menu">
-                <Link to="/patentability" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
-                  <IconScales size={16} />
-                  <div className="dropdown-item-content">
-                    <span className="dropdown-item-title">⚖️ Patentability Assessment</span>
-                    <span className="dropdown-item-desc">Prior art & § 3(p)/3(d)/3(e) assessment</span>
-                  </div>
-                </Link>
-                <Link to="/roadmap" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
-                  <IconCalendar size={16} />
-                  <div className="dropdown-item-content">
-                    <span className="dropdown-item-title">🗺️ IP Journey Roadmap</span>
-                    <span className="dropdown-item-desc">Personalized filing-to-grant timeline</span>
-                  </div>
-                </Link>
-                <Link to="/guardian" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
-                  <IconLeaf size={16} />
-                  <div className="dropdown-item-content">
-                    <span className="dropdown-item-title">🧭 Dual-Use Guardian</span>
-                    <span className="dropdown-item-desc">IP + AYUSH + ABS + FSSAI in one view</span>
-                  </div>
-                </Link>
-                <Link to="/ip-calculator" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
-                  <IconCurrencyRupee size={16} />
-                  <div className="dropdown-item-content">
-                    <span className="dropdown-item-title">Fee Calculator</span>
-                    <span className="dropdown-item-desc">Patent filing fees estimate</span>
-                  </div>
-                </Link>
-                <Link to="/deadline-calculator" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
-                  <IconCalendar size={16} />
-                  <div className="dropdown-item-content">
-                    <span className="dropdown-item-title">Deadline Calculator</span>
-                    <span className="dropdown-item-desc">Track RFE, FER & renewals</span>
-                  </div>
-                </Link>
-                <Link to="/abs-checker" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
-                  <IconLeaf size={16} />
-                  <div className="dropdown-item-content">
-                    <span className="dropdown-item-title">ABS Checker</span>
-                    <span className="dropdown-item-desc">Biodiversity compliance</span>
-                  </div>
-                </Link>
-                <Link to="/checklists" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
-                  <IconCheck size={16} />
-                  <div className="dropdown-item-content">
-                    <span className="dropdown-item-title">Filing Checklists</span>
-                    <span className="dropdown-item-desc">Patent, TM, GI checklists</span>
-                  </div>
-                </Link>
-              </div>
+      <nav className={`gov-nav-bar${scrolled ? ' nav-scrolled' : ''}`} role="navigation" aria-label="Main Portal Navigation">
+        <div className="gov-nav-container">
+          {/* Left: Brand Identity with Sidebar Toggle */}
+          <div className="gov-brand-group">
+            {showSidebar && (
+              <button
+                type="button"
+                className={`gov-nav-sidebar-toggle ${sidebarCollapsed ? 'is-collapsed' : 'is-expanded'}`}
+                onClick={onToggleSidebar}
+                aria-label={sidebarCollapsed ? 'Open history sidebar' : 'Close history sidebar'}
+                title={sidebarCollapsed ? 'Open history sidebar' : 'Close history sidebar'}
+              >
+                <IconMenu size={20} />
+              </button>
             )}
-          </li>
 
-          {/* Services Dropdown */}
-          <li className="gov-nav-dropdown" ref={servicesDropdownRef}>
-            <button
-              type="button"
-              className="gov-nav-link-btn gov-nav-dropdown-trigger"
-              data-tour="services"
-              onClick={() => {
-                setServicesDropdownOpen(!servicesDropdownOpen)
-                setToolsDropdownOpen(false)
-              }}
-              aria-expanded={servicesDropdownOpen}
-            >
-              <IconBriefcase size={15} />
-              <span>Services</span>
-              <IconChevronDown size={12} className={`dropdown-chevron ${servicesDropdownOpen ? 'open' : ''}`} />
-            </button>
-            {servicesDropdownOpen && (
-              <div className="gov-nav-dropdown-menu">
-                <Link to="/drafts" className="gov-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
-                  <IconEdit size={16} />
-                  <div className="dropdown-item-content">
-                    <span className="dropdown-item-title">Draft Generator</span>
-                    <span className="dropdown-item-desc">Form-1, NBA templates</span>
-                  </div>
-                </Link>
-                <Link to="/workspace" className="gov-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
-                  <IconBriefcase size={16} />
-                  <div className="dropdown-item-content">
-                    <span className="dropdown-item-title">Matter Workspace</span>
-                    <span className="dropdown-item-desc">Track your IP cases</span>
-                    {!authLoggedIn && <span className="dropdown-item-badge">Login required</span>}
-                  </div>
-                </Link>
-                <Link to="/documents" className="gov-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
-                  <IconPaperClip size={16} />
-                  <div className="dropdown-item-content">
-                    <span className="dropdown-item-title">Document Upload</span>
-                    <span className="dropdown-item-desc">Upload & search PDFs</span>
-                    {!authLoggedIn && <span className="dropdown-item-badge">Login required</span>}
-                  </div>
-                </Link>
-                <Link to="/experts" className="gov-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
-                  <IconUsers size={16} />
-                  <div className="dropdown-item-content">
-                    <span className="dropdown-item-title">Expert Connect</span>
-                    <span className="dropdown-item-desc">Find IP experts & FAQs</span>
-                  </div>
-                </Link>
-              </div>
-            )}
-          </li>
-
-          {/* Direct Links */}
-          <li className="gov-nav-item-secondary">
-            <button
-              type="button"
-              className="gov-nav-link-btn"
-              onClick={handleSeeDemo}
-              aria-label="See Demo"
-            >
-              <IconEye size={15} />
-              <span>{t('seeDemo') || 'See Demo'}</span>
-            </button>
-          </li>
-          <li>
-            <Link to="/sources" className="gov-nav-link" onClick={() => setMobileMenuOpen(false)}>
-              <IconBook size={15} />
-              <span>Sources</span>
-            </Link>
-          </li>
-          <li>
-            <Link to="/pricing" className="gov-nav-link" onClick={() => setMobileMenuOpen(false)}>
-              <IconTag size={15} />
-              <span>Pricing</span>
-            </Link>
-          </li>
-          <li className="gov-nav-item-secondary">
-            <button
-              type="button"
-              className="gov-nav-link-btn"
-              onClick={() => {
-                setMobileMenuOpen(false)
-                if (onOpenAbout) onOpenAbout()
-              }}
-            >
-              <IconInfo size={15} />
-              <span>About</span>
-            </button>
-          </li>
-          <li className="gov-nav-item-secondary">
-            <button
-              type="button"
-              className="gov-nav-link-btn"
-              onClick={() => {
-                setMobileMenuOpen(false)
-                setTourRun(true)
-              }}
-              title="Take a guided tour"
-            >
-              <IconInfo size={15} />
-              <span>{t('tourNavBtn') || 'Tour'}</span>
-            </button>
-          </li>
-
-          {/* Mobile-Only Actions inside Hamburger Menu */}
-          <li className="gov-nav-mobile-actions">
-            {authLoggedIn ? (
-              <div className="gov-nav-mobile-profile-card">
-                <div className="gov-nav-mobile-profile-header">
-                  <div className="gov-profile-avatar-circle">
-                    <span className="gov-profile-avatar-initial">
-                      {(authUserName || 'U').charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                  <div className="welcome-text">
-                    <span className="welcome-label">Signed in as</span>
-                    <span className="welcome-name">{authUserName || 'Innovator'}</span>
-                  </div>
-                </div>
-
-                <div className="gov-nav-mobile-profile-actions">
-                  <button
-                    type="button"
-                    className="gov-nav-mobile-profile-action-btn"
-                    onClick={() => {
-                      setMobileMenuOpen(false)
-                      setEditProfileOpen(true)
-                    }}
-                  >
-                    <span>✎ Edit Profile</span>
-                  </button>
-                  <Link
-                    to="/chat"
-                    className="gov-nav-mobile-profile-action-btn"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <span>◉ My Consultations</span>
-                  </Link>
-                  <Link
-                    to="/pricing"
-                    className="gov-nav-mobile-profile-action-btn gov-nav-mobile-pro-btn"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <span>⭐ Upgrade to Pro</span>
-                    <span className="gov-profile-pro-badge">PRO</span>
-                  </Link>
-                  <button
-                    type="button"
-                    className="gov-nav-mobile-profile-action-btn gov-nav-mobile-logout-btn"
-                    onClick={() => {
-                      setMobileMenuOpen(false)
-                      effectiveLogout()
-                    }}
-                  >
-                    <span>Logout</span>
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '8px' }}>
-                <Link
-                  to="/login"
-                  className="gov-nav-mobile-login-btn"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <IconUser size={16} />
-                  <span>Login/Register</span>
-                </Link>
-              </div>
-            )}
             <Link
-              to="/chat"
-              className="gov-nav-mobile-cta"
-              onClick={() => setMobileMenuOpen(false)}
+              to="/"
+              className="gov-brand-wrap"
+              onClick={() => {
+                setMobileMenuOpen(false)
+                window.dispatchEvent(new CustomEvent('retrigger-hero-anim'))
+              }}
             >
-              <span>Consult RagVyn AI</span>
-              <IconArrowRight size={15} />
+              <div className="gov-brand-text">
+                <div className="gov-brand-title">
+                  IP-SAKTI <span className="title-highlight">Sahayak</span>
+                </div>
+              </div>
             </Link>
-          </li>
-        </ul>
+          </div>
 
-        {/* Right: Actions */}
-        <div className="gov-nav-actions">
-          {/* Desktop User/Guest Groups */}
-          <div className="gov-nav-desktop-actions">
-            {authLoggedIn ? (
-              <div className="gov-nav-user-group">
-                <Link to="/chat" className="gov-nav-cta" id="gov-nav-consult-btn">
-                  <span>RagVyn AI</span>
-                  <IconArrowRight size={14} />
-                </Link>
+          {/* Center: Professional navigation with dropdowns */}
+          <ul className={`gov-nav-menu ${mobileMenuOpen ? 'mobile-open' : ''}`}>
+            {/* Tools Dropdown */}
+            <li className="gov-nav-dropdown" ref={toolsDropdownRef}>
+              <button
+                type="button"
+                className="gov-nav-link-btn gov-nav-dropdown-trigger"
+                data-tour="ip-tools"
+                onClick={() => {
+                  setToolsDropdownOpen(!toolsDropdownOpen)
+                  setServicesDropdownOpen(false)
+                }}
+                aria-expanded={toolsDropdownOpen}
+              >
+                <IconCalculator size={15} />
+                <span>IP Tools</span>
+                <IconChevronDown size={12} className={`dropdown-chevron ${toolsDropdownOpen ? 'open' : ''}`} />
+              </button>
+              {toolsDropdownOpen && (
+                <div className="gov-nav-dropdown-menu">
+                  <Link to="/patentability" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
+                    <IconScales size={16} />
+                    <div className="dropdown-item-content">
+                      <span className="dropdown-item-title">⚖️ Patentability Assessment</span>
+                      <span className="dropdown-item-desc">Prior art & § 3(p)/3(d)/3(e) assessment</span>
+                    </div>
+                  </Link>
+                  <Link to="/roadmap" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
+                    <IconCalendar size={16} />
+                    <div className="dropdown-item-content">
+                      <span className="dropdown-item-title">🗺️ IP Journey Roadmap</span>
+                      <span className="dropdown-item-desc">Personalized filing-to-grant timeline</span>
+                    </div>
+                  </Link>
+                  <Link to="/guardian" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
+                    <IconLeaf size={16} />
+                    <div className="dropdown-item-content">
+                      <span className="dropdown-item-title">🧭 Dual-Use Guardian</span>
+                      <span className="dropdown-item-desc">IP + AYUSH + ABS + FSSAI in one view</span>
+                    </div>
+                  </Link>
+                  <Link to="/ip-calculator" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
+                    <IconCurrencyRupee size={16} />
+                    <div className="dropdown-item-content">
+                      <span className="dropdown-item-title">Fee Calculator</span>
+                      <span className="dropdown-item-desc">Patent filing fees estimate</span>
+                    </div>
+                  </Link>
+                  <Link to="/deadline-calculator" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
+                    <IconCalendar size={16} />
+                    <div className="dropdown-item-content">
+                      <span className="dropdown-item-title">Deadline Calculator</span>
+                      <span className="dropdown-item-desc">Track RFE, FER & renewals</span>
+                    </div>
+                  </Link>
+                  <Link to="/abs-checker" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
+                    <IconLeaf size={16} />
+                    <div className="dropdown-item-content">
+                      <span className="dropdown-item-title">ABS Checker</span>
+                      <span className="dropdown-item-desc">Biodiversity compliance</span>
+                    </div>
+                  </Link>
+                  <Link to="/checklists" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
+                    <IconCheck size={16} />
+                    <div className="dropdown-item-content">
+                      <span className="dropdown-item-title">Filing Checklists</span>
+                      <span className="dropdown-item-desc">Patent, TM, GI checklists</span>
+                    </div>
+                  </Link>
+                </div>
+              )}
+            </li>
+
+            {/* Services Dropdown */}
+            <li className="gov-nav-dropdown" ref={servicesDropdownRef}>
+              <button
+                type="button"
+                className="gov-nav-link-btn gov-nav-dropdown-trigger"
+                data-tour="services"
+                onClick={() => {
+                  setServicesDropdownOpen(!servicesDropdownOpen)
+                  setToolsDropdownOpen(false)
+                }}
+                aria-expanded={servicesDropdownOpen}
+              >
+                <IconBriefcase size={15} />
+                <span>Services</span>
+                <IconChevronDown size={12} className={`dropdown-chevron ${servicesDropdownOpen ? 'open' : ''}`} />
+              </button>
+              {servicesDropdownOpen && (
+                <div className="gov-nav-dropdown-menu">
+                  <Link to="/drafts" className="gov-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
+                    <IconEdit size={16} />
+                    <div className="dropdown-item-content">
+                      <span className="dropdown-item-title">Draft Generator</span>
+                      <span className="dropdown-item-desc">Form-1, NBA templates</span>
+                    </div>
+                  </Link>
+                  <Link to="/workspace" className="gov-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
+                    <IconBriefcase size={16} />
+                    <div className="dropdown-item-content">
+                      <span className="dropdown-item-title">Matter Workspace</span>
+                      <span className="dropdown-item-desc">Track your IP cases</span>
+                      {!authLoggedIn && <span className="dropdown-item-badge">Login required</span>}
+                    </div>
+                  </Link>
+                  <Link to="/documents" className="gov-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
+                    <IconPaperClip size={16} />
+                    <div className="dropdown-item-content">
+                      <span className="dropdown-item-title">Document Upload</span>
+                      <span className="dropdown-item-desc">Upload & search PDFs</span>
+                      {!authLoggedIn && <span className="dropdown-item-badge">Login required</span>}
+                    </div>
+                  </Link>
+                  <Link to="/experts" className="gov-dropdown-item" onClick={() => { setServicesDropdownOpen(false); setMobileMenuOpen(false); }}>
+                    <IconUsers size={16} />
+                    <div className="dropdown-item-content">
+                      <span className="dropdown-item-title">Expert Connect</span>
+                      <span className="dropdown-item-desc">Find IP experts & FAQs</span>
+                    </div>
+                  </Link>
+                </div>
+              )}
+            </li>
+
+            {/* Direct Links */}
+            <li className="gov-nav-item-secondary">
+              <button
+                type="button"
+                className="gov-nav-link-btn"
+                onClick={handleSeeDemo}
+                aria-label="See Demo"
+              >
+                <IconEye size={15} />
+                <span>{t('seeDemo') || 'See Demo'}</span>
+              </button>
+            </li>
+            <li className="gov-nav-item-secondary">
+              <Link to="/sources" className="gov-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                <IconBook size={15} />
+                <span>Sources</span>
+              </Link>
+            </li>
+            <li className="gov-nav-item-secondary">
+              <Link to="/pricing" className="gov-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                <IconTag size={15} />
+                <span>Pricing</span>
+              </Link>
+            </li>
+            <li className="gov-nav-item-secondary">
+              <button
+                type="button"
+                className="gov-nav-link-btn"
+                onClick={() => {
+                  setMobileMenuOpen(false)
+                  if (onOpenAbout) onOpenAbout()
+                }}
+              >
+                <IconInfo size={15} />
+                <span>About</span>
+              </button>
+            </li>
+            <li className="gov-nav-item-secondary">
+              <button
+                type="button"
+                className="gov-nav-link-btn"
+                onClick={() => {
+                  setMobileMenuOpen(false)
+                  setTourRun(true)
+                }}
+                title="Take a guided tour"
+              >
+                <IconInfo size={15} />
+                <span>{t('tourNavBtn') || 'Tour'}</span>
+              </button>
+            </li>
+
+            {/* Mobile-Only Actions inside Hamburger Menu */}
+            <li className="gov-nav-mobile-actions">
+              {authLoggedIn ? (
+                <div className="gov-nav-mobile-profile-card">
+                  <div className="gov-nav-mobile-profile-header">
+                    <div className="gov-profile-avatar-circle">
+                      <span className="gov-profile-avatar-initial">
+                        {(authUserName || 'U').charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="welcome-text">
+                      <span className="welcome-label">Signed in as</span>
+                      <span className="welcome-name">{authUserName || 'Innovator'}</span>
+                    </div>
+                  </div>
+
+                  <div className="gov-nav-mobile-profile-actions">
+                    <button
+                      type="button"
+                      className="gov-nav-mobile-profile-action-btn"
+                      onClick={() => {
+                        setMobileMenuOpen(false)
+                        setEditProfileOpen(true)
+                      }}
+                    >
+                      <span>✎ Edit Profile</span>
+                    </button>
+                    <Link
+                      to="/chat"
+                      className="gov-nav-mobile-profile-action-btn"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <span>◉ My Consultations</span>
+                    </Link>
+                    <Link
+                      to="/pricing"
+                      className="gov-nav-mobile-profile-action-btn gov-nav-mobile-pro-btn"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <span>⭐ Upgrade to Pro</span>
+                      <span className="gov-profile-pro-badge">PRO</span>
+                    </Link>
+                    <button
+                      type="button"
+                      className="gov-nav-mobile-profile-action-btn gov-nav-mobile-logout-btn"
+                      onClick={() => {
+                        setMobileMenuOpen(false)
+                        effectiveLogout()
+                      }}
+                    >
+                      <span>Logout</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '8px' }}>
+                  <Link
+                    to="/login"
+                    className="gov-nav-mobile-login-btn"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <IconUser size={16} />
+                    <span>Login/Register</span>
+                  </Link>
+                </div>
+              )}
+              <Link
+                to="/chat"
+                className="gov-nav-mobile-cta"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <span>Consult RagVyn AI</span>
+                <IconArrowRight size={15} />
+              </Link>
+            </li>
+          </ul>
+
+          {/* Right: Actions */}
+          <div className="gov-nav-actions">
+            {/* Desktop User/Guest Groups */}
+            <div className="gov-nav-desktop-actions">
+              {authLoggedIn ? (
+                <div className="gov-nav-user-group">
+                  <Link to="/chat" className="gov-nav-cta" id="gov-nav-consult-btn">
+                    <span>RagVyn AI</span>
+                    <IconArrowRight size={14} />
+                  </Link>
+                  <UserProfileMenu
+                    userName={authUserName}
+                    userEmail={authUserEmail}
+                    onLogout={effectiveLogout}
+                    onSwitchAccount={effectiveSwitchAccount}
+                    onOpenEditProfile={() => setEditProfileOpen(true)}
+                  />
+                </div>
+              ) : (
+                <div className="gov-nav-guest-group">
+                  <Link to="/login" className="gov-nav-login-btn">
+                    <IconUser size={14} />
+                    <span>Login/Register</span>
+                  </Link>
+                  <Link to="/chat" className="gov-nav-cta" id="gov-nav-consult-btn">
+                    <span>RagVyn AI</span>
+                    <IconArrowRight size={14} />
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {/* Mobile Profile Avatar Trigger (When logged in) */}
+            {authLoggedIn && (
+              <div className="gov-nav-mobile-profile-wrap">
                 <UserProfileMenu
+                  compact={true}
                   userName={authUserName}
                   userEmail={authUserEmail}
                   onLogout={effectiveLogout}
@@ -4586,71 +4662,45 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn: propLoggedIn, userN
                   onOpenEditProfile={() => setEditProfileOpen(true)}
                 />
               </div>
-            ) : (
-              <div className="gov-nav-guest-group">
-                <Link to="/login" className="gov-nav-login-btn">
-                  <IconUser size={14} />
-                  <span>Login/Register</span>
-                </Link>
-                <Link to="/chat" className="gov-nav-cta" id="gov-nav-consult-btn">
-                  <span>RagVyn AI</span>
-                  <IconArrowRight size={14} />
-                </Link>
-              </div>
             )}
+
+            {/* Mobile Quick Action Pill */}
+            <Link to="/chat" className="gov-nav-mobile-quick-cta" aria-label="RagVyn AI">
+              <span>AI</span>
+              <IconSparkles size={13} />
+            </Link>
+
+            {/* Mobile hamburger toggle */}
+            <button
+              type="button"
+              className="gov-mobile-toggle"
+              aria-label="Toggle navigation menu"
+              aria-expanded={mobileMenuOpen}
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              {mobileMenuOpen ? <IconX size={20} /> : <IconMenu size={20} />}
+            </button>
           </div>
-
-          {/* Mobile Profile Avatar Trigger (When logged in) */}
-          {authLoggedIn && (
-            <div className="gov-nav-mobile-profile-wrap">
-              <UserProfileMenu
-                compact={true}
-                userName={authUserName}
-                userEmail={authUserEmail}
-                onLogout={effectiveLogout}
-                onSwitchAccount={effectiveSwitchAccount}
-                onOpenEditProfile={() => setEditProfileOpen(true)}
-              />
-            </div>
-          )}
-
-          {/* Mobile Quick Action Pill */}
-          <Link to="/chat" className="gov-nav-mobile-quick-cta" aria-label="RagVyn AI">
-            <span>AI</span>
-            <IconSparkles size={13} />
-          </Link>
-
-          {/* Mobile hamburger toggle */}
-          <button
-            type="button"
-            className="gov-mobile-toggle"
-            aria-label="Toggle navigation menu"
-            aria-expanded={mobileMenuOpen}
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? <IconX size={20} /> : <IconMenu size={20} />}
-          </button>
         </div>
-      </div>
-      {mobileMenuOpen && (
-        <div
-          className="gov-mobile-backdrop"
-          onClick={() => setMobileMenuOpen(false)}
-          aria-hidden="true"
-        />
-      )}
-    </nav>
-    <EditProfileModal
-      isOpen={editProfileOpen}
-      onClose={() => setEditProfileOpen(false)}
-    />
-    <OnboardingTour
-      run={tourRun}
-      onClose={() => setTourRun(false)}
-      onOpenTools={(open) => setToolsDropdownOpen(open)}
-      onOpenServices={(open) => setServicesDropdownOpen(open)}
-      t={t}
-    />
+        {mobileMenuOpen && (
+          <div
+            className="gov-mobile-backdrop"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-hidden="true"
+          />
+        )}
+      </nav>
+      <EditProfileModal
+        isOpen={editProfileOpen}
+        onClose={() => setEditProfileOpen(false)}
+      />
+      <OnboardingTour
+        run={tourRun}
+        onClose={() => setTourRun(false)}
+        onOpenTools={(open) => setToolsDropdownOpen(open)}
+        onOpenServices={(open) => setServicesDropdownOpen(open)}
+        t={t}
+      />
     </>
   )
 }
@@ -4663,7 +4713,7 @@ function TranslatedFooter() {
 /* ============================================================
    NAVBAR WRAPPER (COMMON)
    ============================================================ */
-function Navbar({ onOpenAbout, onOpenWizard, theme, toggleTheme, isLoggedIn, userName, userEmail, onLogout, onSwitchAccount }) {
+function Navbar({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize, isLoggedIn, userName, userEmail, onLogout, onSwitchAccount, showSidebar, sidebarCollapsed, onToggleSidebar }) {
   return (
     <header className="gov-portal-header-wrapper" role="banner">
       <GovtAccessibilityBar
@@ -4678,6 +4728,9 @@ function Navbar({ onOpenAbout, onOpenWizard, theme, toggleTheme, isLoggedIn, use
         userEmail={userEmail}
         onLogout={onLogout}
         onSwitchAccount={onSwitchAccount}
+        showSidebar={showSidebar}
+        sidebarCollapsed={sidebarCollapsed}
+        onToggleSidebar={onToggleSidebar}
       />
     </header>
   )
@@ -5414,81 +5467,45 @@ function LandingPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, 
     }
   }, [location.pathname, location.state, location.hash])
 
+  const handleSeeDemo = (e) => {
+    e.preventDefault()
+    const target = document.getElementById('demo')
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
+
   return (
     <div className="landing">
-      <Navbar
-        onOpenAbout={onOpenAbout}
-        onOpenWizard={onOpenWizard}
-        theme={theme}
-        toggleTheme={toggleTheme}
-        fontSize={fontSize}
-        setFontSize={setFontSize}
-        setPrefillPrompt={setPrefillPrompt}
-        isLoggedIn={isLoggedIn}
-        userName={userName}
-        onLogout={onLogout}
-      />
-
-      {/* Hero Section - Two Column Split Composition */}
+      {/* Hero Section - Refined Institutional Layout */}
       <section className="hero-section" id="hero" ref={heroRef} aria-labelledby="hero-title">
         <div className="hero-container">
-          <div className="hero-grid">
-            {/* Left Column: Narrative, Statues & CTAs */}
-            <div className="hero-content-col">
-              <HeroTypewriterTitle
-                line1Text={t('heroTitle')}
-                line2Text={t('heroSubtitle')}
-                trigger={animTrigger}
-              />
+          <div className="hero-content-col">
+            <HeroTypewriterTitle
+              line1Text={t('heroTitle')}
+              line2Text={t('heroSubtitle')}
+              trigger={animTrigger}
+            />
 
-              <p className="hero-description">
-                {t('heroDesc')}
-              </p>
+            <p className="hero-description">
+              {t('heroDesc')}
+            </p>
 
-              <div className="hero-cta-group">
-                <Link to="/chat" className="btn-primary hero-btn-main" id="hero-start-btn">
-                  <span>{t('startAssessment')}</span>
-                  <IconArrowRight size={16} />
-                </Link>
-                <a href="#how-it-works" className="btn-secondary hero-btn-sub">
-                  <span>{t('howItWorksBtn')}</span>
-                </a>
-              </div>
-
-              {/* Verified Statutory Trust Badges */}
-              <div className="hero-trust-indicators">
-                <div className="hero-trust-item">
-                  <div className="trust-icon-box"><IconScales size={15} /></div>
-                  <div className="trust-text-box">
-                    <strong>{t('trustPatentsAct')}</strong>
-                    <span>{t('trustPatentsActDesc')}</span>
-                  </div>
-                </div>
-                <div className="hero-trust-item">
-                  <div className="trust-icon-box"><IconBook size={15} /></div>
-                  <div className="trust-text-box">
-                    <strong>{t('trustTkdl')}</strong>
-                    <span>{t('trustTkdlDesc')}</span>
-                  </div>
-                </div>
-                <div className="hero-trust-item">
-                  <div className="trust-icon-box"><IconLeaf size={15} /></div>
-                  <div className="trust-text-box">
-                    <strong>{t('trustBdAct')}</strong>
-                    <span>{t('trustBdActDesc')}</span>
-                  </div>
-                </div>
-                <div className="hero-trust-item">
-                  <div className="trust-icon-box"><IconShieldCheck size={15} /></div>
-                  <div className="trust-text-box">
-                    <strong>{t('trustDrugsRules')}</strong>
-                    <span>{t('trustDrugsRulesDesc')}</span>
-                  </div>
-                </div>
-              </div>
+            <div className="hero-cta-group">
+              <Link to="/chat" className="btn-primary hero-btn-main" id="hero-start-btn">
+                <span>{t('startAssessment')}</span>
+                <IconArrowRight size={16} />
+              </Link>
+              <a
+                href="#demo"
+                onClick={handleSeeDemo}
+                className="btn-secondary hero-btn-sub"
+                id="hero-see-demo-btn"
+                aria-label="See interactive video demo"
+              >
+                <span>{t('seeDemo') || 'See Demo'}</span>
+              </a>
             </div>
-
-            {/* Right Column: Removed - Interactive diagnostic was here */}
           </div>
         </div>
       </section>
@@ -5758,199 +5775,191 @@ const VOICE_LANGUAGES = [
 
 function useVoiceInput(onResult, lang = 'hi-IN') {
   const [isListening, setIsListening] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
   const [interimText, setInterimText] = useState('')
   const [error, setError] = useState(null)
-  const [confidence, setConfidence] = useState(null) // Track recognition confidence
+  const [confidence, setConfidence] = useState(null)
   const recognitionRef = useRef(null)
   const onResultRef = useRef(onResult)
-  const shouldRestartRef = useRef(false)
 
-  // Check support once
   const isSupported = typeof window !== 'undefined' &&
     !!(window.SpeechRecognition || window.webkitSpeechRecognition)
 
-  // Keep callback ref updated
   useEffect(() => {
     onResultRef.current = onResult
   }, [onResult])
 
-  // Initialize recognition when lang changes (or on mount)
+  // Stop & cleanup recognition on unmount or when language changes
   useEffect(() => {
-    if (!isSupported) {
-      console.log('[Speech] Speech recognition not supported in this browser')
-      return
-    }
-
-    // Cleanup old instance
-    if (recognitionRef.current) {
-      shouldRestartRef.current = false
-      try {
-        recognitionRef.current.abort()
-      } catch (e) {
-        console.log('[Speech] Cleanup abort error (safe to ignore):', e.message)
-      }
-    }
-
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-    const recognition = new SpeechRecognition()
-
-    // Configuration optimized for better Hindi recognition accuracy
-    recognition.continuous = false  // Single-shot mode for better accuracy
-    recognition.interimResults = true  // Show partial results
-    recognition.maxAlternatives = 1  // Single best result for better accuracy
-    recognition.lang = lang
-
-    console.log('[Speech] Recognition initialized with lang:', lang, '(single-shot mode for accuracy)')
-
-    recognition.onstart = () => {
-      console.log('[Speech] Started listening - Lang:', lang)
-      setIsListening(true)
-      setError(null)
-      setInterimText('')
-      setConfidence(null)
-    }
-
-    recognition.onresult = (event) => {
-      let finalTranscript = ''
-      let interimTranscript = ''
-      let lastConfidence = null
-
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const result = event.results[i]
-        // Get the best alternative (first one has highest confidence)
-        const transcript = result[0].transcript
-        const resultConfidence = result[0].confidence
-
-        console.log('[Speech] Result:', transcript, 'Confidence:', resultConfidence, 'isFinal:', result.isFinal)
-
-        if (result.isFinal) {
-          finalTranscript += transcript + ' '
-          lastConfidence = resultConfidence
-          console.log('[Speech] Final result:', transcript, '| Confidence:', (resultConfidence * 100).toFixed(1) + '%')
-        } else {
-          interimTranscript += transcript
-        }
-      }
-
-      // Update confidence for UI display
-      if (lastConfidence !== null) {
-        setConfidence(lastConfidence)
-      }
-
-      // Show interim results
-      if (interimTranscript) {
-        setInterimText(interimTranscript)
-      }
-
-      // Send final results and clear interim
-      if (finalTranscript.trim()) {
-        setInterimText('') // Clear interim when final comes
-        onResultRef.current(finalTranscript.trim())
-      }
-    }
-
-    recognition.onerror = (event) => {
-      console.error('[Speech] Speech recognition error:', event.error)
-
-      // Handle specific errors
-      switch (event.error) {
-        case 'not-allowed':
-          setError('माइक्रोफ़ोन की अनुमति दें / Please allow microphone access')
-          shouldRestartRef.current = false
-          setIsListening(false)
-          break
-        case 'no-speech':
-          // Don't stop - just keep listening
-          console.log('[Speech] No speech detected, continuing...')
-          break
-        case 'audio-capture':
-          setError('माइक्रोफ़ोन नहीं मिला / No microphone found')
-          shouldRestartRef.current = false
-          setIsListening(false)
-          break
-        case 'network':
-          setError('नेटवर्क त्रुटि / Network error')
-          break
-        case 'aborted':
-          // User or code aborted - don't show error
-          break
-        default:
-          setError(`त्रुटि / Error: ${event.error}`)
-      }
-    }
-
-    recognition.onend = () => {
-      console.log('[Speech] Recognition ended, shouldRestart:', shouldRestartRef.current)
-
-      // Auto-restart if user wants to keep listening
-      if (shouldRestartRef.current) {
-        setTimeout(() => {
-          try {
-            console.log('[Speech] Auto-restarting...')
-            recognitionRef.current?.start()
-          } catch (e) {
-            console.log('[Speech] Restart failed:', e.message)
-            // If restart fails, stop listening
-            shouldRestartRef.current = false
-            setIsListening(false)
-          }
-        }, 100)
-      } else {
-        setIsListening(false)
-        setInterimText('')
-      }
-    }
-
-    recognitionRef.current = recognition
-
-    // Cleanup on unmount or lang change
     return () => {
-      shouldRestartRef.current = false
-      try {
-        recognitionRef.current?.abort()
-      } catch (e) {
-        console.log('[Speech] Cleanup error (safe to ignore):', e.message)
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.abort()
+        } catch (_) {}
+        recognitionRef.current = null
       }
+      setIsListening(false)
+      setIsProcessing(false)
     }
-  }, [isSupported, lang])
-
-  const startListening = useCallback(() => {
-    console.log('[Speech] startListening called')
-    setError(null)
-    shouldRestartRef.current = true
-
-    try {
-      recognitionRef.current?.start()
-      console.log('[Speech] start() called successfully')
-    } catch (e) {
-      console.log('[Speech] start() error:', e.message)
-      if (e.name !== 'InvalidStateError') {
-        setError('वॉइस शुरू नहीं हो सका / Failed to start voice')
-      }
-      // InvalidStateError means already started - that's ok
-    }
-  }, [])
+  }, [lang])
 
   const stopListening = useCallback(() => {
-    console.log('[Speech] stopListening called')
-    shouldRestartRef.current = false
-
-    try {
-      recognitionRef.current?.stop()
-    } catch (e) {
-      console.log('[Speech] stop() error (safe to ignore):', e.message)
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop()
+      } catch (_) {}
     }
-
     setIsListening(false)
+    setIsProcessing(false)
     setInterimText('')
   }, [])
 
+  const startListening = useCallback(async () => {
+    if (isListening || isProcessing) return
+
+    setError(null)
+    setInterimText('')
+    setConfidence(null)
+    setIsProcessing(true)
+
+    if (!isSupported) {
+      setError('ब्राउज़र वॉइस इनपुट का समर्थन नहीं करता / Voice input is not supported in this browser. Please use Google Chrome or Microsoft Edge.')
+      setIsProcessing(false)
+      return
+    }
+
+    // Permission and media stream pre-flight
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+        // Stop captured tracks immediately so the mic icon does not linger in the address bar
+        stream.getTracks().forEach(track => track.stop())
+      } catch (err) {
+        setIsProcessing(false)
+        setIsListening(false)
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          setError('माइक्रोफ़ोन अनुमति अस्वीकृत / Microphone access denied. Please click the permissions icon in your browser URL bar to allow microphone access.')
+        } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+          setError('कोई माइक्रोफ़ोन नहीं मिला / No microphone hardware found. Please connect an audio input device and try again.')
+        } else {
+          setError(`माइक्रोफ़ोन एक्सेस त्रुटि / Microphone access error: ${err.message}`)
+        }
+        return
+      }
+    } else if (typeof window !== 'undefined' && window.location.protocol !== 'https:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      setIsProcessing(false)
+      setError('माइक्रोफ़ोन के लिए HTTPS या localhost आवश्यक है / Microphone requires a secure HTTPS or localhost connection.')
+      return
+    }
+
+    // Clean up any stale recognition instance
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.abort()
+      } catch (_) {}
+      recognitionRef.current = null
+    }
+
+    try {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+      const recognition = new SpeechRecognition()
+
+      // Continuous mode allows natural speaking without rapid timeouts
+      recognition.continuous = true
+      recognition.interimResults = true
+      recognition.maxAlternatives = 1
+      recognition.lang = lang
+
+      recognition.onstart = () => {
+        setIsListening(true)
+        setIsProcessing(false)
+        setError(null)
+      }
+
+      recognition.onresult = (event) => {
+        let finalTranscript = ''
+        let interimTranscript = ''
+        let lastConfidence = null
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const result = event.results[i]
+          const transcript = result[0].transcript
+          const resultConfidence = result[0].confidence
+
+          if (result.isFinal) {
+            finalTranscript += transcript + ' '
+            lastConfidence = resultConfidence
+          } else {
+            interimTranscript += transcript
+          }
+        }
+
+        if (lastConfidence !== null) {
+          setConfidence(lastConfidence)
+        }
+
+        if (interimTranscript) {
+          setInterimText(interimTranscript)
+        }
+
+        if (finalTranscript.trim()) {
+          setInterimText('')
+          onResultRef.current(finalTranscript.trim())
+        }
+      }
+
+      recognition.onerror = (event) => {
+        setIsListening(false)
+        setIsProcessing(false)
+        switch (event.error) {
+          case 'not-allowed':
+            setError('माइक्रोफ़ोन की अनुमति अस्वीकृत / Microphone access was blocked. Please enable microphone permissions in your browser.')
+            break
+          case 'no-speech':
+            // No speech detected during pause — gracefully ignore
+            return
+          case 'audio-capture':
+            setError('माइक्रोफ़ोन नहीं मिला / Audio capture failed. Please check your microphone hardware.')
+            break
+          case 'network':
+            setError('वॉइस सेवा अनुपलब्ध या नेटवर्क त्रुटि / Speech recognition network error. Please check your internet connection and ensure speech service is reachable.')
+            break
+          case 'language-not-supported':
+            setError(`चयनित भाषा समर्थित नहीं है / Selected language (${lang}) is not supported for voice recognition on this browser. Try Hindi or English.`)
+            break
+          case 'service-not-allowed':
+            setError('वॉइस सेवा प्रतिबंधित / Speech recognition service is not allowed by browser security policy.')
+            break
+          case 'aborted':
+            // Normal user abort
+            break
+          default:
+            setError(`वॉइस त्रुटि / Voice recognition error: ${event.error}`)
+        }
+      }
+
+      recognition.onend = () => {
+        setIsListening(false)
+        setIsProcessing(false)
+        setInterimText('')
+      }
+
+      recognitionRef.current = recognition
+      recognition.start()
+    } catch (err) {
+      setIsListening(false)
+      setIsProcessing(false)
+      setError(`वॉइस शुरू करने में विफल / Failed to start voice recognition: ${err.message}`)
+    }
+  }, [isListening, isProcessing, isSupported, lang])
+
   return {
     isListening,
+    isProcessing,
     isSupported,
     interimText,
     error,
-    confidence, // Expose confidence for UI display
+    confidence,
     startListening,
     stopListening
   }
@@ -6036,7 +6045,7 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
   const [conversationId, setConversationId] = useState(null)
   const [sessions, setSessions] = useState([])
   const [loadingSessions, setLoadingSessions] = useState(false)
-  
+
   // File attachment state
   const [attachedFile, setAttachedFile] = useState(null)
 
@@ -6108,7 +6117,7 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
     setInput(prev => prev ? prev + ' ' + transcript : transcript)
   }, [])
 
-  const { isListening, isSupported: voiceSupported, interimText, error: voiceError, confidence: voiceConfidence, startListening, stopListening } = useVoiceInput(handleVoiceResult, voiceLang)
+  const { isListening, isProcessing, isSupported: voiceSupported, interimText, error: voiceError, confidence: voiceConfidence, startListening, stopListening } = useVoiceInput(handleVoiceResult, voiceLang)
 
 
   // ----- Conversation persistence helpers -----
@@ -6126,7 +6135,7 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
   }, [])
 
   const getAuthHeaders = () => {
-    const token = localStorage.getItem('ip_sakti_access_token')
+    const token = typeof window !== 'undefined' ? (sessionStorage.getItem('ip_sakti_access_token') || localStorage.getItem('ip_sakti_access_token')) : null
     return token ? { Authorization: `Bearer ${token}` } : {}
   }
 
@@ -6227,6 +6236,8 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
       setInput('')
       setActiveSessionId(null)
       setConversationId(null)
+      setAttachedFile(null)
+      setHighlightedSourceId(null)
       window.dispatchEvent(new CustomEvent('ragvyn_active_session_changed', { detail: { id: null } }))
       window.history.replaceState({}, document.title)
     } else if (location.state?.loadSessionId) {
@@ -6238,6 +6249,32 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
       setPrefillPrompt('')
     }
   }, [location.state, prefillPrompt, setPrefillPrompt, loadConversation])
+
+  // Listen for session deletion and update events from RagvynSidebar
+  useEffect(() => {
+    const handleSessionDeleted = (e) => {
+      const deletedId = e.detail?.id
+      const wasActive = e.detail?.wasActive || deletedId === conversationId || deletedId === activeSessionId
+      if (wasActive) {
+        setMessages([])
+        setInput('')
+        setActiveSessionId(null)
+        setConversationId(null)
+        setAttachedFile(null)
+        setHighlightedSourceId(null)
+      }
+      setSessions(prev => prev.filter(s => s.id !== deletedId))
+    }
+    const handleSessionsUpdated = () => {
+      refreshSessions()
+    }
+    window.addEventListener('ragvyn_session_deleted', handleSessionDeleted)
+    window.addEventListener('ragvyn_sessions_updated', handleSessionsUpdated)
+    return () => {
+      window.removeEventListener('ragvyn_session_deleted', handleSessionDeleted)
+      window.removeEventListener('ragvyn_sessions_updated', handleSessionsUpdated)
+    }
+  }, [conversationId, activeSessionId, refreshSessions])
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -6311,20 +6348,20 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0]
     if (!file) return
-    
+
     // Validate file type
     const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword', 'text/plain', 'image/png', 'image/jpeg']
     if (!allowedTypes.includes(file.type)) {
       alert('File type not supported. Please upload PDF, Word, Text, or Image files.')
       return
     }
-    
+
     // Validate file size (10MB max)
     if (file.size > 10 * 1024 * 1024) {
       alert('File too large. Maximum size is 10MB.')
       return
     }
-    
+
     setAttachedFile(file)
     e.target.value = '' // Reset input
   }
@@ -6681,28 +6718,16 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
       role="main"
       style={themeCSSVariables}
     >
-      <GovtAccessibilityBar theme={theme} toggleTheme={toggleTheme} fontSize={fontSize} setFontSize={setFontSize} />
-
-      {/* Topbar */}
-      <header className="chat-topbar" role="banner">
-        <div className="chat-topbar-left">
-          <Link to="/" className="chat-brand" aria-label={t('backToHome')}>
-            <div className="chat-brand-icon" aria-hidden="true">
-              <IconLeaf size={20} />
-            </div>
-            <div className="chat-brand-info">
-              <div className="chat-brand-title-row">
-                <span className="chat-brand-name">IP-SAKTI Sahayak</span>
-                <span className="chat-ragvyn-pill">RagVyn AI</span>
-              </div>
-              <span className="chat-brand-dept devanagari">
-                आयुष मंत्रालय | Govt of India
-              </span>
-            </div>
-          </Link>
+      {/* Sleek Workspace Header for Themes and Sources */}
+      <header className="chat-workspace-header" role="region" aria-label="Chat Controls">
+        <div className="chat-workspace-header-left">
+          <div className="chat-workspace-badge">
+            <span className="chat-workspace-dot" />
+            <span className="chat-workspace-title">RagVyn AI Assistant</span>
+          </div>
         </div>
 
-        <div className="topbar-right">
+        <div className="chat-workspace-header-right">
           {/* RagVyn Theme Selector Popover */}
           <div className="chat-theme-picker-anchor" ref={themePickerRef}>
             <button
@@ -6760,21 +6785,6 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
             )}
           </div>
 
-          <select
-            className="lang-select"
-            value={lang}
-            onChange={e => setLang(e.target.value)}
-            aria-label={t('selectResponseLang')}
-            id="lang-selector"
-          >
-            {languages.map(l => (
-              <option key={l.code} value={l.code}>[{l.flag}] {l.label}</option>
-            ))}
-          </select>
-
-          <button className="btn-secondary chat-about-btn" onClick={onOpenAbout}>
-            <IconInfo size={14} /> <span>{t('about')}</span>
-          </button>
           <button
             ref={sourcesTriggerRef}
             className="btn-secondary chat-about-btn sources-toggle-btn"
@@ -6785,7 +6795,6 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
             <IconBook size={14} />
             <span className="sources-toggle-label">{sourcesPanelOpen ? 'Hide Sources' : 'Sources'}</span>
           </button>
-          <ThemeToggleBtn theme={theme} toggleTheme={toggleTheme} />
         </div>
       </header>
 
@@ -6919,8 +6928,8 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
                   </span>
                 </div>
 
-                <div className="input-row">
-                  <div className="chat-input-wrap">
+                <div className="chat-composer-box">
+                  <div className="chat-textarea-wrap">
                     <textarea
                       ref={textareaRef}
                       className="chat-input"
@@ -6932,61 +6941,72 @@ function ChatPage({ onOpenAbout, onOpenWizard, prefillPrompt, setPrefillPrompt, 
                       rows={1}
                       aria-label={t('typeYourQuestion')}
                     />
-                    {/* File Upload Button */}
-                    <div className="chat-file-upload">
-                      <input
-                        type="file"
-                        id="chat-file-input"
-                        accept=".pdf,.docx,.doc,.txt,.png,.jpg,.jpeg"
-                        onChange={handleFileSelect}
-                        style={{ display: 'none' }}
-                      />
-                      <button
-                        type="button"
-                        className="file-upload-btn"
-                        onClick={() => document.getElementById('chat-file-input')?.click()}
-                        aria-label="Attach file"
-                        title="Upload PDF, Word, or Image"
-                        style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-                      >
-                        <IconPaperClip size={16} />
-                      </button>
-                    </div>
-                    {/* Voice Input Controls */}
-                    {voiceSupported && (
-                      <div className="voice-controls">
-                        <VoiceLanguageSelector
-                          value={voiceLang}
-                          onChange={setVoiceLang}
-                          isListening={isListening}
+                  </div>
+
+                  <div className="chat-composer-action-bar">
+                    <div className="chat-composer-left-actions">
+                      {/* File Upload Button */}
+                      <div className="chat-file-upload">
+                        <input
+                          type="file"
+                          id="chat-file-input"
+                          accept=".pdf,.docx,.doc,.txt,.png,.jpg,.jpeg"
+                          onChange={handleFileSelect}
+                          style={{ display: 'none' }}
                         />
                         <button
                           type="button"
-                          className={`voice-btn ${isListening ? 'listening' : ''}`}
-                          onClick={isListening ? stopListening : startListening}
-                          aria-label={isListening ? t('voiceListening') : t('tapToSpeak')}
-                          title={t('voiceInput')}
-                          style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                          className="file-upload-btn"
+                          onClick={() => document.getElementById('chat-file-input')?.click()}
+                          aria-label="Attach file"
+                          title="Upload PDF, Word, or Image"
                         >
-                          {isListening ? (
-                            <span className="voice-waves">
-                              <span></span><span></span><span></span>
-                            </span>
-                          ) : <IconMic size={16} />}
+                          <IconPaperClip size={16} />
+                          <span className="file-upload-btn-label">Attach</span>
                         </button>
                       </div>
-                    )}
+                    </div>
+
+                    <div className="chat-composer-right-actions">
+                      {/* Voice Input Controls */}
+                      {voiceSupported && (
+                        <div className="voice-controls">
+                          <VoiceLanguageSelector
+                            value={voiceLang}
+                            onChange={setVoiceLang}
+                            isListening={isListening}
+                          />
+                          <button
+                            type="button"
+                            className={`voice-btn ${isListening ? 'listening' : ''}`}
+                            onClick={isListening ? stopListening : startListening}
+                            disabled={isProcessing}
+                            aria-label={isListening ? t('voiceListening') : t('tapToSpeak')}
+                            aria-pressed={isListening}
+                            title={t('voiceInput')}
+                          >
+                            {isListening ? (
+                              <span className="voice-waves">
+                                <span></span><span></span><span></span>
+                              </span>
+                            ) : <IconMic size={16} />}
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Send Button */}
+                      <button
+                        className="send-btn"
+                        id="send-message-btn"
+                        onClick={handleSend}
+                        disabled={!input.trim() || typing}
+                        aria-label={t('sendMessage')}
+                        title={t('sendMessage')}
+                      >
+                        <IconSend size={16} />
+                      </button>
+                    </div>
                   </div>
-                  <button
-                    className="send-btn"
-                    id="send-message-btn"
-                    onClick={handleSend}
-                    disabled={!input.trim() || typing}
-                    aria-label={t('sendMessage')}
-                    style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-                  >
-                    <IconSend size={16} />
-                  </button>
                 </div>
 
                 {/* Attached file preview */}
@@ -7140,15 +7160,6 @@ function FormulationWizardPage({
 
   return (
     <div className="page-container">
-      <Navbar
-        onOpenAbout={onOpenAbout}
-        onOpenWizard={onOpenWizard}
-        theme={theme}
-        toggleTheme={toggleTheme}
-        fontSize={fontSize}
-        setFontSize={setFontSize}
-      />
-
       <header className="page-header">
         <span
           className="chip"
@@ -7447,15 +7458,6 @@ function ABSCheckerPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSiz
 
   return (
     <div className="page-container">
-      <Navbar
-        onOpenAbout={onOpenAbout}
-        onOpenWizard={onOpenWizard}
-        theme={theme}
-        toggleTheme={toggleTheme}
-        fontSize={fontSize}
-        setFontSize={setFontSize}
-      />
-
       {showIntro ? (
         <ToolIntro
           config={TOOL_INTRO_CONFIGS['abs-checker']}
@@ -7485,84 +7487,84 @@ function ABSCheckerPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSiz
             <p className="page-subtitle">{t('absPageSubtitle')}</p>
           </header>
 
-      <main className="abs-form-card">
-        <form onSubmit={handleEvaluate} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          <div className="form-group">
-            <label className="form-label">1. {t('absApplicantType')}</label>
-            <select
-              className="form-select"
-              value={applicantType}
-              onChange={e => setApplicantType(e.target.value)}
-            >
-              <option value="indian_individual">{t('absIndianCitizen')}</option>
-              <option value="indian_company">{t('absIndianCompany')}</option>
-              <option value="foreign_entity">{t('absForeignEntity')}</option>
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">2. {t('absResourceOrigin')}</label>
-            <select
-              className="form-select"
-              value={resourceSource}
-              onChange={e => setResourceSource(e.target.value)}
-            >
-              <option value="india">{t('absSourcedIndia')}</option>
-              <option value="imported">{t('absImported')}</option>
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">3. {t('absIntendedPurpose')}</label>
-            <select
-              className="form-select"
-              value={activityIntent}
-              onChange={e => setActivityIntent(e.target.value)}
-            >
-              <option value="commercial">{t('absCommercial')}</option>
-              <option value="patent">{t('absPatent')}</option>
-              <option value="export">{t('absExport')}</option>
-            </select>
-          </div>
-
-          <button type="submit" className="btn-primary" style={{ marginTop: '0.5rem' }}>
-            {t('absCheckButton')} →
-          </button>
-        </form>
-
-        {evaluated && (
-          <div className="abs-result-card">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ display: 'flex', color: 'var(--primary-light)' }}><IconFileText size={22} /></span>
-              <h3 style={{ fontSize: '1.1rem', color: 'var(--text-primary)', margin: 0 }}>
-                NBA Approval & ABS Regulatory Assessment
-              </h3>
-            </div>
-
-            {applicantType === 'foreign_entity' ? (
-              <div style={{ fontSize: '0.88rem', color: 'var(--text-primary)', lineHeight: 1.6 }}>
-                <p><strong>Status:</strong> <span style={{ color: '#FCA5A5' }}>Mandatory Prior Approval Required (Section 3 of BD Act 2002)</span></p>
-                <p style={{ marginTop: '0.5rem' }}>Because the applicant involves foreign equity, NRIs, or foreign incorporation:</p>
-                <ul style={{ paddingLeft: '1.2rem', marginTop: '0.4rem', color: 'var(--text-secondary)' }}>
-                  <li>Must submit <strong>Form I</strong> application to the National Biodiversity Authority (NBA).</li>
-                  <li>Must sign an Access & Benefit Sharing (ABS) agreement before accessing Indian herbs.</li>
-                  <li>If filing a patent, <strong>Form III</strong> approval is mandatory before patent grant (Section 6).</li>
-                </ul>
+          <main className="abs-form-card">
+            <form onSubmit={handleEvaluate} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <div className="form-group">
+                <label className="form-label">1. {t('absApplicantType')}</label>
+                <select
+                  className="form-select"
+                  value={applicantType}
+                  onChange={e => setApplicantType(e.target.value)}
+                >
+                  <option value="indian_individual">{t('absIndianCitizen')}</option>
+                  <option value="indian_company">{t('absIndianCompany')}</option>
+                  <option value="foreign_entity">{t('absForeignEntity')}</option>
+                </select>
               </div>
-            ) : (
-              <div style={{ fontSize: '0.88rem', color: 'var(--text-primary)', lineHeight: 1.6 }}>
-                <p><strong>Status:</strong> <span style={{ color: '#86EFAC' }}>State Biodiversity Board (SBB) Intimation Required</span></p>
-                <p style={{ marginTop: '0.5rem' }}>For 100% Indian entities and domestic Vaidyas:</p>
-                <ul style={{ paddingLeft: '1.2rem', marginTop: '0.4rem', color: 'var(--text-secondary)' }}>
-                  <li>Local Vaidyas & traditional practitioners are EXEMPT from ABS fees for domestic practice.</li>
-                  <li>Commercial AYUSH manufacturers must notify the respective State Biodiversity Board (SBB) prior to commercial production.</li>
-                  <li>If filing for an international PCT patent, prior NBA notification via Form III is required.</li>
-                </ul>
+
+              <div className="form-group">
+                <label className="form-label">2. {t('absResourceOrigin')}</label>
+                <select
+                  className="form-select"
+                  value={resourceSource}
+                  onChange={e => setResourceSource(e.target.value)}
+                >
+                  <option value="india">{t('absSourcedIndia')}</option>
+                  <option value="imported">{t('absImported')}</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">3. {t('absIntendedPurpose')}</label>
+                <select
+                  className="form-select"
+                  value={activityIntent}
+                  onChange={e => setActivityIntent(e.target.value)}
+                >
+                  <option value="commercial">{t('absCommercial')}</option>
+                  <option value="patent">{t('absPatent')}</option>
+                  <option value="export">{t('absExport')}</option>
+                </select>
+              </div>
+
+              <button type="submit" className="btn-primary" style={{ marginTop: '0.5rem' }}>
+                {t('absCheckButton')} →
+              </button>
+            </form>
+
+            {evaluated && (
+              <div className="abs-result-card">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ display: 'flex', color: 'var(--primary-light)' }}><IconFileText size={22} /></span>
+                  <h3 style={{ fontSize: '1.1rem', color: 'var(--text-primary)', margin: 0 }}>
+                    NBA Approval & ABS Regulatory Assessment
+                  </h3>
+                </div>
+
+                {applicantType === 'foreign_entity' ? (
+                  <div style={{ fontSize: '0.88rem', color: 'var(--text-primary)', lineHeight: 1.6 }}>
+                    <p><strong>Status:</strong> <span style={{ color: '#FCA5A5' }}>Mandatory Prior Approval Required (Section 3 of BD Act 2002)</span></p>
+                    <p style={{ marginTop: '0.5rem' }}>Because the applicant involves foreign equity, NRIs, or foreign incorporation:</p>
+                    <ul style={{ paddingLeft: '1.2rem', marginTop: '0.4rem', color: 'var(--text-secondary)' }}>
+                      <li>Must submit <strong>Form I</strong> application to the National Biodiversity Authority (NBA).</li>
+                      <li>Must sign an Access & Benefit Sharing (ABS) agreement before accessing Indian herbs.</li>
+                      <li>If filing a patent, <strong>Form III</strong> approval is mandatory before patent grant (Section 6).</li>
+                    </ul>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '0.88rem', color: 'var(--text-primary)', lineHeight: 1.6 }}>
+                    <p><strong>Status:</strong> <span style={{ color: '#86EFAC' }}>State Biodiversity Board (SBB) Intimation Required</span></p>
+                    <p style={{ marginTop: '0.5rem' }}>For 100% Indian entities and domestic Vaidyas:</p>
+                    <ul style={{ paddingLeft: '1.2rem', marginTop: '0.4rem', color: 'var(--text-secondary)' }}>
+                      <li>Local Vaidyas & traditional practitioners are EXEMPT from ABS fees for domestic practice.</li>
+                      <li>Commercial AYUSH manufacturers must notify the respective State Biodiversity Board (SBB) prior to commercial production.</li>
+                      <li>If filing for an international PCT patent, prior NBA notification via Form III is required.</li>
+                    </ul>
+                  </div>
+                )}
               </div>
             )}
-          </div>
-        )}
-      </main>
+          </main>
         </>
       )}
     </div>
@@ -7580,8 +7582,8 @@ const PATENT_FEE_SCHEDULE = {
   //               earlyPub (Form 9), examReq (Form 18) }
   natural: { base: 1600, extraClaim: 320, extraPage: 160, earlyPub: 2500, examReq: 4000 },
   startup: { base: 4000, extraClaim: 800, extraPage: 400, earlyPub: 6250, examReq: 10000 },
-  small:   { base: 4000, extraClaim: 800, extraPage: 400, earlyPub: 6250, examReq: 10000 },
-  others:  { base: 8000, extraClaim: 1600, extraPage: 800, earlyPub: 12500, examReq: 20000 },
+  small: { base: 4000, extraClaim: 800, extraPage: 400, earlyPub: 6250, examReq: 10000 },
+  others: { base: 8000, extraClaim: 1600, extraPage: 800, earlyPub: 12500, examReq: 20000 },
 }
 
 // Convention / PCT National Phase applications carry the same First-Schedule
@@ -7802,79 +7804,35 @@ import {
    Computes key Indian patent deadlines from a filing / priority
    date, with a timeline visualization + urgency alerts.
    ============================================================ */
-function DocumentsPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize, isLoggedIn, userName, onLogout }) {
+function DocumentsPage() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--doc-bg, #F7F5F0)' }}>
-      <Navbar
-        onOpenAbout={onOpenAbout}
-        onOpenWizard={onOpenWizard}
-        theme={theme}
-        toggleTheme={toggleTheme}
-        fontSize={fontSize}
-        setFontSize={setFontSize}
-        isLoggedIn={isLoggedIn}
-        userName={userName}
-        onLogout={onLogout}
-      />
       <DocumentUpload />
     </div>
   )
 }
 
-function DraftsPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize, isLoggedIn, userName, onLogout }) {
+function DraftsPage() {
   const navigate = useNavigate()
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--dg-bg, #F7F5F0)' }}>
-      <Navbar
-        onOpenAbout={onOpenAbout}
-        onOpenWizard={onOpenWizard}
-        theme={theme}
-        toggleTheme={toggleTheme}
-        fontSize={fontSize}
-        setFontSize={setFontSize}
-        isLoggedIn={isLoggedIn}
-        userName={userName}
-        onLogout={onLogout}
-      />
       <DraftGenerator onBack={() => navigate('/')} />
     </div>
   )
 }
 
-function WorkspacePage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize, isLoggedIn, userName, onLogout }) {
+function WorkspacePage() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--mw-bg, #F7F5F0)' }}>
-      <Navbar
-        onOpenAbout={onOpenAbout}
-        onOpenWizard={onOpenWizard}
-        theme={theme}
-        toggleTheme={toggleTheme}
-        fontSize={fontSize}
-        setFontSize={setFontSize}
-        isLoggedIn={isLoggedIn}
-        userName={userName}
-        onLogout={onLogout}
-      />
       <MatterWorkspace />
     </div>
   )
 }
 
-function ExpertConnectPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFontSize, isLoggedIn, userName, onLogout }) {
+function ExpertConnectPage() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--ec-bg, #F7F5F0)' }}>
-      <Navbar
-        onOpenAbout={onOpenAbout}
-        onOpenWizard={onOpenWizard}
-        theme={theme}
-        toggleTheme={toggleTheme}
-        fontSize={fontSize}
-        setFontSize={setFontSize}
-        isLoggedIn={isLoggedIn}
-        userName={userName}
-        onLogout={onLogout}
-      />
       <ExpertConnect />
     </div>
   )
@@ -8051,15 +8009,6 @@ function DeadlineCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme,
 
   return (
     <div className="page-container calc-page">
-      <Navbar
-        onOpenAbout={onOpenAbout}
-        onOpenWizard={onOpenWizard}
-        theme={theme}
-        toggleTheme={toggleTheme}
-        fontSize={fontSize}
-        setFontSize={setFontSize}
-      />
-
       {showIntro ? (
         <ToolIntro
           config={TOOL_INTRO_CONFIGS['deadline-calculator']}
@@ -8089,124 +8038,124 @@ function DeadlineCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme,
             <p className="page-subtitle">{t('deadlineSubtitle')}</p>
           </header>
 
-      <main className="calc-main" style={{ display: 'grid', gap: '1.5rem' }}>
-        {/* Input card */}
-        <div style={cardStyle}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.1rem' }}>
-            <div>
-              <label htmlFor="dl-filing" style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>
-                {t('deadlineFilingLabel')}
-              </label>
-              <input
-                id="dl-filing"
-                type="date"
-                value={filingDate}
-                onChange={(e) => setFilingDate(e.target.value)}
-                style={inputStyle}
-                aria-label={t('deadlineFilingLabel')}
-              />
-            </div>
-            <div>
-              <label htmlFor="dl-priority" style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>
-                {t('deadlinePriorityLabel')}
-              </label>
-              <input
-                id="dl-priority"
-                type="date"
-                value={priorityDate}
-                onChange={(e) => setPriorityDate(e.target.value)}
-                style={inputStyle}
-                aria-label={t('deadlinePriorityLabel')}
-              />
-            </div>
-          </div>
-          <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary, #9aa0a6)', margin: '0.75rem 0 1.1rem', display: 'flex', gap: '6px', alignItems: 'flex-start' }}>
-            <IconInfo size={14} style={{ flexShrink: 0, marginTop: '2px' }} /> {t('deadlinePriorityHint')}
-          </p>
-          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-            <button
-              className="calc-btn-primary"
-              onClick={handleCalculate}
-              disabled={!filingDate}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center', opacity: filingDate ? 1 : 0.55, cursor: filingDate ? 'pointer' : 'not-allowed' }}
-            >
-              <IconCalculator size={16} /> {t('deadlineCalcBtn')}
-            </button>
-            <button
-              className="calc-btn-secondary"
-              onClick={handleReset}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
-            >
-              <IconRotate size={16} /> {t('deadlineResetBtn')}
-            </button>
-          </div>
-        </div>
-
-        {/* Results / timeline */}
-        {computed ? (
-          <div style={cardStyle}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
-              <h2 style={{ fontSize: '1.15rem', margin: 0, display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                <IconCalendar size={18} /> {t('deadlineTimelineTitle')}
-              </h2>
-              {urgentCount > 0 && (
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: 600, color: '#dc2626', background: 'rgba(220,38,38,0.12)', padding: '4px 10px', borderRadius: '999px' }}>
-                  <IconAlertTriangle size={14} /> {urgentCount} {t('deadlineUrgent')}
-                </span>
-              )}
+          <main className="calc-main" style={{ display: 'grid', gap: '1.5rem' }}>
+            {/* Input card */}
+            <div style={cardStyle}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.1rem' }}>
+                <div>
+                  <label htmlFor="dl-filing" style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>
+                    {t('deadlineFilingLabel')}
+                  </label>
+                  <input
+                    id="dl-filing"
+                    type="date"
+                    value={filingDate}
+                    onChange={(e) => setFilingDate(e.target.value)}
+                    style={inputStyle}
+                    aria-label={t('deadlineFilingLabel')}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="dl-priority" style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>
+                    {t('deadlinePriorityLabel')}
+                  </label>
+                  <input
+                    id="dl-priority"
+                    type="date"
+                    value={priorityDate}
+                    onChange={(e) => setPriorityDate(e.target.value)}
+                    style={inputStyle}
+                    aria-label={t('deadlinePriorityLabel')}
+                  />
+                </div>
+              </div>
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary, #9aa0a6)', margin: '0.75rem 0 1.1rem', display: 'flex', gap: '6px', alignItems: 'flex-start' }}>
+                <IconInfo size={14} style={{ flexShrink: 0, marginTop: '2px' }} /> {t('deadlinePriorityHint')}
+              </p>
+              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                <button
+                  className="calc-btn-primary"
+                  onClick={handleCalculate}
+                  disabled={!filingDate}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center', opacity: filingDate ? 1 : 0.55, cursor: filingDate ? 'pointer' : 'not-allowed' }}
+                >
+                  <IconCalculator size={16} /> {t('deadlineCalcBtn')}
+                </button>
+                <button
+                  className="calc-btn-secondary"
+                  onClick={handleReset}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
+                >
+                  <IconRotate size={16} /> {t('deadlineResetBtn')}
+                </button>
+              </div>
             </div>
 
-            {/* Legend */}
-            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', fontSize: '0.75rem', color: 'var(--text-secondary, #9aa0a6)', marginBottom: '1.25rem' }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span style={{ width: 10, height: 10, borderRadius: '50%', background: '#dc2626', display: 'inline-block' }} /> {t('deadlineLegendUrgent')}</span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--primary-light, #2f855a)', display: 'inline-block' }} /> {t('deadlineLegendUpcoming')}</span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span style={{ width: 10, height: 10, borderRadius: '50%', background: '#94a3b8', display: 'inline-block' }} /> {t('deadlineLegendPassed')}</span>
-            </div>
+            {/* Results / timeline */}
+            {computed ? (
+              <div style={cardStyle}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
+                  <h2 style={{ fontSize: '1.15rem', margin: 0, display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                    <IconCalendar size={18} /> {t('deadlineTimelineTitle')}
+                  </h2>
+                  {urgentCount > 0 && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: 600, color: '#dc2626', background: 'rgba(220,38,38,0.12)', padding: '4px 10px', borderRadius: '999px' }}>
+                      <IconAlertTriangle size={14} /> {urgentCount} {t('deadlineUrgent')}
+                    </span>
+                  )}
+                </div>
 
-            {/* Timeline */}
-            <div style={{ position: 'relative', paddingLeft: '1.75rem' }}>
-              <span style={{ position: 'absolute', left: '9px', top: '4px', bottom: '4px', width: '2px', background: 'var(--glass-border, rgba(255,255,255,0.18))' }} aria-hidden="true" />
-              {computed.items.map((item) => {
-                const c = statusColor(item.countdown.status)
-                return (
-                  <div key={item.id} style={{ position: 'relative', marginBottom: '1.1rem' }}>
-                    <span style={{ position: 'absolute', left: '-1.75rem', top: '4px', width: 18, height: 18, borderRadius: '50%', background: c.dot, border: '3px solid var(--glass-bg, rgba(0,0,0,0.2))', boxShadow: item.countdown.status === 'urgent' ? '0 0 0 4px rgba(220,38,38,0.18)' : 'none' }} aria-hidden="true" />
-                    <div style={{ background: c.bg, border: `1px solid ${c.dot}33`, borderRadius: '14px', padding: '0.9rem 1rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'baseline' }}>
-                        <strong style={{ fontSize: '0.95rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                          {item.countdown.status === 'urgent' && <IconAlertTriangle size={14} style={{ color: '#dc2626' }} />}
-                          {item.title}
-                        </strong>
-                        <span style={{ fontSize: '0.9rem', fontWeight: 700, color: c.fg }}>{formatDate(item.date)}</span>
+                {/* Legend */}
+                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', fontSize: '0.75rem', color: 'var(--text-secondary, #9aa0a6)', marginBottom: '1.25rem' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span style={{ width: 10, height: 10, borderRadius: '50%', background: '#dc2626', display: 'inline-block' }} /> {t('deadlineLegendUrgent')}</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--primary-light, #2f855a)', display: 'inline-block' }} /> {t('deadlineLegendUpcoming')}</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span style={{ width: 10, height: 10, borderRadius: '50%', background: '#94a3b8', display: 'inline-block' }} /> {t('deadlineLegendPassed')}</span>
+                </div>
+
+                {/* Timeline */}
+                <div style={{ position: 'relative', paddingLeft: '1.75rem' }}>
+                  <span style={{ position: 'absolute', left: '9px', top: '4px', bottom: '4px', width: '2px', background: 'var(--glass-border, rgba(255,255,255,0.18))' }} aria-hidden="true" />
+                  {computed.items.map((item) => {
+                    const c = statusColor(item.countdown.status)
+                    return (
+                      <div key={item.id} style={{ position: 'relative', marginBottom: '1.1rem' }}>
+                        <span style={{ position: 'absolute', left: '-1.75rem', top: '4px', width: 18, height: 18, borderRadius: '50%', background: c.dot, border: '3px solid var(--glass-bg, rgba(0,0,0,0.2))', boxShadow: item.countdown.status === 'urgent' ? '0 0 0 4px rgba(220,38,38,0.18)' : 'none' }} aria-hidden="true" />
+                        <div style={{ background: c.bg, border: `1px solid ${c.dot}33`, borderRadius: '14px', padding: '0.9rem 1rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'baseline' }}>
+                            <strong style={{ fontSize: '0.95rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                              {item.countdown.status === 'urgent' && <IconAlertTriangle size={14} style={{ color: '#dc2626' }} />}
+                              {item.title}
+                            </strong>
+                            <span style={{ fontSize: '0.9rem', fontWeight: 700, color: c.fg }}>{formatDate(item.date)}</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap', marginTop: '4px' }}>
+                            <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary, #9aa0a6)' }}>{item.section}</span>
+                            <span style={{ fontSize: '0.78rem', fontWeight: 600, color: c.fg }}>{item.countdown.label}</span>
+                          </div>
+                          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #9aa0a6)', margin: '0.5rem 0 0', lineHeight: 1.5 }}>{item.desc}</p>
+                        </div>
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap', marginTop: '4px' }}>
-                        <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary, #9aa0a6)' }}>{item.section}</span>
-                        <span style={{ fontSize: '0.78rem', fontWeight: 600, color: c.fg }}>{item.countdown.label}</span>
-                      </div>
-                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #9aa0a6)', margin: '0.5rem 0 0', lineHeight: 1.5 }}>{item.desc}</p>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
+                    )
+                  })}
+                </div>
 
-            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary, #9aa0a6)', marginTop: '1.25rem', padding: '0.85rem 1rem', borderRadius: '12px', background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.3)', display: 'flex', gap: '8px', alignItems: 'flex-start', lineHeight: 1.5 }}>
-              <IconAlertTriangle size={15} style={{ flexShrink: 0, marginTop: '1px', color: '#d97706' }} /> {t('deadlineDisclaimer')}
-            </p>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary, #9aa0a6)', marginTop: '1.25rem', padding: '0.85rem 1rem', borderRadius: '12px', background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.3)', display: 'flex', gap: '8px', alignItems: 'flex-start', lineHeight: 1.5 }}>
+                  <IconAlertTriangle size={15} style={{ flexShrink: 0, marginTop: '1px', color: '#d97706' }} /> {t('deadlineDisclaimer')}
+                </p>
 
-            <div style={{ marginTop: '1.1rem' }}>
-              <Link to="/chat" className="calc-btn-outline" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-                <IconMessageSquare size={16} /> {t('deadlineAskExpert')}
-              </Link>
-            </div>
-          </div>
-        ) : (
-          <div style={{ ...cardStyle, textAlign: 'center', color: 'var(--text-secondary, #9aa0a6)' }}>
-            <IconCalendar size={40} style={{ opacity: 0.4, marginBottom: '0.5rem' }} />
-            <p style={{ margin: 0 }}>{t('deadlineEmptyHint')}</p>
-          </div>
-        )}
-      </main>
+                <div style={{ marginTop: '1.1rem' }}>
+                  <Link to="/chat" className="calc-btn-outline" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                    <IconMessageSquare size={16} /> {t('deadlineAskExpert')}
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div style={{ ...cardStyle, textAlign: 'center', color: 'var(--text-secondary, #9aa0a6)' }}>
+                <IconCalendar size={40} style={{ opacity: 0.4, marginBottom: '0.5rem' }} />
+                <p style={{ margin: 0 }}>{t('deadlineEmptyHint')}</p>
+              </div>
+            )}
+          </main>
         </>
       )}
     </div>
@@ -8992,15 +8941,6 @@ function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, f
 
   return (
     <div className="page-container calc-page">
-      <Navbar
-        onOpenAbout={onOpenAbout}
-        onOpenWizard={onOpenWizard}
-        theme={theme}
-        toggleTheme={toggleTheme}
-        fontSize={fontSize}
-        setFontSize={setFontSize}
-      />
-
       {showIntro ? (
         <ToolIntro
           config={TOOL_INTRO_CONFIGS['ip-calculator']}
@@ -9032,86 +8972,86 @@ function IPCostCalculatorPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, f
             </p>
           </header>
 
-      <main className="calc-main">
-        {/* Tools: Quick Patent Fee Calculator (Patents Rules 2003, First Schedule) */}
-        <PatentFeeCalculator />
+          <main className="calc-main">
+            {/* Tools: Quick Patent Fee Calculator (Patents Rules 2003, First Schedule) */}
+            <PatentFeeCalculator />
 
-        {currentStep <= TOTAL_STEPS ? (
-          <>
-            {/* Progress Bar */}
-            <div className="calc-progress">
-              <div className="calc-progress-bar">
-                <div
-                  className="calc-progress-fill"
-                  style={{ width: `${(currentStep / TOTAL_STEPS) * 100}%` }}
-                />
-              </div>
-              <div className="calc-progress-steps">
-                {[1, 2, 3, 4, 5].map(step => (
-                  <div
-                    key={step}
-                    className={`calc-progress-step ${currentStep >= step ? 'active' : ''} ${currentStep === step ? 'current' : ''}`}
-                  >
-                    <span className="calc-step-dot" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {currentStep > step ? <IconCheck size={14} /> : step}
-                    </span>
-                    <span className="calc-step-label">
-                      {step === 1 && 'IP Type'}
-                      {step === 2 && 'Jurisdiction'}
-                      {step === 3 && 'Applicant'}
-                      {step === 4 && 'Services'}
-                      {step === 5 && 'Review'}
-                    </span>
+            {currentStep <= TOTAL_STEPS ? (
+              <>
+                {/* Progress Bar */}
+                <div className="calc-progress">
+                  <div className="calc-progress-bar">
+                    <div
+                      className="calc-progress-fill"
+                      style={{ width: `${(currentStep / TOTAL_STEPS) * 100}%` }}
+                    />
                   </div>
-                ))}
-              </div>
-            </div>
+                  <div className="calc-progress-steps">
+                    {[1, 2, 3, 4, 5].map(step => (
+                      <div
+                        key={step}
+                        className={`calc-progress-step ${currentStep >= step ? 'active' : ''} ${currentStep === step ? 'current' : ''}`}
+                      >
+                        <span className="calc-step-dot" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {currentStep > step ? <IconCheck size={14} /> : step}
+                        </span>
+                        <span className="calc-step-label">
+                          {step === 1 && 'IP Type'}
+                          {step === 2 && 'Jurisdiction'}
+                          {step === 3 && 'Applicant'}
+                          {step === 4 && 'Services'}
+                          {step === 5 && 'Review'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
-            {/* Step Content */}
-            <div className="calc-content">
-              {renderStepContent()}
-            </div>
+                {/* Step Content */}
+                <div className="calc-content">
+                  {renderStepContent()}
+                </div>
 
-            {/* Navigation Buttons */}
-            <div className="calc-nav">
-              <button
-                className="calc-btn-back"
-                onClick={handleBack}
-                disabled={currentStep === 1}
-              >
-                ← Back
-              </button>
+                {/* Navigation Buttons */}
+                <div className="calc-nav">
+                  <button
+                    className="calc-btn-back"
+                    onClick={handleBack}
+                    disabled={currentStep === 1}
+                  >
+                    ← Back
+                  </button>
 
-              {currentStep < TOTAL_STEPS ? (
-                <button
-                  className="calc-btn-next"
-                  onClick={handleNext}
-                  disabled={!canProceed()}
-                >
-                  Next →
-                </button>
-              ) : (
-                <button
-                  className="calc-btn-calculate"
-                  onClick={handleCalculate}
-                  disabled={isCalculating || !canProceed()}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
-                >
-                  {isCalculating ? (
-                    <>
-                      <span className="calc-spinner" /> Calculating...
-                    </>
+                  {currentStep < TOTAL_STEPS ? (
+                    <button
+                      className="calc-btn-next"
+                      onClick={handleNext}
+                      disabled={!canProceed()}
+                    >
+                      Next →
+                    </button>
                   ) : (
-                    <>Calculate Estimate →</>
+                    <button
+                      className="calc-btn-calculate"
+                      onClick={handleCalculate}
+                      disabled={isCalculating || !canProceed()}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
+                    >
+                      {isCalculating ? (
+                        <>
+                          <span className="calc-spinner" /> Calculating...
+                        </>
+                      ) : (
+                        <>Calculate Estimate →</>
+                      )}
+                    </button>
                   )}
-                </button>
-              )}
-            </div>
-          </>
-        ) : (
-          renderResults()
-        )}
-      </main>
+                </div>
+              </>
+            ) : (
+              renderResults()
+            )}
+          </main>
         </>
       )}
     </div>
@@ -9194,16 +9134,6 @@ function SourcesPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, 
 
   return (
     <div className="page-container sources-page-container">
-      <Navbar
-        onOpenAbout={onOpenAbout}
-        onOpenWizard={onOpenWizard}
-        theme={theme}
-        toggleTheme={toggleTheme}
-        fontSize={fontSize}
-        setFontSize={setFontSize}
-        setPrefillPrompt={setPrefillPrompt}
-      />
-
       <header className="page-header sources-hero-header">
         <div className="sources-kicker-badge" aria-label="Authoritative Sources Section">
           <IconShieldCheck size={14} aria-hidden="true" />
@@ -9315,15 +9245,6 @@ function PrivacyPolicyPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, font
 
   return (
     <div className="page-container">
-      <Navbar
-        onOpenAbout={onOpenAbout}
-        onOpenWizard={onOpenWizard}
-        theme={theme}
-        toggleTheme={toggleTheme}
-        fontSize={fontSize}
-        setFontSize={setFontSize}
-      />
-
       <header className="page-header">
         <span className="chip" style={{ background: 'var(--color-primary-light, #eaf2ed)', color: 'var(--color-primary, #143D30)', marginBottom: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
           <IconLock size={13} /> {t('privacyLegal')}
@@ -9453,6 +9374,7 @@ function PrivacyPolicyPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, font
    ============================================================ */
 function ProtectedRoute({ children, isLoggedIn: propLoggedIn }) {
   const { t } = useLanguage()
+  const location = useLocation()
   let auth = null
   try {
     auth = useAuth()
@@ -9483,7 +9405,7 @@ function ProtectedRoute({ children, isLoggedIn: propLoggedIn }) {
           </span>
           <h2>{t('loginTitle') || 'Sign In Required'}</h2>
           <p>Please enter your email to receive a secure one-time passcode (OTP) and continue.</p>
-          <Link to="/login" className="btn-primary">
+          <Link to="/login" state={{ from: location.pathname }} className="btn-primary">
             {t('loginOrRegister') || 'Continue to Sign In'} →
           </Link>
         </div>
@@ -9497,7 +9419,20 @@ function ProtectedRoute({ children, isLoggedIn: propLoggedIn }) {
 /* ============================================================
    APP SHELL — Sidebar + Content Layout
    ============================================================ */
-function AppShell({ children, isLoggedIn, userName, userEmail, onOpenAbout, onLogout, onSwitchAccount }) {
+function AppShell({
+  children,
+  isLoggedIn,
+  userName,
+  userEmail,
+  onOpenAbout,
+  onOpenWizard,
+  onLogout,
+  onSwitchAccount,
+  theme,
+  toggleTheme,
+  fontSize,
+  setFontSize,
+}) {
   const { lang, setLang, languages } = useLanguage()
   const location = useLocation()
   const navigate = useNavigate()
@@ -9567,7 +9502,8 @@ function AppShell({ children, isLoggedIn, userName, userEmail, onOpenAbout, onLo
   // The RagvynSidebar is chat-only: it renders exclusively on the /chat route.
   // Every other page (landing, login, sources, pricing, patentability, etc.) has no sidebar.
   const showSidebar = location.pathname === '/chat'
-  const hideFooter = location.pathname === '/login' || location.pathname === '/auth/callback' || location.pathname === '/chat'
+  const isAuthRoute = location.pathname === '/login' || location.pathname === '/auth/callback'
+  const hideFooter = isAuthRoute || location.pathname === '/chat'
 
   const handleNewChat = () => {
     navigate('/chat', { state: { newChat: true } })
@@ -9600,18 +9536,7 @@ function AppShell({ children, isLoggedIn, userName, userEmail, onOpenAbout, onLo
         />
       )}
 
-      {/* Persistent sidebar toggle — chat-only, desktop only */}
-      {showSidebar && !isMobile && (
-        <button
-          className="ragvyn-sidebar-restore-toggle"
-          onClick={handleToggleSidebar}
-          aria-label={sidebarCollapsed ? 'Open sidebar' : 'Close sidebar'}
-          title={sidebarCollapsed ? 'Open sidebar' : 'Close sidebar'}
-        >
-          <IconMenu size={20} />
-        </button>
-      )}
-
+      {/* Content wrapper */}
       <div
         className={[
           'ragvyn-app-content',
@@ -9620,6 +9545,24 @@ function AppShell({ children, isLoggedIn, userName, userEmail, onOpenAbout, onLo
         ].filter(Boolean).join(' ')}
       >
         <div className="ragvyn-shell-flow">
+          {!isAuthRoute && (
+            <Navbar
+              onOpenAbout={onOpenAbout}
+              onOpenWizard={onOpenWizard}
+              theme={theme}
+              toggleTheme={toggleTheme}
+              fontSize={fontSize}
+              setFontSize={setFontSize}
+              isLoggedIn={isLoggedIn}
+              userName={userName}
+              userEmail={userEmail}
+              onLogout={onLogout}
+              onSwitchAccount={onSwitchAccount}
+              showSidebar={showSidebar}
+              sidebarCollapsed={sidebarCollapsed}
+              onToggleSidebar={handleToggleSidebar}
+            />
+          )}
           <div className="ragvyn-shell-main">
             {children}
           </div>
@@ -9683,6 +9626,11 @@ function AppContent() {
         onLogout={signOut}
         onSwitchAccount={switchAccount}
         onOpenAbout={() => setIsAboutOpen(true)}
+        onOpenWizard={() => setIsWizardOpen(true)}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        fontSize={fontSize}
+        setFontSize={setFontSize}
       >
         <Routes>
           <Route

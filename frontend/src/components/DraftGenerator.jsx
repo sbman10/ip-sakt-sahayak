@@ -357,7 +357,7 @@ export default function DraftGenerator({ onBack }) {
     try {
       let data = null
       try {
-        const token = localStorage.getItem('ip_sakti_access_token')
+        const token = sessionStorage.getItem('ip_sakti_access_token') || localStorage.getItem('ip_sakti_access_token')
         const response = await fetch(`${API_BASE}/api/drafts/generate`, {
           method: 'POST',
           headers: {

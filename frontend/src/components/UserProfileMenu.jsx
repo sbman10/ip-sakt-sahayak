@@ -80,7 +80,7 @@ export default function UserProfileMenu({
   // Fetch verified database-backed identity & organisation overview
   const fetchProfileIdentity = useCallback(async () => {
     try {
-      const token = localStorage.getItem('ip_sakti_access_token')
+      const token = sessionStorage.getItem('ip_sakti_access_token') || localStorage.getItem('ip_sakti_access_token')
       if (!token || token === 'undefined' || token === 'null') return
       const API_BASE = getApiBase()
       const resp = await fetch(`${API_BASE}/api/profile`, {
