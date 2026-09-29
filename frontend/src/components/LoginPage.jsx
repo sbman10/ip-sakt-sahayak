@@ -14,6 +14,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useLanguage } from '../App'
 import { useAuth } from '../context/AuthContext'
+import { getApiBase } from '../api/config'
 import { IpSaktiLogo, IconCheck, IconLock, IconRefreshCw } from './Icons'
 
 // Demo credentials are read from local environment variables and never rendered.
@@ -136,7 +137,7 @@ export default function LoginPage({ onLogin }) {
     setSuccess('')
     setIsLoading(true)
     try {
-      const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
+      const apiBase = getApiBase()
       const res = await fetch(`${apiBase}/api/auth/google/url`)
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}))
@@ -181,7 +182,12 @@ export default function LoginPage({ onLogin }) {
       }, 300)
     } catch (err) {
       console.error('[LoginPage] Quick login failed:', err)
-      setError(err.message || 'Login failed. Please check backend status.')
+      const msg = err.message || ''
+      if (msg.toLowerCase().includes('failed to fetch') || msg.toLowerCase().includes('networkerror')) {
+        setError('Backend server is unreachable or still waking up on Render. If you just deployed on Render, please wait until the build finishes (says "Live").')
+      } else {
+        setError(msg || 'Login failed. Please check backend status.')
+      }
     } finally {
       setIsLoading(false)
       setLoadingAccountId(null)

@@ -12,6 +12,6 @@ export function getApiBase() {
   if (configured) return configured
 
   return import.meta.env.PROD
-    ? 'https://ragvyn.onrender.com'
+    ? 'https://ragvyn-k825.onrender.com'
     : 'http://127.0.0.1:8000'
 }
