@@ -57,6 +57,8 @@ const TOUR_FALLBACK = {
   tourExpertsDesc: 'Consult verified Ayurvedic IP attorneys and regulatory facilitators for official legal representation.',
   tourSourcesTitle: '📚 Knowledge Base Sources',
   tourSourcesDesc: 'Inspect the authoritative legal corpus—statutes, rules, and international treaties—that ground every answer.',
+  tourInformaticsTitle: '📖 Statutory Informatics',
+  tourInformaticsDesc: 'Explore codified acts, treaties, biological diversity frameworks, and IP guidelines in one compendium.',
   tourFinishTitle: '🎉 You are all set!',
   tourFinishDesc: 'You now know your way around IP-SAKTI Sahayak. Start by querying RagVyn AI or exploring the Informatics compendium.',
 }
@@ -170,9 +172,9 @@ const STEPS = [
     openServices: true,
   },
   {
-    selector: '[data-tour="nav-sources"], a[href="/sources"]',
-    titleKey: 'tourSourcesTitle',
-    descKey: 'tourSourcesDesc',
+    selector: '[data-tour="nav-informatics"], a[href="/informatics"]',
+    titleKey: 'tourInformaticsTitle',
+    descKey: 'tourInformaticsDesc',
     placement: 'bottom',
   },
   {

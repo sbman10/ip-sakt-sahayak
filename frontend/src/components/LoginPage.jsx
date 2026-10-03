@@ -409,9 +409,9 @@ export default function LoginPage({ onLogin }) {
         {/* Left Panel - Branding */}
         <div className="login-branding">
           <div className="login-brand-content">
-            <Link to="/" className="login-logo" aria-label="RAGVYN home">
+            <Link to="/" className="login-logo" aria-label="IP-SAKTI Sahayak home">
               <IpSaktiLogo className="login-logo-svg" size={64} />
-              <span className="login-logo-text">RAGVYN</span>
+              <span className="login-logo-text">IP-SAKTI Sahayak</span>
             </Link>
 
             <h1 className="login-brand-title">
@@ -427,7 +427,7 @@ export default function LoginPage({ onLogin }) {
                 <span className="login-feature-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                   <IconCheck size={14} />
                 </span>
-                <span>{t('Close to Zero Hallucination') || 'Zero-Hallucination Legal Grounding'}</span>
+                <span>{t('evidenceGrounded') || 'Evidence-Grounded Statutory Verification'}</span>
               </div>
               <div className="login-feature">
                 <span className="login-feature-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -451,7 +451,7 @@ export default function LoginPage({ onLogin }) {
           <div className="login-form-container" style={{ maxWidth: '520px' }}>
             <div className="login-form-header">
               <h2>Workspace Authentication</h2>
-              <p>Sign in to continue to your RAGVYN workspace.</p>
+              <p>Sign in to continue to your IP-SAKTI Sahayak workspace.</p>
             </div>
 
             {/* Password login remains primary; OTP is intentionally a bottom action. */}

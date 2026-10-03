@@ -90,6 +90,7 @@ import {
 import { RAGVYN_THEMES, getChatTheme, getThemeCSSVariables, DEFAULT_THEME_ID } from './config/chatThemes'
 import DraftGenerator from './components/DraftGenerator'
 import { getApiBase } from './api/config'
+import GlobalSearch from './components/GlobalSearch'
 
 // IconClose component (X icon)
 function IconClose({ size = 16 }) {
@@ -177,7 +178,7 @@ const UI_TRANSLATIONS = {
     seeDemo: 'See Demo',
 
     // Trust Pills
-    zeroHallucination: 'Zero-hallucination',
+    zeroHallucination: 'Evidence-grounded',
     sourceCited: 'Source-cited',
     multiLanguage: '10+ Languages',
     indiaIntl: 'India & International',
@@ -475,7 +476,7 @@ const UI_TRANSLATIONS = {
     aboutPurposeP1: 'IP-SAKTI Sahayak is an AI-powered platform designed to help AYUSH innovators and Vaidyas navigate Indian Intellectual Property laws, Traditional Knowledge, and biological diversity compliance through a structured and evidence-based digital interface.',
     aboutPurposeP2: 'The platform brings together regulatory tools, authoritative sources, and RagVyn AI, its RAG-based AI assistant, to make complex IP and regulatory information easier to understand and access.',
     aboutPurposeText: 'IP-SAKTI Sahayak is an AI-powered platform designed to help AYUSH innovators and Vaidyas navigate Indian Intellectual Property laws, Traditional Knowledge, and biological diversity compliance through a structured and evidence-based digital interface. The platform brings together regulatory tools, authoritative sources, and RagVyn AI, its RAG-based AI assistant, to make complex IP and regulatory information easier to understand and access.',
-    aboutGroundingTitle: 'Grounding Policy & Zero Hallucination',
+    aboutGroundingTitle: 'Evidence Grounding & Statutory Verification',
     aboutGroundingP1: 'RagVyn AI uses Retrieval-Augmented Generation (RAG) to ground responses in the platform\'s official knowledge corpus.',
     aboutGroundingP2: 'When relevant legal or regulatory evidence is unavailable, it abstains rather than inventing information.',
     aboutGroundingP3: 'Responses include section citations, source/database references, and confidence indicators wherever applicable.',
@@ -676,7 +677,7 @@ const UI_TRANSLATIONS = {
     seeDemo: 'डेमो देखें',
 
     // Trust Pills
-    zeroHallucination: 'शून्य-भ्रम',
+    zeroHallucination: 'प्रमाण-आधारित',
     sourceCited: 'स्रोत-उद्धृत',
     multiLanguage: '10+ भाषाएं',
     indiaIntl: 'भारत और अंतर्राष्ट्रीय',
@@ -1116,7 +1117,7 @@ const UI_TRANSLATIONS = {
     home: 'ಮುಖಪುಟ', absChecker: 'ABS ಪರಿಶೀಲಕ', ipCalculator: 'IP ಕ್ಯಾಲ್ಕುಲೇಟರ್', officialSources: 'ಅಧಿಕೃತ ಮೂಲಗಳು', aboutPortal: 'ಪೋರ್ಟಲ್ ಬಗ್ಗೆ', consultAssistant: 'IP ಸಹಾಯಕರನ್ನು ಸಂಪರ್ಕಿಸಿ',
     heroEyebrow: 'ಆಯುಷ್ ನವೀನತೆ ಮಾರ್ಗದರ್ಶನ', heroTitle: 'ನಿಮ್ಮ ನವೀನತೆಯನ್ನು ರಕ್ಷಿಸಿ.', heroSubtitle: 'ಮುಂದೆ ಏನು ಎಂದು ತಿಳಿಯಿರಿ.', heroDesc: 'ಒಂದು ಮಾರ್ಗದರ್ಶಿ ಮೌಲ್ಯಮಾಪನದ ಮೂಲಕ ಬೌದ್ಧಿಕ ಆಸ್ತಿ, ನಿಯಂತ್ರಣ ಮತ್ತು ಜೈವಿಕ ವೈವಿಧ್ಯತೆ ಮಾರ್ಗಗಳನ್ನು ಅನ್ವೇಷಿಸಿ.',
     startAssessment: 'ಮೌಲ್ಯಮಾಪನ ಪ್ರಾರಂಭಿಸಿ →', startConsultation: 'ಮೌಲ್ಯಮಾಪನ ಪ್ರಾರಂಭಿಸಿ →', howItWorksBtn: 'ಇದು ಹೇಗೆ ಕೆಲಸ ಮಾಡುತ್ತದೆ', formulationWizard: 'ಫಾರ್ಮುಲೇಶನ್ ವಿಝಾರ್ಡ್', seeDemo: 'ಡೆಮೊ ನೋಡಿ',
-    zeroHallucination: 'ಶೂನ್ಯ-ಭ್ರಮೆ', sourceCited: 'ಮೂಲ-ಉಲ್ಲೇಖಿತ', multiLanguage: '10+ ಭಾಷೆಗಳು', indiaIntl: 'ಭಾರತ ಮತ್ತು ಅಂತರರಾಷ್ಟ್ರೀಯ',
+    zeroHallucination: 'ಸಾಕ್ಷ್ಯ-ಆಧಾರಿತ', sourceCited: 'ಮೂಲ-ಉಲ್ಲೇಖಿತ', multiLanguage: '10+ ಭಾಷೆಗಳು', indiaIntl: 'ಭಾರತ ಮತ್ತು ಅಂತರರಾಷ್ಟ್ರೀಯ',
     trustPatentsAct: 'ಪೇಟೆಂಟ್ ಕಾಯಿದೆ 1970', trustPatentsActDesc: 'ವಿಭಾಗ 3(p) TKDL ಅಪವಾದಗಳು', trustTkdl: 'TKDL ಡೇಟಾಬೇಸ್', trustTkdlDesc: '2.5 ಲಕ್ಷ+ ಫಾರ್ಮುಲೇಶನ್ ಪೂರ್ವ ಕಲೆ', trustBdAct: 'ಜೈವಿಕ ವೈವಿಧ್ಯತಾ ಕಾಯಿದೆ 2002', trustBdActDesc: 'ಕಡ್ಡಾಯ ABS ಅನುಮೋದನೆ', trustDrugsRules: 'ಔಷಧಿ ಮತ್ತು ಸೌಂದರ್ಯ ನಿಯಮಗಳು', trustDrugsRulesDesc: 'ASU ನಿಯಂತ್ರಕ ಪರವಾನಗಿ',
     statutesCovered: 'ಒಳಗೊಂಡಿರುವ ಕಾಯಿದೆಗಳು', languagesSupported: 'ಬೆಂಬಲಿತ ಭಾಷೆಗಳು', averageResponseTime: 'ಸರಾಸರಿ ಪ್ರತಿಕ್ರಿಯೆ ಸಮಯ', userSatisfaction: 'ಬಳಕೆದಾರರ ತೃಪ್ತಿ',
     chatWelcome: 'ನಮಸ್ಕಾರ! ನಾನು IP-SAKTI ಸಹಾಯಕ, ಆಯುರ್ವೇದದಲ್ಲಿ ಬೌದ್ಧಿಕ ಆಸ್ತಿಗೆ ನಿಮ್ಮ ಮಾರ್ಗದರ್ಶಿ.', chatPlaceholder: 'ಪೇಟೆಂಟ್ ಕಾಯಿದೆ, ABS, TKDL ಬಗ್ಗೆ ಕೇಳಿ...', sendMessage: 'ಕಳುಹಿಸಿ',
@@ -1135,7 +1136,7 @@ const UI_TRANSLATIONS = {
     home: 'হোম', absChecker: 'ABS চেকার', ipCalculator: 'IP ক্যালকুলেটর', officialSources: 'অফিসিয়াল উৎস', aboutPortal: 'পোর্টাল সম্পর্কে', consultAssistant: 'IP সহায়ক পরামর্শ',
     heroEyebrow: 'আয়ুষ উদ্ভাবন নির্দেশনা', heroTitle: 'আপনার উদ্ভাবন রক্ষা করুন।', heroSubtitle: 'পরবর্তী কী তা জানুন।', heroDesc: 'একটি নির্দেশিত মূল্যায়নের মাধ্যমে বৌদ্ধিক সম্পত্তি, নিয়ন্ত্রণ এবং জীববৈচিত্র্য পথ অন্বেষণ করুন।',
     startAssessment: 'মূল্যায়ন শুরু করুন →', startConsultation: 'মূল্যায়ন শুরু করুন →', howItWorksBtn: 'এটি কিভাবে কাজ করে', formulationWizard: 'ফর্মুলেশন উইজার্ড', seeDemo: 'ডেমো দেখুন',
-    zeroHallucination: 'শূন্য-বিভ্রম', sourceCited: 'উৎস-উদ্ধৃত', multiLanguage: '10+ ভাষা', indiaIntl: 'ভারত এবং আন্তর্জাতিক',
+    zeroHallucination: 'প্রমাণ-ভিত্তিক', sourceCited: 'উৎস-উদ্ধৃত', multiLanguage: '10+ ভাষা', indiaIntl: 'ভারত এবং আন্তর্জাতিক',
     trustPatentsAct: 'পেটেন্ট আইন 1970', trustPatentsActDesc: 'ধারা 3(p) TKDL ব্যতিক্রম', trustTkdl: 'TKDL ডেটাবেস', trustTkdlDesc: '2.5 লক্ষ+ ফর্মুলেশন পূর্ব শিল্প', trustBdAct: 'জীববৈচিত্র্য আইন 2002', trustBdActDesc: 'বাধ্যতামূলক ABS অনুমোদন', trustDrugsRules: 'ওষুধ ও প্রসাধনী নিয়ম', trustDrugsRulesDesc: 'ASU নিয়ন্ত্রক লাইসেন্সিং',
     statutesCovered: 'আচ্ছাদিত আইন', languagesSupported: 'সমর্থিত ভাষা', averageResponseTime: 'গড় প্রতিক্রিয়া সময়', userSatisfaction: 'ব্যবহারকারীর সন্তুষ্টি',
     chatWelcome: 'নমস্কার! আমি IP-SAKTI সহায়ক, আয়ুর্বেদে বৌদ্ধিক সম্পত্তির জন্য আপনার গাইড।', chatPlaceholder: 'পেটেন্ট আইন, ABS, TKDL সম্পর্কে জিজ্ঞাসা করুন...', sendMessage: 'পাঠান',
@@ -1154,7 +1155,7 @@ const UI_TRANSLATIONS = {
     home: 'முகப்பு', absChecker: 'ABS சோதனை', ipCalculator: 'IP கணிப்பான்', officialSources: 'அதிகாரப்பூர்வ ஆதாரங்கள்', aboutPortal: 'போர்டல் பற்றி', consultAssistant: 'IP உதவியாளரை அணுகவும்',
     heroEyebrow: 'ஆயுஷ் புதுமை வழிகாட்டுதல்', heroTitle: 'உங்கள் புதுமையைப் பாதுகாக்கவும்.', heroSubtitle: 'அடுத்தது என்னவென்று தெரிந்துகொள்ளுங்கள்.', heroDesc: 'ஒரு வழிகாட்டி மதிப்பீட்டின் மூலம் அறிவுசார் சொத்து, ஒழுங்குமுறை மற்றும் உயிர் பன்முகத்தன்மை பாதைகளை ஆராயுங்கள்.',
     startAssessment: 'மதிப்பீட்டைத் தொடங்கு →', startConsultation: 'மதிப்பீட்டைத் தொடங்கு →', howItWorksBtn: 'இது எப்படி வேலை செய்கிறது', formulationWizard: 'ஃபார்முலேஷன் விஸார்ட்', seeDemo: 'டெமோ பார்',
-    zeroHallucination: 'பூஜ்ஜிய-மாயை', sourceCited: 'ஆதாரம்-மேற்கோள்', multiLanguage: '10+ மொழிகள்', indiaIntl: 'இந்தியா மற்றும் சர்வதேசம்',
+    zeroHallucination: 'சான்று-அடிப்படையிலான', sourceCited: 'ஆதாரம்-மேற்கோள்', multiLanguage: '10+ மொழிகள்', indiaIntl: 'இந்தியா மற்றும் சர்வதேசம்',
     trustPatentsAct: 'காப்புரிமை சட்டம் 1970', trustPatentsActDesc: 'பிரிவு 3(p) TKDL விலக்குகள்', trustTkdl: 'TKDL தரவுத்தளம்', trustTkdlDesc: '2.5 லட்சம்+ ஃபார்முலேஷன் முந்தைய கலை', trustBdAct: 'உயிர் பன்முகத்தன்மை சட்டம் 2002', trustBdActDesc: 'கட்டாய ABS அனுமதி', trustDrugsRules: 'மருந்துகள் மற்றும் அழகுசாதனப் விதிகள்', trustDrugsRulesDesc: 'ASU ஒழுங்குமுறை உரிமம்',
     statutesCovered: 'உள்ளடக்கிய சட்டங்கள்', languagesSupported: 'ஆதரிக்கப்படும் மொழிகள்', averageResponseTime: 'சராசரி பதில் நேரம்', userSatisfaction: 'பயனர் திருப்தி',
     chatWelcome: 'வணக்கம்! நான் IP-SAKTI சஹாயக், ஆயுர்வேதத்தில் அறிவுசார் சொத்துக்கான உங்கள் வழிகாட்டி.', chatPlaceholder: 'காப்புரிமை சட்டம், ABS, TKDL பற்றி கேளுங்கள்...', sendMessage: 'அனுப்பு',
@@ -1173,7 +1174,7 @@ const UI_TRANSLATIONS = {
     home: 'హోమ్', absChecker: 'ABS తనిఖీ', ipCalculator: 'IP కాలిక్యులేటర్', officialSources: 'అధికారిక మూలాలు', aboutPortal: 'పోర్టల్ గురించి', consultAssistant: 'IP సహాయకుడిని సంప్రదించండి',
     heroEyebrow: 'ఆయుష్ ఆవిష్కరణ మార్గదర్శకత్వం', heroTitle: 'మీ ఆవిష్కరణను రక్షించండి.', heroSubtitle: 'తర్వాత ఏమిటో తెలుసుకోండి.', heroDesc: 'ఒక మార్గదర్శక మూల్యాంకనం ద్వారా మేధో సంపత్తి, నియంత్రణ మరియు జీవవైవిధ్య మార్గాలను అన్వేషించండి.',
     startAssessment: 'మూల్యాంకనం ప్రారంభించండి →', startConsultation: 'మూల్యాంకనం ప్రారంభించండి →', howItWorksBtn: 'ఇది ఎలా పని చేస్తుంది', formulationWizard: 'ఫార్ములేషన్ విజార్డ్', seeDemo: 'డెమో చూడండి',
-    zeroHallucination: 'సున్నా-భ్రమ', sourceCited: 'మూలం-ఉదహరించబడింది', multiLanguage: '10+ భాషలు', indiaIntl: 'భారతదేశం మరియు అంతర్జాతీయ',
+    zeroHallucination: 'ఆధార-ఆధారిత', sourceCited: 'మూలం-ఉదహరించబడింది', multiLanguage: '10+ భాషలు', indiaIntl: 'భారతదేశం మరియు అంతర్జాతీయ',
     trustPatentsAct: 'పేటెంట్ చట్టం 1970', trustPatentsActDesc: 'సెక్షన్ 3(p) TKDL మినహాయింపులు', trustTkdl: 'TKDL డేటాబేస్', trustTkdlDesc: '2.5 లక్షల+ ఫార్ములేషన్ పూర్వ కళ', trustBdAct: 'జీవవైవిధ్య చట్టం 2002', trustBdActDesc: 'తప్పనిసరి ABS ఆమోదం', trustDrugsRules: 'మందులు & సౌందర్య సాధనాల నియమాలు', trustDrugsRulesDesc: 'ASU నియంత్రణ లైసెన్సింగ్',
     statutesCovered: 'కవర్ చేయబడిన చట్టాలు', languagesSupported: 'మద్దతు ఉన్న భాషలు', averageResponseTime: 'సగటు ప్రతిస్పందన సమయం', userSatisfaction: 'వినియోగదారు సంతృప్తి',
     chatWelcome: 'నమస్కారం! నేను IP-SAKTI సహాయక్, ఆయుర్వేదంలో మేధో సంపత్తికి మీ గైడ్.', chatPlaceholder: 'పేటెంట్ చట్టం, ABS, TKDL గురించి అడగండి...', sendMessage: 'పంపు',
@@ -1192,7 +1193,7 @@ const UI_TRANSLATIONS = {
     home: 'मुख्यपृष्ठ', absChecker: 'ABS तपासणी', ipCalculator: 'IP कॅल्क्युलेटर', officialSources: 'अधिकृत स्रोत', aboutPortal: 'पोर्टलबद्दल', consultAssistant: 'IP सहाय्यकाशी सल्ला',
     heroEyebrow: 'आयुष नवोन्मेष मार्गदर्शन', heroTitle: 'तुमची नवनिर्मिती सुरक्षित करा.', heroSubtitle: 'पुढे काय ते जाणून घ्या.', heroDesc: 'एका मार्गदर्शित मूल्यांकनाद्वारे बौद्धिक संपदा, नियमन आणि जैवविविधता मार्ग शोधा.',
     startAssessment: 'मूल्यांकन सुरू करा →', startConsultation: 'मूल्यांकन सुरू करा →', howItWorksBtn: 'हे कसे कार्य करते', formulationWizard: 'फॉर्म्युलेशन विझार्ड', seeDemo: 'डेमो पहा',
-    zeroHallucination: 'शून्य-भ्रम', sourceCited: 'स्रोत-उद्धृत', multiLanguage: '10+ भाषा', indiaIntl: 'भारत आणि आंतरराष्ट्रीय',
+    zeroHallucination: 'पुरावा-आधारित', sourceCited: 'स्रोत-उद्धृत', multiLanguage: '10+ भाषा', indiaIntl: 'भारत आणि आंतरराष्ट्रीय',
     trustPatentsAct: 'पेटंट कायदा 1970', trustPatentsActDesc: 'कलम 3(p) TKDL अपवाद', trustTkdl: 'TKDL डेटाबेस', trustTkdlDesc: '2.5 लाख+ फॉर्म्युलेशन पूर्व कला', trustBdAct: 'जैवविविधता कायदा 2002', trustBdActDesc: 'अनिवार्य ABS मंजुरी', trustDrugsRules: 'औषधी व सौंदर्य प्रसाधने नियम', trustDrugsRulesDesc: 'ASU नियामक परवाना',
     statutesCovered: 'समाविष्ट कायदे', languagesSupported: 'समर्थित भाषा', averageResponseTime: 'सरासरी प्रतिसाद वेळ', userSatisfaction: 'वापरकर्ता समाधान',
     chatWelcome: 'नमस्कार! मी IP-SAKTI सहायक, आयुर्वेदातील बौद्धिक संपदेसाठी तुमचा मार्गदर्शक.', chatPlaceholder: 'पेटंट कायदा, ABS, TKDL बद्दल विचारा...', sendMessage: 'पाठवा',
@@ -1211,7 +1212,7 @@ const UI_TRANSLATIONS = {
     home: 'હોમ', absChecker: 'ABS ચેકર', ipCalculator: 'IP કેલ્ક્યુલેટર', officialSources: 'અધિકૃત સ્ત્રોતો', aboutPortal: 'પોર્ટલ વિશે', consultAssistant: 'IP સહાયકનો સંપર્ક કરો',
     heroEyebrow: 'આયુષ નવીનતા માર્ગદર્શન', heroTitle: 'તમારી નવીનતાને સુરક્ષિત કરો.', heroSubtitle: 'આગળ શું છે તે જાણો.', heroDesc: 'એક માર્ગદર્શિત મૂલ્યાંકન દ્વારા બૌદ્ધિક સંપત્તિ, નિયમન અને જૈવવિવિધતા માર્ગો શોધો.',
     startAssessment: 'મૂલ્યાંકન શરૂ કરો →', startConsultation: 'મૂલ્યાંકન શરૂ કરો →', howItWorksBtn: 'આ કેવી રીતે કામ કરે છે', formulationWizard: 'ફોર્મ્યુલેશન વિઝાર્ડ', seeDemo: 'ડેમો જુઓ',
-    zeroHallucination: 'શૂન્ય-ભ્રમ', sourceCited: 'સ્ત્રોત-ટાંકેલ', multiLanguage: '10+ ભાષાઓ', indiaIntl: 'ભારત અને આંતરરાષ્ટ્રીય',
+    zeroHallucination: 'પુરાવા-આધારિત', sourceCited: 'સ્ત્રોત-ટાંકેલ', multiLanguage: '10+ ભાષાઓ', indiaIntl: 'ભારત અને આંતરરાષ્ટ્રીય',
     trustPatentsAct: 'પેટન્ટ કાયદો 1970', trustPatentsActDesc: 'કલમ 3(p) TKDL અપવાદો', trustTkdl: 'TKDL ડેટાબેસ', trustTkdlDesc: '2.5 લાખ+ ફોર્મ્યુલેશન પૂર્વ કળા', trustBdAct: 'જૈવવિવિધતા કાયદો 2002', trustBdActDesc: 'ફરજિયાત ABS મંજૂરી', trustDrugsRules: 'દવા અને સૌંદર્ય પ્રસાધન નિયમો', trustDrugsRulesDesc: 'ASU નિયમનકારી લાઇસન્સ',
     statutesCovered: 'આવરી લેવાયેલા કાયદા', languagesSupported: 'સમર્થિત ભાષાઓ', averageResponseTime: 'સરેરાશ પ્રતિસાદ સમય', userSatisfaction: 'વપરાશકર્તા સંતોષ',
     chatWelcome: 'નમસ્તે! હું IP-SAKTI સહાયક, આયુર્વેદમાં બૌદ્ધિક સંપત્તિ માટે તમારું માર્ગદર્શક.', chatPlaceholder: 'પેટન્ટ કાયદો, ABS, TKDL વિશે પૂછો...', sendMessage: 'મોકલો',
@@ -1230,7 +1231,7 @@ const UI_TRANSLATIONS = {
     home: 'ഹോം', absChecker: 'ABS ചെക്കർ', ipCalculator: 'IP കാൽക്കുലേറ്റർ', officialSources: 'ഔദ്യോഗിക ഉറവിടങ്ങൾ', aboutPortal: 'പോർട്ടലിനെക്കുറിച്ച്', consultAssistant: 'IP സഹായിയെ ബന്ധപ്പെടുക',
     heroEyebrow: 'ആയുഷ് നവീകരണ മാർഗ്ഗനിർദ്ദേശം', heroTitle: 'നിങ്ങളുടെ നവീകരണം സംരക്ഷിക്കുക.', heroSubtitle: 'അടുത്തത് എന്താണെന്ന് അറിയുക.', heroDesc: 'ഒരു മാർഗ്ഗനിർദ്ദേശ മൂല്യനിർണ്ണയത്തിലൂടെ ബൗദ്ധിക സ്വത്ത്, നിയന്ത്രണം, ജൈവവൈവിധ്യ പാതകൾ പര്യവേക്ഷണം ചെയ്യുക.',
     startAssessment: 'മൂല്യനിർണ്ണയം ആരംഭിക്കുക →', startConsultation: 'മൂല്യനിർണ്ണയം ആരംഭിക്കുക →', howItWorksBtn: 'ഇത് എങ്ങനെ പ്രവർത്തിക്കുന്നു', formulationWizard: 'ഫോർമുലേഷൻ വിസാർഡ്', seeDemo: 'ഡെമോ കാണുക',
-    zeroHallucination: 'സീറോ-ഭ്രമം', sourceCited: 'ഉറവിടം-ഉദ്ധരിച്ചത്', multiLanguage: '10+ ഭാഷകൾ', indiaIntl: 'ഇന്ത്യയും അന്താരാഷ്ട്രവും',
+    zeroHallucination: 'തെളിവ്-അധിഷ്ഠിത', sourceCited: 'ഉറവിടം-ഉദ്ധരിച്ചത്', multiLanguage: '10+ ഭാഷകൾ', indiaIntl: 'ഇന്ത്യയും അന്താരാഷ്ട്രവും',
     trustPatentsAct: 'പേറ്റന്റ് നിയമം 1970', trustPatentsActDesc: 'വകുപ്പ് 3(p) TKDL ഒഴിവാക്കലുകൾ', trustTkdl: 'TKDL ഡാറ്റാബേസ്', trustTkdlDesc: '2.5 ലക്ഷം+ ഫോർമുലേഷൻ മുൻകല', trustBdAct: 'ജൈവവൈവിധ്യ നിയമം 2002', trustBdActDesc: 'നിർബന്ധിത ABS അംഗീകാരം', trustDrugsRules: 'മരുന്ന് & സൗന്ദര്യവർധക നിയമങ്ങൾ', trustDrugsRulesDesc: 'ASU റെഗുലേറ്ററി ലൈസൻസിംഗ്',
     statutesCovered: 'ഉൾപ്പെടുത്തിയ നിയമങ്ങൾ', languagesSupported: 'പിന്തുണയ്ക്കുന്ന ഭാഷകൾ', averageResponseTime: 'ശരാശരി പ്രതികരണ സമയം', userSatisfaction: 'ഉപയോക്തൃ സംതൃപ്തി',
     chatWelcome: 'നമസ്കാരം! ഞാൻ IP-SAKTI സഹായക്, ആയുർവേദത്തിലെ ബൗദ്ധിക സ്വത്തിനുള്ള നിങ്ങളുടെ ഗൈഡ്.', chatPlaceholder: 'പേറ്റന്റ് നിയമം, ABS, TKDL എന്നിവയെക്കുറിച്ച് ചോദിക്കുക...', sendMessage: 'അയയ്ക്കുക',
@@ -1249,7 +1250,7 @@ const UI_TRANSLATIONS = {
     home: 'ਹੋਮ', absChecker: 'ABS ਚੈੱਕਰ', ipCalculator: 'IP ਕੈਲਕੁਲੇਟਰ', officialSources: 'ਅਧਿਕਾਰਤ ਸਰੋਤ', aboutPortal: 'ਪੋਰਟਲ ਬਾਰੇ', consultAssistant: 'IP ਸਹਾਇਕ ਨਾਲ ਸੰਪਰਕ ਕਰੋ',
     heroEyebrow: 'ਆਯੁਸ਼ ਨਵੀਨਤਾ ਮਾਰਗਦਰਸ਼ਨ', heroTitle: 'ਆਪਣੀ ਨਵੀਨਤਾ ਦੀ ਰੱਖਿਆ ਕਰੋ।', heroSubtitle: 'ਜਾਣੋ ਅੱਗੇ ਕੀ ਹੈ।', heroDesc: 'ਇੱਕ ਮਾਰਗਦਰਸ਼ਿਤ ਮੁਲਾਂਕਣ ਦੁਆਰਾ ਬੌਧਿਕ ਸੰਪੱਤੀ, ਨਿਯਮ ਅਤੇ ਜੈਵ ਵਿਭਿੰਨਤਾ ਮਾਰਗਾਂ ਦੀ ਖੋਜ ਕਰੋ।',
     startAssessment: 'ਮੁਲਾਂਕਣ ਸ਼ੁਰੂ ਕਰੋ →', startConsultation: 'ਮੁਲਾਂਕਣ ਸ਼ੁਰੂ ਕਰੋ →', howItWorksBtn: 'ਇਹ ਕਿਵੇਂ ਕੰਮ ਕਰਦਾ ਹੈ', formulationWizard: 'ਫਾਰਮੂਲੇਸ਼ਨ ਵਿਜ਼ਾਰਡ', seeDemo: 'ਡੈਮੋ ਦੇਖੋ',
-    zeroHallucination: 'ਜ਼ੀਰੋ-ਭਰਮ', sourceCited: 'ਸਰੋਤ-ਹਵਾਲਾ', multiLanguage: '10+ ਭਾਸ਼ਾਵਾਂ', indiaIntl: 'ਭਾਰਤ ਅਤੇ ਅੰਤਰਰਾਸ਼ਟਰੀ',
+    zeroHallucination: 'ਸਬੂਤ-ਅਧਾਰਤ', sourceCited: 'ਸਰੋਤ-ਹਵਾਲਾ', multiLanguage: '10+ ਭਾਸ਼ਾਵਾਂ', indiaIntl: 'ਭਾਰਤ ਅਤੇ ਅੰਤਰਰਾਸ਼ਟਰੀ',
     trustPatentsAct: 'ਪੇਟੈਂਟ ਐਕਟ 1970', trustPatentsActDesc: 'ਧਾਰਾ 3(p) TKDL ਛੋਟ', trustTkdl: 'TKDL ਡੇਟਾਬੇਸ', trustTkdlDesc: '2.5 ਲੱਖ+ ਫਾਰਮੂਲੇਸ਼ਨ ਪੂਰਵ ਕਲਾ', trustBdAct: 'ਜੈਵ ਵਿਭਿੰਨਤਾ ਐਕਟ 2002', trustBdActDesc: 'ਲਾਜ਼ਮੀ ABS ਮਨਜ਼ੂਰੀ', trustDrugsRules: 'ਦਵਾਈਆਂ ਅਤੇ ਸ਼ਿੰਗਾਰ ਨਿਯਮ', trustDrugsRulesDesc: 'ASU ਰੈਗੂਲੇਟਰੀ ਲਾਇਸੈਂਸਿੰਗ',
     statutesCovered: 'ਸ਼ਾਮਲ ਕਾਨੂੰਨ', languagesSupported: 'ਸਮਰਥਿਤ ਭਾਸ਼ਾਵਾਂ', averageResponseTime: 'ਔਸਤ ਜਵਾਬ ਸਮਾਂ', userSatisfaction: 'ਉਪਭੋਗਤਾ ਸੰਤੁਸ਼ਟੀ',
     chatWelcome: 'ਸਤ ਸ੍ਰੀ ਅਕਾਲ! ਮੈਂ IP-SAKTI ਸਹਾਇਕ, ਆਯੁਰਵੇਦ ਵਿੱਚ ਬੌਧਿਕ ਸੰਪੱਤੀ ਲਈ ਤੁਹਾਡਾ ਗਾਈਡ।', chatPlaceholder: 'ਪੇਟੈਂਟ ਐਕਟ, ABS, TKDL ਬਾਰੇ ਪੁੱਛੋ...', sendMessage: 'ਭੇਜੋ',
@@ -2121,7 +2122,7 @@ function AboutModal({ isOpen, onClose }) {
           <div className="about-header-branding">
             <div className="about-brand-emblem-box">
               <img
-                src="/logo.png"
+                src="/ip-sakti-logo.png"
                 alt="IP-SAKTI Sahayak Official Logo"
                 className="about-official-logo"
               />
@@ -2147,62 +2148,89 @@ function AboutModal({ isOpen, onClose }) {
 
         {/* 2. Modal Body with Editorial Narrative & Harmonious Text Highlighting */}
         <div className="about-modal-body">
-          {/* Section 1: Purpose & Vision */}
-          <section className="about-section-card about-vision-card" aria-labelledby="about-purpose-title">
+          {/* Section 1: About the Platform — IP-SAKTI Sahayak */}
+          <section className="about-section-card about-vision-card" aria-labelledby="about-platform-title">
             <div className="about-section-heading-row">
               <span className="about-heading-badge" aria-hidden="true">
                 <IconSparkles size={14} />
               </span>
-              <h3 id="about-purpose-title" className="about-section-heading">
-                {t('aboutPurposeTitle') || 'Brand Story & Mission'}
+              <h3 id="about-platform-title" className="about-section-heading">
+                IP-SAKTI Sahayak — Sovereign Legal-Tech Platform
               </h3>
             </div>
             <div className="about-section-content">
               <p className="about-intro-text">
-                <span className="about-hl-brand">IP-SAKTI Sahayak</span> is a specialized sovereign legal-intelligence platform engineered to empower <span className="about-hl-ayurveda">Ayurveda</span> innovators, Vaidyas, and ASU manufacturers navigating the intricate nexus of <span className="about-hl-ip">Intellectual Property</span> laws and <span className="about-hl-tk">Traditional Knowledge</span> protection.
+                <span className="about-hl-brand">IP-SAKTI Sahayak</span> is India&apos;s sovereign legal-intelligence platform engineered to empower <span className="about-hl-ayurveda">Ayurveda</span> innovators, Vaidyas, researchers, and ASU manufacturers navigating the intricate nexus of <span className="about-hl-ip">Intellectual Property</span> laws and <span className="about-hl-tk">Traditional Knowledge</span> protection.
               </p>
               <p className="about-body-text">
-                By bridging indigenous herbal heritage with <span className="about-hl-ai">Evidence-Grounded AI</span>, the platform democratizes access to statutory clearance, patentability guidance under <span className="about-hl-compliance">Section 3(p)</span>, and mandatory Biological Diversity Act benefit-sharing protocols.
+                Rather than functioning merely as a chatbot, the platform provides an integrated suite of diagnostic tools, Section 3(p) prior art clearances, Biological Diversity Act (ABS) compliance workflows, formulation classification wizards, and statutory filing assistance tailored specifically for Ayurvedic formulations and herbal innovations.
               </p>
             </div>
           </section>
 
-          {/* Section 2: Grounding Policy & Safe Abstention Guarantee */}
-          <section className="about-section-card about-grounding-card" aria-labelledby="about-grounding-title">
+          {/* Section 2: Dedicated AI Assistant — RagVyn AI */}
+          <section className="about-section-card about-grounding-card" aria-labelledby="about-ragvyn-title">
             <div className="about-section-heading-row about-grounding-heading-row">
               <div className="about-heading-with-icon">
                 <span className="about-heading-badge about-heading-badge-mint" aria-hidden="true">
                   <IconShieldCheck size={15} />
                 </span>
-                <h3 id="about-grounding-title" className="about-section-heading">
-                  {t('aboutGroundingTitle') || 'Grounding Protocol & Zero Hallucination'}
+                <h3 id="about-ragvyn-title" className="about-section-heading">
+                  RagVyn AI — Dedicated Statutory Assistant
                 </h3>
               </div>
               <span className="about-status-pill">
                 <IconShield size={11} aria-hidden="true" />
-                Zero Hallucination · Safe Abstention
+                Evidence-Grounded · Source-Cited
               </span>
             </div>
             <div className="about-section-content">
               <p className="about-body-text">
-                The platform&apos;s retrieval engine, <span className="about-hl-brand">RagVyn AI</span>, operates under a zero-hallucination mandate. Responses are synthesized strictly from authenticated statutory corpora, gazette notifications, and published prior art.
-              </p>
-              <p className="about-body-text">
-                If statutory precedent or official evidence is lacking for a specific formulation, the system <span className="about-hl-abstain">abstains safely</span> rather than conjecturing legal conclusions.
+                <span className="about-hl-brand">RagVyn AI</span> is the dedicated RAG-based (Retrieval-Augmented Generation) intelligence assistant operating within the IP-SAKTI Sahayak platform. Designed specifically for intellectual property and regulatory guidance, RagVyn AI retrieves authenticated statutory texts, official gazette notifications, and canonical prior art records before formulating any guidance. Every response is strictly grounded in retrieved evidence with exact statutory section and treaty citations, helping users resolve complex IP, regulatory, traditional knowledge, and biodiversity-related questions. RagVyn AI is engineered to support informed decision-making; it serves as a decision-support aid and does not substitute for certified legal counsel or formal patent office determinations.
               </p>
             </div>
-            <div className="about-grounding-features">
-              <div className="about-feature-chip">
-                <IconBook size={13} aria-hidden="true" />
-                <span>Statutory Corpus Grounded</span>
+            <div className="about-ragvyn-points">
+              <div className="about-ragvyn-point">
+                <IconShieldCheck size={14} className="about-ragvyn-point-icon" aria-hidden="true" />
+                <div>
+                  <strong>Retrieval-Grounded Responses</strong>
+                  <span>Synthesized strictly from primary statutes, gazettes, and canonical TKDL references.</span>
+                </div>
               </div>
-              <div className="about-feature-chip">
-                <IconShield size={13} aria-hidden="true" />
-                <span>Safe Abstention Mandate</span>
+              <div className="about-ragvyn-point">
+                <IconScroll size={14} className="about-ragvyn-point-icon" aria-hidden="true" />
+                <div>
+                  <strong>Source-Cited Guidance</strong>
+                  <span>Explicit section citations to Patents Act 1970, Biological Diversity Act 2002, and treaties.</span>
+                </div>
               </div>
-              <div className="about-feature-chip">
-                <IconScroll size={13} aria-hidden="true" />
-                <span>Precise Section Citations</span>
+              <div className="about-ragvyn-point">
+                <IconSparkles size={14} className="about-ragvyn-point-icon" aria-hidden="true" />
+                <div>
+                  <strong>Context-Aware IP & Regulatory Assistance</strong>
+                  <span>Differentiates ASU classical texts, proprietary formulations, and ABS benefit-sharing pathways.</span>
+                </div>
+              </div>
+              <div className="about-ragvyn-point">
+                <IconGlobe size={14} className="about-ragvyn-point-icon" aria-hidden="true" />
+                <div>
+                  <strong>Multilingual Interaction</strong>
+                  <span>Native querying across 10+ official Indian languages with preserved statutory semantics.</span>
+                </div>
+              </div>
+              <div className="about-ragvyn-point">
+                <IconBook size={14} className="about-ragvyn-point-icon" aria-hidden="true" />
+                <div>
+                  <strong>Evidence-Based Retrieval</strong>
+                  <span>Cross-references codified statutory corpora and gazette rules for verifiable reasoning.</span>
+                </div>
+              </div>
+              <div className="about-ragvyn-point">
+                <IconShield size={14} className="about-ragvyn-point-icon" aria-hidden="true" />
+                <div>
+                  <strong>Safe Handling of Insufficient Evidence</strong>
+                  <span>Transparently flags gaps and abstains safely when precedent or empirical records are lacking.</span>
+                </div>
               </div>
             </div>
           </section>
@@ -4381,7 +4409,7 @@ function FAQSection() {
 /* ============================================================
    INSTITUTIONAL ACCESSIBILITY STRIP (COMPACT GOV-TECH)
    ============================================================ */
-function GovtAccessibilityBar({ theme, toggleTheme }) {
+function GovtAccessibilityBar({ theme, toggleTheme, onOpenAbout }) {
 
   return (
     <div className="gov-utility-strip" role="region" aria-label="Institutional Identity & Accessibility">
@@ -4396,6 +4424,9 @@ function GovtAccessibilityBar({ theme, toggleTheme }) {
             <strong>आयुष मंत्रालय</strong> | Ministry of AYUSH
           </span>
         </div>
+
+        {/* Center: Global Search Bar inside Top Utility Strip */}
+        <GlobalSearch onOpenAbout={onOpenAbout} />
 
         <div className="gov-utility-right">
 
@@ -4432,12 +4463,12 @@ function GovtAccessibilityBar({ theme, toggleTheme }) {
 function IpSaktiLogo({ className = '', size = 36 }) {
   return (
     <img
-      src="/logo.png"
+      src="/ip-sakti-logo.png"
       alt="IP-SAKTI Sahayak Logo"
       className={className}
       width={size}
       height={size}
-      style={{ objectFit: 'contain' }}
+      style={{ objectFit: 'cover', borderRadius: '50%' }}
     />
   )
 }
@@ -4576,6 +4607,15 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn: propLoggedIn, userN
                 window.dispatchEvent(new CustomEvent('retrigger-hero-anim'))
               }}
             >
+              <div className="gov-brand-logo-disc" aria-hidden="true">
+                <img
+                  src="/ip-sakti-logo.png"
+                  alt="IP-SAKTI Sahayak Official Logo"
+                  className="gov-brand-logo-img"
+                  width="36"
+                  height="36"
+                />
+              </div>
               <div className="gov-brand-text">
                 <div className="gov-brand-title">
                   IP-SAKTI <span className="title-highlight">Sahayak</span>
@@ -4722,17 +4762,6 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn: propLoggedIn, userN
               >
                 <IconBook size={15} />
                 <span>Informatics</span>
-              </Link>
-            </li>
-            <li className="gov-nav-item-secondary">
-              <Link
-                to="/sources"
-                className="gov-nav-link"
-                data-tour="nav-sources"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <IconScroll size={15} />
-                <span>Sources</span>
               </Link>
             </li>
             <li className="gov-nav-item-secondary">
@@ -4950,6 +4979,7 @@ function Navbar({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, setFo
       <GovtAccessibilityBar
         theme={theme}
         toggleTheme={toggleTheme}
+        onOpenAbout={onOpenAbout}
       />
       <GovtNavbar
         onOpenAbout={onOpenAbout}
@@ -5422,7 +5452,7 @@ Based on this information, provide comprehensive statutory-grounded IP and regul
               </button>
             </div>
             <div className="assessment-card-footnote">
-              <span>Source-backed legal intelligence • Zero hallucination protocol</span>
+              <span>Source-backed legal intelligence • Evidence-grounded protocol</span>
             </div>
           </div>
         </div>
@@ -5562,7 +5592,7 @@ Based on this information, provide comprehensive statutory-grounded IP and regul
             )}
 
             <div className="assessment-card-footnote">
-              <span>Source-backed legal intelligence • Zero hallucination protocol</span>
+              <span>Source-backed legal intelligence • Evidence-grounded protocol</span>
             </div>
           </div>
         </>
@@ -5698,6 +5728,14 @@ function LandingPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, 
     }
   }, [location.pathname, location.state, location.hash])
 
+  const handleSeeDemo = (e) => {
+    e.preventDefault()
+    const target = document.getElementById('demo')
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
+
   const IMPLEMENTED_FEATURES = [
     {
       id: 'formulation-wizard',
@@ -5785,19 +5823,41 @@ function LandingPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, 
               trigger={animTrigger}
             />
 
-            <p className="hero-description">
-              {t('heroDesc')}
-            </p>
-
             <div className="hero-cta-group">
               <Link to="/chat" className="btn-primary hero-btn-main" id="hero-start-btn">
                 <span>{t('startAssessment')}</span>
                 <IconArrowRight size={16} />
               </Link>
-              <Link to="/patentability" className="btn-secondary hero-btn-sub" id="hero-patentability-btn">
-                <IconScales size={16} />
-                <span>Check Patentability</span>
-              </Link>
+              <a
+                href="#demo"
+                onClick={handleSeeDemo}
+                className="btn-secondary hero-btn-sub"
+                id="hero-see-demo-btn"
+                aria-label="See interactive video demo"
+              >
+                <span>{t('seeDemo') || 'See Demo'}</span>
+              </a>
+            </div>
+
+            {/* Secondary Quick-Access Statutory Tool Navigation (Compact Oval / Pill Design) */}
+            <div className="hero-tools-nav" id="features" aria-label="Statutory Tools & Services">
+              <div className="hero-tools-pills">
+                {IMPLEMENTED_FEATURES.map((tool) => (
+                  <Link
+                    key={tool.id}
+                    to={tool.route}
+                    className="hero-tool-pill"
+                    id={`hero-tool-${tool.id}`}
+                    title={`${tool.name} — ${tool.actionText}`}
+                    aria-label={`${tool.name} — ${tool.actionText}`}
+                  >
+                    <span className="hero-pill-icon" aria-hidden="true">{tool.icon}</span>
+                    <span className="hero-pill-name">{tool.name}</span>
+                    <IconArrowRight size={13} className="hero-pill-arrow" aria-hidden="true" />
+                    <span className="sr-only"> ({tool.actionText})</span>
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -5806,36 +5866,8 @@ function LandingPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, 
       {/* Stats Counter */}
       <StatsCounter />
 
-      {/* Features Grid - Editorial Government Standard */}
-      <section className="section" id="features" aria-labelledby="features-title">
-        <Reveal>
-          <p className="section-label">STATUTORY TOOLS & SERVICES</p>
-          <h2 className="section-title" id="features-title">Specialized Intellectual Property Diagnostic Suite</h2>
-          <p className="section-subtitle" style={{ maxWidth: '720px', margin: '0 auto 2.5rem', textAlign: 'center', color: 'var(--text-secondary, #52605B)', fontSize: '1.02rem', lineHeight: 1.6 }}>
-            Domain-specific statutory tools designed for AYUSH practitioners, cultivators, research institutions, and MSMEs navigating Indian and international IP frameworks.
-          </p>
-        </Reveal>
-        <div className="features-grid">
-          {IMPLEMENTED_FEATURES.map((f, i) => (
-            <Reveal key={f.id} delay={i * 60}>
-              <article className="feature-card">
-                <div className="feature-card-header">
-                  <div className="feature-icon" aria-hidden="true">{f.icon}</div>
-                  <span className="feature-tag">{f.tag}</span>
-                </div>
-                <h3>{f.name}</h3>
-                <p>{f.explanation}</p>
-                <div className="feature-card-action">
-                  <Link to={f.route} className="feature-action-link">
-                    <span>{f.actionText}</span>
-                    <IconArrowRight size={14} />
-                  </Link>
-                </div>
-              </article>
-            </Reveal>
-          ))}
-        </div>
-      </section>
+      {/* Live Demo Preview */}
+      <DemoPreview />
 
       {/* How It Works */}
       <section className="section" id="how-it-works" aria-labelledby="how-title">
@@ -9494,7 +9526,7 @@ function SourcesPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, 
             <IconShieldCheck size={22} />
           </div>
           <div className="sources-verification-text">
-            <strong>Statutory Grounding Protocol:</strong> Every legal reference, Section 3(p) prior art check, and ABS regulatory guidance emitted by IP-SAKTI Sahayak is cross-verified against these primary statutory archives and ratified treaties with strict citations and zero hallucination.
+            <strong>Statutory Grounding Protocol:</strong> Every legal reference, Section 3(p) prior art check, and ABS regulatory guidance emitted by IP-SAKTI Sahayak is cross-verified against these primary statutory archives and ratified treaties with strict citations and retrieval-grounded verification.
           </div>
         </div>
       </main>

@@ -804,13 +804,14 @@ export const IconScale = IconScales
 export function IpSaktiLogo({ className = '', size = 36 }) {
   return (
     <img
-      src="/logo.png"
+      src="/ip-sakti-logo.png"
       alt="IP-SAKTI Sahayak Logo"
       className={className}
       width={size}
       height={size}
-      style={{ objectFit: 'contain' }}
+      style={{ objectFit: 'cover', borderRadius: '50%' }}
     />
   )
 }
+
 
