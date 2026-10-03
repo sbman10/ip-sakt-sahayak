@@ -24,6 +24,7 @@ import SitemapPage from './components/SitemapPage'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import LoginPage from './components/LoginPage'
 import AuthCallbackPage from './components/AuthCallbackPage'
+import InformaticsPage from './components/InformaticsPage'
 import {
   IconHome,
   IconFlask,
@@ -60,6 +61,7 @@ import {
   IconEyeOff,
   IconSparkles,
   IconChevronDown,
+  IconChevronRight,
   IconAlertTriangle,
   IconTag,
   IconSend,
@@ -527,6 +529,8 @@ const UI_TRANSLATIONS = {
     tourWelcomeDesc: 'Your AI guide for Ayurveda IP, patents, TKDL and regulatory questions. Let us show you around in 30 seconds.',
     tourChatTitle: '💬 Ask RagVyn AI',
     tourChatDesc: 'Ask any Ayurveda IP question in your language and get a cited, trustworthy answer — the heart of the app.',
+    tourInformaticsTitle: '🏛️ Statutory & Treaty Informatics',
+    tourInformaticsDesc: 'Explore our comprehensive, source-backed legal compendium covering Patents, Treaties, TKDL, Biodiversity (ABS), and ASU drug licensing.',
     tourToolsTitle: '🧰 IP Tools',
     tourToolsDesc: 'Open this menu for our smart tools that go beyond chat. We will highlight the top three next.',
     tourVerdictTitle: '🛡️ Patentability Verdict',
@@ -1019,6 +1023,8 @@ const UI_TRANSLATIONS = {
     tourWelcomeDesc: 'आयुर्वेद IP, पेटेंट, TKDL और नियामक सवालों के लिए आपका AI गाइड। 30 सेकंड में पूरा टूर देखिए।',
     tourChatTitle: '💬 AI असिस्टेंट से पूछें',
     tourChatDesc: 'अपनी भाषा में कोई भी आयुर्वेद IP सवाल पूछें और स्रोत-सहित भरोसेमंद जवाब पाएं — यही ऐप का दिल है।',
+    tourInformaticsTitle: '🏛️ वैधानिक एवं संधि सूचना विज्ञान',
+    tourInformaticsDesc: 'पेटेंट, संधियों, TKDL, जैव विविधता (ABS) और ASU औषधि लाइसेंसिंग को कवर करने वाला हमारा व्यापक, साक्ष्य-आधारित कानूनी संग्रह देखें।',
     tourToolsTitle: '🧰 IP टूल्स',
     tourToolsDesc: 'चैट से आगे के स्मार्ट टूल्स के लिए यह मेन्यू खोलें। अब हम टॉप तीन हाइलाइट करेंगे।',
     tourVerdictTitle: '🛡️ पेटेंट योग्यता फैसला',
@@ -4399,10 +4405,16 @@ function GovtAccessibilityBar({ theme, toggleTheme }) {
 
           <button
             type="button"
+            id="gov-top-a11y-btn"
             className="gov-skip-link"
             title="Accessibility options"
             aria-label="Open accessibility options"
-            onClick={() => { if (window.__openAccessibility) window.__openAccessibility() }}
+            aria-haspopup="dialog"
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              if (window.__openAccessibility) window.__openAccessibility(e.currentTarget)
+            }}
             style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '5px', background: 'rgba(212,175,55,0.18)', border: '1.5px solid rgba(212,175,55,0.7)', borderRadius: '18px', cursor: 'pointer', padding: '5px 12px', color: 'inherit', fontWeight: 700 }}
           >
             <IconAccessibility size={20} />
@@ -4451,6 +4463,26 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn: propLoggedIn, userN
   const [editProfileOpen, setEditProfileOpen] = useState(false)
   const toolsDropdownRef = useRef(null)
   const servicesDropdownRef = useRef(null)
+  const [a11yOpen, setA11yOpen] = useState(false)
+  const activeA11yTriggerRef = useRef(null)
+
+  // Listen to global openAccessibility call (from top accessibility strip button)
+  useEffect(() => {
+    window.__openAccessibility = (triggerEl) => {
+      const target = triggerEl || document.getElementById('gov-top-a11y-btn')
+      if (a11yOpen && activeA11yTriggerRef.current === target) {
+        setA11yOpen(false)
+      } else {
+        activeA11yTriggerRef.current = target
+        setToolsDropdownOpen(false)
+        setServicesDropdownOpen(false)
+        setA11yOpen(true)
+      }
+    }
+    return () => {
+      try { delete window.__openAccessibility } catch (_) {}
+    }
+  }, [a11yOpen])
 
   const authLoggedIn = authCtx ? authCtx.isLoggedIn : (propLoggedIn !== undefined
     ? Boolean(propLoggedIn)
@@ -4486,20 +4518,6 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn: propLoggedIn, userN
     navigate('/login')
   }
 
-  const handleSeeDemo = (e) => {
-    if (e) e.preventDefault()
-    setMobileMenuOpen(false)
-    if (location.pathname === '/') {
-      const el = document.getElementById('demo')
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-        window.history.replaceState(null, '', '#demo')
-      }
-    } else {
-      navigate('/#demo', { state: { scrollTo: 'demo' } })
-    }
-  }
-
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24)
     onScroll()
@@ -4510,11 +4528,13 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn: propLoggedIn, userN
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      // Do not close dropdowns when clicking inside the onboarding tour card or overlay
+      // Do not close dropdowns when clicking inside tour, dialogs, a11y panel, or top a11y button
       if (
         event.target.closest('[data-tour-root]') ||
         event.target.closest('.tour-modal') ||
-        event.target.closest('[role="dialog"]')
+        event.target.closest('[role="dialog"]') ||
+        event.target.closest('#a11y-popover-panel') ||
+        event.target.closest('#gov-top-a11y-btn')
       ) {
         return
       }
@@ -4550,6 +4570,7 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn: propLoggedIn, userN
             <Link
               to="/"
               className="gov-brand-wrap"
+              data-tour="nav-brand"
               onClick={() => {
                 setMobileMenuOpen(false)
                 window.dispatchEvent(new CustomEvent('retrigger-hero-anim'))
@@ -4572,53 +4593,56 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn: propLoggedIn, userN
                 className="gov-nav-link-btn gov-nav-dropdown-trigger"
                 data-tour="ip-tools"
                 onClick={() => {
-                  setToolsDropdownOpen(!toolsDropdownOpen)
+                  const next = !toolsDropdownOpen
+                  setToolsDropdownOpen(next)
                   setServicesDropdownOpen(false)
+                  if (!next) setA11yOpen(false)
                 }}
                 aria-expanded={toolsDropdownOpen}
+                aria-controls="gov-tools-menu"
               >
                 <IconCalculator size={15} />
                 <span>IP Tools</span>
                 <IconChevronDown size={12} className={`dropdown-chevron ${toolsDropdownOpen ? 'open' : ''}`} />
               </button>
               {toolsDropdownOpen && (
-                <div className="gov-nav-dropdown-menu">
-                  <Link to="/patentability" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
+                <div className="gov-nav-dropdown-menu" id="gov-tools-menu" role="region" aria-label="IP Tools Menu">
+                  <Link to="/patentability" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setA11yOpen(false); setMobileMenuOpen(false); }}>
                     <IconScales size={16} />
                     <div className="dropdown-item-content">
                       <span className="dropdown-item-title">⚖️ Patentability Assessment</span>
                       <span className="dropdown-item-desc">Prior art & § 3(p)/3(d)/3(e) assessment</span>
                     </div>
                   </Link>
-                  <Link to="/roadmap" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
+                  <Link to="/roadmap" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setA11yOpen(false); setMobileMenuOpen(false); }}>
                     <IconCalendar size={16} />
                     <div className="dropdown-item-content">
                       <span className="dropdown-item-title">🗺️ IP Journey Roadmap</span>
                       <span className="dropdown-item-desc">Personalized filing-to-grant timeline</span>
                     </div>
                   </Link>
-                  <Link to="/guardian" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
+                  <Link to="/guardian" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setA11yOpen(false); setMobileMenuOpen(false); }}>
                     <IconLeaf size={16} />
                     <div className="dropdown-item-content">
                       <span className="dropdown-item-title">🧭 Dual-Use Guardian</span>
                       <span className="dropdown-item-desc">IP + AYUSH + ABS + FSSAI in one view</span>
                     </div>
                   </Link>
-                  <Link to="/ip-calculator" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
+                  <Link to="/ip-calculator" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setA11yOpen(false); setMobileMenuOpen(false); }}>
                     <IconCurrencyRupee size={16} />
                     <div className="dropdown-item-content">
                       <span className="dropdown-item-title">Fee Calculator</span>
                       <span className="dropdown-item-desc">Patent filing fees estimate</span>
                     </div>
                   </Link>
-                  <Link to="/deadline-calculator" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
+                  <Link to="/deadline-calculator" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setA11yOpen(false); setMobileMenuOpen(false); }}>
                     <IconCalendar size={16} />
                     <div className="dropdown-item-content">
                       <span className="dropdown-item-title">Deadline Calculator</span>
                       <span className="dropdown-item-desc">Track RFE, FER & renewals</span>
                     </div>
                   </Link>
-                  <Link to="/abs-checker" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setMobileMenuOpen(false); }}>
+                  <Link to="/abs-checker" className="gov-dropdown-item" onClick={() => { setToolsDropdownOpen(false); setA11yOpen(false); setMobileMenuOpen(false); }}>
                     <IconLeaf size={16} />
                     <div className="dropdown-item-content">
                       <span className="dropdown-item-title">ABS Checker</span>
@@ -4690,26 +4714,25 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn: propLoggedIn, userN
 
             {/* Direct Links */}
             <li className="gov-nav-item-secondary">
-              <button
-                type="button"
-                className="gov-nav-link-btn"
-                onClick={handleSeeDemo}
-                aria-label="See Demo"
+              <Link
+                to="/informatics"
+                className="gov-nav-link"
+                data-tour="nav-informatics"
+                onClick={() => setMobileMenuOpen(false)}
               >
-                <IconEye size={15} />
-                <span>{t('seeDemo') || 'See Demo'}</span>
-              </button>
-            </li>
-            <li className="gov-nav-item-secondary">
-              <Link to="/sources" className="gov-nav-link" onClick={() => setMobileMenuOpen(false)}>
                 <IconBook size={15} />
-                <span>Sources</span>
+                <span>Informatics</span>
               </Link>
             </li>
             <li className="gov-nav-item-secondary">
-              <Link to="/pricing" className="gov-nav-link" onClick={() => setMobileMenuOpen(false)}>
-                <IconTag size={15} />
-                <span>Pricing</span>
+              <Link
+                to="/sources"
+                className="gov-nav-link"
+                data-tour="nav-sources"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <IconScroll size={15} />
+                <span>Sources</span>
               </Link>
             </li>
             <li className="gov-nav-item-secondary">
@@ -4823,7 +4846,7 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn: propLoggedIn, userN
             <div className="gov-nav-desktop-actions">
               {authLoggedIn ? (
                 <div className="gov-nav-user-group">
-                  <Link to="/chat" className="gov-nav-cta" id="gov-nav-consult-btn">
+                  <Link to="/chat" className="gov-nav-cta" id="gov-nav-consult-btn" data-tour="nav-consult">
                     <span>RagVyn AI</span>
                     <IconArrowRight size={14} />
                   </Link>
@@ -4841,7 +4864,7 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn: propLoggedIn, userN
                     <IconUser size={14} />
                     <span>Login/Register</span>
                   </Link>
-                  <Link to="/chat" className="gov-nav-cta" id="gov-nav-consult-btn">
+                  <Link to="/chat" className="gov-nav-cta" id="gov-nav-consult-btn" data-tour="nav-consult">
                     <span>RagVyn AI</span>
                     <IconArrowRight size={14} />
                   </Link>
@@ -4889,6 +4912,15 @@ function GovtNavbar({ onOpenAbout, onOpenWizard, isLoggedIn: propLoggedIn, userN
           />
         )}
       </nav>
+      <AccessibilityPanel
+        isOpen={a11yOpen}
+        onClose={() => {
+          setA11yOpen(false)
+          if (activeA11yTriggerRef.current) activeA11yTriggerRef.current.focus()
+        }}
+        triggerRef={activeA11yTriggerRef}
+        t={t}
+      />
       <EditProfileModal
         isOpen={editProfileOpen}
         onClose={() => setEditProfileOpen(false)}
@@ -5666,13 +5698,80 @@ function LandingPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, 
     }
   }, [location.pathname, location.state, location.hash])
 
-  const handleSeeDemo = (e) => {
-    e.preventDefault()
-    const target = document.getElementById('demo')
-    if (target) {
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }
-  }
+  const IMPLEMENTED_FEATURES = [
+    {
+      id: 'formulation-wizard',
+      route: '/formulation-wizard',
+      name: 'Formulation Classification Wizard',
+      tag: 'Section 3(p) & FSSAI',
+      explanation: 'Classify Ayurvedic preparations across Classical, Proprietary ASU, and Ayurveda Aahar regulatory pathways.',
+      actionText: 'Launch Classification',
+      icon: <IconFlask size={22} />,
+    },
+    {
+      id: 'patentability',
+      route: '/patentability',
+      name: 'Patentability Assessment',
+      tag: 'Indian Patents Act 1970',
+      explanation: 'Screen formulations against Section 3(p) traditional knowledge bars and Section 3(e) synergistic efficacy requirements.',
+      actionText: 'Assess Patentability',
+      icon: <IconScales size={22} />,
+    },
+    {
+      id: 'abs-checker',
+      route: '/abs-checker',
+      name: 'Biological Diversity & ABS Checker',
+      tag: 'BD Act 2002 & NBA',
+      explanation: 'Verify State Biodiversity Board (SBB) intimation and National Biodiversity Authority (NBA) approval requirements.',
+      actionText: 'Check ABS Compliance',
+      icon: <IconLeaf size={22} />,
+    },
+    {
+      id: 'roadmap',
+      route: '/roadmap',
+      name: 'Procedural Filing Roadmap',
+      tag: 'Filing to Grant Guide',
+      explanation: 'Step-by-step statutory milestones from provisional specification and TKDL defense to examination and patent grant.',
+      actionText: 'View Filing Roadmap',
+      icon: <IconCalendar size={22} />,
+    },
+    {
+      id: 'guardian',
+      route: '/guardian',
+      name: 'Dual-Use Compliance Guardian',
+      tag: 'SCOMET & Biological Safety',
+      explanation: 'Screen endemic medicinal herbs and biological materials against export restrictions and threatened flora schedules.',
+      actionText: 'Verify Compliance',
+      icon: <IconShieldCheck size={22} />,
+    },
+    {
+      id: 'checklists',
+      route: '/checklists',
+      name: 'Statutory Filing Checklists',
+      tag: 'Patent Rules 2003',
+      explanation: 'Complete document preparation checklists for Form 1, Form 2 specifications, Form 3 foreign filings, and Form 18.',
+      actionText: 'Access Checklists',
+      icon: <IconCheck size={22} />,
+    },
+    {
+      id: 'drafts',
+      route: '/drafts',
+      name: 'Patent Specification Drafter',
+      tag: 'Specification Drafting',
+      explanation: 'Structure provisional specifications, prior art disclosure statements, and non-obviousness arguments with statutory language.',
+      actionText: 'Generate Draft',
+      icon: <IconFileText size={22} />,
+    },
+    {
+      id: 'informatics',
+      route: '/informatics',
+      name: 'Statutory & Treaty Informatics',
+      tag: 'Statutory Compendium',
+      explanation: 'Authoritative compendium of Indian patent law, TKDL prior art rules, WIPO GRATK Treaty, and biodiversity benefit-sharing frameworks.',
+      actionText: 'Explore Informatics',
+      icon: <IconBook size={22} />,
+    },
+  ]
 
   return (
     <div className="landing">
@@ -5695,15 +5794,10 @@ function LandingPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, 
                 <span>{t('startAssessment')}</span>
                 <IconArrowRight size={16} />
               </Link>
-              <a
-                href="#demo"
-                onClick={handleSeeDemo}
-                className="btn-secondary hero-btn-sub"
-                id="hero-see-demo-btn"
-                aria-label="See interactive video demo"
-              >
-                <span>{t('seeDemo') || 'See Demo'}</span>
-              </a>
+              <Link to="/patentability" className="btn-secondary hero-btn-sub" id="hero-patentability-btn">
+                <IconScales size={16} />
+                <span>Check Patentability</span>
+              </Link>
             </div>
           </div>
         </div>
@@ -5712,61 +5806,36 @@ function LandingPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, 
       {/* Stats Counter */}
       <StatsCounter />
 
-      {/* Live Demo Preview */}
-      <DemoPreview />
-
-      {/* Features Grid */}
+      {/* Features Grid - Editorial Government Standard */}
       <section className="section" id="features" aria-labelledby="features-title">
         <Reveal>
-          <p className="section-label">{t('featuresLabel')}</p>
-          <h2 className="section-title" id="features-title">{t('featuresTitle')}</h2>
+          <p className="section-label">STATUTORY TOOLS & SERVICES</p>
+          <h2 className="section-title" id="features-title">Specialized Intellectual Property Diagnostic Suite</h2>
+          <p className="section-subtitle" style={{ maxWidth: '720px', margin: '0 auto 2.5rem', textAlign: 'center', color: 'var(--text-secondary, #52605B)', fontSize: '1.02rem', lineHeight: 1.6 }}>
+            Domain-specific statutory tools designed for AYUSH practitioners, cultivators, research institutions, and MSMEs navigating Indian and international IP frameworks.
+          </p>
         </Reveal>
         <div className="features-grid">
-          {[
-            {
-              icon: <IconScroll size={24} />,
-              titleKey: 'featureStatuteCited',
-              descKey: 'featureStatuteCitedDesc',
-            },
-            {
-              icon: <IconFlask size={24} />,
-              titleKey: 'featureFormulationWizard',
-              descKey: 'featureFormulationWizardDesc',
-            },
-            {
-              icon: <IconGlobe size={24} />,
-              titleKey: 'featureMultilingual',
-              descKey: 'featureMultilingualDesc',
-            },
-            {
-              icon: <IconScales size={24} />,
-              titleKey: 'featureJurisdiction',
-              descKey: 'featureJurisdictionDesc',
-            },
-            {
-              icon: <IconLeaf size={24} />,
-              titleKey: 'featureABS',
-              descKey: 'featureABSDesc',
-            },
-            {
-              icon: <IconLock size={24} />,
-              titleKey: 'featureTKDL',
-              descKey: 'featureTKDLDesc',
-            },
-          ].map((f, i) => (
-            <Reveal key={f.titleKey} delay={i * 80}>
+          {IMPLEMENTED_FEATURES.map((f, i) => (
+            <Reveal key={f.id} delay={i * 60}>
               <article className="feature-card">
-                <div className="feature-icon" aria-hidden="true" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{f.icon}</div>
-                <h3>{t(f.titleKey)}</h3>
-                <p>{t(f.descKey)}</p>
+                <div className="feature-card-header">
+                  <div className="feature-icon" aria-hidden="true">{f.icon}</div>
+                  <span className="feature-tag">{f.tag}</span>
+                </div>
+                <h3>{f.name}</h3>
+                <p>{f.explanation}</p>
+                <div className="feature-card-action">
+                  <Link to={f.route} className="feature-action-link">
+                    <span>{f.actionText}</span>
+                    <IconArrowRight size={14} />
+                  </Link>
+                </div>
               </article>
             </Reveal>
           ))}
         </div>
       </section>
-
-      {/* Personas Section */}
-      <PersonasSection />
 
       {/* How It Works */}
       <section className="section" id="how-it-works" aria-labelledby="how-title">
@@ -5791,9 +5860,6 @@ function LandingPage({ onOpenAbout, onOpenWizard, theme, toggleTheme, fontSize, 
           ))}
         </div>
       </section>
-
-      {/* Comparison Section */}
-      <ComparisonSection />
 
       {/* Statute Showcase */}
       <StatuteShowcase />
@@ -9811,7 +9877,6 @@ function AppContent() {
   return (
     <BrowserRouter>
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
-      <AccessibilityPanel hideFab={true} />
       <FormulationWizardModal
         isOpen={isWizardOpen}
         onClose={() => setIsWizardOpen(false)}
@@ -10086,6 +10151,12 @@ function AppContent() {
             path="/sitemap"
             element={
               <SitemapPage />
+            }
+          />
+          <Route
+            path="/informatics"
+            element={
+              <InformaticsPage />
             }
           />
           {/* Legacy route redirects */}

@@ -57,6 +57,18 @@ export const SITEMAP_ROUTES = [
     badge: 'Public Portal',
   },
   {
+    path: '/informatics',
+    title: 'Statutory & Treaty Informatics',
+    titleKey: 'sitemap.informatics.title',
+    description: 'Structured compendium of Indian patent statutes, traditional knowledge bars, international treaties, and ABS frameworks.',
+    descriptionKey: 'sitemap.informatics.description',
+    group: 'core',
+    visibility: 'public',
+    footerEligible: true,
+    authRequired: false,
+    badge: 'Official Compendium',
+  },
+  {
     path: '/chat',
     title: 'AI Consultation & Statutory Search',
     titleKey: 'sitemap.chat.title',

@@ -1,28 +1,22 @@
-import React, { useState, useEffect, useLayoutEffect, useCallback } from 'react'
+import React, { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react'
 
 /**
- * OnboardingTour — a game-style guided walkthrough (COD / Free-Fire onboarding feel).
+ * OnboardingTour — Guided, accessible walkthrough for IP-SAKTI Sahayak / RagVyn.
  *
- * How it works (NOTHING hard-coded to pixels):
- *  - Steps are a data-driven list. Each step names a CSS SELECTOR for a real
- *    element on the page. At runtime the tour reads that element's live
- *    bounding box (getBoundingClientRect) and draws a "spotlight" cutout around
- *    it while the rest of the screen is dimmed + blurred.
- *  - A tooltip card animates in near the highlighted element with the feature's
- *    title + description + Prev / Next / Skip controls and progress dots.
- *  - Recomputes on resize / scroll so the spotlight always tracks the element.
- *  - If a step's element is missing (e.g. a dropdown is closed, or logged-out),
- *    the step is auto-skipped — so it degrades gracefully, never points at nothing.
- *
- * First-visit: auto-starts once (localStorage flag). Re-runnable from the
- * navbar "Tour" button via the `run`/`onClose` props.
- *
- * i18n: title/description come from t() keys, so they translate with the UI.
+ * Requirements:
+ *  - Highlights only elements that actually exist on the page.
+ *  - Includes Informatics navigation item.
+ *  - Completely removes See Demo and Pricing references.
+ *  - Provides Next, Previous, and Skip controls.
+ *  - Left Arrow (Previous), Right Arrow / Enter (Next), Escape (Skip / Close).
+ *  - Traps focus while active and restores focus to the launching element after closing.
+ *  - Stable selectors with data-tour attributes.
+ *  - Respects prefers-reduced-motion.
+ *  - Scrolls target into view safely.
  */
 
-const STORAGE_KEY = 'ip_sakti_tour_done_v2'
+const STORAGE_KEY = 'ip_sakti_tour_done_v3'
 
-// English fallbacks so the tour is fully functional even before i18n keys exist.
 const TOUR_FALLBACK = {
   tourStep: 'Step',
   tourSkip: 'Skip',
@@ -30,74 +24,68 @@ const TOUR_FALLBACK = {
   tourNext: 'Next',
   tourFinish: 'Got it!',
   tourWelcomeTitle: 'Welcome to IP-SAKTI Sahayak! 👋',
-  tourWelcomeDesc: 'Your AI guide for Ayurveda IP, patents, TKDL and regulatory questions. Let us show you around in 30 seconds.',
+  tourWelcomeDesc: 'Your sovereign AI assistant for Ayurvedic IP, patent eligibility, TKDL prior-art and regulatory compliance. Let us guide you through the key modules in 30 seconds.',
   tourChatTitle: '💬 Ask RagVyn AI',
-  tourChatDesc: 'Ask any Ayurveda IP question in your language and get a cited, trustworthy answer — the heart of the app.',
-  tourDemoTitle: '🎬 Interactive Demo & Sandbox',
-  tourDemoDesc: 'Experience live patent screening, dual-use checks, and statutory RAG queries before starting your assessment.',
-  tourToolsTitle: '🧰 IP Tools',
-  tourToolsDesc: 'Open this menu for our smart tools that go beyond chat. Let us highlight the top three next.',
-  tourVerdictTitle: '🛡️ Patentability Verdict',
-  tourVerdictDesc: 'Type a formula and get an instant RED / YELLOW / GREEN verdict on whether it can be patented — our Biopiracy Shield.',
+  tourChatDesc: 'Consult on any Ayurvedic IP or regulatory question with verified, source-cited statutory answers grounded in domestic and international law.',
+  tourInformaticsTitle: '🏛️ Statutory & Treaty Informatics',
+  tourInformaticsDesc: 'Explore our comprehensive, source-backed legal compendium covering Patents, Treaties, TKDL, Biodiversity (ABS), and ASU drug licensing.',
+  tourToolsTitle: '🧰 IP Diagnostic Tools',
+  tourToolsDesc: 'Access specialized decision engines designed specifically for AYUSH innovators, researchers, and traditional practitioners.',
+  tourVerdictTitle: '🛡️ Patentability Assessment',
+  tourVerdictDesc: 'Screen your formulation against Section 3(p) traditional knowledge bars and Section 3(d) therapeutic efficacy standards.',
   tourRoadmapTitle: '🗺️ IP Journey Roadmap',
-  tourRoadmapDesc: 'See your full patent journey — filing to grant to renewals — as a personalized, grounded timeline.',
+  tourRoadmapDesc: 'Track your personalized statutory timeline from provisional filing to publication, examination, and 20-year patent grant.',
   tourGuardianTitle: '🧭 Dual-Use Guardian',
-  tourGuardianDesc: 'One view for ALL the compliance you need — patent + AYUSH licence + Biodiversity (ABS) + FSSAI.',
-  tourFeeTitle: '💰 Fee Calculator',
-  tourFeeDesc: 'Estimate your exact patent filing fees (Natural Person / Startup / Others) with all the extra-claim and page charges.',
-  tourDeadlineTitle: '📅 Deadline Calculator',
-  tourDeadlineDesc: 'Never miss a date — track RFE, FER, publication, renewals and PCT deadlines from your filing date.',
-  tourAbsTitle: '🌿 ABS Checker',
-  tourAbsDesc: 'Check if your biological resource needs NBA / ABS approval under the Biodiversity Act before you commercialise.',
-  tourChecklistTitle: '✅ Filing Checklists',
-  tourChecklistDesc: 'Step-by-step interactive checklists for Patent, Trademark, GI and ABS filings with docs, time and fees.',
-  tourServicesTitle: '💼 Services',
-  tourServicesDesc: 'Open this menu for hands-on services — draft generation, your case workspace, document upload and expert help.',
-  tourDraftsTitle: '📝 Draft Generator',
-  tourDraftsDesc: 'Auto-fill official templates — patent Form-1, NBA Form III, and a Section 3(p) opposition petition.',
+  tourGuardianDesc: 'Unified compliance checklist across Patent filing, State AYUSH licensing, Biodiversity (ABS), and FSSAI rules.',
+  tourFeeTitle: '💰 Statutory Fee Calculator',
+  tourFeeDesc: 'Estimate official patent filing fees across applicant categories (Natural Person, Startup, Small Entity, Others).',
+  tourDeadlineTitle: '📅 Statutory Deadline Calculator',
+  tourDeadlineDesc: 'Calculate critical patent prosecution deadlines including RFE, FER response, publication, and PCT priority windows.',
+  tourAbsTitle: '🌿 Biodiversity (ABS) Checker',
+  tourAbsDesc: 'Verify whether access to endemic biological resources mandates prior approval from the National Biodiversity Authority (NBA).',
+  tourChecklistTitle: '✅ Statutory Filing Checklists',
+  tourChecklistDesc: 'Step-by-step documentation checklists and procedural guides for Patent, Trademark, and GI applications.',
+  tourServicesTitle: '💼 Practitioner Services',
+  tourServicesDesc: 'Drafting, matter prosecution tracking, private document search, and verified expert consultation.',
+  tourDraftsTitle: '📝 Legal Draft Generator',
+  tourDraftsDesc: 'Auto-fill official statutory templates including Patent Form-1, NBA Form III, and Section 3(p) opposition petitions.',
   tourWorkspaceTitle: '🗂️ Matter Workspace',
-  tourWorkspaceDesc: 'Track all your IP cases in one place — statuses, notes and documents per matter (login required).',
-  tourDocumentsTitle: '📎 Document Upload',
-  tourDocumentsDesc: 'Upload your own PDFs and search them privately — kept separate from the public corpus (login required).',
+  tourWorkspaceDesc: 'Track and manage your confidential IP matters, filings, and prosecution milestones in one secure portal.',
+  tourDocumentsTitle: '📎 Document Vault',
+  tourDocumentsDesc: 'Securely upload research specifications and examine documents privately, completely isolated from public data.',
   tourExpertsTitle: '👥 Expert Connect',
-  tourExpertsDesc: 'Find verified IP experts by language and rating, request a consultation, and browse common IP FAQs.',
-  tourSourcesTitle: '📚 Sources',
-  tourSourcesDesc: 'See exactly which laws, acts and treaties power our answers — full transparency you can trust.',
-  tourPricingTitle: '🏷️ Pricing',
-  tourPricingDesc: 'Free to start. Upgrade for more daily queries, uploads, drafts and expert consultations when you need them.',
+  tourExpertsDesc: 'Consult verified Ayurvedic IP attorneys and regulatory facilitators for official legal representation.',
+  tourSourcesTitle: '📚 Knowledge Base Sources',
+  tourSourcesDesc: 'Inspect the authoritative legal corpus—statutes, rules, and international treaties—that ground every answer.',
   tourFinishTitle: '🎉 You are all set!',
-  tourFinishDesc: 'That is the whole toolkit. Jump into RagVyn AI to ask your first question — replay this tour anytime from the Tour button.',
+  tourFinishDesc: 'You now know your way around IP-SAKTI Sahayak. Start by querying RagVyn AI or exploring the Informatics compendium.',
 }
 
-// Data-driven step list. `selector` is resolved live from the DOM.
-// `openTools` tells the tour to open the IP Tools dropdown first (so its
-// items exist to be highlighted). titleKey/descKey are i18n keys.
 const STEPS = [
   {
-    selector: '.gov-brand-wrap',
+    selector: '[data-tour="nav-brand"], .gov-brand-wrap',
     titleKey: 'tourWelcomeTitle',
     descKey: 'tourWelcomeDesc',
     placement: 'bottom',
   },
   {
-    selector: '.gov-nav-cta',
+    selector: '[data-tour="nav-consult"], #gov-nav-consult-btn, .gov-nav-cta',
     titleKey: 'tourChatTitle',
     descKey: 'tourChatDesc',
     placement: 'bottom',
   },
   {
-    selector: '#hero-see-demo-btn, a[href="#demo"]',
-    titleKey: 'tourDemoTitle',
-    descKey: 'tourDemoDesc',
+    selector: '[data-tour="nav-informatics"], a[href="/informatics"]',
+    titleKey: 'tourInformaticsTitle',
+    descKey: 'tourInformaticsDesc',
     placement: 'bottom',
   },
   {
-    selector: '[data-tour="ip-tools"]',
+    selector: '[data-tour="ip-tools"], [data-tour="nav-tools"]',
     titleKey: 'tourToolsTitle',
     descKey: 'tourToolsDesc',
     placement: 'bottom',
   },
-  // ---- IP Tools dropdown items ----
   {
     selector: 'a[href="/patentability"], a[href="/verdict"]',
     titleKey: 'tourVerdictTitle',
@@ -147,9 +135,8 @@ const STEPS = [
     placement: 'right',
     openTools: true,
   },
-  // ---- Services dropdown ----
   {
-    selector: '[data-tour="services"]',
+    selector: '[data-tour="services"], [data-tour="nav-services"]',
     titleKey: 'tourServicesTitle',
     descKey: 'tourServicesDesc',
     placement: 'bottom',
@@ -182,40 +169,42 @@ const STEPS = [
     placement: 'right',
     openServices: true,
   },
-  // ---- Direct links ----
   {
-    selector: 'a[href="/sources"]',
+    selector: '[data-tour="nav-sources"], a[href="/sources"]',
     titleKey: 'tourSourcesTitle',
     descKey: 'tourSourcesDesc',
     placement: 'bottom',
   },
   {
-    selector: 'a[href="/pricing"]',
-    titleKey: 'tourPricingTitle',
-    descKey: 'tourPricingDesc',
-    placement: 'bottom',
-  },
-  {
-    selector: '.gov-nav-cta',
+    selector: '[data-tour="nav-consult"], #gov-nav-consult-btn, .gov-nav-cta',
     titleKey: 'tourFinishTitle',
     descKey: 'tourFinishDesc',
     placement: 'bottom',
   },
 ]
 
-const PAD = 8 // spotlight padding around the target
+const PAD = 8
 
 export default function OnboardingTour({ run, onClose, onOpenTools, onOpenServices, t: tProp }) {
-  // t comes from the parent (App's LanguageContext). Fallback to key-less labels
-  // if not provided, so the component never crashes when t is missing.
-  const t = tProp || ((k) => TOUR_FALLBACK[k] || k)
+  const t = useCallback((k) => {
+    if (typeof tProp === 'function') {
+      const res = tProp(k)
+      if (res && res !== k) return res
+    }
+    return TOUR_FALLBACK[k] || k
+  }, [tProp])
   const [active, setActive] = useState(false)
   const [index, setIndex] = useState(0)
   const [rect, setRect] = useState(null)
 
-  // Auto-start on first visit, or when parent sets run=true.
+  const triggerElementRef = useRef(null)
+  const cardRef = useRef(null)
+  const nextBtnRef = useRef(null)
+
+  // Auto-start on first visit or when triggered externally
   useEffect(() => {
     if (run) {
+      triggerElementRef.current = document.activeElement
       setIndex(0)
       setActive(true)
       return
@@ -223,17 +212,17 @@ export default function OnboardingTour({ run, onClose, onOpenTools, onOpenServic
     const done = localStorage.getItem(STORAGE_KEY)
     if (!done) {
       const timer = setTimeout(() => {
+        triggerElementRef.current = document.activeElement
         setIndex(0)
         setActive(true)
-      }, 1200) // let the page settle first
+      }, 1200)
       return () => clearTimeout(timer)
     }
   }, [run])
 
   const step = STEPS[index] || null
 
-  // Open whichever dropdown this step needs (and close the other) so its
-  // items exist to be highlighted.
+  // Ensure appropriate dropdown is open for nested sub-items
   useEffect(() => {
     if (!active || !step) return
     if (step.openTools) {
@@ -248,13 +237,53 @@ export default function OnboardingTour({ run, onClose, onOpenTools, onOpenServic
     }
   }, [active, index, step, onOpenTools, onOpenServices])
 
-  // Measure the current target element's live position.
-  const measure = useCallback(() => {
+  // Update spotlight rect without triggering any scroll events
+  const updateRect = useCallback(() => {
     if (!step) return
+    const el = document.querySelector(step.selector)
+    if (!el) return
+    const isVisible = el.offsetParent !== null || el.offsetWidth > 0 || el.offsetHeight > 0
+    if (!isVisible) return
+    const r = el.getBoundingClientRect()
+    if (r.width > 0 && r.height > 0) {
+      setRect({ top: r.top, left: r.left, width: r.width, height: r.height })
+    }
+  }, [step])
+
+  // Measure element bounding box and scroll into view smoothly ONLY on step change
+  const scrollAndMeasure = useCallback(() => {
+    if (!step) return
+    const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
     const findAndMeasure = (targetSelector) => {
       const el = document.querySelector(targetSelector)
       if (!el) return null
-      el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      
+      // Check if element is visible
+      const isVisible = el.offsetParent !== null || el.offsetWidth > 0 || el.offsetHeight > 0
+      if (!isVisible) return null
+
+      // Check if element is inside sticky navbar or header
+      const isInsideNav = Boolean(el.closest('.gov-portal-header-wrapper, .gov-nav-bar'))
+      if (isInsideNav) {
+        // If window is scrolled down, reset window scroll to top smoothly so navbar sits naturally
+        if (typeof window !== 'undefined' && window.scrollY > 0) {
+          window.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' })
+        }
+        // If element is inside a scrollable dropdown menu, scroll only within the menu container
+        const menuContainer = el.closest('.gov-nav-dropdown-menu')
+        if (menuContainer) {
+          el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'auto' })
+        }
+      } else {
+        // In-page element outside the header: center smoothly
+        el.scrollIntoView({
+          block: 'center',
+          inline: 'nearest',
+          behavior: prefersReducedMotion ? 'auto' : 'smooth',
+        })
+      }
+
       const r = el.getBoundingClientRect()
       if (r.width > 0 && r.height > 0) {
         return { top: r.top, left: r.left, width: r.width, height: r.height }
@@ -268,39 +297,62 @@ export default function OnboardingTour({ run, onClose, onOpenTools, onOpenServic
       return
     }
 
-    // If element not ready (e.g. dropdown opening animation), retry once
+    // Dropdown opening animation retry
     const retryTimer = setTimeout(() => {
       const retried = findAndMeasure(step.selector)
-      setRect(retried)
-    }, 120)
+      if (retried) {
+        setRect(retried)
+      } else {
+        // If element genuinely missing in current view (e.g. mobile hidden), advance
+        setIndex((curr) => (curr < STEPS.length - 1 ? curr + 1 : curr))
+      }
+    }, 180)
 
     return () => clearTimeout(retryTimer)
   }, [step])
 
+  // Run scrollAndMeasure ONLY when active step/index changes
   useLayoutEffect(() => {
     if (!active) return
-    // small delay so a just-opened dropdown has rendered
-    const id = setTimeout(measure, (step?.openTools || step?.openServices) ? 240 : 40)
+    const id = setTimeout(scrollAndMeasure, (step?.openTools || step?.openServices) ? 220 : 40)
     return () => clearTimeout(id)
-  }, [active, index, measure, step])
+  }, [active, index, scrollAndMeasure, step])
 
+  // On scroll or resize, ONLY update spotlight coordinates via requestAnimationFrame — NEVER scroll!
   useEffect(() => {
     if (!active) return
-    const onChange = () => measure()
+    let rafId = null
+    const onChange = () => {
+      if (rafId) cancelAnimationFrame(rafId)
+      rafId = requestAnimationFrame(updateRect)
+    }
     window.addEventListener('resize', onChange)
     window.addEventListener('scroll', onChange, true)
     return () => {
+      if (rafId) cancelAnimationFrame(rafId)
       window.removeEventListener('resize', onChange)
       window.removeEventListener('scroll', onChange, true)
     }
-  }, [active, measure])
+  }, [active, updateRect])
 
+  // Finish tour and restore focus to launching element
   const finish = useCallback(() => {
     localStorage.setItem(STORAGE_KEY, '1')
     setActive(false)
     if (onOpenTools) onOpenTools(false)
     if (onOpenServices) onOpenServices(false)
     if (onClose) onClose()
+
+    // Restore focus
+    if (triggerElementRef.current && typeof triggerElementRef.current.focus === 'function') {
+      setTimeout(() => {
+        try {
+          triggerElementRef.current.focus()
+        } catch {
+          // ignore focus failure
+        }
+      }, 50)
+    }
   }, [onClose, onOpenTools, onOpenServices])
 
   const next = useCallback(() => {
@@ -313,48 +365,96 @@ export default function OnboardingTour({ run, onClose, onOpenTools, onOpenServic
 
   const prev = useCallback(() => setIndex((i) => Math.max(0, i - 1)), [])
 
-  // Keyboard: Esc = skip, Right/Enter = next, Left = prev
+  // Auto-focus Next button when step changes for keyboard convenience
+  useEffect(() => {
+    if (active) {
+      const timer = setTimeout(() => {
+        nextBtnRef.current?.focus()
+      }, 100)
+      return () => clearTimeout(timer)
+    }
+  }, [active, index])
+
+  // Keyboard navigation & Focus Trapping
   useEffect(() => {
     if (!active) return
+
     const onKey = (e) => {
-      if (e.key === 'Escape') finish()
-      else if (e.key === 'ArrowRight' || e.key === 'Enter') next()
-      else if (e.key === 'ArrowLeft') prev()
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        finish()
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault()
+        next()
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault()
+        prev()
+      } else if (e.key === 'Tab') {
+        // Focus trap inside tooltip card
+        if (!cardRef.current) return
+        const focusable = cardRef.current.querySelectorAll('button:not([disabled])')
+        if (!focusable.length) return
+        const first = focusable[0]
+        const last = focusable[focusable.length - 1]
+
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault()
+            last.focus()
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault()
+            first.focus()
+          }
+        }
+      }
     }
+
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [active, finish, next, prev])
 
   if (!active || !step) return null
 
-  // Spotlight box (falls back to a centered box if the element is missing).
   const spot = rect
     ? {
-        top: rect.top - PAD,
-        left: rect.left - PAD,
+        top: Math.max(8, rect.top - PAD),
+        left: Math.max(8, rect.left - PAD),
         width: rect.width + PAD * 2,
         height: rect.height + PAD * 2,
       }
     : null
 
-  // Tooltip position: below or beside the spotlight, clamped to viewport.
   const tooltip = computeTooltipPos(spot, step.placement)
 
   return (
-    <div style={styles.root} aria-live="polite" role="dialog" data-tour-root="true">
+    <div style={styles.root} aria-live="polite" role="dialog" aria-modal="true" data-tour-root="true">
       <style>{`
         @keyframes tourPulse {
-          0%, 100% { box-shadow: 0 0 0 9999px rgba(8,24,18,0.78), 0 0 0 2px #D4AF37, 0 0 18px 4px rgba(212,175,55,0.5); }
-          50% { box-shadow: 0 0 0 9999px rgba(8,24,18,0.78), 0 0 0 3px #D4AF37, 0 0 28px 8px rgba(212,175,55,0.75); }
+          0%, 100% { box-shadow: 0 0 0 9999px rgba(8,24,18,0.82), 0 0 0 2px #C87A1E, 0 0 16px 3px rgba(200,122,30,0.5); }
+          50% { box-shadow: 0 0 0 9999px rgba(8,24,18,0.82), 0 0 0 3px #F8D18C, 0 0 26px 6px rgba(248,209,140,0.7); }
         }
         @keyframes tourCardIn {
-          from { opacity: 0; transform: translateY(14px) scale(0.96); }
+          from { opacity: 0; transform: translateY(12px) scale(0.97); }
           to { opacity: 1; transform: translateY(0) scale(1); }
         }
+        @media (prefers-reduced-motion: reduce) {
+          .tour-spotlight-box {
+            animation: none !important;
+            transition: none !important;
+          }
+          .tour-card-box {
+            animation: none !important;
+            transition: none !important;
+          }
+        }
       `}</style>
-      {/* Blurred / dimmed backdrop with a spotlight cutout using box-shadow */}
+
+      {/* Dimmed backdrop with spotlight cutout */}
       {spot ? (
         <div
+          className="tour-spotlight-box"
           style={{
             ...styles.spotlight,
             top: spot.top,
@@ -367,32 +467,69 @@ export default function OnboardingTour({ run, onClose, onOpenTools, onOpenServic
         <div style={styles.fullDim} />
       )}
 
-      {/* Tooltip card */}
-      <div style={{ ...styles.tooltip, ...tooltip.style }} key={index}>
-        <div style={styles.stepCount}>
-          {t('tourStep') || 'Step'} {index + 1} / {STEPS.length}
+      {/* Interactive Tooltip Card with focus trap ref */}
+      <div
+        ref={cardRef}
+        className="tour-card-box"
+        style={{ ...styles.tooltip, ...tooltip.style }}
+        key={index}
+      >
+        <div style={styles.stepHeaderRow}>
+          <div style={styles.stepCount}>
+            {t('tourStep') || 'Step'} {index + 1} / {STEPS.length}
+          </div>
+          <button
+            type="button"
+            onClick={finish}
+            style={styles.closeIconBtn}
+            aria-label="Close tour"
+            title="Close tour (Esc)"
+          >
+            ✕
+          </button>
         </div>
+
         <div style={styles.tipTitle}>{t(step.titleKey)}</div>
         <div style={styles.tipDesc}>{t(step.descKey)}</div>
 
-        {/* progress dots */}
-        <div style={styles.dots}>
+        {/* Progress indicator */}
+        <div style={styles.dots} aria-hidden="true">
           {STEPS.map((_, i) => (
-            <span key={i} style={{ ...styles.dot, ...(i === index ? styles.dotActive : {}) }} />
+            <span
+              key={i}
+              style={{ ...styles.dot, ...(i === index ? styles.dotActive : {}) }}
+            />
           ))}
         </div>
 
+        {/* Action Controls */}
         <div style={styles.btnRow}>
-          <button type="button" onClick={finish} style={styles.skipBtn}>
+          <button
+            type="button"
+            onClick={finish}
+            style={styles.skipBtn}
+            aria-label="Skip tour"
+          >
             {t('tourSkip') || 'Skip'}
           </button>
           <div style={{ display: 'flex', gap: 8 }}>
             {index > 0 && (
-              <button type="button" onClick={prev} style={styles.prevBtn}>
+              <button
+                type="button"
+                onClick={prev}
+                style={styles.prevBtn}
+                aria-label="Previous step"
+              >
                 {t('tourPrev') || 'Back'}
               </button>
             )}
-            <button type="button" onClick={next} style={styles.nextBtn}>
+            <button
+              ref={nextBtnRef}
+              type="button"
+              onClick={next}
+              style={styles.nextBtn}
+              aria-label={index >= STEPS.length - 1 ? 'Finish tour' : 'Next step'}
+            >
               {index >= STEPS.length - 1 ? (t('tourFinish') || 'Got it!') : (t('tourNext') || 'Next')}
             </button>
           </div>
@@ -403,63 +540,152 @@ export default function OnboardingTour({ run, onClose, onOpenTools, onOpenServic
 }
 
 function computeTooltipPos(spot, placement) {
-  const W = 320
+  const W = Math.min(340, typeof window !== 'undefined' ? window.innerWidth - 24 : 340)
   const vw = typeof window !== 'undefined' ? window.innerWidth : 1200
   const vh = typeof window !== 'undefined' ? window.innerHeight : 800
+
   if (!spot) {
-    return { style: { top: vh / 2 - 90, left: vw / 2 - W / 2, width: W } }
+    return { style: { top: Math.max(20, vh / 2 - 110), left: Math.max(12, vw / 2 - W / 2), width: W } }
   }
+
   let top, left
-  if (placement === 'right') {
+  if (placement === 'right' && spot.left + spot.width + W + 20 < vw) {
     left = spot.left + spot.width + 16
-    top = spot.top
-    if (left + W > vw - 12) {
-      // not enough room on the right -> put below
-      left = Math.min(spot.left, vw - W - 12)
-      top = spot.top + spot.height + 16
-    }
+    top = Math.max(16, Math.min(spot.top, vh - 240))
   } else {
-    // bottom (default)
+    // bottom placement clamped
     top = spot.top + spot.height + 16
-    left = spot.left
-    if (left + W > vw - 12) left = vw - W - 12
-    if (left < 12) left = 12
-    if (top + 200 > vh) top = Math.max(12, spot.top - 200) // flip above
+    left = Math.max(12, Math.min(spot.left, vw - W - 12))
+
+    if (top + 220 > vh) {
+      top = Math.max(12, spot.top - 230)
+    }
   }
+
   return { style: { top, left, width: W } }
 }
 
 const styles = {
-  root: { position: 'fixed', inset: 0, zIndex: 100000, pointerEvents: 'auto' },
-  // The spotlight: a transparent box whose HUGE box-shadow dims everything else.
+  root: {
+    position: 'fixed',
+    inset: 0,
+    zIndex: 100000,
+    pointerEvents: 'auto',
+    fontFamily: 'system-ui, -apple-system, sans-serif',
+  },
   spotlight: {
     position: 'fixed',
     borderRadius: 12,
-    boxShadow: '0 0 0 9999px rgba(8, 24, 18, 0.78)',
-    border: '2px solid #D4AF37',
-    transition: 'top 0.35s cubic-bezier(0.4,0,0.2,1), left 0.35s cubic-bezier(0.4,0,0.2,1), width 0.35s, height 0.35s',
-    animation: 'tourPulse 1.8s ease-in-out infinite',
+    boxShadow: '0 0 0 9999px rgba(8, 24, 18, 0.82)',
+    border: '2px solid #C87A1E',
+    transition: 'top 0.3s cubic-bezier(0.4,0,0.2,1), left 0.3s cubic-bezier(0.4,0,0.2,1), width 0.3s, height 0.3s',
+    animation: 'tourPulse 2s ease-in-out infinite',
     pointerEvents: 'none',
   },
-  fullDim: { position: 'fixed', inset: 0, background: 'rgba(8,24,18,0.82)', backdropFilter: 'blur(3px)' },
+  fullDim: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(8, 24, 18, 0.85)',
+    backdropFilter: 'blur(3px)',
+  },
   tooltip: {
     position: 'fixed',
-    background: '#fff',
+    background: '#FFFFFF',
     borderRadius: 16,
-    padding: '20px 22px',
-    boxShadow: '0 20px 60px rgba(0,0,0,0.35)',
-    border: '1px solid rgba(212,175,55,0.4)',
-    animation: 'tourCardIn 0.4s cubic-bezier(0.16,1,0.3,1)',
-    transition: 'top 0.35s ease, left 0.35s ease',
+    padding: '20px',
+    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.1)',
+    border: '1.5px solid rgba(200, 122, 30, 0.5)',
+    animation: 'tourCardIn 0.35s cubic-bezier(0.16,1,0.3,1)',
+    zIndex: 100001,
   },
-  stepCount: { fontSize: 11.5, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: '#D4AF37', marginBottom: 6 },
-  tipTitle: { fontSize: 19, fontWeight: 800, color: '#143D30', marginBottom: 8, lineHeight: 1.3 },
-  tipDesc: { fontSize: 14.5, color: '#3A4A3A', lineHeight: 1.6 },
-  dots: { display: 'flex', gap: 6, marginTop: 16 },
-  dot: { width: 8, height: 8, borderRadius: '50%', background: 'rgba(20,61,48,0.2)', transition: 'all 0.3s' },
-  dotActive: { background: '#1E8449', width: 22, borderRadius: 6 },
-  btnRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 18, gap: 10 },
-  skipBtn: { background: 'transparent', border: 'none', color: '#7A8A7A', fontSize: 13.5, fontWeight: 600, cursor: 'pointer', padding: '8px 4px' },
-  prevBtn: { background: '#fff', border: '2px solid rgba(20,61,48,0.2)', color: '#143D30', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', padding: '8px 16px', borderRadius: 10 },
-  nextBtn: { background: 'linear-gradient(135deg,#143D30,#1E8449)', border: 'none', color: '#fff', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', padding: '9px 20px', borderRadius: 10 },
+  stepHeaderRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  stepCount: {
+    fontSize: 11,
+    fontWeight: 800,
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+    color: '#C87A1E',
+  },
+  closeIconBtn: {
+    background: 'transparent',
+    border: 'none',
+    color: '#64748B',
+    fontSize: 14,
+    cursor: 'pointer',
+    padding: '2px 6px',
+    borderRadius: 4,
+    lineHeight: 1,
+  },
+  tipTitle: {
+    fontSize: 17,
+    fontWeight: 800,
+    color: '#143D30',
+    marginBottom: 8,
+    lineHeight: 1.3,
+  },
+  tipDesc: {
+    fontSize: 13.5,
+    color: '#334155',
+    lineHeight: 1.55,
+  },
+  dots: {
+    display: 'flex',
+    gap: 5,
+    marginTop: 14,
+    flexWrap: 'wrap',
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: '50%',
+    background: 'rgba(20, 61, 48, 0.2)',
+    transition: 'all 0.25s',
+  },
+  dotActive: {
+    background: '#143D30',
+    width: 18,
+    borderRadius: 6,
+  },
+  btnRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 18,
+    gap: 8,
+  },
+  skipBtn: {
+    background: 'transparent',
+    border: 'none',
+    color: '#64748B',
+    fontSize: 13,
+    fontWeight: 600,
+    cursor: 'pointer',
+    padding: '6px 4px',
+  },
+  prevBtn: {
+    background: '#FFFFFF',
+    border: '1.5px solid rgba(20, 61, 48, 0.25)',
+    color: '#143D30',
+    fontSize: 13,
+    fontWeight: 700,
+    cursor: 'pointer',
+    padding: '7px 14px',
+    borderRadius: 8,
+  },
+  nextBtn: {
+    background: '#143D30',
+    border: 'none',
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: 700,
+    cursor: 'pointer',
+    padding: '8px 18px',
+    borderRadius: 8,
+    boxShadow: '0 2px 8px rgba(20, 61, 48, 0.3)',
+  },
 }
